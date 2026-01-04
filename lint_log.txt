@@ -1,0 +1,70 @@
+
+> frontend@0.1.0 lint
+> eslint
+
+
+D:\Web Development\LMS\payroll-system\frontend\app\(auth)\register\page.tsx
+   19:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   32:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  115:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Web Development\LMS\payroll-system\frontend\app\(dashboard)\attendance\page.tsx
+   8:10  warning  'locationLoaded' is assigned a value but never used              @typescript-eslint/no-unused-vars
+   9:40  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  37:14  warning  'error' is defined but never used                                @typescript-eslint/no-unused-vars
+  50:14  warning  'error' is defined but never used                                @typescript-eslint/no-unused-vars
+  84:67  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+D:\Web Development\LMS\payroll-system\frontend\app\(dashboard)\employees\page.tsx
+   29:11  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   49:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  154:45  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Web Development\LMS\payroll-system\frontend\app\(dashboard)\leaves\approvals\page.tsx
+  12:48  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  20:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  44:35  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  52:35  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  68:45  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Web Development\LMS\payroll-system\frontend\app\(dashboard)\leaves\page.tsx
+   42:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  159:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Web Development\LMS\payroll-system\frontend\app\(dashboard)\page.tsx
+  6:11  warning  'user' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Web Development\LMS\payroll-system\frontend\app\(dashboard)\payroll\page.tsx
+   18:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+   27:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  135:41  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Web Development\LMS\payroll-system\frontend\app\page.tsx
+  109:40  error  Parsing error: Unterminated string literal
+
+D:\Web Development\LMS\payroll-system\frontend\components\auth\LoginForm.tsx
+  19:14  warning  'error' is defined but never used                                @typescript-eslint/no-unused-vars
+  80:14  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+D:\Web Development\LMS\payroll-system\frontend\components\common\DataTable.tsx
+   6:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  11:9   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  13:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Web Development\LMS\payroll-system\frontend\components\dashboard\DashboardLayout.tsx
+  8:17  warning  'isLoading' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Web Development\LMS\payroll-system\frontend\components\leaves\LeaveCard.tsx
+  18:3   warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  35:35  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Web Development\LMS\payroll-system\frontend\lib\api\hooks.ts
+    9:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   18:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   59:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  104:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  111:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  145:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 37 problems (26 errors, 11 warnings)
+
