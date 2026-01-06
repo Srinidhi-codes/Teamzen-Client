@@ -3,7 +3,7 @@
 interface Column {
   key: string;
   label: string;
-  render?: (value: any) => React.ReactNode;
+  render?: (value: any, row: any) => React.ReactNode;
 }
 
 interface DataTableProps {
@@ -44,7 +44,7 @@ export function DataTable({
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200">
       <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+        <thead className="bg-linear-to-r from-gray-50 to-gray-100">
           <tr>
             {columns.map((col) => (
               <th
@@ -72,7 +72,7 @@ export function DataTable({
                   key={col.key}
                   className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium"
                 >
-                  {col.render ? col.render(row[col.key]) : row[col.key]}
+                  {col.render ? col.render(row[col.key], row) : row[col.key]}
                 </td>
               ))}
             </tr>

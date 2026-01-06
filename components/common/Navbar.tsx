@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useUser } from "@/lib/api/hooks";
+import { useGraphQLUser } from "@/lib/api/graphqlHooks";
 import { useState } from "react";
 
 export function Navbar() {
-  const { user } = useUser();
+  const { user, isLoading: isUserLoading, error: userError } = useGraphQLUser();
   const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -39,11 +39,11 @@ export function Navbar() {
                   className="flex items-center space-x-2 hover:bg-gray-50 px-3 py-2 rounded-lg transition"
                 >
                   <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                    {user.first_name?.charAt(0)}
-                    {user.last_name?.charAt(0)}
+                    {user.firstName?.charAt(0)}
+                    {user.lastName?.charAt(0)}
                   </div>
                   <span className="text-sm font-medium hidden sm:inline">
-                    {user.first_name} {user.last_name}
+                    {user.firstName} {user.lastName}
                   </span>
                 </button>
 

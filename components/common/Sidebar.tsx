@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useUser } from "@/lib/api/hooks";
+import { useGraphQLUser } from "@/lib/api/graphqlHooks";
 import { useState } from "react";
 
 interface NavItem {
@@ -24,7 +24,7 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user } = useUser();
+  const { user, isLoading: isUserLoading, error: userError } = useGraphQLUser();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const filteredItems = navItems.filter(
@@ -53,8 +53,8 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition ${isActive
-                  ? "bg-indigo-600 text-white"
-                  : "text-indigo-100 hover:bg-indigo-800"
+                ? "bg-indigo-600 text-white"
+                : "text-indigo-100 hover:bg-indigo-800"
                 }`}
               title={isCollapsed ? item.name : ""}
             >
