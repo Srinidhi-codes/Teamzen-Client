@@ -20,6 +20,11 @@ export interface GraphQLUser {
   employeeId?: string | null;
   employmentType?: "full_time" | "contract" | "intern";
 
+  organization?: {
+    id: string;
+    name: string;
+  } | null;
+
   manager?: {
     id: string;
     firstName: string;

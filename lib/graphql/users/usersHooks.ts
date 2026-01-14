@@ -4,17 +4,17 @@ import { UPDATE_PROFILE, CHANGE_PASSWORD } from "./mutations";
 import { GraphQLUser } from "./types";
 
 import { useEffect } from "react";
-import { useUserStore } from "@/lib/store/userStore";
+import { useStore } from "@/lib/store/useStore";
 
 export function useGraphQLUser() {
   const { data, loading, error, refetch } = useQuery(GET_ME) as any;
-  const { setUser, user: storedUser } = useUserStore();
+  const { setAuthenticatedUser, user: storedUser } = useStore();
 
   useEffect(() => {
     if (data?.me) {
-      setUser(data.me as GraphQLUser);
+      setAuthenticatedUser(data.me as GraphQLUser);
     }
-  }, [data, setUser]);
+  }, [data, setAuthenticatedUser]);
 
   return {
     user: (data?.me as GraphQLUser) || storedUser || null,

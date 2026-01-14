@@ -61,6 +61,11 @@ client.interceptors.response.use(
         processQueue(refreshError);
 
         // ❌ Refresh failed → session expired
+        // Clear global store
+        import("@/lib/store/useStore").then(({ useStore }) => {
+           useStore.getState().logoutUser();
+        });
+
         if (typeof window !== "undefined") {
           window.location.href = "/login";
         }
@@ -71,8 +76,30 @@ client.interceptors.response.use(
       }
     }
 
+
+
     return Promise.reject(error);
   }
 );
+
+export const refreshAuthToken = async () => {
+    if (isRefreshing) {
+        return new Promise<void>((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+        });
+    }
+
+    isRefreshing = true;
+
+    try {
+        await client.post(API_ENDPOINTS.REFRESH);
+        processQueue();
+    } catch (error) {
+        processQueue(error);
+        throw error;
+    } finally {
+        isRefreshing = false;
+    }
+};
 
 export default client;

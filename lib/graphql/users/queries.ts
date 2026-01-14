@@ -36,6 +36,10 @@ export const GET_ME = gql`
         name
         address
       }
+      organization {
+        id
+        name
+      }
       bankAccountNumber
       bankIfscCode
       panNumber
