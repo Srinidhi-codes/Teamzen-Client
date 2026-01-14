@@ -9,7 +9,12 @@ export const GET_ATTENDANCE = gql`
     logoutTime
     loginDistance
     logoutDistance
+    isVerified
+    workedHours
     status
+    correctionStatus
+    correctionReason
+    approvalComment
   }
 }
 `;

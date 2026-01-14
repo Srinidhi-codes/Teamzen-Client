@@ -1,4 +1,5 @@
 import { DataTable } from "@/components/common/DataTable";
+import moment from "moment";
 
 export type AttendanceRow = {
     id: string;
@@ -14,6 +15,9 @@ const STATUS_MAP: Record<string, { label: string; className: string }> = {
     early_logout: { label: "Early Logout", className: "badge-warning" },
     absent: { label: "Absent", className: "badge-danger" },
     present: { label: "Present", className: "badge-success" },
+    approved: { label: "Approved", className: "badge-success" },
+    rejected: { label: "Rejected", className: "badge-danger" },
+    pending: { label: "Pending", className: "badge-warning" },
 };
 
 export function AttendanceTable({
@@ -40,14 +44,31 @@ export function AttendanceTable({
             key: "loginTime",
             label: "Login",
             render: (value: string) => (
-                <span className="font-mono">{value || "--:--:--"}</span>
+                <span className="font-md">
+                    {value ? moment(value, "HH:mm:ss").format("hh:mm:ss A") : "--:--:--"}
+                </span>
             ),
         },
         {
             key: "logoutTime",
             label: "Logout",
             render: (value: string) => (
-                <span className="font-mono">{value || "--:--:--"}</span>
+                <span className="font-md">
+                    {value ? moment(value, "HH:mm:ss").format("hh:mm:ss A") : "--:--:--"}
+                </span>
+            ),
+        },
+        {
+            key: "workedHours",
+            label: "Worked Hours",
+            render: (value: string) => (
+                <span
+                    className={`capitalize ${Number(value) >= 8 ? "text-black" : "text-red-600"
+                        }`}
+                >
+                    {value ? `${Number(value).toFixed(0)} hrs` : "--:--"}
+                </span>
+
             ),
         },
         {
@@ -63,6 +84,30 @@ export function AttendanceTable({
             },
         },
         {
+            key: "correctionReason",
+            label: "Reason",
+            render: (value: string) => (
+                <span className="font-md text-wrap">{value || "--:--:--"}</span>
+            ),
+        },
+        {
+            key: "approvalComment",
+            label: "Approval Comment",
+            render: (value: string) => (
+                <span className="font-md text-wrap">{value || "--:--:--"}</span>
+            ),
+        },
+        {
+            key: "correctionStatus",
+            label: "Approval Status",
+            render: (value: string) => {
+                const s = STATUS_MAP[value];
+                return (
+                    <span className={`badge capitalize ${s?.className ?? "badge-info"}`}> {value || "--:--:--"}</span >
+                )
+            },
+        },
+        {
             key: "correction_status",
             label: "Correction",
             render: (value: string | undefined, row: AttendanceRow) => (
@@ -71,7 +116,7 @@ export function AttendanceTable({
                     {(
                         <button
                             onClick={() => onRequestCorrection(row)}
-                            className="text-indigo-600 text-sm font-medium"
+                            className="text-indigo-600 text-sm font-md cursor-pointer"
                         >
                             Request
                         </button>

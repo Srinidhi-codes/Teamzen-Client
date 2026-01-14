@@ -9,26 +9,21 @@ import { useRouter } from "next/navigation";
 
 export default function AttendancePage() {
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    startDate: "",
-    endDate: "",
-  });
 
   const { checkIn, checkOut, checkInLoading, checkOutLoading } = useAttendanceMutations()
   const { attendance: attendanceData, refetchAttendance } = useGraphQlAttendance()
   const router = useRouter()
 
-  useEffect(() => {
-    if (!formData.startDate || !formData.endDate) return;
-    refetchAttendance({
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-    })
-  }, [formData])
+  // useEffect(() => {
+  //   refetchAttendance({
+  //     startDate: moment().format("YYYY-MM-DD"),
+  //     endDate: moment().format("YYYY-MM-DD"),
+  //   })
+  // }, [])
 
   const todayAttendance = attendanceData[0];
-  const loginDistance = parseInt(Math.round(todayAttendance?.loginDistance / 1000).toFixed(2));
-  const logoutDistance = parseInt(Math.round(todayAttendance?.logoutDistance / 1000).toFixed(2));
+  const loginDistance = todayAttendance?.loginDistance ? parseInt(Math.round(todayAttendance.loginDistance / 1000).toFixed(2)) : 0;
+  const logoutDistance = todayAttendance?.logoutDistance ? parseInt(Math.round(todayAttendance.logoutDistance / 1000).toFixed(2)) : 0;
 
   const STATUS_LABELS: Record<string, string> = {
     late_login: "Late Login",
@@ -44,15 +39,6 @@ export default function AttendancePage() {
     present: "text-green-600",
   }
 
-
-  // const getAttendance = (start_date: string, end_date: string) => {
-  //   refetch({
-  //     input: {
-  //       start_date: today,
-  //       end_date: today,
-  //     },
-  //   })
-  // }
 
   const getLocationAsync = (): Promise<{ latitude: number; longitude: number }> => {
     return new Promise((resolve, reject) => {
@@ -123,24 +109,19 @@ export default function AttendancePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <button
             onClick={handleCheckIn}
-            disabled={checkInLoading || todayAttendance?.loginTime}
+            disabled={checkInLoading || !!todayAttendance?.loginTime}
             className="px-6 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-bold text-lg"
           >
             {checkInLoading ? "Processing..." : "✓ Check In"}
           </button>
           <button
             onClick={handleCheckOut}
-            disabled={checkOutLoading || todayAttendance?.logoutTime}
+            disabled={checkOutLoading || !!todayAttendance?.logoutTime}
             className="px-6 py-4 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-bold text-lg"
           >
             {checkOutLoading ? "Processing..." : "✗ Check Out"}
           </button>
         </div>
-      </div>
-
-      <div className="flex gap-x-3">
-        <input type="date" className="border rounded-lg p-2 text-black" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} />
-        <input type="date" className="border rounded-lg p-2 text-black" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} />
       </div>
 
       {/* Attendance Status */}
@@ -151,7 +132,7 @@ export default function AttendancePage() {
             <div className="text-gray-600 text-sm font-medium">
               Check In Time
             </div>
-            <div className={`text-2xl font-bold capitalize ${["late_login", "absent"].includes(todayAttendance?.status) ? "text-red-600" : "text-black"}`}>
+            <div className={`text-2xl font-bold capitalize ${["late_login", "absent"].includes(todayAttendance?.status ?? "") ? "text-red-600" : "text-black"}`}>
               {todayAttendance?.loginTime
                 ? todayAttendance?.loginTime
                 : "--:--"}
@@ -161,15 +142,15 @@ export default function AttendancePage() {
             <div className="text-gray-600 text-sm font-medium">
               Check Out Time
             </div>
-            <div className={`mt-2 text-2xl font-bold ${["early_logout", "absent"].includes(todayAttendance?.status) ? "text-red-600" : "text-black"}`}>{todayAttendance?.logoutTime
+            <div className={`mt-2 text-2xl font-bold ${["early_logout", "absent"].includes(todayAttendance?.status ?? "") ? "text-red-600" : "text-black"}`}>{todayAttendance?.logoutTime
               ? todayAttendance.logoutTime
               : "--:--"}</div>
           </div>
           {todayAttendance?.status && <div className="border rounded-lg p-4">
             <div className="text-gray-600 text-sm font-medium">Status</div>
             <div className="mt-2 flex items-center text-2xl font-bold">
-              <span className={STATUS_COLORS[todayAttendance?.status] ?? "text-gray-500"}>
-                {STATUS_LABELS[todayAttendance?.status] ?? "--"}
+              <span className={STATUS_COLORS[todayAttendance?.status ?? ""] ?? "text-gray-500"}>
+                {STATUS_LABELS[todayAttendance?.status ?? ""] ?? "--"}
               </span>
             </div>
           </div>}

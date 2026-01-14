@@ -7,6 +7,7 @@ export type AttendanceRow = {
     attendanceDate: string;
     loginTime?: string | null;
     logoutTime?: string | null;
+    correctionReason?: string | null;
 };
 
 type Props = {
@@ -23,12 +24,12 @@ export type CorrectionPayload = {
 };
 
 export function CorrectionModal({ record, onClose, onSubmit }: Props) {
-    console.log(record, "RECORD")
+
     const [form, setForm] = useState<CorrectionPayload>({
         attendanceRecordId: record.id,
         correctedLoginTime: record.loginTime ?? "",
         correctedLogoutTime: record.logoutTime ?? "",
-        reason: "",
+        reason: record.correctionReason ?? "",
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});

@@ -5,23 +5,28 @@ import { Card } from "@/components/common/Card";
 import { useGraphQlAttendance, useAttendanceMutations } from "@/lib/graphql/attendance/attendanceHooks";
 import { AttendanceTable, AttendanceRow } from "@/components/attendance/AttendanceTable";
 import { CorrectionModal } from "@/components/attendance/CorrectionModal";
+import moment from "moment";
 
 export default function AttendanceCorrectionPage() {
-    const [startDate, setStartDate] = useState("");
-    const [endDate, setEndDate] = useState("");
+    const [startDate, setStartDate] = useState(moment().startOf("month").format("YYYY-MM-DD"));
+    const [endDate, setEndDate] = useState(moment().format("YYYY-MM-DD"));
     const [selected, setSelected] = useState<AttendanceRow | null>(null);
 
     const { attendance, isLoading, refetchAttendance } = useGraphQlAttendance();
 
     /** Fetch attendance */
-    const loadAttendance = () => {
+    const loadAttendance = async (startDate: string, endDate: string) => {
         if (!startDate || !endDate) return;
-        refetchAttendance({ startDate, endDate });
+        await refetchAttendance({ startDate, endDate });
     };
 
     useEffect(() => {
-        loadAttendance();
-    }, [startDate, endDate]);
+        const startDate = moment().startOf("month").format("YYYY-MM-DD");
+        const endDate = moment().format("YYYY-MM-DD");
+
+        loadAttendance(startDate, endDate);
+    }, []);
+
 
     const { requestCorrection, requestCorrectionLoading } = useAttendanceMutations();
 
