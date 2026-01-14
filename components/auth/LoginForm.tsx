@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/lib/api/hooks";
+import { useUserStore } from "@/lib/store/userStore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -11,11 +12,18 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { login } = useAuth();
+  const { setUser } = useUserStore(); // Using Zustand store
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login.mutateAsync({ email, password });
+      const response = await login.mutateAsync({ email, password });
+
+      // Update global store
+      if (response && response.user) {
+        setUser(response.user);
+      }
+
       router.push("/dashboard");
     } catch (error) {
       alert("Login failed");

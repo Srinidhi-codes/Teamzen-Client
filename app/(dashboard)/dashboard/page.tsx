@@ -1,12 +1,12 @@
 "use client";
 
-import { useUser } from "@/lib/api/hooks";
 import { Stat } from "@/components/common/Stats";
 import { Card } from "@/components/common/Card";
 import Link from "next/link";
+import { useGraphQLUser } from "@/lib/api/graphqlHooks";
 
 export default function DashboardPage() {
-  const { user } = useUser();
+  const { user, isLoading: isUserLoading, error: userError } = useGraphQLUser();
 
   return (
     <div className="space-y-8">
@@ -15,7 +15,7 @@ export default function DashboardPage() {
         <div className="w-full h-full p-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Welcome back, {user?.first_name}! 👋
+              Welcome back, {user?.firstName}! 👋
             </h1>
             <p className="text-gray-600">
               Here&apos;s what&apos;s happening with your team today.

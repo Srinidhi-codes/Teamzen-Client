@@ -1,181 +1,173 @@
 "use client";
 
-import { usePayrollRuns } from "@/lib/api/hooks";
-import { useState } from "react";
+import { useAttendance } from "@/lib/api/hooks";
+import { useAttendanceMutations, useGraphQlAttendance } from "@/lib/graphql/attendance/attendanceHooks";
+import { refresh } from "next/cache";
+import { useEffect, useState } from "react";
+import moment from "moment";
+import { useRouter } from "next/navigation";
 
-export default function PayrollPage() {
-  const { data: payrollRuns, isLoading, create, calculate } = usePayrollRuns();
+export default function AttendancePage() {
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    payroll_month: new Date().toISOString().split("T")[0],
-  });
 
-  const handleCreatePayroll = async () => {
+  const { checkIn, checkOut, checkInLoading, checkOutLoading } = useAttendanceMutations()
+  const { attendance: attendanceData, refetchAttendance } = useGraphQlAttendance()
+  const router = useRouter()
+
+  // useEffect(() => {
+  //   refetchAttendance({
+  //     startDate: moment().format("YYYY-MM-DD"),
+  //     endDate: moment().format("YYYY-MM-DD"),
+  //   })
+  // }, [])
+
+  const todayAttendance = attendanceData[0];
+  const loginDistance = todayAttendance?.loginDistance ? parseInt(Math.round(todayAttendance.loginDistance / 1000).toFixed(2)) : 0;
+  const logoutDistance = todayAttendance?.logoutDistance ? parseInt(Math.round(todayAttendance.logoutDistance / 1000).toFixed(2)) : 0;
+
+  const STATUS_LABELS: Record<string, string> = {
+    late_login: "Late Login",
+    early_logout: "Early Logout",
+    absent: "Absent",
+    present: "Present",
+  }
+
+  const STATUS_COLORS: Record<string, string> = {
+    late_login: "text-yellow-600",
+    early_logout: "text-orange-600",
+    absent: "text-red-600",
+    present: "text-green-600",
+  }
+
+
+  const getLocationAsync = (): Promise<{ latitude: number; longitude: number }> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject("Geolocation not supported");
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => reject(error.message)
+      );
+    });
+  };
+
+
+  const handleCheckIn = async () => {
     try {
-      await create.mutateAsync(formData);
-      setShowForm(false);
-      alert("Payroll run created successfully");
+      const { latitude, longitude } = await getLocationAsync();
+
+      await checkIn({
+        latitude,
+        longitude,
+        officeLocationId: "2",
+        loginTime: moment().format("HH:mm:ss").toString()
+      });
+
+      alert("Check-in successful");
     } catch (error) {
-      alert("Failed to create payroll");
+      alert("Check-in failed");
+      console.error(error);
     }
   };
 
-  const handleCalculate = async (runId: number) => {
+
+  const handleCheckOut = async () => {
     try {
-      await calculate.mutateAsync(runId);
-      alert("Payroll calculated successfully");
+      const { latitude, longitude } = await getLocationAsync();
+
+      await checkOut({ latitude, longitude, logoutTime: moment().format("HH:mm:ss").toString() });
+
+      alert("Check-out successful");
     } catch (error) {
-      alert("Failed to calculate payroll");
+      alert("Check-out failed");
+      console.error(error);
     }
   };
+
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Payroll Management</h1>
+      <div className="w-full flex justify-between">
+        <h1 className="text-3xl font-bold text-gray-900">Attendance</h1>
         <button
-          onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-        >
-          Create Payroll Run
-        </button>
+          onClick={() => router.push("/attendance/attendance-correction")}
+          className="btn-primary"
+        >Attendance Correction</button>
       </div>
-
-      {/* Create Payroll Form */}
-      {showForm && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            New Payroll Run
-          </h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Payroll Month
-              </label>
-              <input
-                type="month"
-                value={formData.payroll_month}
-                onChange={(e) =>
-                  setFormData({ ...formData, payroll_month: e.target.value })
-                }
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border"
-              />
-            </div>
-            <button
-              onClick={handleCreatePayroll}
-              disabled={create.isPending}
-              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
-            >
-              {create.isPending ? "Creating..." : "Create"}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Payroll Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-gray-600 text-sm font-medium">
-            Total Employees
-          </div>
-          <div className="mt-2 text-3xl font-bold text-gray-900">
-            {payrollRuns?.[0]?.total_employees || 0}
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-gray-600 text-sm font-medium">Gross Salary</div>
-          <div className="mt-2 text-3xl font-bold text-blue-600">
-            ₹{payrollRuns?.[0]?.total_gross_salary?.toLocaleString() || 0}
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-gray-600 text-sm font-medium">
-            Total Deductions
-          </div>
-          <div className="mt-2 text-3xl font-bold text-red-600">
-            ₹{payrollRuns?.[0]?.total_deductions?.toLocaleString() || 0}
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-gray-600 text-sm font-medium">Net Salary</div>
-          <div className="mt-2 text-3xl font-bold text-green-600">
-            ₹{payrollRuns?.[0]?.total_net_salary?.toLocaleString() || 0}
-          </div>
-        </div>
-      </div>
-
-      {/* Payroll Runs Table */}
+      {/* Check In/Out Card */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Payroll Runs</h2>
-        {isLoading ? (
-          <p>Loading...</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Month
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Employees
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Gross Salary
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {payrollRuns?.map((run: any) => (
-                  <tr key={run.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {new Date(run.payroll_month).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                      })}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {run.total_employees}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ₹{run.total_gross_salary?.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${run.status === "approved"
-                          ? "bg-green-100 text-green-800"
-                          : run.status === "draft"
-                            ? "bg-gray-100 text-gray-800"
-                            : "bg-blue-100 text-blue-800"
-                          }`}
-                      >
-                        {run.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      {run.status === "draft" && (
-                        <button
-                          onClick={() => handleCalculate(run.id)}
-                          disabled={calculate.isPending}
-                          className="text-indigo-600 hover:text-indigo-900"
-                        >
-                          Calculate
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <h2 className="text-lg font-bold text-gray-900 mb-6">
+          Check In / Check Out
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <button
+            onClick={handleCheckIn}
+            disabled={checkInLoading || !!todayAttendance?.loginTime}
+            className="px-6 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-bold text-lg"
+          >
+            {checkInLoading ? "Processing..." : "✓ Check In"}
+          </button>
+          <button
+            onClick={handleCheckOut}
+            disabled={checkOutLoading || !!todayAttendance?.logoutTime}
+            className="px-6 py-4 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-bold text-lg"
+          >
+            {checkOutLoading ? "Processing..." : "✗ Check Out"}
+          </button>
+        </div>
       </div>
-    </div>
+
+      {/* Attendance Status */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-lg font-bold text-gray-900 mb-4">Today's Status</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="border rounded-lg p-4">
+            <div className="text-gray-600 text-sm font-medium">
+              Check In Time
+            </div>
+            <div className={`text-2xl font-bold capitalize ${["late_login", "absent"].includes(todayAttendance?.status ?? "") ? "text-red-600" : "text-black"}`}>
+              {todayAttendance?.loginTime
+                ? todayAttendance?.loginTime
+                : "--:--"}
+            </div>
+          </div>
+          <div className="border rounded-lg p-4">
+            <div className="text-gray-600 text-sm font-medium">
+              Check Out Time
+            </div>
+            <div className={`mt-2 text-2xl font-bold ${["early_logout", "absent"].includes(todayAttendance?.status ?? "") ? "text-red-600" : "text-black"}`}>{todayAttendance?.logoutTime
+              ? todayAttendance.logoutTime
+              : "--:--"}</div>
+          </div>
+          {todayAttendance?.status && <div className="border rounded-lg p-4">
+            <div className="text-gray-600 text-sm font-medium">Status</div>
+            <div className="mt-2 flex items-center text-2xl font-bold">
+              <span className={STATUS_COLORS[todayAttendance?.status ?? ""] ?? "text-gray-500"}>
+                {STATUS_LABELS[todayAttendance?.status ?? ""] ?? "--"}
+              </span>
+            </div>
+          </div>}
+          {todayAttendance?.loginDistance && <div className="border rounded-lg p-4">
+            <div className="text-gray-600 text-sm font-medium">Login Distance</div>
+            <div className="mt-2 flex items-center">
+              <span className={`text-lg font-bold text-green-600 capitalize ${loginDistance > 10 ? "text-red-600" : ""}`}>{loginDistance}km</span>
+            </div>
+          </div>}
+          {todayAttendance?.loginDistance && <div className="border rounded-lg p-4">
+            <div className="text-gray-600 text-sm font-medium">Logout Distance</div>
+            <div className="mt-2 flex items-center">
+              <span className={`text-lg font-bold text-green-600 capitalize ${logoutDistance > 10 ? "text-red-600" : ""}`}>{logoutDistance}km</span>
+            </div>
+          </div>}
+        </div>
+      </div>
+    </div >
   );
 }
