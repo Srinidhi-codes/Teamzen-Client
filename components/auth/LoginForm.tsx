@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/lib/api/hooks";
-import { useUserStore } from "@/lib/store/userStore";
+import { useStore } from "@/lib/store/useStore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -12,16 +12,16 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { login } = useAuth();
-  const { setUser } = useUserStore(); // Using Zustand store
+  const { loginUser } = useStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const response = await login.mutateAsync({ email, password });
 
-      // Update global store
+      // Update global store - transformation happens inside the slice!
       if (response && response.user) {
-        setUser(response.user);
+        loginUser(response.user);
       }
 
       router.push("/dashboard");
