@@ -9,7 +9,7 @@ export interface LeaveType {
 export interface LeaveBalance {
     id: string;
     user: string;
-    leaveType: string;
+    leaveType: LeaveType;
     year: number;
     totalEntitled: number;
     used: number;
@@ -23,9 +23,34 @@ export interface LeaveBalance {
     lastUpdated: string;
 }
 
+export interface LeaveRequest {
+    id: string;
+    user: string;
+    leaveType: LeaveType;
+    fromDate: string;
+    toDate: string;
+    durationDays: number;
+    reason: string;
+    status: string;
+    approvedBy: string;
+    approvalComments: string;
+    approvedAt: string;
+}
+
 export type LeaveInput = {
   organizationId: string;
 };
+
+export type LeaveRequestInput = {
+    leaveTypeId: string;
+    fromDate: string;
+    toDate: string;
+    reason: string;
+}
+
+export type GetLeaveRequestResponse = {
+    getLeaveRequests: LeaveRequest[];
+}
 
 export type GetLeaveBalanceResponse = {
     leaveBalance: LeaveBalance[];

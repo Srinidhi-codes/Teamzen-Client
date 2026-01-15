@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@apollo/client/react"
 import { GET_ATTENDANCE, } from "./queries"
-import { CHECK_IN, CHECK_OUT, REQUEST_ATTENDANCE_CORRECTION } from "./mutations"
+import { CANCEL_ATTENDANCE_CORRECTION, CHECK_IN, CHECK_OUT, REQUEST_ATTENDANCE_CORRECTION } from "./mutations"
 import { AttendanceInput, AttendanceRecord, GetAttendanceResponse, GetAttendanceVars } from "./types"
 
 export function useGraphQlAttendance() {
@@ -93,4 +93,23 @@ export function useAttendanceMutations() {
         requestCorrectionLoading: requestCorrectionState.loading,
         requestCorrectionError: requestCorrectionState.error
     };
+}
+
+export function useCancelAttendanceCorrection() {
+    const [cancelAttendanceCorrectionMutation, cancelAttendanceCorrectionState] = useMutation(CANCEL_ATTENDANCE_CORRECTION, {
+        refetchQueries: [{ query: GET_ATTENDANCE }],
+    });
+
+    const cancelAttendanceCorrection = async (correctionId: string) => {
+        const response = await cancelAttendanceCorrectionMutation({
+            variables: { correctionId },
+        });
+        return response.data;
+    }
+
+    return {
+        cancelAttendanceCorrection,
+        cancelAttendanceCorrectionLoading: cancelAttendanceCorrectionState.loading,
+        cancelAttendanceCorrectionError: cancelAttendanceCorrectionState.error,
+    }
 }
