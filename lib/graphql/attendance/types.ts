@@ -12,6 +12,11 @@ export interface AttendanceRecord {
 
   isWithinGeofence: boolean;
   remarks?: string | null;
+  
+  correctionStatus?: string;
+  correctionId?: string;
+  correctionReason?: string;
+  approvalComment?: string;
 }
 
 export interface AttendanceCorrection {

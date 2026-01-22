@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Card } from "@/components/common/Card";
-import { useGraphQlAttendance, useAttendanceMutations } from "@/lib/graphql/attendance/attendanceHooks";
+import { useGraphQlAttendance, useAttendanceMutations, useCancelAttendanceCorrection } from "@/lib/graphql/attendance/attendanceHooks";
 import { AttendanceTable, AttendanceRow } from "@/components/attendance/AttendanceTable";
 import { CorrectionModal } from "@/components/attendance/CorrectionModal";
 import moment from "moment";
@@ -12,6 +12,7 @@ export default function AttendanceCorrectionPage() {
     const [endDate, setEndDate] = useState(moment().format("YYYY-MM-DD"));
     const [selected, setSelected] = useState<AttendanceRow | null>(null);
 
+    const { cancelAttendanceCorrection, cancelAttendanceCorrectionLoading } = useCancelAttendanceCorrection();
     const { attendance, isLoading, refetchAttendance } = useGraphQlAttendance();
 
     /** Fetch attendance */
@@ -20,6 +21,17 @@ export default function AttendanceCorrectionPage() {
         await refetchAttendance({ startDate, endDate });
     };
 
+    const handleCancelCorrection = async (correctionId: string) => {
+        try {
+            await cancelAttendanceCorrection(correctionId);
+            await refetchAttendance({ startDate, endDate });
+        } catch (e) {
+            console.error(e);
+            alert("Failed to cancel correction");
+        }
+    };
+
+
     useEffect(() => {
         const startDate = moment().startOf("month").format("YYYY-MM-DD");
         const endDate = moment().format("YYYY-MM-DD");
@@ -27,11 +39,17 @@ export default function AttendanceCorrectionPage() {
         loadAttendance(startDate, endDate);
     }, []);
 
+    useEffect(() => {
+        if (startDate && endDate) {
+            loadAttendance(startDate, endDate);
+        }
+    }, [startDate, endDate]);
+
+
 
     const { requestCorrection, requestCorrectionLoading } = useAttendanceMutations();
 
     const handleSubmit = async (data: any) => {
-        console.log(data, "TEST")
         try {
             await requestCorrection({
                 attendanceRecordId: data.attendanceRecordId,
@@ -60,7 +78,10 @@ export default function AttendanceCorrectionPage() {
                 <div className="grid md:grid-cols-3 gap-4 text-black">
                     <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
                     <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-                    <button className="btn-primary" onClick={() => loadAttendance(startDate, endDate)}>
+                    <button
+                        className="btn-primary"
+                        onClick={() => loadAttendance(startDate, endDate)}
+                    >
                         Search
                     </button>
                 </div>
@@ -72,6 +93,7 @@ export default function AttendanceCorrectionPage() {
                     data={attendance}
                     isLoading={isLoading}
                     onRequestCorrection={setSelected}
+                    onCancelCorrection={handleCancelCorrection}
                 />
             </Card>
 

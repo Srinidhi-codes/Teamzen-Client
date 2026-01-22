@@ -28,3 +28,12 @@ export const REQUEST_ATTENDANCE_CORRECTION = gql`
     }
   }
 `;
+
+export const CANCEL_ATTENDANCE_CORRECTION = gql`
+  mutation CancelAttendanceCorrection($correctionId: ID!) {
+    cancelAttendanceCorrection(correctionId: $correctionId) {
+      id
+      status
+    }
+  }
+`;

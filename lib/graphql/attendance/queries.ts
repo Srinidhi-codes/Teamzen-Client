@@ -13,6 +13,7 @@ export const GET_ATTENDANCE = gql`
     workedHours
     status
     correctionStatus
+    correctionId
     correctionReason
     approvalComment
   }
