@@ -7,7 +7,8 @@ export type AttendanceRow = {
     loginTime?: string | null;
     logoutTime?: string | null;
     status: string;
-    correction_status?: string;
+    correctionStatus?: string;
+    correctionId?: string;
 };
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
@@ -24,10 +25,12 @@ export function AttendanceTable({
     data,
     isLoading,
     onRequestCorrection,
+    onCancelCorrection
 }: {
     data: AttendanceRow[];
     isLoading: boolean;
     onRequestCorrection: (row: AttendanceRow) => void;
+    onCancelCorrection: (correctionId: string) => void;
 }) {
     const columns = [
         {
@@ -108,22 +111,38 @@ export function AttendanceTable({
             },
         },
         {
-            key: "correction_status",
+            key: "correctionActions",
             label: "Correction",
-            render: (value: string | undefined, row: AttendanceRow) => (
-                <div className="flex items-center gap-2">
-                    {value && <span className="badge badge-info">{value}</span>}
-                    {(
-                        <button
-                            onClick={() => onRequestCorrection(row)}
-                            className="text-indigo-600 text-sm font-md cursor-pointer"
-                        >
-                            Request
-                        </button>
-                    )}
-                </div>
-            ),
+            render: (_: unknown, row: AttendanceRow) => {
+                const status = row.correctionStatus;
+                return (
+                    <div className="flex flex-col items-center gap-2">
+                        {/* REQUEST rules */}
+                        {(!status || status === "rejected" || status === "cancelled") && (
+                            <button
+                                onClick={() => onRequestCorrection(row)}
+                                className="text-indigo-600 text-sm cursor-pointer"
+                                disabled={status === "pending" || status === "approved"}
+                            >
+                                {status ? "Request Again" : "Request"}
+                            </button>
+                        )}
+
+                        {/* CANCEL only for 'pending' */}
+                        {status === "pending" && row.correctionId && (
+                            <button
+                                onClick={() => onCancelCorrection(row.correctionId!)}
+                                className="text-red-600 text-sm cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                        )}
+                    </div>
+                );
+            },
         },
+
+
     ];
 
     return <DataTable columns={columns} data={data} isLoading={isLoading} />;

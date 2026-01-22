@@ -1,30 +1,37 @@
 "use client";
 
-import { useGraphQlLeaveBalance, useGraphQlLeaves } from "@/lib/graphql/leaves/leavesHook";
+import { useGraphQLCancelLeaveRequest, useGraphQLCreateLeaveRequest, useGraphQlLeaveBalance, useGraphQLLeaveRequests, useGraphQlLeaves } from "@/lib/graphql/leaves/leavesHook";
 import { useStore } from "@/lib/store/useStore";
 import { useState } from "react";
 import { Card } from "@/components/common/Card";
 import moment from "moment";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import router from "next/router";
+import { useRouter } from "next/navigation";
 
 export default function LeavesPage() {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
-    leave_type_id: "",
-    from_date: "",
-    to_date: "",
+    leaveTypeId: "",
+    fromDate: "",
+    toDate: "",
     reason: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [viewDetails, setViewDetails] = useState("");
   const { user, isAuthenticated } = useStore();
   const { leaveBalanceData, isLoading: leaveBalanceLoading } = useGraphQlLeaveBalance();
-
+  const { leaveRequestData, isLoading: leaveRequestLoading } = useGraphQLLeaveRequests();
+  const { cancelLeaveRequest, cancelLeaveRequestLoading, cancelLeaveRequestError } = useGraphQLCancelLeaveRequest();
+  const { createLeaveRequest, createLeaveRequestLoading, createLeaveRequestError } = useGraphQLCreateLeaveRequest();
+  const router = useRouter();
   // Mock leave requests data - Replace with actual API call
   const leaveRequests = [
     {
       id: "1",
       leave_type_name: "Casual Leave",
-      from_date: "2025-01-15",
-      to_date: "2025-01-17",
+      fromDate: "2025-01-15",
+      toDate: "2025-01-17",
       status: "approved",
       reason: "Family function",
       days: 3,
@@ -32,8 +39,8 @@ export default function LeavesPage() {
     {
       id: "2",
       leave_type_name: "Earned Leave",
-      from_date: "2025-01-20",
-      to_date: "2025-01-22",
+      fromDate: "2025-01-20",
+      toDate: "2025-01-22",
       status: "pending",
       reason: "Personal work",
       days: 3,
@@ -41,8 +48,8 @@ export default function LeavesPage() {
     {
       id: "3",
       leave_type_name: "Sick Leave",
-      from_date: "2025-01-10",
-      to_date: "2025-01-10",
+      fromDate: "2025-01-10",
+      toDate: "2025-01-10",
       status: "rejected",
       reason: "Medical checkup",
       days: 1,
@@ -52,26 +59,26 @@ export default function LeavesPage() {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.leave_type_id) {
-      newErrors.leave_type_id = "Please select a leave type";
+    if (!formData.leaveTypeId) {
+      newErrors.leaveTypeId = "Please select a leave type";
     }
-    if (!formData.from_date) {
-      newErrors.from_date = "From date is required";
+    if (!formData.fromDate) {
+      newErrors.fromDate = "From date is required";
     }
-    if (!formData.to_date) {
-      newErrors.to_date = "To date is required";
+    if (!formData.toDate) {
+      newErrors.toDate = "To date is required";
     }
     if (!formData.reason || formData.reason.trim().length < 10) {
       newErrors.reason = "Reason must be at least 10 characters";
     }
 
     // Validate date range
-    if (formData.from_date && formData.to_date) {
-      const fromDate = moment(formData.from_date);
-      const toDate = moment(formData.to_date);
+    if (formData.fromDate && formData.toDate) {
+      const fromDate = moment(formData.fromDate);
+      const toDate = moment(formData.toDate);
 
       if (toDate.isBefore(fromDate)) {
-        newErrors.to_date = "To date must be after from date";
+        newErrors.toDate = "To date must be after from date";
       }
     }
 
@@ -86,16 +93,14 @@ export default function LeavesPage() {
       return;
     }
 
-    // TODO: Submit to API
-    console.log("Submitting leave request:", formData);
-    alert("Leave request submitted successfully!");
     setShowForm(false);
     setFormData({
-      leave_type_id: "",
-      from_date: "",
-      to_date: "",
+      leaveTypeId: "",
+      fromDate: "",
+      toDate: "",
       reason: "",
     });
+    createLeaveRequest(formData);
     setErrors({});
   };
 
@@ -111,9 +116,9 @@ export default function LeavesPage() {
   };
 
   const calculateDays = () => {
-    if (formData.from_date && formData.to_date) {
-      const from = moment(formData.from_date);
-      const to = moment(formData.to_date);
+    if (formData.fromDate && formData.toDate) {
+      const from = moment(formData.fromDate);
+      const to = moment(formData.toDate);
       return to.diff(from, "days") + 1;
     }
     return 0;
@@ -147,9 +152,7 @@ export default function LeavesPage() {
           Leave Balance
         </h2>
         {leaveBalanceLoading ? (
-          <div className="flex items-center justify-center h-40">
-            <div className="spinner w-12 h-12"></div>
-          </div>
+          <LoadingSpinner />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {leaveBalanceData?.map((balance: any) => (
@@ -222,12 +225,12 @@ export default function LeavesPage() {
                 Leave Type <span className="text-red-500">*</span>
               </label>
               <select
-                value={formData.leave_type_id}
+                value={formData.leaveTypeId}
                 onChange={(e) => {
-                  setFormData({ ...formData, leave_type_id: e.target.value });
-                  setErrors({ ...errors, leave_type_id: "" });
+                  setFormData({ ...formData, leaveTypeId: e.target.value });
+                  setErrors({ ...errors, leaveTypeId: "" });
                 }}
-                className={`w-full ${errors.leave_type_id ? "input-error" : ""}`}
+                className={`w-full text-gray-800 ${errors.leaveTypeId ? "input-error" : ""}`}
               >
                 <option value="">Select leave type</option>
                 {leaveBalanceData?.map((balance: any) => (
@@ -236,29 +239,29 @@ export default function LeavesPage() {
                   </option>
                 ))}
               </select>
-              {errors.leave_type_id && (
-                <p className="text-red-600 text-sm mt-1">{errors.leave_type_id}</p>
+              {errors.leaveTypeId && (
+                <p className="text-red-600 text-sm mt-1">{errors.leaveTypeId}</p>
               )}
             </div>
 
             {/* Date Range */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-800">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   From Date <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="date"
-                  value={formData.from_date}
+                  value={formData.fromDate}
                   onChange={(e) => {
-                    setFormData({ ...formData, from_date: e.target.value });
-                    setErrors({ ...errors, from_date: "" });
+                    setFormData({ ...formData, fromDate: e.target.value });
+                    setErrors({ ...errors, fromDate: "" });
                   }}
-                  className={`w-full ${errors.from_date ? "input-error" : ""}`}
+                  className={`w-full ${errors.fromDate ? "input-error" : ""}`}
                   min={moment().format("YYYY-MM-DD")}
                 />
-                {errors.from_date && (
-                  <p className="text-red-600 text-sm mt-1">{errors.from_date}</p>
+                {errors.fromDate && (
+                  <p className="text-red-600 text-sm mt-1">{errors.fromDate}</p>
                 )}
               </div>
 
@@ -268,22 +271,22 @@ export default function LeavesPage() {
                 </label>
                 <input
                   type="date"
-                  value={formData.to_date}
+                  value={formData.toDate}
                   onChange={(e) => {
-                    setFormData({ ...formData, to_date: e.target.value });
-                    setErrors({ ...errors, to_date: "" });
+                    setFormData({ ...formData, toDate: e.target.value });
+                    setErrors({ ...errors, toDate: "" });
                   }}
-                  className={`w-full ${errors.to_date ? "input-error" : ""}`}
-                  min={formData.from_date || moment().format("YYYY-MM-DD")}
+                  className={`w-full ${errors.toDate ? "input-error" : ""}`}
+                  min={formData.fromDate || moment().format("YYYY-MM-DD")}
                 />
-                {errors.to_date && (
-                  <p className="text-red-600 text-sm mt-1">{errors.to_date}</p>
+                {errors.toDate && (
+                  <p className="text-red-600 text-sm mt-1">{errors.toDate}</p>
                 )}
               </div>
             </div>
 
             {/* Days Calculation */}
-            {formData.from_date && formData.to_date && (
+            {formData.fromDate && formData.toDate && (
               <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-indigo-700">Total Days</span>
@@ -303,7 +306,7 @@ export default function LeavesPage() {
                   setFormData({ ...formData, reason: e.target.value });
                   setErrors({ ...errors, reason: "" });
                 }}
-                className={`w-full min-h-[120px] ${errors.reason ? "input-error" : ""}`}
+                className={`w-full min-h-[120px] text-gray-800 ${errors.reason ? "input-error" : ""}`}
                 placeholder="Please provide a detailed reason for your leave request (minimum 10 characters)"
               />
               {errors.reason && (
@@ -336,9 +339,9 @@ export default function LeavesPage() {
                 onClick={() => {
                   setShowForm(false);
                   setFormData({
-                    leave_type_id: "",
-                    from_date: "",
-                    to_date: "",
+                    leaveTypeId: "",
+                    fromDate: "",
+                    toDate: "",
                     reason: "",
                   });
                   setErrors({});
@@ -360,8 +363,8 @@ export default function LeavesPage() {
 
       {/* Leave Requests History */}
       <Card title="Leave Requests History" hover gradient>
-        <div className="space-y-4">
-          {leaveRequests.map((request) => (
+        {leaveRequestLoading ? <LoadingSpinner /> : <div className="space-y-4 min-h-34">
+          {leaveRequestData?.length > 0 ? leaveRequestData?.map((request) => (
             <div
               key={request.id}
               className="p-6 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200"
@@ -369,16 +372,16 @@ export default function LeavesPage() {
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
-                    <h3 className="text-lg font-bold text-gray-900">{request.leave_type_name}</h3>
+                    <h3 className="text-lg font-bold text-gray-900">{request.leaveType.name}</h3>
                     {getStatusBadge(request.status)}
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 text-sm">
                     <div className="flex items-center space-x-2">
                       <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       <span className="text-gray-600">
-                        From: <span className="font-semibold text-gray-900">{moment(request.from_date).format("MMM DD, YYYY")}</span>
+                        From: <span className="font-semibold text-gray-900">{moment(request.fromDate).format("MMM DD, YYYY")}</span>
                       </span>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -386,7 +389,7 @@ export default function LeavesPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       <span className="text-gray-600">
-                        To: <span className="font-semibold text-gray-900">{moment(request.to_date).format("MMM DD, YYYY")}</span>
+                        To: <span className="font-semibold text-gray-900">{moment(request.toDate).format("MMM DD, YYYY")}</span>
                       </span>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -394,30 +397,38 @@ export default function LeavesPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <span className="text-gray-600">
-                        Duration: <span className="font-semibold text-gray-900">{request.days} day{request.days > 1 ? "s" : ""}</span>
+                        Duration: <span className="font-semibold text-gray-900">{Number(request.durationDays)} day{Number(request.durationDays) > 1 ? "s" : ""}</span>
                       </span>
                     </div>
-                  </div>
-                  <div className="mt-3">
                     <p className="text-sm text-gray-600">
                       <span className="font-semibold">Reason:</span> {request.reason}
                     </p>
                   </div>
+                  <div className="mt-3">
+                    {request.approvalComments && viewDetails === request.id && <p className="text-sm text-gray-600">
+                      <span className="font-semibold">Comment:</span> {request.approvalComments}
+                    </p>}
+                  </div>
                 </div>
-                <div className="flex md:flex-col gap-2">
-                  <button className="btn-ghost text-sm px-4 py-2">
+                <div className="flex md:flex-col gap-2 pt-4">
+                  <button onClick={() => { setViewDetails(request.id) }} className="btn-secondary text-sm cursor-pointer">
                     View Details
                   </button>
                   {request.status === "pending" && (
-                    <button className="btn-danger text-sm px-4 py-2">
+                    <button onClick={() => { cancelLeaveRequest(request.id) }} className="btn-danger text-sm cursor-pointer">
                       Cancel
                     </button>
                   )}
+                  {true &&
+                    <button onClick={() => { router.push(`/leaves/approvals`) }} className="btn-primary text-sm cursor-pointer">
+                      Approve/Reject
+                    </button>
+                  }
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+          )) : <p className="text-center my-32 font-md text-xl text-gray-800">No leave requests found 🧾</p>}
+        </div>}
       </Card>
     </div>
   );

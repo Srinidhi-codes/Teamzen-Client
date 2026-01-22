@@ -38,28 +38,29 @@ export const GET_LEAVE_BALANCE = gql`
 }
 `;
 
-export const GET_LEAVE_REQUESTS = gql`
-    query LeaveRequests($organizationId: LeaveInput!){
-    leaveRequests(organizationId: $organizationId){
-    id
-    user{
+export const GET_LEAVE_REQUESTS = gql `
+  query getLeaveRequests{
+    getLeaveRequests{
+      id
+      user{
         id
         firstName
-    }
-    leaveType{
+      }
+      leaveType{
         id
         name
+      }
+      fromDate
+      toDate
+      durationDays
+      reason
+      status
+      approvedBy{
+        id
+        firstName
+      }
+      approvalComments
     }
-    fromDate
-    toDate
-    durationDays
-    reason
-    status
-    approvedBy
-    approvalComments
-    approvedAt
-    createdAt
-    updatedAt
   }
-}
-`;
+`
+
