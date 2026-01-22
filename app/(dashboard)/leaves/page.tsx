@@ -100,7 +100,12 @@ export default function LeavesPage() {
       toDate: "",
       reason: "",
     });
-    createLeaveRequest(formData);
+    createLeaveRequest({
+      leave_type_id: formData.leaveTypeId,
+      start_date: formData.fromDate,
+      end_date: formData.toDate,
+      reason: formData.reason,
+    });
     setErrors({});
   };
 
