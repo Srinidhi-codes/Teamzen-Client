@@ -31,7 +31,9 @@ export const useUser = () => {
     queryKey: ["user"],
     queryFn: async () => {
       const response = await client.get(API_ENDPOINTS.USER_ME);
-      return response.data;
+      // Map backend snake_case to frontend camelCase
+      const { mapBackendUserToFrontendUser } = await import("@/lib/transformers");
+      return mapBackendUserToFrontendUser(response.data);
     },
   });
 
@@ -64,38 +66,38 @@ export const useUpdateUser = () => {
 
 /* ---------------- LEAVE REQUESTS ---------------- */
 
-export const useLeaveRequests = () => {
-  const query = useQuery({
-    queryKey: ["leaveRequests"],
-    queryFn: async () => {
-      const response = await client.get(API_ENDPOINTS.LEAVE_REQUESTS);
-      return response.data;
-    },
-  });
+// export const useLeaveRequests = () => {
+//   const query = useQuery({
+//     queryKey: ["leaveRequests"],
+//     queryFn: async () => {
+//       const response = await client.get(API_ENDPOINTS.LEAVE_REQUESTS);
+//       return response.data;
+//     },
+//   });
 
-  const create = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await client.post(API_ENDPOINTS.LEAVE_REQUESTS, data);
-      return response.data;
-    },
-  });
+//   const create = useMutation({
+//     mutationFn: async (data: any) => {
+//       const response = await client.post(API_ENDPOINTS.LEAVE_REQUESTS, data);
+//       return response.data;
+//     },
+//   });
 
-  const approve = useMutation({
-    mutationFn: async ({ id, comments }: { id: number; comments: string }) => {
-      const response = await client.post(
-        `${API_ENDPOINTS.LEAVE_REQUESTS}${id}/approve/`,
-        { comments }
-      );
-      return response.data;
-    },
-  });
+//   const approve = useMutation({
+//     mutationFn: async ({ id, comments }: { id: number; comments: string }) => {
+//       const response = await client.post(
+//         `${API_ENDPOINTS.LEAVE_REQUESTS}${id}/approve/`,
+//         { comments }
+//       );
+//       return response.data;
+//     },
+//   });
 
-  return {
-    ...query,
-    create,
-    approve,
-  };
-};
+//   return {
+//     ...query,
+//     create,
+//     approve,
+//   };
+// };
 
 /* ---------------- LEAVE BALANCES ---------------- */
 
