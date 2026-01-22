@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { Badge } from "@/components/common/Badge";
-import { useLeaveBalances } from "@/lib/api/hooks";
+import { useLeaveRequests } from "@/lib/api/hooks";
 
 export default function ApprovalsPage() {
-  const { data: requests, isLoading, approve } = useLeaveBalances();
+  const { data: requests, isLoading, approve } = useLeaveRequests();
   const [comments, setComments] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
