@@ -60,7 +60,7 @@ export default function AttendanceCorrectionPage() {
                 <div className="grid md:grid-cols-3 gap-4 text-black">
                     <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
                     <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-                    <button className="btn-primary" onClick={loadAttendance}>
+                    <button className="btn-primary" onClick={() => loadAttendance(startDate, endDate)}>
                         Search
                     </button>
                 </div>
