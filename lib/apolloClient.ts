@@ -18,7 +18,7 @@ const fromPromise = <T>(promise: Promise<T>): Observable<T> => {
 };
 
 const httpLink = createHttpLink({
-  uri: "http://localhost:8000/graphql/",
+  uri: process.env.NEXT_PUBLIC_GRAPHQL_URL || "http://localhost:8000/graphql/",
   credentials: "include", // Ensures cookies are sent with requests
 });
 
