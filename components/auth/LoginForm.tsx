@@ -5,6 +5,9 @@ import { useAuth } from "@/lib/api/hooks";
 import { useStore } from "@/lib/store/useStore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -60,40 +63,21 @@ export default function LoginForm() {
         </div>
 
         {/* Login Form */}
-        <div className="glass p-8 space-y-6 animate-slide-up">
+        <div className="glass p-8 space-y-6 animate-slide-up rounded-2xl">
           <form className="space-y-5" onSubmit={handleSubmit}>
             {/* Email Input */}
-            <div>
-              <label
-                htmlFor="email-address"
-                className="block text-sm font-semibold text-gray-700 mb-2"
-              >
-                Email address
-              </label>
+            <div className="space-y-1">
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg
-                    className="h-5 w-5 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
-                    />
-                  </svg>
-                </div>
-                <input
+                <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400 z-10" />
+                <Input
+                  label="Email address"
                   id="email-address"
                   name="email"
                   type="email"
                   autoComplete="email"
                   required
-                  className="pl-12 appearance-none relative block w-full text-black"
                   placeholder="you@example.com"
+                  className="pl-10"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -101,79 +85,30 @@ export default function LoginForm() {
             </div>
 
             {/* Password Input */}
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-semibold text-gray-700 mb-2"
-              >
-                Password
-              </label>
+            <div className="space-y-1">
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg
-                    className="h-5 w-5 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                    />
-                  </svg>
-                </div>
-                <input
+                <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400 z-10" />
+                <Input
+                  label="Password"
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
-                  className="pl-12 pr-12 appearance-none relative block w-full text-black"
                   placeholder="••••••••"
+                  className="pl-10 pr-10"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition"
+                  className="absolute right-3 top-[34px] text-gray-400 hover:text-gray-600 transition"
                 >
                   {showPassword ? (
-                    <svg
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-                      />
-                    </svg>
+                    <EyeOff className="h-5 w-5" />
                   ) : (
-                    <svg
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                    </svg>
+                    <Eye className="h-5 w-5" />
                   )}
                 </button>
               </div>
@@ -186,7 +121,7 @@ export default function LoginForm() {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 rounded"
+                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
                 <label
                   htmlFor="remember-me"
@@ -198,7 +133,7 @@ export default function LoginForm() {
               <div className="text-sm">
                 <a
                   href="#"
-                  className="font-medium text-indigo-600 hover:text-indigo-500 no-underline"
+                  className="font-medium text-indigo-600 hover:text-indigo-500 no-underline transition-colors"
                 >
                   Forgot password?
                 </a>
@@ -207,47 +142,30 @@ export default function LoginForm() {
 
             {/* Submit Button */}
             <div>
-              <button
+              <Button
                 type="submit"
                 disabled={login.isPending}
-                className="btn-primary w-full relative overflow-hidden group"
+                className="w-full h-11 text-base shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                <span className="relative z-10 flex items-center justify-center">
-                  {login.isPending ? (
-                    <>
-                      <div className="spinner w-5 h-5 mr-2"></div>
-                      Signing in...
-                    </>
-                  ) : (
-                    <>
-                      Sign in
-                      <svg
-                        className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M14 5l7 7m0 0l-7 7m7-7H3"
-                        />
-                      </svg>
-                    </>
-                  )}
-                </span>
-              </button>
+                {login.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign in"
+                )}
+              </Button>
             </div>
           </form>
 
           {/* Register Link */}
-          <div className="text-center pt-4 border-t border-gray-200">
+          <div className="text-center pt-4 border-t border-gray-100">
             <p className="text-sm text-gray-600">
               Don&apos;t have an account?{" "}
               <Link
                 href="/register"
-                className="font-semibold text-indigo-600 hover:text-indigo-500 no-underline"
+                className="font-semibold text-indigo-600 hover:text-indigo-500 no-underline transition-colors"
               >
                 Create one now
               </Link>
