@@ -3,20 +3,6 @@ import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
 import { refreshAuthToken } from "./api/client";
 
-// Polyfill fromPromise if not available
-const fromPromise = <T>(promise: Promise<T>): Observable<T> => {
-  return new Observable<T>((observer) => {
-    promise
-      .then((value) => {
-        observer.next(value);
-        observer.complete();
-      })
-      .catch((err) => {
-        observer.error(err);
-      });
-  });
-};
-
 const httpLink = createHttpLink({
   uri: process.env.NEXT_PUBLIC_GRAPHQL_URL || "http://localhost:8000/graphql/",
   credentials: "include", // Ensures cookies are sent with requests
