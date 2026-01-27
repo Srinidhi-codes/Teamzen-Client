@@ -28,7 +28,7 @@ export async function middleware(request: NextRequest) {
     if (refreshToken) {
       try {
         const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/'
-        const refreshEndpoint = process.env.NEXT_PUBLIC_REFRESH_ENDPOINT || 'http://localhost:8000/api/auth/token/refresh/'
+        const refreshEndpoint = process.env.NEXT_PUBLIC_REFRESH_ENDPOINT || 'auth/token/refresh/'
         
         const response = await fetch(`${API_BASE_URL}${refreshEndpoint}`, {
           method: 'POST',
