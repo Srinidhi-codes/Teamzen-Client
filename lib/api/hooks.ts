@@ -1,6 +1,9 @@
+"use client"
 import { useQuery, useMutation } from "@tanstack/react-query";
 import client from "./client";
 import { API_ENDPOINTS } from "./endpoints";
+import { useEffect } from 'react';
+import { refreshAuthToken } from '@/lib/api/client';
 
 /* ---------------- AUTH ---------------- */
 
@@ -22,6 +25,24 @@ export const useAuth = () => {
   });
 
   return { login, register };
+};
+
+// hooks/useTokenRefresh.ts
+
+export const useTokenRefresh = () => {
+  useEffect(() => {
+    // Refresh token every 25 minutes (before 30-minute expiry)
+    const interval = setInterval(async () => {
+      try {
+        await refreshAuthToken();
+        console.log('Token refreshed successfully');
+      } catch (error) {
+        console.error('Failed to refresh token:', error);
+      }
+    }, 25 * 60 * 1000); // 25 minutes
+
+    return () => clearInterval(interval);
+  }, []);
 };
 
 /* ---------------- USER ---------------- */
