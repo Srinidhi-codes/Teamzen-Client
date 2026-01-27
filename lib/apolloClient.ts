@@ -1,4 +1,4 @@
-import { ApolloClient, InMemoryCache, createHttpLink, Observable } from "@apollo/client";
+import { ApolloClient, InMemoryCache, createHttpLink } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
 import { refreshAuthToken } from "./api/client";
@@ -25,51 +25,7 @@ const authLink = setContext((_, { headers }) => {
   };
 });
 
-const errorLink = onError(({ graphQLErrors, networkError, operation, forward }: any) => {
-  const isUnauthorized =
-    (graphQLErrors &&
-      graphQLErrors.some(
-        (e: any) =>
-          e.message === "Unauthenticated" ||
-          e.extensions?.code === "UNAUTHENTICATED" ||
-          e.message.toLowerCase().includes("signature has expired")
-      )) ||
-    (networkError &&
-      "statusCode" in networkError &&
-      networkError.statusCode === 401);
-
-  if (isUnauthorized) {
-    return new Observable((observer) => {
-      refreshAuthToken()
-        .then(() => {
-          const subscriber = forward(operation).subscribe({
-            next: observer.next.bind(observer),
-            error: observer.error.bind(observer),
-            complete: observer.complete.bind(observer),
-          });
-          
-          return () => {
-             if (subscriber.unsubscribe) subscriber.unsubscribe();
-          };
-        })
-        .catch((error) => {
-          // ❌ Refresh failed → session expired
-          // Clear global store
-          import("@/lib/store/useStore").then(({ useStore }) => {
-            useStore.getState().logoutUser();
-          });
-
-          if (typeof window !== "undefined") {
-            window.location.href = "/login";
-          }
-
-          observer.error(error);
-        });
-    });
-  }
-});
-
 export const client = new ApolloClient({
-  link: errorLink.concat(authLink).concat(httpLink),
+  link: authLink.concat(httpLink),
   cache: new InMemoryCache(),
 });
