@@ -38,7 +38,7 @@ export default function ProfilePage() {
         date_of_birth: user.dateOfBirth || "",
         gender: user.gender || "",
         office_location: user.officeLocation?.name || "",
-        employee_id: user.employeeId || "",
+        employee_id: user.id || "",
         designation: user.designation?.name || "",
         department: user.department?.name || "",
         employment_type: user.employmentType || "full_time",
@@ -211,6 +211,11 @@ export default function ProfilePage() {
     designation: user.designation?.name || "",
     department: user.department?.name || "",
     office_location: user.officeLocation?.name || "",
+
+    attendance_rate: user.attendanceRate,
+    leave_balance: user.leaveBalance,
+    total_leave_entitlement: user.totalLeaveEntitlement,
+    tenure_display: user.tenureDisplay,
   };
 
   return (

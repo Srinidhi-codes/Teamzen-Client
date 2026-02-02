@@ -45,6 +45,10 @@ export const GET_ME = gql`
       panNumber
       aadharNumber
       uanNumber
+      attendanceRate
+      leaveBalance
+      totalLeaveEntitlement
+      tenureDisplay
       createdAt
       updatedAt
     }

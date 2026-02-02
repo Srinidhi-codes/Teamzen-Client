@@ -41,6 +41,10 @@ export interface GraphqlUser {
   panNumber: string;
   aadharNumber: string;
   uanNumber: string;
+  attendanceRate: number;
+  leaveBalance: number;
+  totalLeaveEntitlement: number;
+  tenureDisplay: string;
 }
 
 export function useGraphQLUser() {
@@ -73,7 +77,7 @@ export function useGraphQLUpdateUser() {
       aadharNumber: input.aadhar_number,
       uanNumber: input.uan_number,
     };
-    
+
     // Remove undefined/nulls
     const cleanInput = Object.fromEntries(Object.entries(mappedInput).filter(([_, v]) => v != null));
 

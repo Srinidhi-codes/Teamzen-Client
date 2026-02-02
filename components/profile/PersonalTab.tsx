@@ -2,6 +2,8 @@ import { Card } from "@/components/common/Card";
 import { EditableField } from "@/components/common/EditableField";
 import { EditableSelectField } from "@/components/common/EditableSelectField";
 import { UserFormData } from "./types";
+import moment from "moment";
+import { CheckCircle, CircleXIcon } from "lucide-react";
 
 interface PersonalTabProps {
     formData: Partial<UserFormData>;
@@ -75,7 +77,7 @@ export function PersonalTab({
                     />
                     <EditableField
                         label="Date of Birth"
-                        value={formData.date_of_birth || ""}
+                        value={moment(formData.date_of_birth || "").format("ll")}
                         icon="🎂"
                         type="date"
                         editable={isEditing}
@@ -109,7 +111,7 @@ export function PersonalTab({
                         error={errors.office_location}
                         placeholder="e.g. New York HQ"
                     />
-                    <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                    <div className="p-4 bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
                         <p className="text-sm font-semibold text-gray-700 mb-2">
                             Account Status
                         </p>
@@ -120,7 +122,7 @@ export function PersonalTab({
                                     className={`badge ${user.is_active ? "badge-success" : "badge-danger"
                                         }`}
                                 >
-                                    {user.is_active ? "Yes" : "No"}
+                                    {user.is_active ? <CheckCircle className="text-green-500" /> : <CircleXIcon className="text-red-500" />}
                                 </span>
                             </div>
                             <div className="flex items-center justify-between">
@@ -129,13 +131,13 @@ export function PersonalTab({
                                     className={`badge ${user.is_verified ? "badge-success" : "badge-warning"
                                         }`}
                                 >
-                                    {user.is_verified ? "Yes" : "Pending"}
+                                    {user.is_verified ? <CheckCircle className="text-green-500" /> : <CircleXIcon className="text-red-500" />}
                                 </span>
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-gray-600">Member Since</span>
                                 <span className="text-sm font-semibold text-gray-900">
-                                    {new Date(user.created_at || "").toLocaleDateString()}
+                                    {moment(user.dateOfJoining || "").format("ll")}
                                 </span>
                             </div>
                         </div>
