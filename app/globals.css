@@ -145,18 +145,41 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes pulse-slow {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1.1); }
+
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
 }
 
 .animate-fade-in {
@@ -175,28 +198,47 @@
   .btn {
     @apply inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50;
   }
+
   .btn-primary {
-    @apply bg-indigo-600 text-white shadow hover:bg-indigo-700 h-10 px-4 py-2;
+    @apply px-6 py-3 bg-linear-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold transform hover:scale-105;
   }
+
+  .btn-success {
+    @apply px-6 py-3 bg-linear-to-r from-green-600 to-green-600 text-white rounded-xl hover:from-green-700 hover:to-green-700 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold transform hover:scale-105;
+  }
+
+  .btn-danger {
+    @apply px-6 py-3 bg-linear-to-r from-red-600 to-red-600 text-white rounded-xl hover:from-red-700 hover:to-red-700 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold transform hover:scale-105;
+  }
+
   .btn-secondary {
-    @apply bg-white border border-gray-200 text-gray-900 shadow-sm hover:bg-gray-50 h-10 px-4 py-2;
+    @apply px-6 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 hover:bg-gray-50 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold transform hover:scale-105;
   }
-  .input {
+
+  input {
     @apply flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50;
   }
-  .textarea {
+
+  select {
+    @apply flex h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  textarea {
     @apply flex min-h-[80px] w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50;
   }
+
   .glass {
-    @apply bg-white/80 backdrop-blur-xl border border-white/30 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)];
+    @apply bg-white/80 backdrop-blur-xl border border-white/30 shadow-md;
   }
+
   .glass-dark {
-    @apply bg-gray-900/80 backdrop-blur-xl border border-white/10 shadow-2xl;
+    @apply bg-gray-900/80 backdrop-blur-xl border border-white/10 shadow-md;
   }
 
   .card-hover {
     @apply hover:translate-y-[-4px] transition-transform duration-300 ease-out;
   }
+
   .card-shadow {
     @apply hover:shadow-2xl transition-shadow duration-300;
   }
@@ -316,6 +358,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

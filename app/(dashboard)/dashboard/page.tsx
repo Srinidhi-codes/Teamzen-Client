@@ -81,7 +81,7 @@ export default function DashboardPage() {
           </Link>
           <Link
             href="/profile"
-            className="btn-profile flex items-center justify-center space-x-2 group"
+            className="btn-primary flex items-center justify-center space-x-2 group"
           >
             <span>👤</span>
             <span>My Profile</span>
