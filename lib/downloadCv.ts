@@ -1,4 +1,4 @@
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import moment from "moment";
 
 export const handleDownloadCV = (user: any) => {
@@ -12,11 +12,11 @@ export const handleDownloadCV = (user: any) => {
     let cursorY = 20;
 
     const COLORS = {
-        primary: [79, 70, 229], // Indigo-600
-        text: [0, 0, 0],
-        muted: [150, 150, 150],
-        white: [255, 255, 255],
-        divider: [220, 220, 220],
+        primary: [79, 70, 229] as const, // Indigo-600
+        text: [0, 0, 0] as const,
+        muted: [150, 150, 150] as const,
+        white: [255, 255, 255] as const,
+        divider: [220, 220, 220] as const,
     };
 
     // -------------------------
