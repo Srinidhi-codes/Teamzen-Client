@@ -18,7 +18,7 @@ export function FinancialTab({
     user,
 }: FinancialTabProps) {
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in transition-all duration-500">
             <Card title="Bank Details" hover gradient>
                 <div className="space-y-4">
                     <EditableField

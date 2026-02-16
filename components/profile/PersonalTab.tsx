@@ -21,7 +21,7 @@ export function PersonalTab({
     user,
 }: PersonalTabProps) {
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in transition-all duration-500">
             <Card title="Basic Information" hover gradient>
                 <div className="grid grid-rows-2 grid-cols-2 gap-6">
                     <EditableField

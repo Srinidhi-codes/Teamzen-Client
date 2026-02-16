@@ -12,7 +12,7 @@ export function ProfileTabs({ tabs, activeTab, setActiveTab }: ProfileTabsProps)
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 whitespace-nowrap ${activeTab === tab.id
-                        ? "bg-linear-to-r from-indigo-600/60 to-purple-600/60 text-white shadow-lg"
+                        ? "bg-linear-to-r from-primary to-primary/50 text-white shadow-lg"
                         : "text-gray-600 hover:bg-white/50"
                         }`}
                 >

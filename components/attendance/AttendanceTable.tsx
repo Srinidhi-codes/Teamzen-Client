@@ -1,5 +1,8 @@
-import { DataTable } from "@/components/common/DataTable";
+import { DataTable, Column } from "@/components/common/DataTable";
 import moment from "moment";
+import { Badge } from "@/components/common/Badge";
+import { Button } from "@/components/ui/button";
+import { Calendar, Clock, TrendingUp, AlertCircle, CheckCircle2, XCircle, RotateCcw } from "lucide-react";
 
 export type AttendanceRow = {
     id: string;
@@ -9,141 +12,178 @@ export type AttendanceRow = {
     status: string;
     correctionStatus?: string;
     correctionId?: string;
+    workedHours?: string | number | null;
+    correctionReason?: string;
+    approvalComment?: string;
 };
 
-const STATUS_MAP: Record<string, { label: string; className: string }> = {
-    late_login: { label: "Late Login", className: "badge-warning" },
-    early_logout: { label: "Early Logout", className: "badge-warning" },
-    absent: { label: "Absent", className: "badge-danger" },
-    present: { label: "Present", className: "badge-success" },
-    approved: { label: "Approved", className: "badge-success" },
-    rejected: { label: "Rejected", className: "badge-danger" },
-    pending: { label: "Pending", className: "badge-warning" },
+const STATUS_CONFIG: Record<string, { label: string; variant: "success" | "warning" | "danger" | "info" }> = {
+    late_login: { label: "Late Login", variant: "warning" },
+    early_logout: { label: "Early Logout", variant: "warning" },
+    absent: { label: "Absent", variant: "danger" },
+    present: { label: "Active", variant: "success" },
+    approved: { label: "Approved", variant: "success" },
+    rejected: { label: "Rejected", variant: "danger" },
+    pending: { label: "Pending", variant: "warning" },
+    cancelled: { label: "Cancelled", variant: "info" },
 };
 
 export function AttendanceTable({
     data,
     isLoading,
     onRequestCorrection,
-    onCancelCorrection
+    onCancelCorrection,
+    total,
+    currentPage,
+    pageSize,
+    onPageChange
 }: {
     data: AttendanceRow[];
     isLoading: boolean;
     onRequestCorrection: (row: AttendanceRow) => void;
     onCancelCorrection: (correctionId: string) => void;
+    total?: number;
+    currentPage?: number;
+    pageSize?: number;
+    onPageChange?: (page: number) => void;
 }) {
-    const columns = [
+    const columns: Column<AttendanceRow>[] = [
         {
             key: "attendanceDate",
             label: "Date",
-            render: (value: string) =>
-                new Date(value).toLocaleDateString("en-IN", {
-                    weekday: "short",
-                    day: "2-digit",
-                    month: "short",
-                }),
+            render: (value: string) => (
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                        <Calendar className="w-4 h-4" />
+                    </div>
+                    <span className="font-bold tabular-nums">
+                        {moment(value).format("ddd, DD MMM")}
+                    </span>
+                </div>
+            )
         },
         {
             key: "loginTime",
-            label: "Login",
+            label: "Login Time",
             render: (value: string) => (
-                <span className="font-md">
-                    {value ? moment(value, "HH:mm:ss").format("hh:mm:ss A") : "--:--:--"}
-                </span>
+                <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-2 text-foreground font-black tabular-nums text-sm">
+                        <Clock className="w-3 h-3 text-muted-foreground" />
+                        {value ? moment(value, "HH:mm:ss").format("hh:mm:ss A") : "--:--:--"}
+                    </div>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Authorized</p>
+                </div>
             ),
         },
         {
             key: "logoutTime",
-            label: "Logout",
+            label: "Logout Time",
             render: (value: string) => (
-                <span className="font-md">
-                    {value ? moment(value, "HH:mm:ss").format("hh:mm:ss A") : "--:--:--"}
-                </span>
+                <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-2 text-foreground font-black tabular-nums text-sm">
+                        <Clock className="w-3 h-3 text-muted-foreground" />
+                        {value ? moment(value, "HH:mm:ss").format("hh:mm:ss A") : "--:--:--"}
+                    </div>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Termination</p>
+                </div>
             ),
         },
         {
             key: "workedHours",
-            label: "Worked Hours",
-            render: (value: string) => (
-                <span
-                    className={`capitalize ${Number(value) >= 8 ? "text-black" : "text-red-600"
-                        }`}
-                >
-                    {value ? `${Number(value).toFixed(0)} hrs` : "--:--"}
-                </span>
-
+            label: "Productivity",
+            render: (value: string | number) => (
+                <div className="flex items-center gap-2">
+                    <TrendingUp className={`w-3.5 h-3.5 ${Number(value) >= 8 ? "text-emerald-500" : "text-amber-500"}`} />
+                    <span className="font-black tabular-nums text-foreground">
+                        {value ? `${Number(value).toFixed(1)}h` : "0.0h"}
+                    </span>
+                </div>
             ),
         },
         {
             key: "status",
             label: "Status",
             render: (value: string) => {
-                const s = STATUS_MAP[value];
+                const config = STATUS_CONFIG[value] || { label: value, variant: "info" };
                 return (
-                    <span className={`badge ${s?.className ?? "badge-info"}`}>
-                        {s?.label ?? value}
-                    </span>
+                    <Badge variant={config.variant}>
+                        {value}
+                    </Badge>
                 );
             },
-        },
-        {
-            key: "correctionReason",
-            label: "Reason",
-            render: (value: string) => (
-                <span className="font-md text-wrap">{value || "--:--:--"}</span>
-            ),
-        },
-        {
-            key: "approvalComment",
-            label: "Approval Comment",
-            render: (value: string) => (
-                <span className="font-md text-wrap">{value || "--:--:--"}</span>
-            ),
         },
         {
             key: "correctionStatus",
             label: "Approval Status",
-            render: (value: string) => {
-                const s = STATUS_MAP[value];
+            render: (value: string, row: AttendanceRow) => {
+                if (!value && !row.correctionReason) return <span className="text-muted-foreground/30 font-black italic">--</span>;
+                const config = STATUS_CONFIG[value] || { label: value || "Pending Request", variant: "info" };
                 return (
-                    <span className={`badge capitalize ${s?.className ?? "badge-info"}`}> {value || "--:--:--"}</span >
+                    <div className="flex flex-col gap-1.5">
+                        <div className="w-fit">
+                            <Badge variant={config.variant}>
+                                {config.label}
+                            </Badge>
+                        </div>
+                        {row.correctionReason && (
+                            <p className="text-[9px] text-muted-foreground italic truncate max-w-[120px]" title={row.correctionReason}>
+                                "{row.correctionReason}"
+                            </p>
+                        )}
+                    </div>
                 )
             },
         },
-        {
+        ...(data?.some(row => row.correctionStatus !== "approved") ? [{
             key: "correctionActions",
-            label: "Correction",
+            label: "Terminal Actions",
+            className: "text-right",
             render: (_: unknown, row: AttendanceRow) => {
                 const status = row.correctionStatus;
+                if (status === "approved") {
+                    return null;
+                }
                 return (
-                    <div className="flex flex-col items-center gap-2">
-                        {/* REQUEST rules */}
+                    <div className="flex items-center justify-end gap-2">
                         {(!status || status === "rejected" || status === "cancelled") && (
-                            <button
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 px-4 text-[9px] font-black tracking-widest bg-primary/5 border-primary/20 text-primary hover:bg-primary hover:text-white transition-all"
                                 onClick={() => onRequestCorrection(row)}
-                                className="text-indigo-600 text-sm cursor-pointer"
-                                disabled={status === "pending" || status === "approved"}
                             >
-                                {status ? "Request Again" : "Request"}
-                            </button>
+                                {status ? "RE-INITIATE" : "CORRECT"}
+                            </Button>
                         )}
 
-                        {/* CANCEL only for 'pending' */}
                         {status === "pending" && row.correctionId && (
-                            <button
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-8 px-4 text-[9px] font-black tracking-widest"
                                 onClick={() => onCancelCorrection(row.correctionId!)}
-                                className="text-red-600 text-sm cursor-pointer"
                             >
-                                Cancel
-                            </button>
+                                <RotateCcw className="w-3 h-3 mr-1.5" />
+                                VOID
+                            </Button>
                         )}
                     </div>
                 );
             },
-        },
-
-
+        }] : []),
     ];
 
-    return <DataTable columns={columns} data={data} isLoading={isLoading} />;
+    return (
+        <div className="bg-card rounded-4xl border border-border shadow-2xl overflow-hidden p-2">
+            <DataTable
+                columns={columns}
+                data={data}
+                isLoading={isLoading}
+                total={total}
+                currentPage={currentPage}
+                pageSize={pageSize}
+                onPageChange={onPageChange}
+            />
+        </div>
+    );
 }

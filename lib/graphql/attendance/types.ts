@@ -10,9 +10,10 @@ export interface AttendanceRecord {
   status: "present" | "absent" | "half_day" | "leave" | "holiday";
   workedHours?: number | null;
 
+  workingHours?: number | null;
   isWithinGeofence: boolean;
   remarks?: string | null;
-  
+
   correctionStatus?: string;
   correctionId?: string;
   correctionReason?: string;

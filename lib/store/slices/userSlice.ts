@@ -1,14 +1,14 @@
 import { StateCreator } from 'zustand';
-import { GraphQLUser } from '@/lib/graphql/users/types';
+import { User } from '@/lib/graphql/users/types';
 import { mapBackendUserToFrontendUser } from '@/lib/transformers';
 
 export interface UserSlice {
-  user: GraphQLUser | null;
+  user: User | null;
   isAuthenticated: boolean;
   // Actions
   loginUser: (backendData: any) => void;
-  setAuthenticatedUser: (user: GraphQLUser) => void;
-  updateUser: (updates: Partial<GraphQLUser>) => void;
+  setAuthenticatedUser: (user: User) => void;
+  updateUser: (updates: Partial<User>) => void;
   logoutUser: () => void;
 }
 
@@ -20,7 +20,7 @@ export const createUserSlice: StateCreator<UserSlice> = (set) => ({
     const formattedUser = mapBackendUserToFrontendUser(backendData);
     set({ user: formattedUser, isAuthenticated: true });
   },
-  setAuthenticatedUser: (user: GraphQLUser) => {
+  setAuthenticatedUser: (user: User) => {
     set({ user, isAuthenticated: true });
   },
   updateUser: (updates) =>

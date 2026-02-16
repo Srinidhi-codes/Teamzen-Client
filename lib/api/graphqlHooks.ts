@@ -47,8 +47,19 @@ export interface GraphqlUser {
   tenureDisplay: string;
 }
 
+import { useStore } from "@/lib/store/useStore";
+import { useEffect } from "react";
+
 export function useGraphQLUser() {
   const { data, loading, error, refetch } = useQuery(GET_ME) as any;
+  const { setAuthenticatedUser } = useStore();
+
+  useEffect(() => {
+    if (data?.me) {
+      setAuthenticatedUser(data.me as GraphqlUser);
+    }
+  }, [data, setAuthenticatedUser]);
+
   return {
     user: (data?.me as GraphqlUser) || null,
     isLoading: loading,

@@ -57,7 +57,7 @@ export function SecurityTab() {
     };
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in transition-all duration-500">
             <Card title="Change Password" hover gradient>
                 <form onSubmit={handleChangePassword} className="space-y-4">
                     <div>
