@@ -23,7 +23,8 @@ import {
   History,
   FileText,
   User,
-  MoreVertical
+  MoreVertical,
+  Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataTable, Column } from "@/components/common/DataTable";
@@ -31,6 +32,7 @@ import { FormSelect } from "@/components/common/FormSelect";
 import { DatePickerSimple } from "@/components/ui/datePicker";
 import { Loader2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import ConfirmationModal from "@/components/common/ConfirmationModal";
 
 export default function LeavesPage() {
   const [showForm, setShowForm] = useState(false);
@@ -42,6 +44,7 @@ export default function LeavesPage() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [viewDetails, setViewDetails] = useState<any>(null);
+  const [leaveToCancel, setLeaveToCancel] = useState<any>(null);
   const { user } = useStore();
   const { leaveBalanceData, isLoading: leaveBalanceLoading } = useGraphQlLeaveBalance();
   const { leaveRequestData, isLoading: leaveRequestLoading } = useGraphQLLeaveRequests();
@@ -152,14 +155,13 @@ export default function LeavesPage() {
             <Button
               variant="destructive"
               size="sm"
-              className="h-8 px-3 text-[9px] opacity-0 group-hover:opacity-100 transition-all font-black"
+              className="h-8 px-3 text-[9px] transition-all font-black"
               onClick={(e) => {
                 e.stopPropagation();
-                cancelLeaveRequest(row.id);
+                setLeaveToCancel(row);
               }}
-              disabled={cancelLeaveRequestLoading}
             >
-              VOID
+              Cancel
             </Button>
           )}
           <Button
@@ -399,8 +401,21 @@ export default function LeavesPage() {
                   </p>
                 </div>
 
-                <div className="flex justify-end pt-4">
-                  <Button variant="secondary" onClick={() => setViewDetails(null)} className="px-10">
+                <div className="flex justify-end pt-4 gap-4">
+                  {viewDetails.status.toLowerCase() === 'pending' && (
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        setLeaveToCancel(viewDetails);
+                        setViewDetails(null);
+                      }}
+                      className="px-8 font-black text-[10px] uppercase tracking-widest flex items-center gap-2"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Cancel Request
+                    </Button>
+                  )}
+                  <Button variant="secondary" onClick={() => setViewDetails(null)} className="px-10 font-black text-[10px] uppercase tracking-widest">
                     Close
                   </Button>
                 </div>
@@ -510,6 +525,21 @@ export default function LeavesPage() {
           </div>
         )
       }
+
+      <ConfirmationModal
+        isOpen={!!leaveToCancel}
+        onClose={() => setLeaveToCancel(null)}
+        onConfirm={() => {
+          if (leaveToCancel) {
+            cancelLeaveRequest(leaveToCancel.id);
+          }
+        }}
+        title="Cancel Leave Request"
+        description={`Are you sure you want to cancel this ${leaveToCancel?.leaveType.name} request? This operation will restore your allocated balance and notify the administration.`}
+        confirmText="Confirm Cancel"
+        cancelText="Go Back"
+        variant="destructive"
+      />
 
     </div >
   );

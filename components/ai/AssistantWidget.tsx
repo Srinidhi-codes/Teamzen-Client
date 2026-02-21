@@ -1,30 +1,21 @@
+
 "use client";
 
 import { useState, useRef, useEffect } from "react";
 import {
-    MessageSquare,
-    X,
-    Send,
-    Sparkles,
-    Bot,
-    User,
-    Loader2,
-    Minimize2,
-    Trash2,
-    Calendar,
-    Building2,
-    Copy
-} from "lucide-react";
+    Send, X, Bot, User, MessageSquare, Trash2,
+    Sparkles, Loader2, Minimize2
+} from 'lucide-react';
 import { useAssistant } from "@/lib/api/assistant";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
-import { Button } from "react-day-picker";
 import moment from "moment";
+import { MessageRenderer } from "./MessageRenderer";
 
 export function AssistantWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const [input, setInput] = useState("");
+    const [cancelledIds, setCancelledIds] = useState<Set<string>>(new Set());
     const { messages, sendMessage, isLoading, clearHistory } = useAssistant();
     const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -35,21 +26,27 @@ export function AssistantWidget() {
         }
     }, [messages, isLoading]);
 
-    const handleSend = async (e?: React.FormEvent) => {
+    const handleSend = async (e?: React.FormEvent, customQuery?: string) => {
         e?.preventDefault();
-        if (!input.trim() || isLoading) return;
+        const query = customQuery || input;
 
-        const query = input;
-        setInput("");
+        if (!query.trim() || isLoading) return;
+
+        // Detect if we are cancelling a leave and track the ID for UI reactivity
+        const cancelMatch = query.match(/Cancel (?:my )?leave (?:with )?ID\s*(\d+|\w+)/i);
+        if (cancelMatch) {
+            const id = cancelMatch[1];
+            setCancelledIds(prev => new Set(prev).add(id));
+        }
+
+        if (!customQuery) {
+            setInput("");
+        }
 
         try {
-            // Check if user is trying to mark attendance (heuristic)
-            const isAttendanceAction = /check[ -]?in|check[ -]?out|clock[ -]?in|clock[ -]?out|leaving|arrived/i.test(query);
-
             // Get Geolocation if available
             let latitude: number | undefined;
             let longitude: number | undefined;
-            let geoDenied = false;
 
             if ("geolocation" in navigator) {
                 try {
@@ -63,174 +60,13 @@ export function AssistantWidget() {
                     longitude = position.coords.longitude;
                 } catch (geoError: any) {
                     console.warn("Geolocation failed or denied", geoError);
-                    if (geoError.code === geoError.PERMISSION_DENIED) {
-                        geoDenied = true;
-                    }
                 }
             }
 
-            // If it's an attendance action and geo was denied, the AI tool will return an ERROR_CARD
             await sendMessage({ query, latitude, longitude });
         } catch (error) {
             console.error("Failed to send message", error);
         }
-    };
-
-    const MessageRenderer = ({ content, role, isLast }: { content: string, role: string, isLast?: boolean }) => {
-        // Regex to find cards
-        const balanceRegex = /\[BALANCE_CARD\]([\s\S]*?)\[\/BALANCE_CARD\]/g;
-        const attendanceRegex = /\[ATTENDANCE_CARD\]([\s\S]*?)\[\/ATTENDANCE_CARD\]/g;
-        const errorRegex = /\[ERROR_CARD\]([\s\S]*?)\[\/ERROR_CARD\]/g;
-
-        const parts: any[] = [];
-        let lastIndex = 0;
-
-        // Combined parsing logic
-        const allMatches: any[] = [];
-
-        let match;
-        while ((match = balanceRegex.exec(content)) !== null) {
-            allMatches.push({ type: 'balance', index: match.index, lastIndex: balanceRegex.lastIndex, data: match[1] });
-        }
-        while ((match = attendanceRegex.exec(content)) !== null) {
-            allMatches.push({ type: 'attendance', index: match.index, lastIndex: attendanceRegex.lastIndex, data: match[1] });
-        }
-        while ((match = errorRegex.exec(content)) !== null) {
-            allMatches.push({ type: 'error', index: match.index, lastIndex: errorRegex.lastIndex, data: match[1] });
-        }
-
-        allMatches.sort((a, b) => a.index - b.index);
-
-        allMatches.forEach(m => {
-            if (m.index > lastIndex) {
-                parts.push({ type: 'text', value: content.slice(lastIndex, m.index) });
-            }
-
-            const data: any = {};
-            m.data.trim().split('|').forEach((part: string) => {
-                const [key, val] = part.split(':').map(s => s.trim());
-                if (key && val) data[key.toLowerCase()] = val;
-            });
-
-            parts.push({ type: m.type, value: data });
-            lastIndex = m.lastIndex;
-        });
-
-        if (lastIndex < content.length) {
-            parts.push({ type: 'text', value: content.slice(lastIndex) });
-        }
-
-        return (
-            <div className="space-y-3 w-full">
-                {parts.map((part, idx) => {
-                    if (part.type === 'text') {
-                        return (
-                            <div key={idx} className={cn(
-                                "max-w-[85%] p-4 rounded-3xl text-sm leading-relaxed",
-                                role === 'user'
-                                    ? "bg-primary text-primary-foreground rounded-tr-none ml-auto shadow-md shadow-primary/10"
-                                    : "bg-muted/50 border border-border rounded-tl-none"
-                            )}>
-                                {part.value.trim()}
-                            </div>
-                        );
-                    } else if (part.type === 'balance') {
-                        const { name, total, used, available } = part.value;
-                        const usedNum = parseFloat(used) || 0;
-                        const totalNum = parseFloat(total) || 1;
-                        const percent = Math.min((usedNum / totalNum) * 100, 100);
-
-                        return (
-                            <div key={idx} className="bg-card border border-border rounded-3xl p-5 shadow-sm space-y-4 animate-in zoom-in-95 duration-300">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-2xl bg-primary/5 text-primary flex items-center justify-center">
-                                            <Calendar className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-0.5">Leave Type</p>
-                                            <h4 className="font-black text-sm">{name}</h4>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-0.5">Available</p>
-                                        <p className="font-black text-lg text-primary leading-none">{available} <span className="text-[10px]">Days</span></p>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
-                                        <span>Used: {used}</span>
-                                        <span>Total: {total}</span>
-                                    </div>
-                                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-primary rounded-full transition-all duration-1000"
-                                            style={{ width: `${percent}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    } else if (part.type === 'attendance') {
-                        const { action, status, time, office, distance, hours } = part.value;
-                        return (
-                            <div key={idx} className="bg-linear-to-br from-primary/20 to-primary/30 border border-primary/20 rounded-3xl p-5 shadow-sm space-y-4 hover:animate-in zoom-in-95 duration-300 w-full">
-                                <Link href="/attendance">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
-                                                <Building2 className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-primary/70 mb-0.5">{action}</p>
-                                                <h4 className="font-black text-sm text-primary">{office || "Office Location"}</h4>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-primary/70 mb-0.5">Time</p>
-                                            <p className="font-black text-sm text-primary leading-none">{time}</p>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-primary/10">
-                                        {distance && (
-                                            <div>
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-primary/50">Proximity</p>
-                                                <p className="text-xs font-bold text-primary">{distance}</p>
-                                            </div>
-                                        )}
-                                        {hours && (
-                                            <div>
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-primary/50">Work Duration</p>
-                                                <p className="text-xs font-bold text-primary">{hours} hrs</p>
-                                            </div>
-                                        )}
-                                        <div>
-                                            <p className="text-[9px] font-black uppercase tracking-widest text-primary/50">Status</p>
-                                            <p className="text-xs font-bold text-primary capitalize">{status}</p>
-                                        </div>
-                                    </div>
-                                </Link>
-                            </div>
-                        );
-                    } else if (part.type === 'error') {
-                        const { title, message } = part.value;
-                        return (
-                            <div key={idx} className="bg-destructive/5 border border-destructive/20 rounded-3xl p-5 shadow-sm space-y-2 animate-in zoom-in-95 duration-500 w-full">
-                                <div className="flex items-center gap-2 text-destructive">
-                                    <X className="w-4 h-4" />
-                                    <h4 className="font-black text-xs uppercase tracking-widest">{title || "Error Occurred"}</h4>
-                                </div>
-                                <p className="text-sm text-destructive/80 font-medium">
-                                    {message}
-                                </p>
-                            </div>
-                        );
-                    }
-                    return null;
-                })}
-            </div >
-        );
     };
 
     return (
@@ -294,11 +130,7 @@ export function AssistantWidget() {
                                     ].map((q) => (
                                         <button
                                             key={q}
-                                            onClick={() => {
-                                                setInput(q);
-                                                // Trigger send in next tick
-                                                setTimeout(() => handleSend(), 0);
-                                            }}
+                                            onClick={() => handleSend(undefined, q)}
                                             className="text-[10px] font-black uppercase tracking-widest p-3 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-all text-left"
                                         >
                                             {q}
@@ -323,7 +155,12 @@ export function AssistantWidget() {
                                     {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                                 </div>
                                 <div className="flex-1 w-full overflow-hidden">
-                                    <MessageRenderer content={msg.content} role={msg.role} isLast={i === messages.length - 1} />
+                                    <MessageRenderer
+                                        content={msg.content}
+                                        role={msg.role}
+                                        cancelledIds={cancelledIds}
+                                        handleSend={handleSend}
+                                    />
                                     <div className={cn(
                                         "w-full text-xs text-muted-foreground/60 mt-1",
                                         msg.role === 'user' ? "text-right pr-2" : "text-left pl-2"
