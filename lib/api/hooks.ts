@@ -200,3 +200,47 @@ export const usePayrollRuns = () => {
 
   return { ...query, create, calculate };
 };
+
+export const usePolicies = () => {
+  const list = useQuery({
+    queryKey: ['policies'],
+    queryFn: async () => {
+      const response = await client.get(API_ENDPOINTS.POLICIES);
+      return response.data;
+    },
+  });
+
+  const upload = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const response = await client.post(API_ENDPOINTS.POLICIES, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      list.refetch();
+    },
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: number) => {
+      await client.delete(`${API_ENDPOINTS.POLICIES}${id}/`);
+    },
+    onSuccess: () => {
+      list.refetch();
+    },
+  });
+
+  return {
+    policies: list.data,
+    isLoading: list.isLoading,
+    isUploading: upload.isPending,
+    isDeleting: remove.isPending,
+    error: list.error,
+    upload: upload,
+    remove: remove,
+  };
+};
+

@@ -64,7 +64,7 @@ interface ModernStatProps {
 
 export function ModernStat({ icon: Icon, label, value, color, bg, trend }: ModernStatProps) {
   return (
-    <div className="p-6 rounded-4xl bg-card border border-border/40 shadow-sm hover:shadow-lg hover:border-primary/20 transition-all group cursor-default">
+    <div className="premium-card card-hover group cursor-default p-6!">
       <div className="flex justify-between items-start mb-4">
         <div className={`p-3 rounded-2xl ${bg} ${color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
           <Icon className="w-5 h-5" />

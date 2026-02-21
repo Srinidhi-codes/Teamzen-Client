@@ -191,7 +191,7 @@ export default function DashboardPage() {
             </div>
             <div className="space-y-4">
               {recentActivity.length > 0 ? recentActivity.map((item: any, i: number) => (
-                <div key={i} className="flex items-center justify-between p-4 rounded-3xl bg-card border border-border/40 hover:border-primary/20 hover:shadow-lg transition-all group">
+                <div key={i} className="flex items-center justify-between p-4 rounded-4xl bg-card border border-border/40 hover:border-primary/20 hover:shadow-lg hover:translate-y-[-4px] transition-all duration-300 group">
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-2xl ${item.bg} ${item.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
                       <item.icon className="w-5 h-5" />
@@ -213,34 +213,33 @@ export default function DashboardPage() {
           </div>
 
           {/* Attendance Trend Chart */}
-          <div className="bg-card rounded-4xl p-6 border border-border/40 shadow-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-purple-500/10 rounded-xl">
-                <TrendingUp className="w-5 h-5 text-purple-500" />
-              </div>
-              <h3 className="font-black text-lg">Attendance Trend</h3>
-            </div>
-            <div className="h-[250px] w-full">
+          <Card
+            title="Attendance Trend"
+            icon={TrendingUp}
+            gradient
+            hover
+          >
+            <div className="h-[250px] w-full mt-4">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={attendanceTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorTrend" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                      <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <Tooltip
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.2)' }}
-                    itemStyle={{ color: '#8b5cf6', fontWeight: 'bold' }}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.2)', backgroundColor: 'var(--card)', color: 'var(--card-foreground)' }}
+                    itemStyle={{ color: 'var(--primary)', fontWeight: 'bold' }}
                   />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} />
                   <CartesianGrid vertical={false} stroke="#e5e7eb" strokeDasharray="5 5" opacity={0.5} />
-                  <Area type="monotone" dataKey="value" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorTrend)" />
+                  <Area type="monotone" dataKey="value" stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorTrend)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
-          </div>
+          </Card>
 
           {/* Upcoming Events */}
           <div className="space-y-6">
@@ -255,7 +254,7 @@ export default function DashboardPage() {
                 { date: "25", month: "FEB", title: "Team Meeting", type: "Event", color: "text-purple-500" },
                 { date: "28", month: "FEB", title: "Salary Credit", type: "Finance", color: "text-emerald-500" },
               ].map((ev, i) => (
-                <div key={i} className="flex items-center gap-4 p-4 rounded-3xl bg-card border border-border/40 hover:border-primary/20 hover:shadow-md transition-all cursor-pointer group">
+                <div key={i} className="flex items-center gap-4 p-4 rounded-4xl bg-card border border-border/40 hover:border-primary/20 hover:shadow-md hover:translate-y-[-4px] transition-all duration-300 cursor-pointer group">
                   <div className="w-14 h-14 rounded-2xl bg-muted/40 flex flex-col items-center justify-center border border-border/50 group-hover:bg-primary/5 transition-colors">
                     <span className="text-lg font-black text-foreground leading-none">{ev.date}</span>
                     <span className="text-[9px] font-black text-muted-foreground uppercase mt-0.5">{ev.month}</span>
@@ -279,16 +278,17 @@ export default function DashboardPage() {
         <div className="lg:col-span-1 space-y-8">
 
           {/* Payroll Summary */}
-          <div className="bg-emerald-50/50 dark:bg-emerald-950/10 rounded-4xl p-6 border border-emerald-100 dark:border-emerald-900/20 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl -mr-10 -mt-10" />
-            <div className="flex justify-between items-center mb-6 relative z-10">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-500/20">
-                  <DollarSign className="w-5 h-5" />
-                </div>
-                <h3 className="font-black text-sm uppercase tracking-wider text-emerald-900 dark:text-emerald-100">Payroll Summary</h3>
-              </div>
-              <button className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1">
+          <Card
+            title="Payroll Summary"
+            icon={DollarSign}
+            gradient
+            hover
+            className="group"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -mr-10 -mt-10" />
+
+            <div className="flex justify-end mb-4 relative z-10 -mt-12">
+              <button className="text-[10px] font-bold uppercase tracking-widest text-primary hover:underline flex items-center gap-1">
                 <FileText className="w-3 h-3" /> Payslip
               </button>
             </div>
@@ -297,19 +297,19 @@ export default function DashboardPage() {
               <div>
                 <p className="text-xs text-muted-foreground font-semibold mb-1">February 2026</p>
                 <div className="flex items-baseline gap-2">
-                  <h2 className="text-4xl font-black text-emerald-950 dark:text-emerald-50 tracking-tight">$8,750</h2>
+                  <h2 className="text-4xl font-black text-foreground tracking-tight">$8,750</h2>
                   <Badge variant="warning">Processing</Badge>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-emerald-200/50 dark:border-emerald-800/30">
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border/50">
                 <div>
                   <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Base</p>
                   <p className="font-bold text-foreground">$8,500</p>
                 </div>
                 <div>
                   <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Allowances</p>
-                  <p className="font-bold text-emerald-600">+$1,200</p>
+                  <p className="font-bold text-emerald-500">+$1,200</p>
                 </div>
                 <div>
                   <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Deductions</p>
@@ -317,39 +317,37 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="pt-4 flex justify-between items-center">
+              <div className="pt-4 flex justify-between items-center border-t border-border/30">
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-blue-500" />
+                  <TrendingUp className="w-4 h-4 text-primary" />
                   <span className="text-xs font-bold text-muted-foreground">YTD Earnings</span>
                 </div>
                 <span className="font-black tabular-nums">$17,400</span>
               </div>
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-purple-500" />
+                  <Calendar className="w-4 h-4 text-primary" />
                   <span className="text-xs font-bold text-muted-foreground">Next Payment</span>
                 </div>
                 <span className="font-black tabular-nums">Feb 28</span>
               </div>
             </div>
-          </div>
+          </Card>
 
           {/* Last 7 Days Widget */}
-          <div className="bg-card rounded-4xl p-6 border border-border/40 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500">
-                <Calendar className="w-5 h-5" />
-              </div>
-              <h3 className="font-black text-sm uppercase tracking-wider">Last 7 Days</h3>
-            </div>
-
-            <div className="flex justify-between items-center px-1">
+          <Card
+            title="Last 7 Days"
+            icon={Calendar}
+            gradient
+            hover
+          >
+            <div className="flex justify-between items-center px-1 mt-4">
               {last7Days.map((d, i) => (
                 <div key={i} className="flex flex-col items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white shadow-sm transition-all hover:scale-110 cursor-default ${d.status === 'present' ? 'bg-emerald-500' :
-                    d.status === 'leave' ? 'bg-orange-500' :
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white shadow-sm transition-all hover:scale-110 cursor-default ${d.status === 'present' ? 'bg-emerald-500 shadow-emerald-500/20' :
+                    d.status === 'leave' ? 'bg-orange-500 shadow-orange-500/20' :
                       d.status === 'weekend' ? 'bg-muted text-muted-foreground opacity-50' :
-                        'bg-red-500'
+                        'bg-red-500 shadow-red-500/20'
                     }`}>
                     {d.status === 'present' && <CheckCircle2 className="w-4 h-4" />}
                     {d.status === 'leave' && <Plane className="w-4 h-4" />}
@@ -363,10 +361,10 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
 
           {/* Performance Insights Card */}
-          <div className="relative overflow-hidden rounded-4xl bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 text-white p-8 shadow-xl shadow-purple-500/20">
+          <div className="relative overflow-hidden rounded-4xl bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 text-white p-8 shadow-xl shadow-purple-500/20 hover:translate-y-[-8px] transition-all duration-500 ease-out">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl" />
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/10 rounded-full -ml-10 -mb-10 blur-xl" />
 

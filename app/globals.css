@@ -281,6 +281,15 @@
   .text-premium-data {
     @apply text-sm font-bold text-foreground tracking-tight;
   }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 

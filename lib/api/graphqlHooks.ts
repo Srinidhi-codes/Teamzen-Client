@@ -49,6 +49,7 @@ export interface GraphqlUser {
 
 import { useStore } from "@/lib/store/useStore";
 import { useEffect } from "react";
+import { GraphQLUser } from "../graphql/users/types";
 
 export function useGraphQLUser() {
   const { data, loading, error, refetch } = useQuery(GET_ME) as any;
@@ -56,12 +57,12 @@ export function useGraphQLUser() {
 
   useEffect(() => {
     if (data?.me) {
-      setAuthenticatedUser(data.me as GraphqlUser);
+      setAuthenticatedUser(data.me as GraphQLUser);
     }
   }, [data, setAuthenticatedUser]);
 
   return {
-    user: (data?.me as GraphqlUser) || null,
+    user: (data?.me as GraphQLUser) || null,
     isLoading: loading,
     error,
     refetch

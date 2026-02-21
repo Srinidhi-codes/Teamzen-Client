@@ -21,6 +21,7 @@ export interface LeaveBalance {
     isLocked: boolean;
     lockedAt: string;
     lastUpdated: string;
+    availableBalance: number;
 }
 
 export interface LeaveRequest {

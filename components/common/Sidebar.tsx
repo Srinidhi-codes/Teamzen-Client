@@ -12,7 +12,8 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
-  UserCircle
+  UserCircle,
+  BookCheck
 } from "lucide-react";
 
 interface NavItem {
@@ -28,6 +29,7 @@ const navItems: NavItem[] = [
   { name: "Attendance", href: "/attendance", icon: Clock },
   { name: "Payroll", href: "/payroll", icon: DollarSign },
   { name: "Profile", href: "/profile", icon: UserCircle },
+  { name: "Policies", href: "/policies", icon: BookCheck },
 ];
 
 export interface SidebarProps {

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Sidebar } from "../common/Sidebar";
 import { Menu } from "lucide-react";
 import { Navbar } from "../common/Navbar";
+import { AssistantWidget } from "../ai/AssistantWidget";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -51,6 +52,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </footer>
       </div>
+      <AssistantWidget />
     </div>
   );
 }
