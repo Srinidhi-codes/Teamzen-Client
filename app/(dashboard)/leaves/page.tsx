@@ -121,17 +121,17 @@ export default function LeavesPage() {
       key: "fromDate",
       label: "Duration",
       render: (_: any, row: any) => (
-        <div className="flex items-center justify-center gap-2 w-2/3 bg-gray-200 p-1 rounded-lg border border-gray-300">
-          <span className="font-bold tabular-nums text-foreground/70">{moment(row.fromDate).format("MMM DD")}</span>
-          <ArrowRight className="w-3 h-3 text-muted-foreground/30" />
-          <span className="font-bold tabular-nums text-foreground/70">{moment(row.toDate).format("MMM DD")}</span>
+        <div className="flex items-center justify-center gap-2 bg-gray-200 p-1 w-[8.5rem] rounded-xl border border-border">
+          <span className="font-bold tabular-nums text-primary">{moment(row.fromDate).format("MMM DD")}</span>
+          <ArrowRight className="w-3 h-3 text-primary" />
+          <span className="font-bold tabular-nums text-primary">{moment(row.toDate).format("MMM DD")}</span>
         </div>
       )
     },
     {
       key: "durationDays",
       label: "Days",
-      render: (val: number) => <span className="font-black tabular-nums">{val}</span>
+      render: (val: number) => <span className="font-black tabular-nums">{Number(val)}</span>
     },
     {
       key: "status",
