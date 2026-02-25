@@ -42,7 +42,7 @@ export function DatePickerSimple({ label, value, onChange, error, required, clas
                     <Button
                         variant="outline"
                         className={cn(
-                            "w-full h-[35px] rounded-2xl bg-muted/5 border-border/50 text-left font-medium px-5 shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.08)] hover:bg-muted/20 transition-all duration-300 focus:ring-4 focus:ring-primary/10",
+                            "w-full h-[45px] rounded-xl bg-muted/5 border-border/50 text-left font-medium px-5 shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.08)] hover:bg-muted/20 transition-all duration-300 focus:ring-4 focus:ring-primary/10",
                             !displayDate && "text-muted-foreground/50",
                             error && "border-destructive/50 focus:ring-destructive/10"
                         )}

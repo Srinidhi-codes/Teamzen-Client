@@ -21,6 +21,9 @@ export const useStore = create<StoreState>()(
     {
       name: 'payroll-app-storage', // unique name for localStorage key
       storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
       // Optional: Only persist user session, not temporary leave/attendance data if preferred
       partialize: (state) => ({
         user: state.user,

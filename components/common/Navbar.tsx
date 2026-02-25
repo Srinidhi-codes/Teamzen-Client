@@ -119,6 +119,21 @@ export function Navbar() {
                       <span className="text-sm font-bold">My Profile</span>
                     </Link>
                   </DropdownMenuItem>
+
+                  {(user.role === 'admin' || user.role === 'manager') && (
+                    <DropdownMenuItem asChild>
+                      <a
+                        href="http://localhost:3001/dashboard"
+                        className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-orange-500/10 text-orange-600 dark:text-orange-400 cursor-pointer group"
+                      >
+                        <span className="text-lg group-hover:scale-110 transition-transform">⚡</span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold">Admin Panel</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Manager View</span>
+                        </div>
+                      </a>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link
                       href="/settings"

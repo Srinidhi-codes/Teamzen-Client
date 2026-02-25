@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
 export const GET_MY_NOTIFICATIONS = gql`
-  query GetMyNotifications {
-    myNotifications {
+  query GetMyNotifications($level: String) {
+    myNotifications(level: $level) {
       id
       verb
       message
@@ -20,7 +20,7 @@ export const GET_MY_NOTIFICATIONS = gql`
 `;
 
 export const GET_UNREAD_COUNT = gql`
-  query GetUnreadCount {
-    unreadNotificationCount
+  query GetUnreadCount($level: String) {
+    unreadNotificationCount(level: $level)
   }
 `;

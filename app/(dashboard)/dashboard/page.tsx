@@ -102,7 +102,7 @@ export default function DashboardPage() {
           <ModernStat
             icon={TrendingUp}
             label="Attendance Rate"
-            value={`${stats.attendance_rate || 0}%`}
+            value={`${stats.attendanceRate || 0}%`}
             color="text-emerald-500"
             bg="bg-emerald-500/10"
           />
@@ -111,7 +111,7 @@ export default function DashboardPage() {
           <ModernStat
             icon={Calendar}
             label="Leave Balance"
-            value={stats.leave_balances?.[0]?.balance || 0}
+            value={stats.leaveBalances?.[0]?.balance || 0}
             color="text-blue-500"
             bg="bg-blue-500/10"
           />
@@ -120,7 +120,7 @@ export default function DashboardPage() {
           <ModernStat
             icon={Clock}
             label="Pending Requests"
-            value={stats.pending_requests_count || 0}
+            value={stats.pendingRequestsCount || 0}
             color="text-orange-500"
             bg="bg-orange-500/10"
           />
@@ -129,7 +129,7 @@ export default function DashboardPage() {
           <ModernStat
             icon={Users}
             label="Days Present"
-            value={stats.days_present || 0}
+            value={stats.daysPresent || 0}
             color="text-purple-500"
             bg="bg-purple-500/10"
           />
@@ -263,13 +263,17 @@ export default function DashboardPage() {
                 <div key={i} className="flex flex-col items-center gap-3">
                   <Link href="/attendance/attendance-correction" className={`w-8 h-8 rounded-full flex items-center justify-center text-white shadow-sm transition-all hover:scale-110 cursor-default ${d.status === 'present' ? 'bg-emerald-500' :
                     d.status === 'leave' ? 'bg-orange-500' :
-                      d.status === 'weekend' ? 'bg-muted text-muted-foreground opacity-50' :
-                        'bg-red-500'
+                      d.status === 'weekend' ? 'bg-muted text-muted-foreground opacity-30 shadow-none' :
+                        d.status === 'pending' ? 'bg-amber-500' :
+                          d.status === 'not_started' ? 'bg-muted/30 border border-dashed border-muted-foreground/20' :
+                            'bg-red-500'
                     }`}>
                     {d.status === 'present' && <CheckCircle2 className="w-4 h-4" />}
                     {d.status === 'leave' && <Plane className="w-4 h-4" />}
                     {d.status === 'absent' && <XCircle className="w-4 h-4" />}
-                    {d.status === 'weekend' && <span className="text-[10px] text-black font-bold">W</span>}
+                    {d.status === 'pending' && <Clock className="w-3 h-3" />}
+                    {d.status === 'weekend' && <span className="text-[10px] text-muted-foreground font-black">W</span>}
+                    {d.status === 'not_started' && <div className="w-2 h-2 rounded-full bg-muted-foreground/20" />}
                   </Link>
                   <div className="text-center">
                     <span className="block text-xs font-bold text-foreground">{d.date}</span>

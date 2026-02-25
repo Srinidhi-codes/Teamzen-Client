@@ -27,10 +27,14 @@ export async function proxy(request: NextRequest) {
         // Try to refresh if we have a refresh token
         if (refreshToken) {
             try {
-                const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/'
-                const refreshEndpoint = process.env.NEXT_PUBLIC_REFRESH_ENDPOINT || 'auth/token/refresh/'
+                const API_BASE_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/'
+                const refreshEndpoint = process.env.NEXT_PUBLIC_REFRESH_ENDPOINT || 'auth/refresh/'
 
-                const response = await fetch(`${API_BASE_URL}${refreshEndpoint}`, {
+                // Ensure base URL ends with a slash for consistent concatenation
+                const normalizedBaseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL : `${API_BASE_URL}/`
+                const normalizedEndpoint = refreshEndpoint.startsWith('/') ? refreshEndpoint.slice(1) : refreshEndpoint
+
+                const response = await fetch(`${normalizedBaseUrl}${normalizedEndpoint}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

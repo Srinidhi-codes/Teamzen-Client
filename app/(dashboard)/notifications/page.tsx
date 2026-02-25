@@ -32,8 +32,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export default function NotificationsPage() {
     const [filter, setFilter] = useState("all");
-    const { data, loading, refetch } = useQuery(GET_MY_NOTIFICATIONS);
-    const { data: countData, refetch: refetchCount } = useQuery(GET_UNREAD_COUNT);
+    const { data, loading, refetch } = useQuery(GET_MY_NOTIFICATIONS, {
+        variables: { level: "personal" }
+    }) as any;
+    const { data: countData, refetch: refetchCount } = useQuery(GET_UNREAD_COUNT, {
+        variables: { level: "personal" }
+    }) as any;
 
     const [markRead] = useMutation(MARK_NOTIFICATION_READ);
     const [markAllRead] = useMutation(MARK_ALL_READ);
