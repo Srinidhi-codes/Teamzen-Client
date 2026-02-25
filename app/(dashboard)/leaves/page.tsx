@@ -23,14 +23,13 @@ import {
   History,
   FileText,
   User,
-  MoreVertical
+  MoreVertical,
+  XCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataTable, Column } from "@/components/common/DataTable";
-import { FormSelect } from "@/components/common/FormSelect";
-import { DatePickerSimple } from "@/components/ui/datePicker";
-import { Loader2 } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
+import { LeaveRequestModal } from "@/components/leaves/LeaveRequestModal";
+import { LeaveReviewModal } from "@/components/leaves/LeaveReviewModal";
 
 export default function LeavesPage() {
   const [showForm, setShowForm] = useState(false);
@@ -94,8 +93,15 @@ export default function LeavesPage() {
     if (formData.fromDate && formData.toDate) {
       const from = moment(formData.fromDate);
       const to = moment(formData.toDate);
-      const diff = to.diff(from, "days") + 1;
-      return diff > 0 ? diff : 0;
+      let count = 0;
+      let curr = from.clone();
+      while (curr.isSameOrBefore(to)) {
+        if (curr.day() !== 0 && curr.day() !== 6) {
+          count++;
+        }
+        curr.add(1, "days");
+      }
+      return count;
     }
     return 0;
   };
@@ -114,24 +120,24 @@ export default function LeavesPage() {
       key: "leaveType.name",
       label: "Leave Type",
       render: (name: string) => (
-        <span className="font-black italic text-primary group-hover:px-2 transition-all">{name}</span>
+        <span className="font-black italic group-hover:px-2 transition-all">{name}</span>
       )
     },
     {
       key: "fromDate",
       label: "Duration",
       render: (_: any, row: any) => (
-        <div className="flex items-center justify-center gap-2 w-2/3 bg-gray-200 p-1 rounded-lg border border-gray-300">
-          <span className="font-bold tabular-nums text-foreground/70">{moment(row.fromDate).format("MMM DD")}</span>
-          <ArrowRight className="w-3 h-3 text-muted-foreground/30" />
-          <span className="font-bold tabular-nums text-foreground/70">{moment(row.toDate).format("MMM DD")}</span>
+        <div className="flex items-center justify-center gap-2 bg-gray-200 p-1 w-34 rounded-xl border border-border">
+          <span className="font-bold tabular-nums">{moment(row.fromDate).format("MMM DD")}</span>
+          <ArrowRight className="w-3 h-3" />
+          <span className="font-bold tabular-nums">{moment(row.toDate).format("MMM DD")}</span>
         </div>
       )
     },
     {
       key: "durationDays",
       label: "Days",
-      render: (val: number) => <span className="font-black tabular-nums">{val}</span>
+      render: (val: number) => <span className="font-black tabular-nums">{Number(val)}</span>
     },
     {
       key: "status",
@@ -145,23 +151,8 @@ export default function LeavesPage() {
     {
       key: "actions",
       label: "Action",
-      className: "text-right",
       render: (_: any, row: any) => (
-        <div className="flex items-center justify-end gap-2">
-          {row.status === "pending" && (
-            <Button
-              variant="destructive"
-              size="sm"
-              className="h-8 px-3 text-[9px] opacity-0 group-hover:opacity-100 transition-all font-black"
-              onClick={(e) => {
-                e.stopPropagation();
-                cancelLeaveRequest(row.id);
-              }}
-              disabled={cancelLeaveRequestLoading}
-            >
-              VOID
-            </Button>
-          )}
+        <div className="flex items-center justify-start gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -170,6 +161,20 @@ export default function LeavesPage() {
           >
             REVIEW
           </Button>
+          {row.status === "pending" && (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="h-8 px-3 text-[9px] transition-all font-black"
+              onClick={(e) => {
+                e.stopPropagation();
+                cancelLeaveRequest(row.id);
+              }}
+              disabled={cancelLeaveRequestLoading}
+            >
+              Cancel
+            </Button>
+          )}
         </div>
       )
     }
@@ -226,7 +231,9 @@ export default function LeavesPage() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Utilized</p>
-                    <p className="text-3xl font-black text-foreground tabular-nums opacity-20 group-hover:opacity-100 transition-opacity">{balance.used}</p>
+                    <p className="text-3xl font-black text-foreground tabular-nums opacity-20 group-hover:opacity-100 transition-opacity">
+                      {Number(balance.used) + Number(balance.pendingApproval)}
+                    </p>
                   </div>
                 </div>
 
@@ -248,7 +255,7 @@ export default function LeavesPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
         {/* Left Column: Form or History */}
         <div className="lg:col-span-8 space-y-8">
           <div className="space-y-6">
@@ -272,16 +279,29 @@ export default function LeavesPage() {
         </div>
 
         {/* Right Column: Insights */}
-        <div className="lg:col-span-4 space-y-8 p-5 bg-card border border-border shadow-xl rounded-4xl h-2/3">
+        <div className="lg:col-span-4 space-y-8 p-5 bg-card border border-border shadow-xl rounded-4xl min-h-1/2">
           <Card title="System Insights">
             <div className="space-y-8">
               <div className="space-y-4">
                 <div className="flex items-center justify-between text-xs font-black uppercase tracking-widest">
                   <span className="text-muted-foreground">Annual Usage</span>
-                  <span className="text-primary font-black">72.5%</span>
+                  <span className="text-primary font-black">
+                    {Math.round(
+                      ((leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.used), 0) || 0) /
+                        (leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.totalEntitled), 0) || 1)) * 100
+                    )}%
+                  </span>
                 </div>
                 <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-primary w-[72.5%] shadow-[0_0_8px_rgba(var(--primary),0.8)]" />
+                  <div
+                    className="h-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.8)] transition-all duration-1000"
+                    style={{
+                      width: `${Math.round(
+                        ((leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.used), 0) || 0) /
+                          (leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.totalEntitled), 0) || 1)) * 100
+                      )}%`
+                    }}
+                  />
                 </div>
               </div>
 
@@ -302,9 +322,15 @@ export default function LeavesPage() {
                   },
                   {
                     label: "Pending Evaluations",
-                    val: `${leaveRequestData?.filter((r: any) => r.status === "pending").length || 0} Events`,
+                    val: `${leaveRequestData?.filter((r: any) => r.status === "pending").length || 0}`,
                     icon: Clock,
                     color: "text-orange-500"
+                  },
+                  {
+                    label: "Rejected Requests",
+                    val: `${leaveRequestData?.filter((r: any) => r.status === "rejected").length || 0}`,
+                    icon: XCircle,
+                    color: "text-red-500"
                   },
                 ].map((insight, i) => (
                   <div key={i} className="flex items-center justify-between group">
@@ -316,8 +342,6 @@ export default function LeavesPage() {
                   </div>
                 ))}
               </div>
-
-
 
               {leaveBalanceData?.find((b: any) => b.availableBalance <= 2) && (
                 <div className="p-5 rounded-2xl bg-destructive/5 border border-destructive/20 space-y-3">
@@ -334,183 +358,24 @@ export default function LeavesPage() {
           </Card>
         </div>
       </div>
-      {/* Logical Review Modal */}
-      {
-        viewDetails && (
-          <div className="fixed inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-            <div className="bg-card rounded-[3rem] w-full max-w-2xl shadow-[0_32px_128px_-16px_rgba(0,0,0,0.3)] border border-border overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
-              <div className="relative p-10 pb-8 bg-linear-to-br from-primary/10 via-background to-background text-primary">
-                <div className="absolute top-0 right-0 p-10 opacity-10">
-                  <FileText className="w-32 h-32 rotate-12" />
-                </div>
-                <div className="relative z-10 flex justify-between items-start">
-                  <div>
-                    <h2 className="text-4xl text-black font-black tracking-tighter italic leading-none mb-3">
-                      Request Leave
-                    </h2>
-                    <div className="flex items-center gap-3">
-                      <span className="px-3 py-1 bg-white/20 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-sm border border-white/10">
-                        #{viewDetails.id.slice(-8)}
-                      </span>
-                      <p className="text-primary-foreground/60 text-[10px] font-black uppercase tracking-widest">Leave Request</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setViewDetails(null)}
-                    className="w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition-all duration-300 flex items-center justify-center active:scale-90"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-              </div>
 
-              <div className="p-10 space-y-10">
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-8">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Leave Type</label>
-                    <p className="text-lg font-black italic text-primary">{viewDetails.leaveType.name}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Duration</label>
-                    <p className="text-lg font-black tabular-nums">{viewDetails.durationDays}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <Badge variant={getStatusVariant(viewDetails.status)}>{viewDetails.status}</Badge>
-                  </div>
-                </div>
+      <LeaveReviewModal
+        isOpen={!!viewDetails}
+        onClose={() => setViewDetails(null)}
+        viewDetails={viewDetails}
+        getStatusVariant={getStatusVariant}
+      />
 
-                <div className="space-y-2 bg-muted/30 p-6 rounded-3xl border border-border/50 w-2/3">
-                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                    <Calendar className="w-3 h-3 text-primary" /> Duration
-                  </label>
-                  <p className="text-sm font-black text-foreground tracking-widest uppercase flex items-center gap-3">
-                    {moment(viewDetails.fromDate).format("MMMM DD")}
-                    <ArrowRight className="w-4 h-4 text-primary opacity-30" />
-                    {moment(viewDetails.toDate).format("MMMM DD, YYYY")}
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                    <Info className="w-3 h-3 text-primary" /> Reason
-                  </label>
-                  <p className="text-sm font-medium text-foreground/80 leading-relaxed italic border-l-4 border-primary/20 pl-6">
-                    "{viewDetails.reason}"
-                  </p>
-                </div>
-
-                <div className="flex justify-end pt-4">
-                  <Button variant="secondary" onClick={() => setViewDetails(null)} className="px-10">
-                    Close
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-      }
-
-      {/* Leave Request Form Modal */}
-      {
-        showForm && (
-          <div className="fixed inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-            <div className="bg-card rounded-[3rem] w-full max-w-2xl shadow-[0_32px_128px_-16px_rgba(0,0,0,0.3)] border border-border overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
-              <div className="relative p-10 pb-8 bg-linear-to-br from-primary/10 via-background to-background text-primary">
-                <div className="absolute top-0 right-0 p-10 opacity-10">
-                  <FileText className="w-32 h-32 rotate-12" />
-                </div>
-                <div className="relative z-10 flex justify-between items-start">
-                  <div>
-                    <h2 className="text-4xl font-black text-black tracking-tighter leading-none mb-3">
-                      Initiate Leave
-                    </h2>
-                    <div className="flex items-center gap-3">
-                      <span className="px-3 py-1 bg-white/20 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-sm border border-white/10">
-                        NEW REQUEST
-                      </span>
-                      <p className="text-primary-foreground/60 text-[10px] font-black uppercase tracking-widest">Leave Protocol</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowForm(false)}
-                    className="w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition-all duration-300 flex items-center justify-center active:scale-90"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-10 overflow-y-auto max-h-[70vh]">
-                <form onSubmit={handleSubmit} className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <FormSelect
-                      label="Leave Type"
-                      value={formData.leaveTypeId}
-                      onValueChange={(value) => setFormData({ ...formData, leaveTypeId: value })}
-                      placeholder="Select Category"
-                      options={leaveBalanceData?.map((b: any) => ({
-                        label: `${b.leaveType.name} (${b.availableBalance} units)`,
-                        value: b.leaveType.id
-                      })) || []}
-                    />
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <DatePickerSimple
-                        label="Start Phase"
-                        value={formData.fromDate}
-                        onChange={(date) => setFormData({ ...formData, fromDate: moment(date).format("YYYY-MM-DD") })}
-                      />
-                      <DatePickerSimple
-                        label="End Phase"
-                        value={formData.toDate}
-                        onChange={(date) => setFormData({ ...formData, toDate: moment(date).format("YYYY-MM-DD") })}
-                      />
-                    </div>
-                  </div>
-
-                  {calculateDays() > 0 && (
-                    <div className="p-6 rounded-3xl bg-primary/5 border border-primary/20 flex items-center justify-between animate-in zoom-in-95">
-                      <div className="space-y-1">
-                        <p className="text-premium-label text-primary">Calculated Duration</p>
-                        <p className="text-2xl font-black">{calculateDays()} Operational Days</p>
-                      </div>
-                      <CheckCircle2 className="w-10 h-10 text-primary opacity-20" />
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <label className="text-premium-label ml-1">Reason</label>
-                    <Textarea
-                      value={formData.reason}
-                      onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                      placeholder="Enter detailed reason (min 10 chars)..."
-                    />
-                  </div>
-
-                  <div className="p-6 rounded-3xl bg-muted/30 border border-border/50 flex items-start gap-4">
-                    <Info className="w-6 h-6 text-primary shrink-0 mt-1" />
-                    <p className="text-xs font-medium text-muted-foreground leading-relaxed">
-                      Submission of this request triggers a validation sequence with the regional head.
-                      Ensure your <span className="text-primary font-bold">Leave Policy</span> supports the requested units.
-                    </p>
-                  </div>
-
-                  <div className="flex justify-end pt-4 gap-4">
-                    <Button variant="outline" type="button" onClick={() => setShowForm(false)} className="px-10 h-14 rounded-2xl font-black text-[11px] uppercase tracking-widest">
-                      Cancel
-                    </Button>
-                    <Button type="submit" className="btn-primary px-12 h-14 rounded-2xl shadow-xl shadow-primary/20" disabled={createLeaveRequestLoading}>
-                      {createLeaveRequestLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ChevronRight className="w-4 h-4 mr-2" />}
-                      Submit Request
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )
-      }
-
+      <LeaveRequestModal
+        isOpen={showForm}
+        onClose={() => setShowForm(false)}
+        formData={formData}
+        setFormData={setFormData}
+        onSubmit={handleSubmit}
+        leaveBalanceData={leaveBalanceData}
+        isLoading={createLeaveRequestLoading}
+        calculateDays={calculateDays}
+      />
     </div >
   );
 }

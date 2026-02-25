@@ -7,9 +7,10 @@ interface CustomInputProps extends React.ComponentProps<"input"> {
   error?: string;
   hint?: string;
   suffix?: React.ReactNode;
+  icon?: React.ReactNode;
 }
 
-function Input({ className, type, label, error, hint, suffix, ...props }: CustomInputProps) {
+function Input({ className, type, label, error, hint, suffix, icon, ...props }: CustomInputProps) {
   return (
     <div className="space-y-2 w-full">
       {label && (
@@ -19,12 +20,18 @@ function Input({ className, type, label, error, hint, suffix, ...props }: Custom
         </label>
       )}
       <div className="relative group">
+        {icon && (
+          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 z-10 text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none">
+            {icon}
+          </div>
+        )}
         <input
           type={type}
           data-slot="input"
           className={cn(
-            "flex h-[35px] w-full rounded-2xl border bg-background px-5 py-2 text-sm font-medium shadow-inner transition-all placeholder:text-muted-foreground/50 focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:opacity-50",
+            "flex h-[45px] w-full rounded-xl border bg-background px-5 py-2 text-sm font-medium shadow-inner transition-all placeholder:text-muted-foreground/50 focus:ring-4 focus:ring-primary/40 focus:border-primary outline-none disabled:cursor-not-allowed disabled:opacity-50",
             suffix ? "pr-14" : "",
+            icon ? "pl-11" : "",
             error
               ? "border-destructive/50 focus:ring-destructive/10"
               : "border-border/50 focus:ring-primary/10 hover:border-border",

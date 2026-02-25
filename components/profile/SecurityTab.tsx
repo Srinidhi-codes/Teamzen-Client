@@ -1,6 +1,8 @@
 import { Card } from "@/components/common/Card";
 import { useToast } from "@/components/common/ToastProvider";
 import { useGraphQLChangePassword } from "@/lib/api/graphqlHooks";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
 
 interface SecurityTabProps {
     onLogoutAll: () => void; // Or handle internally
@@ -57,18 +59,17 @@ export function SecurityTab() {
     };
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in transition-all duration-500">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in transition-all duration-500">
             <Card title="Change Password" hover gradient>
                 <form onSubmit={handleChangePassword} className="space-y-4">
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Current Password
                         </label>
-                        <input
+                        <Input
                             type="password"
                             name="current_password"
                             placeholder="Enter current password"
-                            className="w-full text-sm p-2 border border-gray-300 rounded-md text-gray-900 bg-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                             required
                         />
                     </div>
@@ -76,11 +77,10 @@ export function SecurityTab() {
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                             New Password
                         </label>
-                        <input
+                        <Input
                             type="password"
                             name="new_password"
                             placeholder="Enter new password"
-                            className="w-full text-sm p-2 border border-gray-300 rounded-md text-gray-900 bg-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                             required
                             minLength={8}
                         />
@@ -89,22 +89,21 @@ export function SecurityTab() {
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Confirm New Password
                         </label>
-                        <input
+                        <Input
                             type="password"
                             name="confirm_password"
                             placeholder="Confirm new password"
-                            className="w-full text-sm p-2 border border-gray-300 rounded-md text-gray-900 bg-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                             required
                             minLength={8}
                         />
                     </div>
-                    <button
+                    <Button
                         type="submit"
-                        className="btn-primary w-full"
+                        className="btn-primary"
                         disabled={isLoading}
                     >
                         {isLoading ? "Updating..." : "Update Password"}
-                    </button>
+                    </Button>
                 </form>
             </Card>
 
@@ -145,12 +144,13 @@ export function SecurityTab() {
                         </div>
                     </div>
 
-                    <button
+                    <Button
                         onClick={handleLogoutAll}
-                        className="btn-danger w-full"
+                        className="w-full"
+                        variant="destructive"
                     >
                         Logout All Devices
-                    </button>
+                    </Button>
                 </div>
             </Card>
         </div>
