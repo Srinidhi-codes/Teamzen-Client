@@ -9,12 +9,21 @@ import { ThemeSelector } from "./ThemeSelector";
 import client from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
+import { NotificationBell } from "./NotificationBell";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 
 export function Navbar() {
   const { user, isLoading: isUserLoading, error: userError } = useGraphQLUser();
   const { navbarTabs, activeNavbarTab, setActiveNavbarTab, logoutUser } = useStore();
   const router = useRouter();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -71,72 +80,79 @@ export function Navbar() {
 
 
           {/* User Menu */}
-          <div className="flex items-center space-x-4 shrink-0">
-            <div className="flex items-center bg-muted/30 p-1.5 rounded-2xl border border-border/50">
+          <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
+            <div className="flex items-center bg-muted/30 p-1.5 rounded-2xl border border-border/50 space-x-1">
+              <NotificationBell />
               <ThemeSelector />
             </div>
 
             {user && (
-              <div className="relative">
-                <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className={`flex items-center space-x-3 px-2 py-2 rounded-2xl transition-all ${dropdownOpen ? 'bg-primary/5 text-primary' : 'hover:bg-muted/50 text-foreground'}`}
-                >
-                  <div className="w-10 h-10 bg-linear-to-br from-primary to-primary/60 rounded-xl flex items-center justify-center text-primary-foreground text-sm font-black shadow-lg shadow-primary/10">
-
-                    {user.firstName?.charAt(0)}
-                    {user.lastName?.charAt(0)}
-                  </div>
-                  <div className="flex-col items-start hidden sm:flex">
-
-                    <span className="text-sm font-black tracking-tight leading-none group-hover:text-primary">
-                      {user.firstName} {user.lastName}
-                    </span>
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">
-                      Administrator
-                    </span>
-                  </div>
-                </button>
-
-
-
-                {/* Dropdown */}
-                {dropdownOpen && (
-                  <>
-                    <div className="fixed inset-0 z-0" onClick={() => setDropdownOpen(false)}></div>
-                    <div className="absolute right-0 mt-3 w-56 bg-card border border-border rounded-3xl shadow-2xl py-3 z-10 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                      <div className="px-4 py-3 border-b border-border/50 bg-muted/20 mb-2">
-                        <p className="text-xs font-black text-primary uppercase tracking-widest mb-1">Signed in as</p>
-                        <p className="text-sm font-bold text-foreground truncate">{user.email}</p>
-                      </div>
-
-                      <Link
-                        href="/profile"
-                        className="flex items-center space-x-3 px-4 py-3 hover:bg-primary/5 text-sm font-bold text-foreground transition-colors group"
-                      >
-                        <span className="group-hover:scale-110 transition-transform">👤</span>
-                        <span>My Profile</span>
-                      </Link>
-                      <Link
-                        href="/settings"
-                        className="flex items-center space-x-3 px-4 py-3 hover:bg-primary/5 text-sm font-bold text-foreground transition-colors group"
-                      >
-                        <span className="group-hover:scale-110 transition-transform">⚙️</span>
-                        <span>Settings</span>
-                      </Link>
-
-                      <hr className="my-2 border-border/50" />
-                      <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-destructive/10 text-sm font-bold text-destructive transition-colors group"
-                      >
-                        <span className="group-hover:scale-110 transition-transform">🚪</span>
-                        <span>Logout</span>
-                      </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center space-x-3 px-2 py-2 rounded-2xl transition-all hover:bg-muted/50 text-foreground group focus:outline-hidden">
+                    <div className="w-10 h-10 bg-linear-to-br from-primary to-primary/60 rounded-xl flex items-center justify-center text-primary-foreground text-sm font-black shadow-lg shadow-primary/10">
+                      {user.firstName?.charAt(0)}
+                      {user.lastName?.charAt(0)}
                     </div>
-                  </>
-                )}
-              </div>
+                    <div className="flex-col items-start hidden sm:flex">
+                      <span className="text-sm font-black tracking-tight leading-none group-hover:text-primary transition-colors">
+                        {user.firstName} {user.lastName}
+                      </span>
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">
+                        {user.role}
+                      </span>
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 p-2 rounded-3xl shadow-2xl border-border">
+                  <DropdownMenuLabel className="px-4 py-3 bg-muted/20 rounded-2xl mb-1">
+                    <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Signed in as</p>
+                    <p className="text-sm font-bold text-foreground truncate">{user.email}</p>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-border/50 my-1" />
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/profile"
+                      className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-primary/5 cursor-pointer group"
+                    >
+                      <span className="text-lg group-hover:scale-110 transition-transform">👤</span>
+                      <span className="text-sm font-bold">My Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+
+                  {(user.role === 'admin' || user.role === 'manager') && (
+                    <DropdownMenuItem asChild>
+                      <a
+                        href="http://localhost:3001/dashboard"
+                        className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-orange-500/10 text-orange-600 dark:text-orange-400 cursor-pointer group"
+                      >
+                        <span className="text-lg group-hover:scale-110 transition-transform">⚡</span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold">Admin Panel</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Manager View</span>
+                        </div>
+                      </a>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/settings"
+                      className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-primary/5 cursor-pointer group"
+                    >
+                      <span className="text-lg group-hover:scale-110 transition-transform">⚙️</span>
+                      <span className="text-sm font-bold">Settings</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-border/50 my-1" />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-destructive/10 text-destructive cursor-pointer group focus:bg-destructive/10 focus:text-destructive"
+                  >
+                    <span className="text-lg group-hover:scale-110 transition-transform">🚪</span>
+                    <span className="text-sm font-bold">Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
 

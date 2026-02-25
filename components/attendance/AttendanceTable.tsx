@@ -71,7 +71,6 @@ export function AttendanceTable({
                         <Clock className="w-3 h-3 text-muted-foreground" />
                         {value ? moment(value, "HH:mm:ss").format("hh:mm:ss A") : "--:--:--"}
                     </div>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Authorized</p>
                 </div>
             ),
         },
@@ -84,7 +83,6 @@ export function AttendanceTable({
                         <Clock className="w-3 h-3 text-muted-foreground" />
                         {value ? moment(value, "HH:mm:ss").format("hh:mm:ss A") : "--:--:--"}
                     </div>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Termination</p>
                 </div>
             ),
         },
@@ -137,14 +135,24 @@ export function AttendanceTable({
         ...(data?.some(row => row.correctionStatus !== "approved") ? [{
             key: "correctionActions",
             label: "Terminal Actions",
-            className: "text-right",
             render: (_: unknown, row: AttendanceRow) => {
                 const status = row.correctionStatus;
                 if (status === "approved") {
                     return null;
                 }
                 return (
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-start gap-2">
+                        {status === "pending" && row.correctionId && (
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-8 px-4 text-[9px] font-black tracking-widest"
+                                onClick={() => onCancelCorrection(row.correctionId!)}
+                            >
+                                <RotateCcw className="w-3 h-3 mr-1.5" />
+                                Cancel
+                            </Button>
+                        )}
                         {(!status || status === "rejected" || status === "cancelled") && (
                             <Button
                                 size="sm"
@@ -156,17 +164,6 @@ export function AttendanceTable({
                             </Button>
                         )}
 
-                        {status === "pending" && row.correctionId && (
-                            <Button
-                                size="sm"
-                                variant="destructive"
-                                className="h-8 px-4 text-[9px] font-black tracking-widest"
-                                onClick={() => onCancelCorrection(row.correctionId!)}
-                            >
-                                <RotateCcw className="w-3 h-3 mr-1.5" />
-                                VOID
-                            </Button>
-                        )}
                     </div>
                 );
             },

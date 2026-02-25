@@ -2,50 +2,7 @@ import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_ME } from "../graphql/users/queries";
 import { UPDATE_PROFILE, CHANGE_PASSWORD } from "../graphql/users/mutations";
 
-export interface GraphqlUser {
-  id: string;
-  email: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  phoneNumber: string;
-  role: string;
-  isActive: boolean;
-  isVerified: boolean;
-  dateOfJoining: string;
-  dateOfBirth: string;
-  gender: string;
-  profilePictureUrl: string | null;
-  employeeId: string;
-  employmentType: string;
-  manager: {
-    id: string;
-    firstName: string;
-    lastName: string;
-  } | null;
-  department: {
-    id: string;
-    name: string;
-  } | null;
-  designation: {
-    id: string;
-    name: string;
-  } | null;
-  officeLocation: {
-    id: string;
-    name: string;
-    address: string;
-  } | null;
-  bankAccountNumber: string;
-  bankIfscCode: string;
-  panNumber: string;
-  aadharNumber: string;
-  uanNumber: string;
-  attendanceRate: number;
-  leaveBalance: number;
-  totalLeaveEntitlement: number;
-  tenureDisplay: string;
-}
+import { GraphQLUser } from "../graphql/users/types";
 
 import { useStore } from "@/lib/store/useStore";
 import { useEffect } from "react";

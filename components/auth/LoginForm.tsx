@@ -14,6 +14,8 @@ import {
   ArrowRight,
   Fingerprint
 } from "lucide-react";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -51,79 +53,66 @@ export default function LoginForm() {
       <div className="max-w-md w-full space-y-8 relative z-10">
         <div className="animate-fade-in text-center">
           {/* Enhanced Logo */}
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-linear-to-tr from-primary to-primary/60 shadow-lg shadow-primary/20 mb-6 transform hover:rotate-6 transition-transform duration-300">
+          {/* <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-linear-to-tr from-primary to-primary/60 shadow-lg shadow-primary/20 mb-6 transform hover:rotate-6 transition-transform duration-300">
             <Fingerprint className="w-10 h-10 text-primary-foreground" />
-          </div>
-          <h2 className="text-3xl font-extrabold text-foreground tracking-tight">Personnel Portal</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Enter your identifiers to access the dashboard</p>
+          </div> */}
+          <h2 className="text-3xl font-extrabold text-foreground tracking-tight">Teamzen User Portal</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Enter your identifiers to access your account</p>
         </div>
 
-        <div className="glass p-8 rounded-3xl animate-slide-up">
+        <div className="glass p-8 rounded-3xl animate-slide-up bg-linear-to-b from-primary/30 via-primary/15">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               {/* Email Field */}
-              <div className="space-y-1.5">
-                <label htmlFor="email-address" className="text-sm font-medium text-foreground/80 ml-1">Universal Identifier</label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                  </div>
-                  <input
-                    id="email-address"
-                    name="email"
-                    type="email"
-                    required
-                    className="block w-full pl-11 pr-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-                    placeholder="you@organization.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-              </div>
+              <Input
+                id="email-address"
+                label="Email Address"
+                name="email"
+                type="email"
+                required
+                icon={<Mail className="h-4 w-4" />}
+                placeholder="you@organization.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
 
               {/* Password Field */}
-              <div className="space-y-1.5">
-                <label htmlFor="password" className="text-sm font-medium text-foreground/80 ml-1">Access Protocol</label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                  </div>
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    required
-                    className="block w-full pl-11 pr-12 py-3 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+              <Input
+                label="Password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                required
+                icon={<Lock className="h-4 w-4" />}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                suffix={
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-muted-foreground hover:text-primary transition-colors"
+                    className="flex items-center text-muted-foreground hover:text-primary transition-colors"
                   >
                     {showPassword ? (
-                      <EyeOff className="h-5 w-5" />
+                      <EyeOff className="h-4 w-4" />
                     ) : (
-                      <Eye className="h-5 w-5" />
+                      <Eye className="h-4 w-4" />
                     )}
                   </button>
-                </div>
-              </div>
+                }
+              />
             </div>
 
             <div className="flex items-center justify-between px-1">
               <label className="flex items-center space-x-2 cursor-pointer group">
                 <input type="checkbox" className="w-4 h-4 rounded border-border bg-card text-primary focus:ring-primary cursor-pointer" />
-                <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Stay logged in</span>
+                <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Remember me</span>
               </label>
               <Link href="#" className="text-sm font-medium text-primary hover:opacity-80 no-underline transition-colors">
                 Recover access?
               </Link>
             </div>
 
-            <button
+            <Button
               type="submit"
               disabled={login.isPending}
               className="w-full py-3.5 px-4 bg-linear-to-r from-primary to-primary/80 hover:opacity-90 text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/20 transform active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
@@ -135,22 +124,16 @@ export default function LoginForm() {
                 </>
               ) : (
                 <>
-                  <span>Sign in</span>
+                  <span>SIGN IN</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
-            </button>
+            </Button>
           </form>
-
-          <div className="mt-8 pt-6 border-t border-border text-center">
-            <p className="text-sm text-muted-foreground">
-              New node? <Link href="/register" className="font-semibold text-primary hover:opacity-80 transition-colors">Request registration</Link>
-            </p>
-          </div>
         </div>
 
         <p className="text-center text-xs text-gray-400">
-          &copy; 2025 Payroll Professional. Secured by Enterprise Access.
+          &copy; 2025 Teamzen Pvt. Ltd. All rights reserved.
         </p>
       </div>
     </div>

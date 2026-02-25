@@ -1,4 +1,4 @@
-import {gql} from "@apollo/client";
+import { gql } from "@apollo/client";
 
 export const GET_ATTENDANCE = gql`  
     query MyAttendance($input: AttendanceInput) {
@@ -9,6 +9,8 @@ export const GET_ATTENDANCE = gql`
     logoutTime
     loginDistance
     logoutDistance
+    actualLoginTime
+    actualLogoutTime
     isVerified
     workedHours
     status

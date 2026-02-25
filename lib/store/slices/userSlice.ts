@@ -6,7 +6,7 @@ export interface UserSlice {
   user: GraphQLUser | null;
   isAuthenticated: boolean;
   // Actions
-  loginUser: (backendData: any) => void;
+  loginUser: (backendData: GraphQLUser) => void;
   setAuthenticatedUser: (user: GraphQLUser) => void;
   updateUser: (updates: Partial<GraphQLUser>) => void;
   logoutUser: () => void;
@@ -15,7 +15,7 @@ export interface UserSlice {
 export const createUserSlice: StateCreator<UserSlice> = (set) => ({
   user: null,
   isAuthenticated: false,
-  loginUser: (backendData: any) => {
+  loginUser: (backendData: GraphQLUser) => {
     // Transform data here, keeping the component clean
     const formattedUser = mapBackendUserToFrontendUser(backendData);
     set({ user: formattedUser, isAuthenticated: true });
@@ -23,7 +23,7 @@ export const createUserSlice: StateCreator<UserSlice> = (set) => ({
   setAuthenticatedUser: (user: GraphQLUser) => {
     set({ user, isAuthenticated: true });
   },
-  updateUser: (updates) =>
+  updateUser: (updates: Partial<GraphQLUser>) =>
     set((state) => ({
       user: state.user ? { ...state.user, ...updates } : null,
     })),

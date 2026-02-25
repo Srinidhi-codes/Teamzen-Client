@@ -39,24 +39,17 @@ import { ModernStat } from "@/components/common/Stats";
 import { FAB } from "@/components/common/FAB";
 import { Badge } from "@/components/common/Badge";
 
-// Mock data for the chart to match the visual for now
-const attendanceTrendData = [
-  { name: "Aug", value: 92 },
-  { name: "Sep", value: 95 },
-  { name: "Oct", value: 88 },
-  { name: "Nov", value: 96 },
-  { name: "Dec", value: 89 },
-  { name: "Jan", value: 94 },
-  { name: "Feb", value: 94 },
-];
+// Attendance Trend Chart imports handled below
+
+import { useQuery } from "@apollo/client/react";
+import { GET_USER_DASHBOARD_STATS } from "@/lib/graphql/dashboard/queries";
 
 export default function DashboardPage() {
   const { user, isLoading: isUserLoading } = useGraphQLUser();
-  const { leaveRequestData, isLoading: isLeavesLoading } = useGraphQLLeaveRequests();
-  const { attendance: attendanceData, isLoading: isAttendanceLoading } = useGraphQlAttendance();
+  const { data: dashboardData, loading: isDashboardLoading } = useQuery(GET_USER_DASHBOARD_STATS);
   const [isFabOpen, setIsFabOpen] = useState(false);
 
-  const isLoading = isUserLoading || isLeavesLoading || isAttendanceLoading;
+  const isLoading = isUserLoading || isDashboardLoading;
 
   if (isLoading) {
     return (
@@ -67,57 +60,23 @@ export default function DashboardPage() {
     );
   }
 
-  // --- Derived Data Calculations ---
+  const stats = (dashboardData as any)?.userDashboardStats || {};
 
-  const pendingLeavesCount = leaveRequestData?.filter((r: any) => r.status === 'pending').length || 0;
-
-  // Calculate days present based on attendance records with 'present' status
-  const daysPresentCount = attendanceData?.filter((a: any) => a.status === 'present').length || 0;
-
-  // Recent Activity: Combine leaves and attendance logs
-  const recentActivity = [
-    ...(leaveRequestData?.map((l: any) => ({
-      type: 'leave',
-      title: l.status === 'approved' ? 'Leave Approved' : 'Leave Pending',
-      desc: l.status === 'approved'
-        ? `Annual leave request for ${moment(l.fromDate).format("MMM DD")} approved`
-        : `Work exception request awaiting approval`,
-      date: l.createdAt || l.fromDate, // Fallback if createdAt missing
-      icon: l.status === 'approved' ? CheckCircle2 : Clock,
-      color: l.status === 'approved' ? 'text-emerald-500' : 'text-orange-500',
-      bg: l.status === 'approved' ? 'bg-emerald-500/10' : 'bg-orange-500/10'
-    })) || []),
-    ...(attendanceData?.slice(0, 5).map((a: any) => ({
-      type: 'attendance',
-      title: 'Checked In',
-      desc: `Morning attendance marked at ${moment(a.date).format("h:mm A")}`, // Assuming date has time or using a fake time
-      date: a.date,
-      icon: Clock,
-      color: 'text-emerald-500',
-      bg: 'bg-emerald-500/10'
-    })) || [])
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 4);
-
-  // Last 7 Days Attendance Status
-  const last7Days = Array.from({ length: 7 }).map((_, i) => {
-    const d = moment().subtract(6 - i, 'days');
-    const record = attendanceData?.find((a: any) => moment(a.date).isSame(d, 'day'));
-    let status = 'absent';
-    if (record) status = 'present';
-    // Check if it was a leave day (simplified check)
-    const onLeave = leaveRequestData?.find((l: any) =>
-      d.isBetween(moment(l.fromDate), moment(l.toDate), 'day', '[]') && l.status === 'approved'
-    );
-    if (onLeave) status = 'leave';
-    if (d.day() === 0 || d.day() === 6) status = 'weekend'; // Weekend check
+  // Recent Activity: Use data from backend
+  const recentActivity = stats.recentActivities?.map((item: any) => {
+    const isLeave = item.action.toLowerCase().includes('leave');
+    const isNotif = item.id.includes('notif');
 
     return {
-      dayStr: d.format('ddd'),
-      dateNum: d.format('D'),
-      status,
-      fullDate: d
+      ...item,
+      title: isLeave ? 'Leave Request' : isNotif ? 'System Message' : 'Attendance Log',
+      desc: item.action,
+      date: item.time,
+      icon: isLeave ? Calendar : isNotif ? Zap : Clock,
+      color: 'text-primary',
+      bg: 'bg-primary/10'
     };
-  });
+  }) || [];
 
   return (
     <div className="p-6 space-y-8 animate-fade-in relative min-h-screen bg-background/50">
@@ -139,43 +98,51 @@ export default function DashboardPage() {
 
       {/* Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <ModernStat
-          icon={TrendingUp}
-          label="Attendance Rate"
-          value={`${user?.attendanceRate || 0}%`}
-          color="text-emerald-500"
-          bg="bg-emerald-500/10"
-          trend="+2%"
-        />
-        <ModernStat
-          icon={Calendar}
-          label="Leave Balance"
-          value={user?.leaveBalance || 0}
-          color="text-blue-500"
-          bg="bg-blue-500/10"
-        />
-        <ModernStat
-          icon={Clock}
-          label="Pending Requests"
-          value={pendingLeavesCount}
-          color="text-orange-500"
-          bg="bg-orange-500/10"
-        />
-        <ModernStat
-          icon={Users}
-          label="Days Present"
-          value={daysPresentCount}
-          color="text-purple-500"
-          bg="bg-purple-500/10"
-          trend="+5%"
-        />
-        <ModernStat
-          icon={DollarSign}
-          label="Monthly Salary"
-          value={`$${user?.salary || '8,500'}`} // Mock/User salary
-          color="text-emerald-500"
-          bg="bg-emerald-500/10"
-        />
+        <Link href="/attendance/attendance-correction">
+          <ModernStat
+            icon={TrendingUp}
+            label="Attendance Rate"
+            value={`${stats.attendanceRate || 0}%`}
+            color="text-emerald-500"
+            bg="bg-emerald-500/10"
+          />
+        </Link>
+        <Link href="/leaves">
+          <ModernStat
+            icon={Calendar}
+            label="Leave Balance"
+            value={stats.leaveBalances?.[0]?.balance || 0}
+            color="text-blue-500"
+            bg="bg-blue-500/10"
+          />
+        </Link>
+        <Link href="/leaves">
+          <ModernStat
+            icon={Clock}
+            label="Pending Requests"
+            value={stats.pendingRequestsCount || 0}
+            color="text-orange-500"
+            bg="bg-orange-500/10"
+          />
+        </Link>
+        <Link href="/attendance/attendance-correction">
+          <ModernStat
+            icon={Users}
+            label="Days Present"
+            value={stats.daysPresent || 0}
+            color="text-purple-500"
+            bg="bg-purple-500/10"
+          />
+        </Link>
+        <Link href="/payroll">
+          <ModernStat
+            icon={DollarSign}
+            label="Monthly Salary"
+            value={`$${(user as any)?.salary || '8,500'}`} // Mock/User salary
+            color="text-emerald-500"
+            bg="bg-emerald-500/10"
+          />
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -187,11 +154,15 @@ export default function DashboardPage() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-black tracking-tight">Recent Activity</h2>
-              <Button variant="ghost" className="text-primary text-xs font-bold uppercase tracking-widest hover:bg-primary/5">View All</Button>
+              <Link href="/notifications" className="text-primary text-xs font-bold uppercase tracking-widest cursor-pointer">View All</Link>
             </div>
             <div className="space-y-4">
               {recentActivity.length > 0 ? recentActivity.map((item: any, i: number) => (
-                <div key={i} className="flex items-center justify-between p-4 rounded-4xl bg-card border border-border/40 hover:border-primary/20 hover:shadow-lg hover:translate-y-[-4px] transition-all duration-300 group">
+                <Link
+                  key={i}
+                  href={item.id.includes('notif') ? '/notifications' : item.id.includes('leave') ? '/leaves' : '/attendance'}
+                  className="flex items-center justify-between p-4 rounded-3xl bg-card border border-border hover:border-primary/20 hover:shadow-lg transition-all group cursor-pointer"
+                >
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-2xl ${item.bg} ${item.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
                       <item.icon className="w-5 h-5" />
@@ -205,7 +176,7 @@ export default function DashboardPage() {
                     <span>{moment(item.date).fromNow()}</span>
                     <ChevronRight className="w-4 h-4" />
                   </div>
-                </div>
+                </Link>
               )) : (
                 <div className="text-center py-10 text-muted-foreground text-sm">No recent activity detected.</div>
               )}
@@ -221,7 +192,7 @@ export default function DashboardPage() {
           >
             <div className="h-[250px] w-full mt-4">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={attendanceTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart data={stats.attendanceTrend || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorTrend" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3} />
@@ -232,7 +203,7 @@ export default function DashboardPage() {
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.2)', backgroundColor: 'var(--card)', color: 'var(--card-foreground)' }}
                     itemStyle={{ color: 'var(--primary)', fontWeight: 'bold' }}
                   />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} dy={10} />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} />
                   <CartesianGrid vertical={false} stroke="#e5e7eb" strokeDasharray="5 5" opacity={0.5} />
                   <Area type="monotone" dataKey="value" stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorTrend)" />
@@ -276,6 +247,41 @@ export default function DashboardPage() {
 
         {/* Right Column (Sidebar) */}
         <div className="lg:col-span-1 space-y-8">
+
+          {/* Last 7 Days Widget */}
+          <div className="bg-card rounded-4xl p-6 border border-border/40 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <h3 className="font-black text-sm uppercase tracking-wider">Last 7 Days</h3>
+            </div>
+
+            <div className="flex justify-between items-center px-1">
+              {stats.last7Days?.map((d: any, i: number) => (
+                <div key={i} className="flex flex-col items-center gap-3">
+                  <Link href="/attendance/attendance-correction" className={`w-8 h-8 rounded-full flex items-center justify-center text-white shadow-sm transition-all hover:scale-110 cursor-default ${d.status === 'present' ? 'bg-emerald-500' :
+                    d.status === 'leave' ? 'bg-orange-500' :
+                      d.status === 'weekend' ? 'bg-muted text-muted-foreground opacity-30 shadow-none' :
+                        d.status === 'pending' ? 'bg-amber-500' :
+                          d.status === 'not_started' ? 'bg-muted/30 border border-dashed border-muted-foreground/20' :
+                            'bg-red-500'
+                    }`}>
+                    {d.status === 'present' && <CheckCircle2 className="w-4 h-4" />}
+                    {d.status === 'leave' && <Plane className="w-4 h-4" />}
+                    {d.status === 'absent' && <XCircle className="w-4 h-4" />}
+                    {d.status === 'pending' && <Clock className="w-3 h-3" />}
+                    {d.status === 'weekend' && <span className="text-[10px] text-muted-foreground font-black">W</span>}
+                    {d.status === 'not_started' && <div className="w-2 h-2 rounded-full bg-muted-foreground/20" />}
+                  </Link>
+                  <div className="text-center">
+                    <span className="block text-xs font-bold text-foreground">{d.date}</span>
+                    <span className="block text-[9px] font-bold text-muted-foreground uppercase">{d.dayStr}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {/* Payroll Summary */}
           <Card
@@ -334,34 +340,6 @@ export default function DashboardPage() {
             </div>
           </Card>
 
-          {/* Last 7 Days Widget */}
-          <Card
-            title="Last 7 Days"
-            icon={Calendar}
-            gradient
-            hover
-          >
-            <div className="flex justify-between items-center px-1 mt-4">
-              {last7Days.map((d, i) => (
-                <div key={i} className="flex flex-col items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white shadow-sm transition-all hover:scale-110 cursor-default ${d.status === 'present' ? 'bg-emerald-500 shadow-emerald-500/20' :
-                    d.status === 'leave' ? 'bg-orange-500 shadow-orange-500/20' :
-                      d.status === 'weekend' ? 'bg-muted text-muted-foreground opacity-50' :
-                        'bg-red-500 shadow-red-500/20'
-                    }`}>
-                    {d.status === 'present' && <CheckCircle2 className="w-4 h-4" />}
-                    {d.status === 'leave' && <Plane className="w-4 h-4" />}
-                    {d.status === 'absent' && <XCircle className="w-4 h-4" />}
-                    {d.status === 'weekend' && <span className="text-[10px] font-black">W</span>}
-                  </div>
-                  <div className="text-center">
-                    <span className="block text-xs font-bold text-foreground">{d.dateNum}</span>
-                    <span className="block text-[9px] font-bold text-muted-foreground uppercase">{d.dayStr}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
 
           {/* Performance Insights Card */}
           <div className="relative overflow-hidden rounded-4xl bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 text-white p-8 shadow-xl shadow-purple-500/20 hover:translate-y-[-8px] transition-all duration-500 ease-out">
@@ -382,8 +360,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
-        </div>
-      </div>
+        </div >
+      </div >
 
       {/* Floating Action Buttons */}
       {/* Floating Action Buttons */}
@@ -409,7 +387,7 @@ export default function DashboardPage() {
         </button>
       </div>
 
-    </div>
+    </div >
   );
 }
 
