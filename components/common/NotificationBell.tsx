@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import moment from "moment";
 
 
 export function NotificationBell() {
@@ -138,7 +139,7 @@ export function NotificationBell() {
                             <DropdownMenuItem
                                 key={notif.id}
                                 className={cn(
-                                    "px-5 py-4 focus:bg-primary/5 transition-colors cursor-pointer relative group flex items-start gap-4 mx-1 rounded-2xl",
+                                    "px-5 py-4 focus:bg-primary/5 transition-colors cursor-pointer relative group flex items-start mb-2 mx-1 rounded-2xl",
                                     !notif.isRead && "bg-primary/5"
                                 )}
                                 onClick={() => handleRedirect(notif)}
@@ -160,7 +161,7 @@ export function NotificationBell() {
                                         {notif.message}
                                     </p>
                                     <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
-                                        {new Date(notif.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} at {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        {moment(notif.createdAt).format("MMM DD, YYYY HH:mm A")}
                                     </p>
                                 </div>
 

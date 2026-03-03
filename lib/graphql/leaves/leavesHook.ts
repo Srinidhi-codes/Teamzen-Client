@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@apollo/client/react"
-import { GetLeaveBalanceResponse, GetLeaveRequestResponse, GetLeavesResponse, LeaveType } from "./types";
-import { GET_LEAVE_BALANCE, GET_LEAVE_REQUESTS, GET_LEAVES } from "./queries";
+import { GetLeaveBalanceResponse, GetLeaveRequestResponse, GetLeavesResponse, GetTeamLeavesResponse, LeaveType } from "./types";
+import { GET_LEAVE_BALANCE, GET_LEAVE_REQUESTS, GET_LEAVES, GET_TEAM_LEAVES } from "./queries";
 import { CANCEL_LEAVE_REQUEST, CREATE_LEAVE_REQUEST } from "./mutations";
 
 export function useGraphQlLeaves(organizationId: string) {
@@ -37,6 +37,19 @@ export function useGraphQLLeaveRequests() {
 
    return {
       leaveRequestData: data?.getLeaveRequests ?? [],
+      isLoading: loading,
+      error,
+      refetch
+   }
+}
+
+export function useGraphQLTeamLeaves() {
+   const { data, loading, error, refetch } = useQuery<GetTeamLeavesResponse>(GET_TEAM_LEAVES, {
+      fetchPolicy: 'network-only',
+   })
+
+   return {
+      teamLeavesData: data?.teamLeaves ?? [],
       isLoading: loading,
       error,
       refetch

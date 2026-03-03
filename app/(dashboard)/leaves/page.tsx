@@ -1,6 +1,6 @@
 "use client";
 
-import { useGraphQLCancelLeaveRequest, useGraphQLCreateLeaveRequest, useGraphQlLeaveBalance, useGraphQLLeaveRequests } from "@/lib/graphql/leaves/leavesHook";
+import { useGraphQLCancelLeaveRequest, useGraphQLCreateLeaveRequest, useGraphQlLeaveBalance, useGraphQLLeaveRequests, useGraphQLTeamLeaves } from "@/lib/graphql/leaves/leavesHook";
 import { useStore } from "@/lib/store/useStore";
 import { useState } from "react";
 import { Card } from "@/components/common/Card";
@@ -24,12 +24,14 @@ import {
   FileText,
   User,
   MoreVertical,
-  XCircle
+  XCircle,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataTable, Column } from "@/components/common/DataTable";
 import { LeaveRequestModal } from "@/components/leaves/LeaveRequestModal";
 import { LeaveReviewModal } from "@/components/leaves/LeaveReviewModal";
+import Image from "next/image";
 
 export default function LeavesPage() {
   const [showForm, setShowForm] = useState(false);
@@ -47,6 +49,7 @@ export default function LeavesPage() {
   const { leaveRequestData, isLoading: leaveRequestLoading } = useGraphQLLeaveRequests();
   const { cancelLeaveRequest, cancelLeaveRequestLoading } = useGraphQLCancelLeaveRequest();
   const { createLeaveRequest, createLeaveRequestLoading } = useGraphQLCreateLeaveRequest();
+  const { teamLeavesData, isLoading: teamLeavesLoading } = useGraphQLTeamLeaves();
   const router = useRouter();
 
   // Pagination State
@@ -97,7 +100,7 @@ export default function LeavesPage() {
       let count = 0;
       let curr = from.clone();
       while (curr.isSameOrBefore(to)) {
-        if (curr.day() !== 0 && curr.day() !== 6) {
+        if (curr.day() !== 0) { // Only exclude Sundays
           count++;
         }
         curr.add(1, "days");
@@ -128,7 +131,7 @@ export default function LeavesPage() {
       key: "fromDate",
       label: "Duration",
       render: (_: any, row: any) => (
-        <div className="flex items-center justify-center gap-2 bg-gray-200 p-1 w-34 rounded-xl border border-border">
+        <div className="flex items-center justify-center gap-2 bg-foreground/5 p-1 w-34 rounded-xl border border-border">
           <span className="font-bold tabular-nums">{moment(row.fromDate).format("MMM DD")}</span>
           <ArrowRight className="w-3 h-3" />
           <span className="font-bold tabular-nums">{moment(row.toDate).format("MMM DD")}</span>
@@ -360,6 +363,63 @@ export default function LeavesPage() {
         </div>
       </div>
 
+      {/* Team on Leave Section */}
+      <div className="space-y-6">
+        <h2 className="text-premium-label flex items-center gap-3">
+          <Users className="w-4 h-4 text-primary" />
+          Team on Leave
+        </h2>
+        <div className="premium-card overflow-hidden">
+          {teamLeavesLoading ? (
+            <div className="p-8 flex justify-center">
+              <LoadingSpinner />
+            </div>
+          ) : teamLeavesData.length === 0 ? (
+            <div className="p-12 text-center space-y-3">
+              <Users className="w-12 h-12 text-muted-foreground/20 mx-auto" />
+              <p className="text-sm text-muted-foreground font-medium italic">No colleagues currently on leave. Maximum operational capacity.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto no-scrollbar">
+              <div className="flex gap-6 p-2 min-w-max">
+                {teamLeavesData.map((leave: any) => (
+                  <div key={leave.id} className="w-64 border border-border shadow-md rounded-3xl p-6 relative group hover:border-primary/30 transition-all hover:bg-muted/30">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden border border-border/40">
+                        {leave.user.profilePicture ? (
+                          <Image src={leave.user.profilePicture.url as string} alt={leave.user.firstName} width={48} height={48} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-primary font-black text-sm">
+                            {leave.user.firstName.charAt(0)}{leave.user.lastName ? leave.user.lastName.charAt(0) : ''}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-black text-foreground truncate max-w-[120px]">
+                          {leave.user.firstName} {leave.user.lastName || ''}
+                        </span>
+                        <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{leave.leaveType.name}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 bg-background/50 p-2 rounded-xl border border-border">
+                      <Calendar className="w-3 h-3 text-muted-foreground" />
+                      <div className="flex items-center gap-1.5 text-[10px] font-black tracking-tight text-foreground/80">
+                        <span className="tabular-nums">{moment(leave.fromDate).format("MMM DD")}</span>
+                        <ArrowRight className="w-2 h-2 opacity-30" />
+                        <span className="tabular-nums">{moment(leave.toDate).format("MMM DD")}</span>
+                      </div>
+                      <div className="ml-auto bg-primary/10 px-1.5 py-0.5 rounded-lg text-primary text-[9px] font-black">
+                        {Math.round(leave.durationDays)}d
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       <LeaveReviewModal
         isOpen={!!viewDetails}
         onClose={() => setViewDetails(null)}
@@ -376,6 +436,8 @@ export default function LeavesPage() {
         leaveBalanceData={leaveBalanceData}
         isLoading={createLeaveRequestLoading}
         calculateDays={calculateDays}
+        errors={errors}
+        teamLeavesData={teamLeavesData}
       />
     </div >
   );

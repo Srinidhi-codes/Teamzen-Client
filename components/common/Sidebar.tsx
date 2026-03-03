@@ -13,8 +13,10 @@ import {
   ChevronLeft,
   ChevronRight,
   UserCircle,
-  BookCheck
+  BookCheck,
+  Bell
 } from "lucide-react";
+import Image from "next/image";
 
 interface NavItem {
   name: string;
@@ -25,11 +27,13 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Team", href: "/team", icon: Users },
   { name: "Leaves", href: "/leaves", icon: Calendar },
   { name: "Attendance", href: "/attendance", icon: Clock },
   { name: "Payroll", href: "/payroll", icon: DollarSign },
   { name: "Profile", href: "/profile", icon: UserCircle },
   { name: "Policies", href: "/policies", icon: BookCheck },
+  { name: "Notifications", href: "/notifications", icon: Bell },
 ];
 
 export interface SidebarProps {
@@ -46,10 +50,9 @@ export function Sidebar({
   closeMobile,
 }: SidebarProps) {
   const pathname = usePathname();
-  const { user } = useGraphQLUser();
 
   const sidebarClasses = `
-    fixed inset-y-0 left-0 z-50
+    fixed inset-y-0 left-0 z-60
     flex flex-col
     bg-sidebar text-sidebar-foreground
     transition-all duration-500 ease-in-out
@@ -66,7 +69,7 @@ export function Sidebar({
       {/* Mobile Overlay */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/50 z-55 md:hidden"
           onClick={closeMobile}
         />
       )}
@@ -75,11 +78,11 @@ export function Sidebar({
         {/* Header */}
         <div className="h-20 flex items-center justify-between px-6 border-b border-sidebar-border/50">
           {(!isCollapsed || isMobileOpen) && (
-            <div className="flex items-center space-x-3 animate-in fade-in slide-in-from-left-4 duration-500">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
-                <span className="text-primary-foreground font-black text-xs">P</span>
+            <div className="flex items-center animate-in fade-in slide-in-from-left-4 duration-500">
+              <div className="w-24 h-24 rounded-lg flex items-center justify-center">
+                <Image src={"/images/teamzen_zoomed.png"} alt="Logo" width={60} height={60} style={{ width: "auto", height: "auto" }} />
               </div>
-              <h1 className="text-lg font-black tracking-tighter text-foreground truncate uppercase">HRMS <span className="text-primary">CORE</span></h1>
+              <h1 className="text-sm font-black text-foreground uppercase text-nowrap">Teamzen <span className="text-primary">CORE</span></h1>
             </div>
           )}
 
@@ -116,7 +119,7 @@ export function Sidebar({
                 key={item.href}
                 href={item.href}
                 onClick={() => isMobileOpen && closeMobile()}
-                className={`flex items-center space-x-4 px-4 py-3.5 rounded-2xl transition-all duration-300 relative group ${isActive
+                className={`flex items-center space-x-4 px-4 py-3.5 rounded-2xl ${isCollapsed ? "justify-center" : ""} transition-all duration-300 relative group ${isActive
                   ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02]"
                   : "text-sidebar-foreground/60 hover:bg-primary/5 hover:text-primary"
                   }`}
@@ -143,7 +146,7 @@ export function Sidebar({
         <div className="p-6 border-t border-sidebar-border/50">
           {(!isCollapsed || isMobileOpen) ? (
             <div className="animate-in fade-in duration-700">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-relaxed">© 2025 HRMS <span className="text-primary/50">Core</span></p>
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-relaxed">© 2025 Teamzen <span className="text-primary/50">Core</span></p>
               <div className="mt-3 flex items-center space-x-2 bg-muted/30 p-2 rounded-xl border border-border/50">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <p className="text-[10px] font-bold text-muted-foreground uppercase truncate">System Active</p>

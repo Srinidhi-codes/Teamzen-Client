@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 export default function Home() {
   const { isAuthenticated, hasHydrated } = useStore();
@@ -99,12 +100,7 @@ export default function Home() {
               <div className="absolute -inset-1 bg-linear-to-r from-primary to-primary/40 rounded-[4rem] blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
               <div className="relative aspect-video bg-card/50 backdrop-blur-3xl border border-white/20 rounded-[3rem] shadow-2xl overflow-hidden">
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                      <Zap className="w-8 h-8 text-primary" />
-                    </div>
-                    <p className="text-muted-foreground font-black uppercase tracking-[0.3em] text-[10px]">Premium Dashboard UI Ready</p>
-                  </div>
+                  <Image src="/images/teamzen_logo2.png" className="w-full h-full object-cover" alt="Logo" width={100} height={100} />
                 </div>
               </div>
             </div>

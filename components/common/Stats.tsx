@@ -60,11 +60,12 @@ interface ModernStatProps {
   color?: string;
   bg?: string;
   trend?: string;
+  className?: string;
 }
 
-export function ModernStat({ icon: Icon, label, value, color, bg, trend }: ModernStatProps) {
+export function ModernStat({ icon: Icon, label, value, color, bg, trend, className }: ModernStatProps) {
   return (
-    <div className="premium-card card-hover group cursor-default p-6!">
+    <div className={`premium-card card-hover group cursor-default p-6! ${className}`}>
       <div className="flex justify-between items-start mb-4">
         <div className={`p-3 rounded-2xl ${bg} ${color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
           <Icon className="w-5 h-5" />

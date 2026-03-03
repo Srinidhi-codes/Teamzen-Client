@@ -1,6 +1,7 @@
 import { Card } from "@/components/common/Card";
 import { EditableField } from "@/components/common/EditableField";
 import { UserFormData } from "./types";
+import { BanknoteIcon, Hash, IdCard } from "lucide-react";
 
 interface FinancialTabProps {
     formData: Partial<UserFormData>;
@@ -24,7 +25,7 @@ export function FinancialTab({
                     <EditableField
                         label="Bank Account Number"
                         value={formData.bank_account_number || ""}
-                        icon="🏦"
+                        icon={<BanknoteIcon />}
                         editable={isEditing}
                         onChange={(value) =>
                             handleInputChange("bank_account_number", value)
@@ -36,7 +37,7 @@ export function FinancialTab({
                     <EditableField
                         label="IFSC Code"
                         value={formData.bank_ifsc_code || ""}
-                        icon="🔢"
+                        icon={<Hash />}
                         editable={isEditing}
                         onChange={(value) =>
                             handleInputChange("bank_ifsc_code", value.toUpperCase())
@@ -72,7 +73,7 @@ export function FinancialTab({
                     <EditableField
                         label="PAN Number"
                         value={formData.pan_number || ""}
-                        icon="🆔"
+                        icon={<IdCard />}
                         editable={isEditing}
                         onChange={(value) =>
                             handleInputChange("pan_number", value.toUpperCase())
@@ -84,7 +85,7 @@ export function FinancialTab({
                     <EditableField
                         label="Aadhar Number"
                         value={formData.aadhar_number || ""}
-                        icon="🪪"
+                        icon={<IdCard />}
                         editable={isEditing}
                         onChange={(value) => handleInputChange("aadhar_number", value)}
                         error={errors.aadhar_number}
@@ -94,7 +95,7 @@ export function FinancialTab({
                     <EditableField
                         label="UAN Number"
                         value={formData.uan_number || ""}
-                        icon="📋"
+                        icon={<Hash />}
                         editable={isEditing}
                         onChange={(value) => handleInputChange("uan_number", value)}
                         error={errors.uan_number}

@@ -6,7 +6,6 @@ import { GraphQLUser } from "../graphql/users/types";
 
 import { useStore } from "@/lib/store/useStore";
 import { useEffect } from "react";
-import { GraphQLUser } from "../graphql/users/types";
 
 export function useGraphQLUser() {
   const { data, loading, error, refetch } = useQuery(GET_ME) as any;

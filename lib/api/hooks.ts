@@ -68,7 +68,7 @@ export const useUser = () => {
 export const useUpdateUser = () => {
   const mutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await client.put(
+      const response = await client.patch(
         API_ENDPOINTS.USER_UPDATE,
         data,
         { withCredentials: true }
@@ -87,119 +87,119 @@ export const useUpdateUser = () => {
 
 /* ---------------- LEAVE REQUESTS ---------------- */
 
-export const useLeaveRequests = () => {
-  const query = useQuery({
-    queryKey: ["leaveRequests"],
-    queryFn: async () => {
-      const response = await client.get(API_ENDPOINTS.LEAVE_REQUESTS);
-      return response.data;
-    },
-  });
+// export const useLeaveRequests = () => {
+//   const query = useQuery({
+//     queryKey: ["leaveRequests"],
+//     queryFn: async () => {
+//       const response = await client.get(API_ENDPOINTS.LEAVE_REQUESTS);
+//       return response.data;
+//     },
+//   });
 
-  const create = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await client.post(API_ENDPOINTS.LEAVE_REQUESTS, data);
-      return response.data;
-    },
-  });
+//   const create = useMutation({
+//     mutationFn: async (data: any) => {
+//       const response = await client.post(API_ENDPOINTS.LEAVE_REQUESTS, data);
+//       return response.data;
+//     },
+//   });
 
-  const approve = useMutation({
-    mutationFn: async ({ id, comments }: { id: number; comments: string }) => {
-      const response = await client.post(
-        `${API_ENDPOINTS.LEAVE_REQUESTS}${id}/approve/`,
-        { comments }
-      );
-      return response.data;
-    },
-  });
+//   const approve = useMutation({
+//     mutationFn: async ({ id, comments }: { id: number; comments: string }) => {
+//       const response = await client.post(
+//         `${API_ENDPOINTS.LEAVE_REQUESTS}${id}/approve/`,
+//         { comments }
+//       );
+//       return response.data;
+//     },
+//   });
 
-  return {
-    ...query,
-    create,
-    approve,
-  };
-};
+//   return {
+//     ...query,
+//     create,
+//     approve,
+//   };
+// };
 
 /* ---------------- LEAVE BALANCES ---------------- */
 
-export const useLeaveBalances = () => {
-  const query = useQuery({
-    queryKey: ["leaveBalances"],
-    queryFn: async () => {
-      const response = await client.get(API_ENDPOINTS.LEAVE_BALANCES);
-      return response.data;
-    },
-  });
+// export const useLeaveBalances = () => {
+//   const query = useQuery({
+//     queryKey: ["leaveBalances"],
+//     queryFn: async () => {
+//       const response = await client.get(API_ENDPOINTS.LEAVE_BALANCES);
+//       return response.data;
+//     },
+//   });
 
-  return {
-    balances: query.data,
-    isLoading: query.isLoading,
-    error: query.error,
-  };
-};
+//   return {
+//     balances: query.data,
+//     isLoading: query.isLoading,
+//     error: query.error,
+//   };
+// };
 
 /* ---------------- ATTENDANCE ---------------- */
 
-export const useAttendance = () => {
-  const checkIn = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await client.post(API_ENDPOINTS.CHECK_IN, data);
-      return response.data;
-    },
-  });
+// export const useAttendance = () => {
+//   const checkIn = useMutation({
+//     mutationFn: async (data: any) => {
+//       const response = await client.post(API_ENDPOINTS.CHECK_IN, data);
+//       return response.data;
+//     },
+//   });
 
-  const checkOut = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await client.post(API_ENDPOINTS.CHECK_OUT, data);
-      return response.data;
-    },
-  });
+//   const checkOut = useMutation({
+//     mutationFn: async (data: any) => {
+//       const response = await client.post(API_ENDPOINTS.CHECK_OUT, data);
+//       return response.data;
+//     },
+//   });
 
-  const records = useQuery({
-    queryKey: ["attendance"],
-    queryFn: async () => {
-      const response = await client.get(API_ENDPOINTS.ATTENDANCE);
-      return response.data;
-    },
-  });
+//   const records = useQuery({
+//     queryKey: ["attendance"],
+//     queryFn: async () => {
+//       const response = await client.get(API_ENDPOINTS.ATTENDANCE);
+//       return response.data;
+//     },
+//   });
 
-  return {
-    checkIn,
-    checkOut,
-    records: records.data,
-    isLoading: records.isLoading,
-  };
-};
+//   return {
+//     checkIn,
+//     checkOut,
+//     records: records.data,
+//     isLoading: records.isLoading,
+//   };
+// };
 
 /* ---------------- PAYROLL ---------------- */
 
-export const usePayrollRuns = () => {
-  const query = useQuery({
-    queryKey: ["payrollRuns"],
-    queryFn: async () => {
-      const response = await client.get(API_ENDPOINTS.PAYROLL_RUNS);
-      return response.data;
-    },
-  });
+// export const usePayrollRuns = () => {
+//   const query = useQuery({
+//     queryKey: ["payrollRuns"],
+//     queryFn: async () => {
+//       const response = await client.get(API_ENDPOINTS.PAYROLL_RUNS);
+//       return response.data;
+//     },
+//   });
 
-  const create = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await client.post(API_ENDPOINTS.PAYROLL_RUNS, data);
-      return response.data;
-    },
-  });
+//   const create = useMutation({
+//     mutationFn: async (data: any) => {
+//       const response = await client.post(API_ENDPOINTS.PAYROLL_RUNS, data);
+//       return response.data;
+//     },
+//   });
 
-  const calculate = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await client.post(
-        `${API_ENDPOINTS.PAYROLL_RUNS}${id}/calculate/`
-      );
-      return response.data;
-    },
-  });
+//   const calculate = useMutation({
+//     mutationFn: async (id: number) => {
+//       const response = await client.post(
+//         `${API_ENDPOINTS.PAYROLL_RUNS}${id}/calculate/`
+//       );
+//       return response.data;
+//     },
+//   });
 
-  return { ...query, create, calculate };
-};
+//   return { ...query, create, calculate };
+// };
 
 export const usePolicies = () => {
   const list = useQuery({

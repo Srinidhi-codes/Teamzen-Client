@@ -27,4 +27,8 @@ export const API_ENDPOINTS = {
   // AI
   POLICIES: "/ai/policies/",
   SMART_CHAT: "/ai/chat/",
+
+  // Password Reset
+  PASSWORD_RESET_REQUEST: "/users/password-reset/",
+  PASSWORD_RESET_CONFIRM: "/users/password-reset-confirm/",
 };

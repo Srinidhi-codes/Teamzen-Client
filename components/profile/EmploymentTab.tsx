@@ -3,6 +3,7 @@ import { EditableField } from "@/components/common/EditableField";
 import { EditableSelectField } from "@/components/common/EditableSelectField";
 import { UserFormData } from "./types";
 import moment from "moment";
+import { Briefcase, Building, Calendar, Clipboard, IdCard, User } from "lucide-react";
 
 interface EmploymentTabProps {
     formData: Partial<UserFormData>;
@@ -26,7 +27,7 @@ export function EmploymentTab({
                     <EditableField
                         label="Employee ID"
                         value={formData.employee_id || ""}
-                        icon="🆔"
+                        icon={<IdCard />}
                         editable={false}
                         onChange={(value) => handleInputChange("employee_id", value)}
                         error={errors.employee_id}
@@ -35,7 +36,7 @@ export function EmploymentTab({
                     <EditableField
                         label="Designation"
                         value={formData.designation || ""}
-                        icon="💼"
+                        icon={<Briefcase />}
                         editable={isEditing}
                         onChange={(value) => handleInputChange("designation", value)}
                         error={errors.designation}
@@ -44,7 +45,7 @@ export function EmploymentTab({
                     <EditableField
                         label="Department"
                         value={formData.department || ""}
-                        icon="🏢"
+                        icon={<Building />}
                         editable={isEditing}
                         onChange={(value) => handleInputChange("department", value)}
                         error={errors.department}
@@ -53,7 +54,7 @@ export function EmploymentTab({
                     <EditableSelectField
                         label="Employment Type"
                         value={formData.employment_type || "full_time"}
-                        icon="📋"
+                        icon={<Clipboard />}
                         editable={isEditing}
                         onChange={(value) => handleInputChange("employment_type", value)}
                         options={[
@@ -66,7 +67,7 @@ export function EmploymentTab({
                     <EditableField
                         label="Date of Joining"
                         value={moment(formData.date_of_joining).format("ll") || ""}
-                        icon="📅"
+                        icon={<Calendar />}
                         type="date"
                         editable={isEditing}
                         onChange={(value) => handleInputChange("date_of_joining", value)}
@@ -75,7 +76,7 @@ export function EmploymentTab({
                     <EditableField
                         label="Manager"
                         value={formData.manager || ""}
-                        icon="👔"
+                        icon={<User />}
                         editable={isEditing}
                         onChange={(value) => handleInputChange("manager", value)}
                         error={errors.manager}

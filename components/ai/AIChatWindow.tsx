@@ -38,7 +38,7 @@ export default function AIChatWindow({ onClose }: { onClose: () => void }) {
         setIsLoading(true);
 
         try {
-            const response = await client.post(API_ENDPOINTS.ASK_POLICY, {
+            const response = await client.post(API_ENDPOINTS.POLICIES, {
                 query: input,
             });
 
