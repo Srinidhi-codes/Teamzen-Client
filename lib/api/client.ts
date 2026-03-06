@@ -1,8 +1,12 @@
 import axios from "axios";
 import { API_ENDPOINTS } from "./endpoints";
 
+// All client-side requests MUST go through the Next.js same-origin proxy
+// at /api/ so the browser sends/receives cookies correctly.
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/";
+  typeof window !== "undefined"
+    ? "/api"
+    : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/");
 
 const client = axios.create({
   baseURL: API_BASE_URL,
@@ -55,8 +59,12 @@ client.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // 🔄 Refresh token (cookies auto-sent)
-        await client.post(API_ENDPOINTS.REFRESH);
+        // 🔄 Refresh via same-origin proxy
+        const refreshResp = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        if (!refreshResp.ok) throw new Error('Refresh failed');
 
         processQueue();
         return client(originalRequest);
@@ -66,7 +74,7 @@ client.interceptors.response.use(
         // ❌ Refresh failed → session expired
         // Clear global store
         import("@/lib/store/useStore").then(({ useStore }) => {
-           useStore.getState().logoutUser();
+          useStore.getState().logoutUser();
         });
 
         if (typeof window !== "undefined") {
@@ -86,23 +94,27 @@ client.interceptors.response.use(
 );
 
 export const refreshAuthToken = async () => {
-    if (isRefreshing) {
-        return new Promise<void>((resolve, reject) => {
-            failedQueue.push({ resolve, reject });
-        });
-    }
+  if (isRefreshing) {
+    return new Promise<void>((resolve, reject) => {
+      failedQueue.push({ resolve, reject });
+    });
+  }
 
-    isRefreshing = true;
+  isRefreshing = true;
 
-    try {
-        await client.post(API_ENDPOINTS.REFRESH);
-        processQueue();
-    } catch (error) {
-        processQueue(error);
-        throw error;
-    } finally {
-        isRefreshing = false;
-    }
+  try {
+    const r = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (!r.ok) throw new Error('Refresh failed');
+    processQueue();
+  } catch (error) {
+    processQueue(error);
+    throw error;
+  } finally {
+    isRefreshing = false;
+  }
 };
 
 export default client;

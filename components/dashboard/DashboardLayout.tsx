@@ -4,6 +4,7 @@ import { useStore } from "@/lib/store/useStore";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
+import AssistantWidget from "@/components/ai";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: "📊" },
@@ -243,6 +244,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
         </main>
       </div>
+
+      {/* Smart Assistant Widget */}
+      <AssistantWidget />
     </div>
   );
 }

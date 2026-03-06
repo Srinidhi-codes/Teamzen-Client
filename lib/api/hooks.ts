@@ -10,10 +10,19 @@ import { refreshAuthToken } from '@/lib/api/client';
 export const useAuth = () => {
   const login = useMutation({
     mutationFn: async (data: any) => {
-      const response = await client.post(API_ENDPOINTS.LOGIN, data, {
-        withCredentials: true,
+      // ⚠️ MUST use fetch to the Next.js proxy — NOT client.post.
+      // The proxy at /api/auth/login relays the cookies as same-origin.
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data),
       });
-      return response.data;
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.detail || err?.error || 'Login failed');
+      }
+      return response.json();
     },
   });
 
