@@ -27,5 +27,5 @@ export const API_ENDPOINTS = {
 
   // AI Chat
   CHAT: "/ai/chat/",
-  SMART_CHAT: "/ai/smart-chat/",
+  SMART_CHAT: "/ai/chat/",
 };

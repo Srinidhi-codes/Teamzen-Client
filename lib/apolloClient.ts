@@ -20,6 +20,9 @@ const fromPromise = <T>(promise: Promise<T>): Observable<T> => {
 const httpLink = createHttpLink({
   // ⚠️ MUST use a relative /api/... URL, NOT NEXT_PUBLIC_GRAPHQL_URL directly.
   uri: "/api/graphql/",
+  fetchOptions: {
+    method: "POST",
+  },
 });
 
 const authLink = setContext((_, { headers }) => {

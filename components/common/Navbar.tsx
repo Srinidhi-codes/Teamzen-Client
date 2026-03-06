@@ -123,7 +123,7 @@ export function Navbar() {
                   {(user.role === 'admin' || user.role === 'manager') && (
                     <DropdownMenuItem asChild>
                       <a
-                        href="http://localhost:3001/dashboard"
+                        href={process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001/dashboard"}
                         className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-orange-500/10 text-orange-600 dark:text-orange-400 cursor-pointer group"
                       >
                         <span className="text-lg group-hover:scale-110 transition-transform">⚡</span>

@@ -7,17 +7,18 @@ import { useEffect, useCallback } from "react";
 export function useNotifications(onMessageReceived?: (msg: any) => void) {
     // Use window.location to determine the correct host
     const getSocketUrl = useCallback(() => {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        let protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        let host = window.location.host;
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/";
+        let protocol = "ws:";
+        let host = "localhost:8000";
 
-        if (apiUrl) {
-            // Deriving WS URL from API URL (e.g., http://localhost:8000/api -> ws://localhost:8000/ws/notifications/)
+        try {
+            // Explicitly parse the NEXT_PUBLIC_API_URL to construct the wss:// URL to the Render backend,
+            // instead of using window.location.host which points to Vercel.
             const urlObj = new URL(apiUrl);
             protocol = urlObj.protocol === "https:" ? "wss:" : "ws:";
             host = urlObj.host;
-        } else if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-            host = "localhost:8000";
+        } catch (e) {
+            console.error("Invalid NEXT_PUBLIC_API_URL for WebSocket:", e);
         }
 
         const url = `${protocol}//${host}/ws/notifications/`;

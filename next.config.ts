@@ -22,15 +22,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  async rewrites() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${apiUrl.replace(/\/$/, "")}/:path*`,
-      },
-    ];
-  },
+  // No rewrites for /api/*. Routing MUST be handled by the Next.js API routes securely.
 };
 
 export default nextConfig;

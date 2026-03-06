@@ -14,6 +14,7 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
     // Build the Django path. If it's not graphql, prepend 'api/' since we stripped it from base.
     const djangoPath = isGraphQL ? path.join('/') : `api/${path.join('/')}`;
 
+    // Django Strawberry (and DRF) usually require trailing slashes.
     const trailingSlash = djangoPath.endsWith('/') ? '' : '/';
     const searchParams = request.nextUrl.searchParams.toString();
     const targetUrl = `${DJANGO_BASE}/${djangoPath}${trailingSlash}${searchParams ? `?${searchParams}` : ''}`;
@@ -40,11 +41,14 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
     }
 
     try {
+        console.log(`[API Proxy] Forwarding ${method} request to: ${targetUrl}`);
         const djangoResponse = await fetch(targetUrl, {
             method,
             headers: forwardedHeaders,
             body,
         });
+
+        console.log(`[API Proxy] Received status ${djangoResponse.status} from: ${targetUrl}`);
 
         const responseHeaders = new Headers();
         djangoResponse.headers.forEach((value, key) => {
