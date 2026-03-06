@@ -1,24 +1,36 @@
 "use client";
 
-import { useAttendance } from "@/lib/api/hooks";
 import { useAttendanceMutations, useGraphQlAttendance } from "@/lib/graphql/attendance/attendanceHooks";
-import { refresh } from "next/cache";
 import { useEffect, useState } from "react";
 import moment from "moment";
 import { useRouter } from "next/navigation";
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-import { Clock, MapPin, CheckCircle2, XCircle, AlertCircle, Calendar, TrendingUp } from "lucide-react";
+import {
+  Clock,
+  AlertCircle,
+  TrendingUp,
+  Fingerprint,
+  Zap,
+  Navigation,
+  Check,
+  X,
+  Edit,
+  NotebookText,
+  LogIn,
+  LogOut
+} from "lucide-react";
 import { toast } from "sonner";
+import { Card } from "@/components/common/Card";
+import { Badge } from "@/components/common/Badge";
+import { Button } from "@/components/ui/button";
+import { useStore } from "@/lib/store/useStore";
 
 export default function AttendancePage() {
-  const [showForm, setShowForm] = useState(false);
   const [currentTime, setCurrentTime] = useState(moment().format("hh:mm:ss A"));
+  const { checkIn, checkOut, checkInLoading, checkOutLoading } = useAttendanceMutations();
+  const { attendance: attendanceData, isLoading } = useGraphQlAttendance();
+  const router = useRouter();
+  const { user } = useStore();
 
-  const { checkIn, checkOut, checkInLoading, checkOutLoading } = useAttendanceMutations()
-  const { attendance: attendanceData, refetchAttendance, isLoading } = useGraphQlAttendance()
-  const router = useRouter()
-
-  // Update current time every second
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(moment().format("hh:mm:ss A"));
@@ -27,266 +39,213 @@ export default function AttendancePage() {
   }, []);
 
   const todayAttendance = attendanceData[0];
-  const loginDistance = todayAttendance?.loginDistance ? parseInt(Math.round(todayAttendance.loginDistance / 1000).toFixed(2)) : 0;
-  const logoutDistance = todayAttendance?.logoutDistance ? parseInt(Math.round(todayAttendance.logoutDistance / 1000).toFixed(2)) : 0;
+  const loginDistance = todayAttendance?.loginDistance ? (todayAttendance.loginDistance / 1000).toFixed(2) : "0";
+  const logoutDistance = todayAttendance?.logoutDistance ? (todayAttendance.logoutDistance / 1000).toFixed(2) : "0";
 
-  const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: any }> = {
-    late_login: {
-      label: "Late Login",
-      color: "text-amber-600",
-      bgColor: "bg-amber-50 border-amber-200",
-      icon: AlertCircle
-    },
-    early_logout: {
-      label: "Early Logout",
-      color: "text-orange-600",
-      bgColor: "bg-orange-50 border-orange-200",
-      icon: AlertCircle
-    },
-    absent: {
-      label: "Absent",
-      color: "text-red-600",
-      bgColor: "bg-red-50 border-red-200",
-      icon: XCircle
-    },
-    present: {
-      label: "Present",
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50 border-emerald-200",
-      icon: CheckCircle2
-    },
-  }
+  const STATUS_CONFIG: Record<string, { label: string; variant: "success" | "warning" | "danger" | "info"; icon: any }> = {
+    late_login: { label: "Late Entry", variant: "warning", icon: AlertCircle },
+    early_logout: { label: "Early Exit", variant: "warning", icon: AlertCircle },
+    absent: { label: "Absent", variant: "danger", icon: X },
+    present: { label: "Active", variant: "success", icon: Check },
+  };
 
   const getLocationAsync = (): Promise<{ latitude: number; longitude: number }> => {
     return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject("Geolocation not supported");
-      }
-
+      if (!navigator.geolocation) reject("Geolocation not supported");
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-        },
-        (error) => reject(error.message)
+        (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+        (err) => reject(err.message)
       );
     });
   };
 
-  const handleCheckIn = async () => {
+  const handleAction = async (type: 'in' | 'out') => {
     try {
       const { latitude, longitude } = await getLocationAsync();
-
-      await checkIn({
-        latitude,
-        longitude,
-        officeLocationId: "2",
-        loginTime: moment().format("HH:mm:ss").toString()
-      });
-
-      toast.success("Check-in successful");
+      if (type === 'in') {
+        await checkIn({ latitude, longitude, officeLocationId: "2", loginTime: moment().format("HH:mm:ss") });
+        toast.success("Identity verified. Access granted.");
+      } else {
+        await checkOut({ latitude, longitude, logoutTime: moment().format("HH:mm:ss") });
+        toast.success("Protocol complete. Session terminated.");
+      }
     } catch (error) {
-      toast.error("Check-in failed");
-      console.error(error);
+      toast.error(error instanceof String ? error : "Location verification failed");
     }
   };
 
-  const handleCheckOut = async () => {
-    try {
-      const { latitude, longitude } = await getLocationAsync();
-
-      await checkOut({ latitude, longitude, logoutTime: moment().format("HH:mm:ss").toString() });
-
-      toast.success("Check-out successful");
-    } catch (error) {
-      toast.error("Check-out failed");
-      console.error(error);
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 space-y-6">
+        <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+        <p className="text-premium-label animate-pulse">Syncing Biometric Data...</p>
+      </div>
+    );
+  }
 
   const statusConfig = todayAttendance?.status ? STATUS_CONFIG[todayAttendance.status] : null;
-  const StatusIcon = statusConfig?.icon;
 
   return (
-    <>
-      {isLoading ? <LoadingSpinner /> : (
-        <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
-          <div className="max-w-7xl mx-auto space-y-6">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <h1 className="text-4xl font-bold bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                  Attendance
-                </h1>
+    <div className="space-y-10 animate-fade-in pb-20">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="space-y-1">
+          <h1 className="text-premium-h1">Attendance</h1>
+          <p className="text-muted-foreground font-medium flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Station: <span className="text-foreground font-bold">{user?.officeLocation?.name}</span>
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => router.push("/attendance/attendance-correction")}
+          className="border-dashed hover:border-primary hover:text-primary active:scale-95 px-6"
+        >
+          <Edit className="w-4 h-4 mr-2" />
+          Data Correction Request
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        {/* Left Column: Actions & Status */}
+        <div className="lg:col-span-8 space-y-10">
+
+          {/* Main Visualizer */}
+          <div className="premium-card bg-primary text-primary-foreground relative overflow-hidden flex flex-col items-center justify-center py-16 shadow-2xl shadow-primary/40">
+            <div className="absolute inset-0 bg-linear-to-b from-white/10 to-transparent pointer-events-none" />
+            <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
+            <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
+
+            <div className="relative z-10 flex flex-col items-center text-center space-y-4">
+              <div className="flex items-center gap-3 bg-white/10 px-4 py-1.5 rounded-full backdrop-blur-md border border-white/20">
+                <Clock className="w-4 h-4 animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Current Time</span>
               </div>
-              <button
-                onClick={() => router.push("/attendance/attendance-correction")}
-                className="px-6 py-3 bg-linear-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold transform hover:scale-105"
-              >
-                Attendance Correction
-              </button>
+              <div className="text-7xl font-black tracking-tighter tabular-nums drop-shadow-2xl">
+                {currentTime}
+              </div>
+              <p className="text-sm font-medium opacity-60 italic">{moment().format("dddd, MMMM Do YYYY")}</p>
             </div>
+          </div>
 
-            {/* Live Clock Card */}
-            <div className="bg-linear-to-br from-indigo-600 to-blue-600 rounded-2xl shadow-2xl p-8 text-white relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
-              <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24"></div>
-              <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-2">
-                  <Clock className="w-6 h-6" />
-                  <span className="text-lg font-medium opacity-90">Current Time</span>
+          {/* Action Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div
+              className={`premium-card p-1 group transition-all duration-500 ${!todayAttendance?.loginTime ? 'hover:scale-[1.02] cursor-pointer' : 'opacity-40 grayscale pointer-events-none'}`}
+              onClick={() => !todayAttendance?.loginTime && handleAction('in')}
+            >
+              <div className="p-8 rounded-4xl border border-border/50 flex flex-col items-center text-center space-y-6 group-hover:bg-primary/5 transition-colors">
+                <div className="w-20 h-20 rounded-3xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                  <Check className="w-10 h-10" />
                 </div>
-                <div className="text-6xl font-bold tracking-tight">{currentTime}</div>
+                <div>
+                  <h3 className="text-xl font-black tracking-tight">{checkInLoading ? "Verifying..." : "Check In"}</h3>
+                  <p className="text-xs font-medium text-muted-foreground mt-2 uppercase tracking-widest">Mark Attendance (IN)</p>
+                </div>
+                {todayAttendance?.loginTime && (
+                  <Badge variant="success">Logged at {todayAttendance.loginTime}</Badge>
+                )}
               </div>
             </div>
 
-            {/* Check In/Out Buttons */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <button
-                onClick={handleCheckIn}
-                disabled={checkInLoading || !!todayAttendance?.loginTime}
-                className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 p-8 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden transform hover:scale-105 disabled:hover:scale-100"
-              >
-                <div className="absolute inset-0 bg-linear-to-br from-emerald-500 to-green-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative z-10 flex flex-col items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-emerald-100 group-hover:bg-white/20 flex items-center justify-center transition-colors duration-300">
-                    <CheckCircle2 className="w-8 h-8 text-emerald-600 group-hover:text-white transition-colors duration-300" />
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-slate-900 group-hover:text-white transition-colors duration-300">
-                      {checkInLoading ? "Processing..." : "Check In"}
-                    </div>
-                    <div className="text-sm text-slate-600 group-hover:text-white/80 transition-colors duration-300 mt-1">
-                      {todayAttendance?.loginTime ? "Already checked in" : "Start your day"}
-                    </div>
-                  </div>
+            <div
+              className={`premium-card p-1 group transition-all duration-500 ${todayAttendance?.loginTime && !todayAttendance?.logoutTime ? 'hover:scale-[1.02] cursor-pointer' : 'opacity-40 grayscale pointer-events-none'}`}
+              onClick={() => todayAttendance?.loginTime && !todayAttendance?.logoutTime && handleAction('out')}
+            >
+              <div className="p-8 rounded-4xl border border-border/50 flex flex-col items-center text-center space-y-6 group-hover:bg-primary/5 transition-colors">
+                <div className="w-20 h-20 rounded-3xl bg-destructive/10 text-destructive flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                  <X className="w-10 h-10" />
                 </div>
-              </button>
-
-              <button
-                onClick={handleCheckOut}
-                disabled={checkOutLoading || !!todayAttendance?.logoutTime}
-                className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 p-8 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden transform hover:scale-105 disabled:hover:scale-100"
-              >
-                <div className="absolute inset-0 bg-linear-to-br from-rose-500 to-red-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative z-10 flex flex-col items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-rose-100 group-hover:bg-white/20 flex items-center justify-center transition-colors duration-300">
-                    <XCircle className="w-8 h-8 text-rose-600 group-hover:text-white transition-colors duration-300" />
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-slate-900 group-hover:text-white transition-colors duration-300">
-                      {checkOutLoading ? "Processing..." : "Check Out"}
-                    </div>
-                    <div className="text-sm text-slate-600 group-hover:text-white/80 transition-colors duration-300 mt-1">
-                      {todayAttendance?.logoutTime ? "Already checked out" : "End your day"}
-                    </div>
-                  </div>
+                <div>
+                  <h3 className="text-xl font-black tracking-tight">{checkOutLoading ? "Verifying..." : "Check Out"}</h3>
+                  <p className="text-xs font-medium text-muted-foreground mt-2 uppercase tracking-widest">Mark Attendance (OUT)</p>
                 </div>
-              </button>
-            </div>
-
-            {/* Today's Status */}
-            <div className="bg-white rounded-2xl shadow-xl p-8">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
-                <TrendingUp className="w-6 h-6 text-indigo-600" />
-                Today's Status
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Check In Time */}
-                <div className={`border-2 rounded-xl p-6 transition-all duration-300 hover:shadow-lg ${["late_login", "absent"].includes(todayAttendance?.status ?? "")
-                  ? "border-red-200 bg-red-50"
-                  : "border-slate-200 bg-slate-50 hover:border-indigo-300"
-                  }`}>
-                  <div className="flex items-center gap-2 text-slate-600 text-sm font-medium mb-3">
-                    <Clock className="w-4 h-4" />
-                    Check In Time
-                  </div>
-                  <div className={`text-3xl font-bold ${["late_login", "absent"].includes(todayAttendance?.status ?? "")
-                    ? "text-red-600"
-                    : "text-slate-900"
-                    }`}>
-                    {todayAttendance?.loginTime || "--:--:--"}
-                  </div>
-                </div>
-
-                {/* Check Out Time */}
-                <div className={`border-2 rounded-xl p-6 transition-all duration-300 hover:shadow-lg ${["early_logout", "absent"].includes(todayAttendance?.status ?? "")
-                  ? "border-red-200 bg-red-50"
-                  : "border-slate-200 bg-slate-50 hover:border-indigo-300"
-                  }`}>
-                  <div className="flex items-center gap-2 text-slate-600 text-sm font-medium mb-3">
-                    <Clock className="w-4 h-4" />
-                    Check Out Time
-                  </div>
-                  <div className={`text-3xl font-bold ${["early_logout", "absent"].includes(todayAttendance?.status ?? "")
-                    ? "text-red-600"
-                    : "text-slate-900"
-                    }`}>
-                    {todayAttendance?.logoutTime || "--:--:--"}
-                  </div>
-                </div>
-
-                {/* Status */}
-                {todayAttendance?.status && statusConfig && (
-                  <div className={`border-2 rounded-xl p-6 transition-all duration-300 hover:shadow-lg ${statusConfig.bgColor}`}>
-                    <div className="flex items-center gap-2 text-slate-600 text-sm font-medium mb-3">
-                      Status
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {StatusIcon && <StatusIcon className={`w-8 h-8 ${statusConfig.color}`} />}
-                      <span className={`text-2xl font-bold ${statusConfig.color}`}>
-                        {statusConfig.label}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Login Distance */}
-                {todayAttendance?.loginDistance && (
-                  <div className={`border-2 rounded-xl p-6 transition-all duration-300 hover:shadow-lg ${loginDistance > 10
-                    ? "border-red-200 bg-red-50"
-                    : "border-emerald-200 bg-emerald-50"
-                    }`}>
-                    <div className="flex items-center gap-2 text-slate-600 text-sm font-medium mb-3">
-                      <MapPin className="w-4 h-4" />
-                      Login Distance
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-3xl font-bold ${loginDistance > 10 ? "text-red-600" : "text-emerald-600"
-                        }`}>
-                        {loginDistance}
-                      </span>
-                      <span className="text-lg text-slate-600">km</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Logout Distance */}
-                {todayAttendance?.logoutDistance && (
-                  <div className={`border-2 rounded-xl p-6 transition-all duration-300 hover:shadow-lg ${logoutDistance > 10
-                    ? "border-red-200 bg-red-50"
-                    : "border-emerald-200 bg-emerald-50"
-                    }`}>
-                    <div className="flex items-center gap-2 text-slate-600 text-sm font-medium mb-3">
-                      <MapPin className="w-4 h-4" />
-                      Logout Distance
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-3xl font-bold ${logoutDistance > 10 ? "text-red-600" : "text-emerald-600"
-                        }`}>
-                        {logoutDistance}
-                      </span>
-                      <span className="text-lg text-slate-600">km</span>
-                    </div>
-                  </div>
+                {todayAttendance?.logoutTime && (
+                  <Badge variant="danger">Exited at {todayAttendance.logoutTime}</Badge>
                 )}
               </div>
             </div>
           </div>
         </div>
-      )}
-    </>
+
+        {/* Right Column: Status & Telemetry */}
+        <div className="lg:col-span-4 space-y-10">
+          <Card title="Today's Attendance">
+            <div className="space-y-8">
+              {statusConfig && (
+                <div className="p-6 rounded-3xl bg-muted/20 border border-border/50 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-premium-label opacity-40">System Status</span>
+                    <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-xl ${statusConfig.variant === 'success' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-destructive/10 text-destructive'} flex items-center justify-center`}>
+                      <statusConfig.icon className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="font-black text-sm tracking-tight">Status Validation</p>
+                      <p className="text-xs text-muted-foreground font-medium italic">Confirmed at HQ</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="premium-card p-6 bg-muted/10 border-none space-y-4">
+                  <LogIn className="w-4 h-4 text-primary" />
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">IN Distance</p>
+                    <p className={`${(parseFloat(loginDistance) * 1000) > (user?.officeLocation?.geoRadiusMeters || 0) ? 'text-red-500' : 'text-green-500'} text-xl font-black tabular-nums`}>{loginDistance}<span className="text-[10px] ml-1">km</span></p>
+                  </div>
+                </div>
+                <div className="premium-card p-6 bg-muted/10 border-none space-y-4">
+                  <LogOut className="w-4 h-4 text-primary" />
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">OUT Distance</p>
+                    <p className={`${(parseFloat(logoutDistance) * 1000) > (user?.officeLocation?.geoRadiusMeters || 0) ? 'text-red-500' : 'text-green-500'} text-xl font-black tabular-nums`}>{logoutDistance}<span className="text-[10px] ml-1">km</span></p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6 pt-4 border-t border-border/50">
+                <h4 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Session Summary</h4>
+                <div className="space-y-4">
+                  {[
+                    { label: "Login Marker", val: todayAttendance?.loginTime || "N/A", icon: Clock },
+                    { label: "Logout Marker", val: todayAttendance?.logoutTime || "N/A", icon: Clock },
+                    { label: "Total Duration", val: todayAttendance?.workingHours || "0.0h", icon: TrendingUp },
+                  ].map((item, i) => (
+                    <div key={i} className="flex justify-between items-center group">
+                      <div className="flex items-center gap-3 opacity-60 group-hover:opacity-100 transition-opacity">
+                        <item.icon className="w-3.5 h-3.5" />
+                        <span className="text-xs font-bold">{item.label}</span>
+                      </div>
+                      <span className="text-xs font-black tabular-nums">{item.val}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <div className="premium-card relative overflow-hidden p-8 border border-primary/20 bg-primary/5">
+            <div className="relative z-10 space-y-6 text-center">
+              <div className="w-14 h-14 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto shadow-xl shadow-primary/20">
+                <NotebookText className="w-7 h-7" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-black tracking-tight italic text-primary">Location Based Attendance Sync</h3>
+                <p className="text-xs font-medium text-muted-foreground leading-relaxed">
+                  Always ensure your location services are active for precise distance calculation.
+                </p>
+              </div>
+              <button className="text-[9px] font-black uppercase tracking-[0.2em] text-primary hover:underline transition-all">
+                Read Policy Docs
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

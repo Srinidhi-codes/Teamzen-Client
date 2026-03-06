@@ -1,5 +1,4 @@
 "use client";
-
 import {
   LineChart,
   Line,
@@ -15,6 +14,22 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { Card } from "@/components/common/Card";
+import { DataTable, Column } from "@/components/common/DataTable";
+import {
+  TrendingUp,
+  Users,
+  DollarSign,
+  Zap,
+  FileText,
+  Download,
+  Printer,
+  Activity,
+  Calendar,
+  Layers,
+  BarChart3
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // Sample data
 const payrollData = [
@@ -47,175 +62,209 @@ const attendanceData = [
   { date: "Fri", present: 99, absent: 1 },
 ];
 
-const COLORS = ["#4f46e5", "#06b6d4", "#f59e0b", "#ef4444", "#10b981"];
+const COLORS = ["#7c3aed", "#ec4899", "#f59e0b", "#10b981", "#3b82f6"];
 
 export default function AnalyticsPage() {
-  return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Analytics & Reports</h1>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-gray-600 text-sm font-medium">Total Cost</div>
-          <div className="mt-2 text-3xl font-bold text-gray-900">
-            ₹65,80,000
+  const deptColumns: Column<any>[] = [
+    {
+      key: "name",
+      label: "Operational Unit",
+      render: (val: string) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+            <Layers className="w-4 h-4" />
           </div>
-          <div className="mt-2 text-xs text-gray-600">No change</div>
+          <span className="font-bold italic">{val}</span>
         </div>
+      )
+    },
+    {
+      key: "employees",
+      label: "Node Count",
+      render: (val: number) => <span className="font-black tabular-nums">{val} Entities</span>
+    },
+    {
+      key: "cost",
+      label: "Total Value",
+      render: (val: number) => <span className="font-black tabular-nums text-primary">₹{val.toLocaleString()}</span>
+    },
+    {
+      key: "avgSalary",
+      label: "Avg Resource Cost",
+      render: (_: any, row: any) => (
+        <span className="font-bold tabular-nums opacity-60">₹{Math.round(row.cost / row.employees).toLocaleString()}</span>
+      )
+    }
+  ];
+
+  return (
+    <div className="space-y-10 animate-fade-in pb-20">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="space-y-1">
+          <h1 className="text-premium-h1">Command Matrix</h1>
+          <p className="text-muted-foreground font-medium flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            Predictive analytics and operational telemetry.
+          </p>
+        </div>
+        <div className="flex gap-4">
+          <Button variant="outline" className="h-12 px-6 rounded-2xl border-dashed border-2 hover:border-primary transition-all">
+            <Calendar className="w-4 h-4 mr-2" />
+            Time Interval: Q2-2024
+          </Button>
+        </div>
+      </div>
+
+      {/* Summary Stat Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {[
+          { label: "Aggregate Cost", val: "₹65,80,000", icon: DollarSign, color: "text-primary", bg: "bg-primary/10" },
+          { label: "Active Connections", val: "108 Nodes", icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
+          { label: "System Velocity", val: "94.2%", icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+          { label: "Data Integrity", val: "99.9%", icon: Zap, color: "text-amber-500", bg: "bg-amber-500/10" },
+        ].map((stat, i) => (
+          <div key={i} className="bg-card rounded-4xl border border-border shadow-xl p-8 space-y-4 hover:border-primary/30 transition-all group">
+            <div className={`w-12 h-12 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+              <stat.icon className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{stat.label}</p>
+              <p className="text-3xl font-black italic tracking-tighter">{stat.val}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Payroll Trend */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Payroll Trend (6 Months)
-          </h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={payrollData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip formatter={(value: any) => `₹${value.toLocaleString()}`} />
-              <Line
-                type="monotone"
-                dataKey="salary"
-                stroke="#4f46e5"
-                strokeWidth={2}
-                dot={{ fill: "#4f46e5", r: 4 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        <Card title="Financial Trajectory" icon={BarChart3}>
+          <div className="h-[350px] mt-6">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={payrollData}>
+                <defs>
+                  <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} />
+                <Tooltip
+                  contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
+                  formatter={(value: any) => [`₹${value.toLocaleString()}`, "Yield"]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="salary"
+                  stroke="#7c3aed"
+                  strokeWidth={4}
+                  dot={{ fill: "#7c3aed", r: 6, strokeWidth: 2, stroke: "#fff" }}
+                  activeDot={{ r: 8, strokeWidth: 0 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
 
-        {/* Department Wise Cost */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Department Wise Cost
-          </h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={departmentData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip formatter={(value: any) => `₹${value.toLocaleString()}`} />
-              <Legend />
-              <Bar dataKey="cost" fill="#4f46e5" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <Card title="Unit Value Distribution" icon={Layers}>
+          <div className="h-[350px] mt-6">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={departmentData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} />
+                <Tooltip
+                  contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
+                  formatter={(value: any) => `₹${value.toLocaleString()}`}
+                />
+                <Bar dataKey="cost" fill="#7c3aed" radius={[10, 10, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
       </div>
 
-      {/* Charts Row 2 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Leave Utilization */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Leave Utilization
-          </h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={leaveData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, value }: any) => `${name}: ${value}`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="used"
-                nameKey="leave_type"
-              >
-                {leaveData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+      {/* Row 2: Summary and Breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div className="lg:col-span-4 space-y-10">
+          <Card title="Temporal Utilization">
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={leaveData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={10}
+                    dataKey="used"
+                  >
+                    {leaveData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend verticalAlign="bottom" height={36} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+
+          <div className="bg-linear-to-br from-primary to-primary-foreground text-primary-foreground rounded-[2.5rem] p-10 space-y-6 shadow-2xl">
+            <Activity className="w-10 h-10 text-white animate-pulse" />
+            <div className="space-y-2">
+              <h3 className="text-xl font-black italic tracking-tighter">Operational Alert</h3>
+              <p className="text-xs font-medium opacity-70 leading-relaxed">
+                Engineering cost has exceeded the threshold by 4.2% this interval. Recommended audit sequence initiated.
+              </p>
+            </div>
+            <Button variant="secondary" className="w-full h-12 rounded-2xl font-black text-[10px] tracking-widest uppercase">
+              Launch Diagnostics
+            </Button>
+          </div>
         </div>
 
-        {/* Attendance Rate */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Weekly Attendance
-          </h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={attendanceData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="present" fill="#10b981" />
-              <Bar dataKey="absent" fill="#ef4444" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+        <div className="lg:col-span-8 space-y-8">
+          <div className="flex items-center justify-between">
+            <h2 className="text-premium-label flex items-center gap-3">
+              <Activity className="w-4 h-4 text-primary" />
+              Unit Summary Matrix
+            </h2>
+          </div>
 
-      {/* Detailed Reports */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">
-          Department Summary
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Department
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Employees
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total Cost
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Avg Salary
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {departmentData.map((dept) => (
-                <tr key={dept.name}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {dept.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {dept.employees}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ₹{dept.cost.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ₹{Math.round(dept.cost / dept.employees).toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+          <div className="bg-card rounded-4xl border border-border shadow-2xl overflow-hidden p-2">
+            <DataTable
+              columns={deptColumns}
+              data={departmentData}
+              isLoading={false}
+            />
+          </div>
 
-      {/* Export Options */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Export Reports</h2>
-        <div className="flex gap-4">
-          <button className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-            📊 Export to PDF
-          </button>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-            📋 Export to Excel
-          </button>
-          <button className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
-            🖨️ Print Report
-          </button>
+          {/* Export Deck */}
+          <div className="bg-muted/30 border border-border/50 rounded-4xl p-10 flex flex-wrap gap-6 items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-black italic">Archive Portal</p>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Protocol Compliant Data Export</p>
+            </div>
+            <div className="flex gap-4">
+              <Button variant="outline" className="h-14 px-8 rounded-2xl bg-white/50 backdrop-blur-sm border-2">
+                <FileText className="w-4 h-4 mr-2 text-primary" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Digital PDF</span>
+              </Button>
+              <Button variant="outline" className="h-14 px-8 rounded-2xl bg-white/50 backdrop-blur-sm border-2">
+                <Download className="w-4 h-4 mr-2 text-emerald-500" />
+                <span className="text-[10px] font-black uppercase tracking-widest">XML Binary</span>
+              </Button>
+              <Button variant="outline" className="h-14 px-8 rounded-2xl bg-white/50 backdrop-blur-sm border-2">
+                <Printer className="w-4 h-4 mr-2 text-amber-500" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Physical Array</span>
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -22,10 +22,10 @@ export const mapBackendUserToFrontendUser = (backendUser: any): GraphQLUser => {
       name: backendUser.organization_name || "Unknown Organization"
     } : null,
     // Relationships might be objects or IDs depending on serializer depth
-    manager: backendUser.manager, 
+    manager: backendUser.manager,
     department: backendUser.department ? (typeof backendUser.department === 'object' ? backendUser.department : { id: backendUser.department, name: backendUser.department_name }) : null,
     designation: backendUser.designation ? (typeof backendUser.designation === 'object' ? backendUser.designation : { id: backendUser.designation, name: backendUser.designation_name }) : null,
-    officeLocation: backendUser.office_location,
+    officeLocation: backendUser.office_location_details || backendUser.office_location,
     bankAccountNumber: backendUser.bank_account_number,
     bankIfscCode: backendUser.bank_ifsc_code,
     panNumber: backendUser.pan_number,

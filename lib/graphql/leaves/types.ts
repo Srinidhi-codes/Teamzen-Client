@@ -3,7 +3,7 @@ export interface LeaveType {
     name: string;
     code: string;
     description: string;
-    maxDaysPerYear: number;    
+    maxDaysPerYear: number;
 }
 
 export interface LeaveBalance {
@@ -16,6 +16,7 @@ export interface LeaveBalance {
     pendingApproval: number;
     carriedForward: number;
     lastAccruedDate: string;
+    availableBalance: number;
     accrued: number;
     expired: number;
     isLocked: boolean;
@@ -38,7 +39,7 @@ export interface LeaveRequest {
 }
 
 export type LeaveInput = {
-  organizationId: string;
+    organizationId: string;
 };
 
 export type LeaveRequestInput = {

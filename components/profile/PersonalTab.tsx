@@ -21,7 +21,7 @@ export function PersonalTab({
     user,
 }: PersonalTabProps) {
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in transition-all duration-500">
             <Card title="Basic Information" hover gradient>
                 <div className="grid grid-rows-2 grid-cols-2 gap-6">
                     <EditableField
@@ -48,7 +48,7 @@ export function PersonalTab({
                         label="Username"
                         value={formData.username || ""}
                         icon="@"
-                        editable={isEditing}
+                        editable={false}
                         onChange={(value) => handleInputChange("username", value)}
                         error={errors.username}
                         required
@@ -86,12 +86,12 @@ export function PersonalTab({
                     />
                     <EditableSelectField
                         label="Gender"
-                        value={formData.gender || ""}
+                        value={formData.gender || "unspecified"}
                         icon="⚧"
                         editable={isEditing}
                         onChange={(value) => handleInputChange("gender", value)}
                         options={[
-                            { value: "", label: "Not specified" },
+                            { value: "unspecified", label: "Not specified" },
                             { value: "male", label: "Male" },
                             { value: "female", label: "Female" },
                             { value: "other", label: "Other" },
@@ -106,7 +106,7 @@ export function PersonalTab({
                         label="Office Location"
                         value={formData.office_location || ""}
                         icon="📍"
-                        editable={isEditing}
+                        editable={false}
                         onChange={(value) => handleInputChange("office_location", value)}
                         error={errors.office_location}
                         placeholder="e.g. New York HQ"

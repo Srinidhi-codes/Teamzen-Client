@@ -35,6 +35,11 @@ export const GET_ME = gql`
         id
         name
         address
+        geoRadiusMeters
+        latitude
+        longitude
+        loginTime
+        logoutTime
       }
       organization {
         id
