@@ -6,7 +6,7 @@ import { useEffect, useCallback } from "react";
 
 export function useNotifications(onMessageReceived?: (msg: any) => void) {
     // Use window.location to determine the correct host
-    const getSocketUrl = useCallback(() => {
+    const getSocketUrl = useCallback(async () => {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/";
         let protocol = "ws:";
         let host = "localhost:8000";
@@ -21,7 +21,18 @@ export function useNotifications(onMessageReceived?: (msg: any) => void) {
             console.error("Invalid NEXT_PUBLIC_API_URL for WebSocket:", e);
         }
 
-        const url = `${protocol}//${host}/ws/notifications/`;
+        let token = "";
+        try {
+            const res = await fetch('/api/auth/ws-token');
+            if (res.ok) {
+                const data = await res.json();
+                token = data.token;
+            }
+        } catch (e) {
+            console.error("Failed to fetch WebSocket token:", e);
+        }
+
+        const url = `${protocol}//${host}/ws/notifications/${token ? `?token=${token}` : ''}`;
         console.log("Attempting Notification Socket connection to:", url);
         return url;
     }, []);
