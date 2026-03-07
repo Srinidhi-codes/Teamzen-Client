@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "@apollo/client/react"
 import { GetLeaveBalanceResponse, GetLeaveRequestResponse, GetLeavesResponse, GetTeamLeavesResponse, LeaveType } from "./types";
 import { GET_LEAVE_BALANCE, GET_LEAVE_REQUESTS, GET_LEAVES, GET_TEAM_LEAVES } from "./queries";
-import { CANCEL_LEAVE_REQUEST, CREATE_LEAVE_REQUEST } from "./mutations";
+import { CANCEL_LEAVE_REQUEST, CREATE_LEAVE_REQUEST, LEAVE_REQUEST_PROCESS } from "./mutations";
 
 export function useGraphQlLeaves(organizationId: string) {
    const { data, loading, error, refetch } = useQuery<GetLeavesResponse>(GET_LEAVES, {
@@ -106,5 +106,34 @@ export function useGraphQLCancelLeaveRequest() {
       cancelLeaveRequest,
       cancelLeaveRequestLoading: cancelLeaveRequestState.loading,
       cancelLeaveRequestError: cancelLeaveRequestState.error,
+   }
+}
+
+export function useGraphQLLeaveRequestProcess() {
+   const [processLeaveRequestMutation, processLeaveRequestState] = useMutation(LEAVE_REQUEST_PROCESS, {
+      refetchQueries: [{ query: GET_LEAVE_BALANCE }, { query: GET_LEAVE_REQUESTS }]
+   })
+
+   const processLeaveRequest = async (input: {
+      request_id: string;
+      status: string;
+      comments: string;
+   }) => {
+      const response = await processLeaveRequestMutation({
+         variables: {
+            input: {
+               requestId: input.request_id,
+               status: input.status,
+               comments: input.comments
+            }
+         },
+      })
+      return response.data
+   }
+
+   return {
+      processLeaveRequest,
+      processLeaveRequestLoading: processLeaveRequestState.loading,
+      processLeaveRequestError: processLeaveRequestState.error,
    }
 }

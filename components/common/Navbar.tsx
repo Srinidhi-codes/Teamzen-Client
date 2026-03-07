@@ -32,7 +32,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
 
   const handleLogout = async () => {
     try {
-      await client.post(API_ENDPOINTS.LOGOUT);
+      await fetch('/api/auth/logout', { method: 'POST' });
     } catch (error) {
       console.error("Logout failed:", error);
     } finally {

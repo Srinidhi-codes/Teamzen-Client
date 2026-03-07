@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { Badge } from "@/components/common/Badge";
-import { useLeaveRequests } from "@/lib/api/hooks";
+import { useGraphQLLeaveRequests, useGraphQLLeaveRequestProcess } from "@/lib/graphql/leaves/leavesHook";
 
 export default function ApprovalsPage() {
-  const { data: requests, isLoading, approve } = useLeaveRequests();
+  const { leaveRequestData: requests, isLoading } = useGraphQLLeaveRequests();
+  const { processLeaveRequest, processLeaveRequestLoading } = useGraphQLLeaveRequestProcess();
   const [comments, setComments] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
@@ -13,7 +14,7 @@ export default function ApprovalsPage() {
 
   const handleApprove = async (id: number) => {
     try {
-      await approve.mutateAsync({ id, comments });
+      await processLeaveRequest({ request_id: id.toString(), status: "approved", comments });
       setSelectedId(null);
       setComments("");
       alert("Leave approved successfully");
@@ -105,7 +106,7 @@ export default function ApprovalsPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleApprove(request.id)}
-                        disabled={approve.isPending}
+                        disabled={processLeaveRequestLoading}
                         className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
                       >
                         Approve

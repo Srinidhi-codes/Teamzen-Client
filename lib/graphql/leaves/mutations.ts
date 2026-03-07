@@ -32,3 +32,12 @@ export const CANCEL_LEAVE_REQUEST = gql`
             }
         }
 `
+
+export const LEAVE_REQUEST_PROCESS = gql`
+    mutation LeaveRequestProcess($input: LeaveRequestProcessInput!) {
+        leaveRequestProcess(input: $input) {
+            id
+            status
+        }
+    }
+`;
