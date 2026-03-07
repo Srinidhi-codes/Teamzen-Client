@@ -1,6 +1,6 @@
 import { gql } from "@apollo/client";
 
-export const CREATE_LEAVE_REQUEST = gql `
+export const CREATE_LEAVE_REQUEST = gql`
     mutation CreateLeaveRequest($input: LeaveRequestInput!) {
         createLeaveRequest(input: $input){
         id
@@ -16,7 +16,7 @@ export const CREATE_LEAVE_REQUEST = gql `
         }}
 `
 
-export const CANCEL_LEAVE_REQUEST = gql `
+export const CANCEL_LEAVE_REQUEST = gql`
     mutation CancelLeaveRequest($requestId: ID!){
         cancelLeaveRequest(requestId: $requestId){
             id
@@ -32,3 +32,12 @@ export const CANCEL_LEAVE_REQUEST = gql `
             }
         }
 `
+
+export const LEAVE_REQUEST_PROCESS = gql`
+    mutation LeaveRequestProcess($input: LeaveRequestProcessInput!) {
+        leaveRequestProcess(input: $input) {
+            id
+            status
+        }
+    }
+`;

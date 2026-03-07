@@ -60,7 +60,7 @@ export default function LoginForm() {
           <p className="mt-2 text-sm text-muted-foreground">Enter your identifiers to access your account</p>
         </div>
 
-        <div className="glass p-8 rounded-3xl animate-slide-up bg-linear-to-b from-primary/30 via-primary/15">
+        <div className="glass p-8 rounded-3xl animate-slide-up bg-linear-to-b from-primary/10 via-primary/5">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               {/* Email Field */}
@@ -107,7 +107,7 @@ export default function LoginForm() {
                 <input type="checkbox" className="w-4 h-4 rounded border-border bg-card text-primary focus:ring-primary cursor-pointer" />
                 <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Remember me</span>
               </label>
-              <Link href="#" className="text-sm font-medium text-primary hover:opacity-80 no-underline transition-colors">
+              <Link href="/forgot-password" title="Forgot Password?" className="text-sm font-medium text-primary hover:opacity-80 no-underline transition-colors">
                 Recover access?
               </Link>
             </div>

@@ -19,9 +19,11 @@ interface DatePickerSimpleProps {
     error?: string
     required?: boolean
     className?: string
+    disableFuture?: boolean
+    disablePast?: boolean
 }
 
-export function DatePickerSimple({ label, value, onChange, error, required, className }: DatePickerSimpleProps) {
+export function DatePickerSimple({ label, value, onChange, error, required, className, disableFuture = false, disablePast = false }: DatePickerSimpleProps) {
     const [open, setOpen] = React.useState(false)
 
     const dateValue = value ? (typeof value === 'string' ? moment(value.substring(0, 10), "YYYY-MM-DD").toDate() : value) : undefined;
@@ -65,13 +67,15 @@ export function DatePickerSimple({ label, value, onChange, error, required, clas
                             onChange?.(date)
                             setOpen(false)
                         }}
-                        disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                        }
+                        disabled={(date) => {
+                            if (disableFuture && date > new Date()) return true;
+                            if (disablePast && date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
+                            return date < new Date("1900-01-01");
+                        }}
                         initialFocus
                         captionLayout="dropdown"
                         fromYear={1960}
-                        toYear={new Date().getFullYear()}
+                        toYear={new Date().getFullYear() + 10}
                     />
                 </PopoverContent>
             </Popover>

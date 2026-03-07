@@ -16,8 +16,14 @@ export function useNotifications(onMessageReceived?: (msg: any) => void) {
             const urlObj = new URL(apiUrl);
             protocol = urlObj.protocol === "https:" ? "wss:" : "ws:";
             host = urlObj.host;
-        } else if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-            host = "localhost:8000";
+        } else {
+            // Fallback for local development
+            // If we're on a dev port (like 3000 or 3001), the backend is likely on 8000
+            if (window.location.port === "3000" || window.location.port === "3001") {
+                host = `${window.location.hostname}:8000`;
+            } else {
+                host = window.location.host;
+            }
         }
 
         const url = `${protocol}//${host}/ws/notifications/`;
@@ -39,8 +45,8 @@ export function useNotifications(onMessageReceived?: (msg: any) => void) {
         },
         onMessage: (event) => {
             const data = JSON.parse(event.data);
-            // Only process notifications for the correct level
-            if (data.level === 'personal') {
+            // Process both personal and admin notifications
+            if (data.level === 'personal' || data.level === 'admin') {
                 toast.success(data.message, {
                     description: `${data.actor?.firstName} ${data.verb}`,
                     duration: 5000,

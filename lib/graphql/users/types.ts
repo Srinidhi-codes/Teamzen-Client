@@ -23,6 +23,9 @@ export interface GraphQLUser {
   organization?: {
     id: string;
     name: string;
+    logo?: {
+      url: string;
+    } | null;
   } | null;
 
   manager?: {

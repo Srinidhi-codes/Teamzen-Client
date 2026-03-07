@@ -3,7 +3,7 @@ import { FormSelect } from "@/components/common/FormSelect";
 interface EditableSelectFieldProps {
     label: string;
     value: string;
-    icon: string;
+    icon: React.ReactNode;
     editable: boolean;
     onChange: (value: string) => void;
     options: { value: string; label: string }[];

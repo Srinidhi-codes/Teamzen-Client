@@ -13,7 +13,7 @@ import { UserFormData } from "./types";
 import { userProfileSchema } from "@/lib/schemas";
 import { z } from "zod";
 import { Button } from "../ui/button";
-import { Loader2 } from "lucide-react";
+import { Briefcase, DollarSign, IndianRupee, Loader2, Lock, User } from "lucide-react";
 
 export default function ProfilePage() {
   const { user, isLoading: isUserLoading, error: userError } = useGraphQLUser();
@@ -58,10 +58,10 @@ export default function ProfilePage() {
   }, [user]);
 
   const tabs = [
-    { id: "personal", label: "Personal Info", icon: "👤" },
-    { id: "employment", label: "Employment", icon: "💼" },
-    { id: "financial", label: "Financial", icon: "💰" },
-    { id: "security", label: "Security", icon: "🔒" },
+    { id: "personal", label: "Personal Info", icon: <User /> },
+    { id: "employment", label: "Employment", icon: <Briefcase /> },
+    { id: "financial", label: "Financial", icon: <IndianRupee /> },
+    { id: "security", label: "Security", icon: <Lock /> },
   ];
 
   const handleInputChange = (field: keyof UserFormData, value: string) => {
@@ -174,7 +174,17 @@ export default function ProfilePage() {
       window.location.reload();
     } catch (err: any) {
       console.error("Error uploading profile picture:", err);
-      error("Failed to upload profile picture. Please try again.");
+      let errorMsg = "Failed to upload profile picture.";
+      if (err.response?.data) {
+        // Extract the first error message if available
+        const data = err.response.data;
+        const firstKey = Object.keys(data)[0];
+        if (firstKey) {
+          const firstErr = data[firstKey];
+          errorMsg += ` ${firstKey}: ${Array.isArray(firstErr) ? firstErr[0] : firstErr}`;
+        }
+      }
+      error(errorMsg);
     }
   };
 
@@ -271,7 +281,7 @@ export default function ProfilePage() {
       </div>
 
       {isEditing && activeTab !== "security" && (
-        <div className="glass p-6 rounded-2xl border border-white/30 shadow-xl flex justify-end space-x-4 animate-slide-up sticky bottom-4 z-10">
+        <div className="glass-dark p-6 rounded-2xl border border-white/30 shadow-xl flex justify-end space-x-4 animate-slide-up sticky bottom-4 z-10">
           <Button
             onClick={handleCancel}
             variant={"outline"}

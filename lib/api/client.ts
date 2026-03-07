@@ -2,20 +2,18 @@ import axios from "axios";
 import { API_ENDPOINTS } from "./endpoints";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 const client = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true, // Required for cookies
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 /* ----------------------------------
    Refresh Queue (Cookie-safe)
 ---------------------------------- */
 let isRefreshing = false;
+let refreshTokenPromise: Promise<void> | null = null;
 let failedQueue: {
   resolve: () => void;
   reject: (error: any) => void;
@@ -60,17 +58,19 @@ client.interceptors.response.use(
 
         processQueue();
         return client(originalRequest);
-      } catch (refreshError) {
+      } catch (refreshError: any) {
         processQueue(refreshError);
 
         // ❌ Refresh failed → session expired
         // Clear global store
-        import("@/lib/store/useStore").then(({ useStore }) => {
-           useStore.getState().logoutUser();
-        });
-
         if (typeof window !== "undefined") {
-          window.location.href = "/login";
+          import("@/lib/store/useStore").then(({ useStore }) => {
+            useStore.getState().logoutUser();
+          });
+
+          if (!window.location.pathname.includes("/login")) {
+            window.location.href = "/login";
+          }
         }
 
         return Promise.reject(refreshError);
@@ -79,30 +79,51 @@ client.interceptors.response.use(
       }
     }
 
-
-
     return Promise.reject(error);
   }
 );
 
+/* ----------------------------------
+   Manual Token Refresh
+---------------------------------- */
 export const refreshAuthToken = async () => {
-    if (isRefreshing) {
-        return new Promise<void>((resolve, reject) => {
-            failedQueue.push({ resolve, reject });
-        });
+  // Check if we even have a session flag (non-httponly cookie)
+  if (typeof document !== "undefined") {
+    const hasSession = document.cookie.includes("session_can_refresh=true");
+    if (!hasSession) {
+      console.log("No active session detected, skipping refresh.");
+      throw new Error("No active session");
     }
+  }
 
-    isRefreshing = true;
+  // If already refreshing, return the existing promise
+  if (isRefreshing && refreshTokenPromise) {
+    return refreshTokenPromise;
+  }
 
+  // If refresh is queued, wait in queue
+  if (isRefreshing) {
+    return new Promise<void>((resolve, reject) => {
+      failedQueue.push({ resolve, reject });
+    });
+  }
+
+  isRefreshing = true;
+
+  refreshTokenPromise = (async () => {
     try {
-        await client.post(API_ENDPOINTS.REFRESH);
-        processQueue();
+      await client.post(API_ENDPOINTS.REFRESH);
+      processQueue();
     } catch (error) {
-        processQueue(error);
-        throw error;
+      processQueue(error);
+      throw error;
     } finally {
-        isRefreshing = false;
+      isRefreshing = false;
+      refreshTokenPromise = null;
     }
+  })();
+
+  return refreshTokenPromise;
 };
 
 export default client;

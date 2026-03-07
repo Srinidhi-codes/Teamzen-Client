@@ -49,8 +49,12 @@ export type LeaveRequestInput = {
     reason: string;
 }
 
-export type GetLeaveRequestResponse = {
+export interface GetLeaveRequestResponse {
     getLeaveRequests: LeaveRequest[];
+}
+
+export interface GetTeamLeavesResponse {
+    teamLeaves: LeaveRequest[];
 }
 
 export type GetLeaveBalanceResponse = {
