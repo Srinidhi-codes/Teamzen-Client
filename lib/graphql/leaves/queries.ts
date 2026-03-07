@@ -1,4 +1,4 @@
-import {gql} from "@apollo/client";
+import { gql } from "@apollo/client";
 
 export const GET_LEAVES = gql`  
     query LeaveTypes($organizationId: LeaveInput!){
@@ -29,6 +29,7 @@ export const GET_LEAVE_BALANCE = gql`
     used
     pendingApproval
     accrued
+    carriedForward
     expired
     isLocked
     availableBalance
@@ -38,7 +39,7 @@ export const GET_LEAVE_BALANCE = gql`
 }
 `;
 
-export const GET_LEAVE_REQUESTS = gql `
+export const GET_LEAVE_REQUESTS = gql`
   query getLeaveRequests{
     getLeaveRequests{
       id
@@ -62,5 +63,29 @@ export const GET_LEAVE_REQUESTS = gql `
       approvalComments
     }
   }
-`
+`;
+
+export const GET_TEAM_LEAVES = gql`
+  query TeamLeaves {
+    teamLeaves {
+      id
+      user {
+        id
+        firstName
+        lastName
+        profilePicture{
+          url
+        }
+      }
+      leaveType {
+        id
+        name
+      }
+      fromDate
+      toDate
+      durationDays
+      status
+    }
+  }
+`;
 

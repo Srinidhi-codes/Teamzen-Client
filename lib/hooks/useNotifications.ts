@@ -40,8 +40,8 @@ export function useNotifications(onMessageReceived?: (msg: any) => void) {
         },
         onMessage: (event) => {
             const data = JSON.parse(event.data);
-            // Only process notifications for the correct level
-            if (data.level === 'personal') {
+            // Process both personal and admin notifications
+            if (data.level === 'personal' || data.level === 'admin') {
                 toast.success(data.message, {
                     description: `${data.actor?.firstName} ${data.verb}`,
                     duration: 5000,

@@ -3,7 +3,7 @@ import { EditableField } from "@/components/common/EditableField";
 import { EditableSelectField } from "@/components/common/EditableSelectField";
 import { UserFormData } from "./types";
 import moment from "moment";
-import { CheckCircle, CircleXIcon } from "lucide-react";
+import { AtSign, Cake, CheckCircle, CircleXIcon, Mail, MapPin, Phone, User, VenusAndMars } from "lucide-react";
 
 interface PersonalTabProps {
     formData: Partial<UserFormData>;
@@ -27,7 +27,7 @@ export function PersonalTab({
                     <EditableField
                         label="First Name"
                         value={formData.first_name || ""}
-                        icon="👤"
+                        icon={<User />}
                         editable={isEditing}
                         onChange={(value) => handleInputChange("first_name", value)}
                         error={errors.first_name}
@@ -37,7 +37,7 @@ export function PersonalTab({
                     <EditableField
                         label="Last Name"
                         value={formData.last_name || ""}
-                        icon="👤"
+                        icon={<User />}
                         editable={isEditing}
                         onChange={(value) => handleInputChange("last_name", value)}
                         error={errors.last_name}
@@ -47,7 +47,7 @@ export function PersonalTab({
                     <EditableField
                         label="Username"
                         value={formData.username || ""}
-                        icon="@"
+                        icon={<AtSign />}
                         editable={false}
                         onChange={(value) => handleInputChange("username", value)}
                         error={errors.username}
@@ -57,7 +57,7 @@ export function PersonalTab({
                     <EditableField
                         label="Email"
                         value={formData.email || ""}
-                        icon="📧"
+                        icon={<Mail />}
                         type="email"
                         editable={isEditing}
                         onChange={(value) => handleInputChange("email", value)}
@@ -68,7 +68,7 @@ export function PersonalTab({
                     <EditableField
                         label="Phone Number"
                         value={formData.phone_number || ""}
-                        icon="📱"
+                        icon={<Phone />}
                         type="tel"
                         editable={isEditing}
                         onChange={(value) => handleInputChange("phone_number", value)}
@@ -78,7 +78,7 @@ export function PersonalTab({
                     <EditableField
                         label="Date of Birth"
                         value={moment(formData.date_of_birth || "").format("ll")}
-                        icon="🎂"
+                        icon={<Cake />}
                         type="date"
                         editable={isEditing}
                         onChange={(value) => handleInputChange("date_of_birth", value)}
@@ -87,7 +87,7 @@ export function PersonalTab({
                     <EditableSelectField
                         label="Gender"
                         value={formData.gender || "unspecified"}
-                        icon="⚧"
+                        icon={<VenusAndMars />}
                         editable={isEditing}
                         onChange={(value) => handleInputChange("gender", value)}
                         options={[
@@ -105,7 +105,7 @@ export function PersonalTab({
                     <EditableField
                         label="Office Location"
                         value={formData.office_location || ""}
-                        icon="📍"
+                        icon={<MapPin />}
                         editable={false}
                         onChange={(value) => handleInputChange("office_location", value)}
                         error={errors.office_location}

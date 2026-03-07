@@ -25,6 +25,26 @@ export const GET_USER_DASHBOARD_STATS = gql`
         month
         value
       }
+      upcomingEvents {
+        id
+        user
+        type
+        date
+        profilePicture
+        daysUntil
+      }
+      wishMessage
+    }
+  }
+`;
+
+export const GET_USER_ACTIVITIES = gql`
+  query GetUserActivities {
+    userActivities {
+      id
+      user
+      action
+      time
     }
   }
 `;
