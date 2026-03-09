@@ -2,42 +2,45 @@
 
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import { toast } from "sonner";
-import { useEffect, useCallback } from "react";
+import { useEffect, useState } from "react";
 
 export function useNotifications(onMessageReceived?: (msg: any) => void) {
-    // Use window.location to determine the correct host
-    const getSocketUrl = useCallback(async () => {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/";
-        let protocol = "ws:";
-        let host = "localhost:8000";
+    const [socketUrl, setSocketUrl] = useState<string | null>(null);
 
-        try {
-            // Explicitly parse the NEXT_PUBLIC_API_URL to construct the wss:// URL to the Render backend,
-            // instead of using window.location.host which points to Vercel.
-            const urlObj = new URL(apiUrl);
-            protocol = urlObj.protocol === "https:" ? "wss:" : "ws:";
-            host = urlObj.host;
-        } catch (e) {
-            console.error("Invalid NEXT_PUBLIC_API_URL for WebSocket:", e);
-        }
+    useEffect(() => {
+        const fetchTokenAndConnect = async () => {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/";
+            let protocol = "ws:";
+            let host = "localhost:8000";
 
-        let token = "";
-        try {
-            const res = await fetch('/api/auth/ws-token');
-            if (res.ok) {
-                const data = await res.json();
-                token = data.token;
+            try {
+                const urlObj = new URL(apiUrl);
+                protocol = urlObj.protocol === "https:" ? "wss:" : "ws:";
+                host = urlObj.host;
+            } catch (e) {
+                console.error("Invalid NEXT_PUBLIC_API_URL for WebSocket:", e);
             }
-        } catch (e) {
-            console.error("Failed to fetch WebSocket token:", e);
-        }
 
-        const url = `${protocol}//${host}/ws/notifications/${token ? `?token=${token}` : ''}`;
-        console.log("Attempting Notification Socket connection to:", url);
-        return url;
+            let token = "";
+            try {
+                const res = await fetch('/api/auth/ws-token');
+                if (res.ok) {
+                    const data = await res.json();
+                    token = data.token;
+                }
+            } catch (e) {
+                console.error("Failed to fetch WebSocket token:", e);
+            }
+
+            const url = `${protocol}//${host}/ws/notifications/${token ? `?token=${token}` : ''}`;
+            console.log("Setting Notification Socket connection to:", url);
+            setSocketUrl(url);
+        };
+
+        fetchTokenAndConnect();
     }, []);
 
-    const { readyState } = useWebSocket(getSocketUrl, {
+    const { readyState } = useWebSocket(socketUrl, {
         shouldReconnect: () => true,
         reconnectInterval: 5000,
         onOpen: () => console.log("Notification Socket Connected ✅"),
@@ -62,7 +65,7 @@ export function useNotifications(onMessageReceived?: (msg: any) => void) {
                 }
             }
         }
-    });
+    }, socketUrl !== null);
 
     return { readyState, isConnected: readyState === ReadyState.OPEN };
 }
