@@ -14,6 +14,7 @@ import {
 import moment from "moment";
 import { FormTextarea } from "../common/FormTextArea";
 import { FormInput } from "../common/FormInput";
+import { PremiumModal } from "../common/PremiumModal";
 
 export type AttendanceRow = {
     id: string;
@@ -84,100 +85,78 @@ export function CorrectionModal({ record, onClose, onSubmit }: Props) {
     const formatTime = (timeStr?: string | null) => timeStr ? moment(timeStr, "HH:mm:ss").format("hh:mm A") : "--:--";
 
     return (
-        <div className="fixed inset-0 -top-20 bg-background/60 flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-            <div className="bg-card rounded-[2.5rem] w-full max-w-2xl shadow-3xl border border-border overflow-hidden animate-in zoom-in-95 duration-300">
-                {/* Header */}
-                <div className="bg-linear-to-br from-primary/20 via-primary/5 to-background p-8 text-primary-foreground relative">
-                    <div className="absolute top-0 right-0 p-8 opacity-10">
-                        <Calendar className="w-32 h-32 rotate-12" />
-                    </div>
-                    <div className="flex flex-col items-start gap-1 relative z-10">
-                        <div className="flex items-center gap-2 mb-1">
-                            <h2 className="text-3xl font-black text-black">
-                                Attendance Correction
-                            </h2>
-                        </div>
-                        <p className="text-gray-500/70 text-xs font-bold flex items-center gap-2 tracking-wide">
-                            Requesting correction for {formatDate(record.attendanceDate)}
-                        </p>
-                    </div>
-
-                    <button
-                        onClick={onClose}
-                        className="absolute top-4 right-4 text-black hover:text-red-500 transition-all active:scale-90"
-                    >
-                        <X className="w-6 h-6" />
-                    </button>
-                </div>
-
-
+        <PremiumModal
+            isOpen={true}
+            onClose={onClose}
+            title="Attendance Correction"
+            subtitle={`Requesting Protocol Adjustment for ${moment(record.attendanceDate).format("MMMM DD, YYYY")}`}
+            badge="ADJUSTMENT REQUEST"
+            icon={Calendar}
+        >
+            <div className="space-y-8">
                 {/* Body */}
-                <div className="p-8 space-y-8">
+                <div className="p-6 sm:p-8 space-y-6 sm:space-y-8 overflow-y-auto overflow-x-hidden custom-scrollbar">
                     {/* Comparison Engine */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 relative">
                         {/* Connecting Arrow */}
-                        <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-card border border-border shadow-sm items-center justify-center z-10 text-muted-foreground/60">
+                        <div className="hidden sm:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-card border border-border shadow-sm items-center justify-center z-10 text-muted-foreground/60">
                             <ArrowRight className="w-5 h-5" />
                         </div>
 
-                        <div className="bg-red-300/5 p-6 rounded-4xl border border-red-500/30 shadow-sm group hover:scale-105 transition-all duration-300">
+                        <div className="bg-red-300/5 p-5 sm:p-6 rounded-3xl sm:rounded-4xl border border-red-500/30 shadow-sm transition-all duration-300">
 
-                            <h3 className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-4 ml-1">Original Records</h3>
-                            <div className="space-y-4">
+                            <h3 className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-3 sm:mb-4 ml-1">Original Records</h3>
+                            <div className="space-y-3 sm:space-y-4">
                                 <div className="flex items-center justify-between">
                                     <span className="text-[10px] font-bold text-red-500 uppercase">Check In</span>
-                                    <span className="text-sm font-black text-red-500">{formatTime(record.actualLoginTime)}</span>
+                                    <span className="text-xs sm:text-sm font-black text-red-500">{formatTime(record.actualLoginTime)}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-[10px] font-bold text-red-500 uppercase">Check Out</span>
-                                    <span className="text-sm font-black text-red-500">{formatTime(record.actualLogoutTime)}</span>
+                                    <span className="text-xs sm:text-sm font-black text-red-500">{formatTime(record.actualLogoutTime)}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-green-300/5 p-6 rounded-4xl border border-green-500/30 group shadow-sm hover:scale-105 transition-all duration-300">
+                        <div className="bg-emerald-300/5 p-5 sm:p-6 rounded-3xl sm:rounded-4xl border border-emerald-500/30 transition-all duration-300">
 
-                            <h3 className="text-[10px] font-black text-green-500 uppercase tracking-widest mb-4 ml-1">Proposed Correction</h3>
-                            <div className="space-y-4">
+                            <h3 className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-3 sm:mb-4 ml-1">Proposed Correction</h3>
+                            <div className="space-y-3 sm:space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-bold text-green-500/60 uppercase">Check In</span>
-                                    <span className="text-sm font-black text-green-500">{formatTime(form.correctedLoginTime)}</span>
+                                    <span className="text-[10px] font-bold text-emerald-500/60 uppercase">Check In</span>
+                                    <span className="text-xs sm:text-sm font-black text-emerald-500">{formatTime(form.correctedLoginTime)}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-bold text-green-500/60 uppercase">Check Out</span>
-                                    <span className="text-sm font-black text-green-500">{formatTime(form.correctedLogoutTime)}</span>
+                                    <span className="text-[10px] font-bold text-emerald-500/60 uppercase">Check Out</span>
+                                    <span className="text-xs sm:text-sm font-black text-emerald-500">{formatTime(form.correctedLogoutTime)}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-muted/30 p-8 rounded-4xl border border-border/50">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 bg-muted/30 p-6 sm:p-8 rounded-3xl sm:rounded-4xl border border-border/50">
                         <div className="space-y-2">
-                            <div className="relative">
-                                <FormInput
-                                    label="Corrected Login Time"
-                                    type="time"
-                                    step="1"
-                                    value={form.correctedLoginTime}
-                                    onChange={(e) => update("correctedLoginTime", e.target.value)}
-                                    className={`input pl-12 ${errors.correctedLoginTime ? 'border-destructive' : ''}`}
-                                />
-                            </div>
+                            <FormInput
+                                label="Corrected Login"
+                                type="time"
+                                step="1"
+                                value={form.correctedLoginTime}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => update("correctedLoginTime", e.target.value)}
+                                className={`input h-12 transition-all ${errors.correctedLoginTime ? 'border-destructive' : ''}`}
+                            />
                             {errors.correctedLoginTime && <p className="text-[9px] font-black text-destructive uppercase tracking-widest ml-1">{errors.correctedLoginTime}</p>}
                         </div>
 
                         <div className="space-y-2">
-                            <div className="relative">
-                                <FormInput
-                                    label="Corrected Logout Time"
-                                    type="time"
-                                    step="1"
-                                    value={form.correctedLogoutTime}
-                                    onChange={(e) => update("correctedLogoutTime", e.target.value)}
-                                    className={`input pl-12 ${errors.correctedLogoutTime ? 'border-destructive' : ''}`}
-                                />
-                            </div>
+                            <FormInput
+                                label="Corrected Logout"
+                                type="time"
+                                step="1"
+                                value={form.correctedLogoutTime}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => update("correctedLogoutTime", e.target.value)}
+                                className={`input h-12 transition-all ${errors.correctedLogoutTime ? 'border-destructive' : ''}`}
+                            />
                             {errors.correctedLogoutTime && <p className="text-[9px] font-black text-destructive uppercase tracking-widest ml-1">{errors.correctedLogoutTime}</p>}
                         </div>
                     </div>
@@ -193,38 +172,34 @@ export function CorrectionModal({ record, onClose, onSubmit }: Props) {
                         />
                         {errors.reason && <p className="text-[9px] font-black text-destructive uppercase tracking-widest ml-1">{errors.reason}</p>}
                     </div>
-                    <div className="p-6 rounded-2xl bg-primary/5 border border-primary/20 flex gap-4">
+                    <div className="p-4 sm:p-6 rounded-2xl bg-primary/5 border border-primary/20 flex gap-3 sm:gap-4">
                         <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                        <p className="text-[11px] font-medium text-muted-foreground leading-relaxed">
-                            Submission of this adjustment initiates an <span className="text-primary font-bold italic">Attendance Correction</span>.
-                            HQ will review the attendance markers against original attendance logs.
+                        <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground leading-relaxed">
+                            Adjustment submission initiates a <span className="text-primary font-bold italic underline decoration-primary/30">Protocol Review</span>.
+                            Markers will be verified against system original logs.
                         </p>
                     </div>
                 </div>
 
                 {/* Footer Controls */}
-                <div className="p-8 border-t border-border flex flex-col sm:flex-row justify-end gap-4 bg-muted/20 backdrop-blur-sm">
+                <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 pt-10">
                     <button
                         onClick={onClose}
-                        className="btn-ghost"
+                        className="btn-outline h-12 px-8 font-black text-[10px] uppercase tracking-widest order-2 sm:order-1"
                         disabled={loading}
                     >
                         Dismiss
                     </button>
-                    <div className="flex gap-4">
-                        <button
-                            onClick={submit}
-                            disabled={loading}
-                            className="btn-primary px-12 gap-3"
-                        >
-                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-                            Submit Correction
-                        </button>
-                    </div>
+                    <button
+                        onClick={submit}
+                        disabled={loading}
+                        className="btn-primary h-12 px-10 gap-2 font-black text-[10px] uppercase tracking-widest order-1 sm:order-2 shadow-xl shadow-primary/20"
+                    >
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                        Submit Correction
+                    </button>
                 </div>
-
-
             </div>
-        </div>
+        </PremiumModal>
     );
 }

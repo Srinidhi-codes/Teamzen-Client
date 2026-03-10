@@ -69,10 +69,10 @@ export function AssistantWidget() {
     };
 
     return (
-        <div className="fixed bottom-6 right-6 z-100 flex flex-col items-end transition-all duration-300">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-100 flex flex-col items-end transition-all duration-300">
             {/* Chat Window */}
             {isOpen && (
-                <div className="mb-4 w-[400px] h-[600px] bg-card border border-border rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
+                <div className="mb-4 w-[calc(100vw-2rem)] sm:w-[400px] h-[calc(100vh-5rem)] md:h-[600px] max-h-[600px] bg-card border border-border rounded-4xl sm:rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
                     {/* Header */}
                     <div className="p-6 border-b border-border bg-muted/20 backdrop-blur-sm flex justify-between items-center group">
                         <div className="flex items-center gap-3">
@@ -196,7 +196,7 @@ export function AssistantWidget() {
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 placeholder="Message assistant..."
-                                className="pr-14 h-14 rounded-2xl bg-muted/30 border-border focus-visible:ring-primary/20 transition-all font-medium py-4 px-6"
+                                className="h-14 rounded-2xl bg-muted/30 border-border focus-visible:ring-primary/20 transition-all font-medium py-4 pl-6 pr-16"
                                 disabled={isLoading}
                             />
                             <button

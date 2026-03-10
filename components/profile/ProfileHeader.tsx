@@ -4,6 +4,7 @@ import { handleDownloadCV } from "@/lib/downloadCv";
 import { Camera, Edit2, X, Download, CheckCircle, Briefcase, Building2, ShieldCheck, Mail, Phone, MapPin } from "lucide-react";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import Image from "next/image";
 
 interface ProfileHeaderProps {
@@ -28,21 +29,21 @@ export function ProfileHeader({
             <div className="absolute top-0 right-0 w-1/2 h-full bg-linear-to-l from-primary/5 to-transparent pointer-events-none" />
             <div className="absolute -left-20 -top-20 w-80 h-80 bg-primary/5 rounded-full blur-3xl opacity-50" />
 
-            <div className="relative z-10 flex flex-col lg:flex-row items-center lg:items-end gap-10">
+            <div className="relative z-10 flex flex-col lg:flex-row items-center lg:items-end gap-6 sm:gap-10">
                 {/* Avatar Section */}
                 <div className="relative shrink-0">
-                    <div className="w-44 h-44 rounded-[2.5rem] p-1 bg-linear-to-br from-primary to-primary/20 shadow-2xl relative z-10">
-                        <div className="w-full h-full bg-background rounded-[2.2rem] overflow-hidden flex items-center justify-center border-4 border-background shadow-inner">
+                    <div className="w-32 h-32 sm:w-44 sm:h-44 rounded-3xl sm:rounded-[2.5rem] p-1 bg-linear-to-br from-primary to-primary/20 shadow-2xl relative z-10">
+                        <div className="w-full h-full bg-background rounded-2xl sm:rounded-[2.2rem] overflow-hidden flex items-center justify-center border-2 sm:border-4 border-background shadow-inner">
                             {user.profile_picture ? (
                                 <Image
                                     src={user.profile_picture}
                                     alt="Profile"
-                                    width={100}
-                                    height={100}
+                                    width={176}
+                                    height={176}
                                     className="w-full h-full object-cover"
                                 />
                             ) : (
-                                <div className="w-full h-full bg-linear-to-br from-primary to-primary/60 flex items-center justify-center text-white text-6xl font-black italic drop-shadow-lg">
+                                <div className="w-full h-full bg-linear-to-br from-primary to-primary/60 flex items-center justify-center text-white text-4xl sm:text-6xl font-black italic drop-shadow-lg">
                                     {user.first_name?.charAt(0)}
                                     {user.last_name?.charAt(0)}
                                 </div>
@@ -52,9 +53,9 @@ export function ProfileHeader({
 
                     <label
                         htmlFor="profile-picture-upload"
-                        className="absolute -bottom-2 -right-2 w-14 h-14 bg-primary text-primary-foreground rounded-2xl shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer z-20 border-4 border-background"
+                        className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 w-10 h-10 sm:w-14 sm:h-14 bg-primary text-primary-foreground rounded-xl sm:rounded-2xl shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer z-20 border-2 sm:border-4 border-background"
                     >
-                        <Camera className="w-6 h-6" />
+                        <Camera className="w-4 h-4 sm:w-6 sm:h-6" />
                         <input
                             id="profile-picture-upload"
                             type="file"
@@ -68,11 +69,11 @@ export function ProfileHeader({
                 {/* Info Content */}
                 <div className="flex-1 text-center lg:text-left space-y-6 pb-2">
                     <div className="space-y-3">
-                        <div className="flex items-center justify-center lg:justify-start gap-3">
-                            <h1 className="text-4xl lg:text-5xl font-black tracking-tighter italic">
+                        <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3">
+                            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tighter italic">
                                 {user.first_name} <span className="text-primary">{user.last_name}</span>
                             </h1>
-                            {user.isVerified && <ShieldCheck className="w-6 h-6 text-emerald-500 fill-emerald-500/10" />}
+                            {user.isVerified && <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-500 fill-emerald-500/10" />}
                         </div>
 
                         <div className="flex flex-wrap justify-center lg:justify-start gap-4">
@@ -99,15 +100,22 @@ export function ProfileHeader({
                 </div>
 
                 {/* Actions */}
-                <div className="flex lg:flex-col gap-4 shrink-0 pb-2">
+                <div className="flex flex-col sm:flex-row lg:flex-col gap-3 sm:gap-4 w-full sm:w-auto shrink-0 pb-2">
                     <Button
                         onClick={() => (isEditing ? onCancel() : setIsEditing(true))}
-                        className={isEditing ? "btn-secondary" : "btn-primary"}
+                        className={cn(
+                            "w-full sm:w-auto",
+                            isEditing ? "btn-secondary" : "btn-primary"
+                        )}
                     >
                         {isEditing ? <X className="w-4 h-4 mr-2" /> : <Edit2 className="w-4 h-4 mr-2" />}
                         {isEditing ? "Cancel Edit" : "Modify Profile"}
                     </Button>
-                    <Button variant="outline" onClick={() => handleDownloadCV(user)} className="border-dashed hover:border-primary active:scale-95 bg-muted/10">
+                    <Button
+                        variant="outline"
+                        onClick={() => handleDownloadCV(user)}
+                        className="w-full sm:w-auto border-dashed hover:border-primary active:scale-95 bg-muted/10"
+                    >
                         <Download className="w-4 h-4 mr-2" />
                         Download CV
                     </Button>

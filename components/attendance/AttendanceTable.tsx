@@ -171,16 +171,18 @@ export function AttendanceTable({
     ];
 
     return (
-        <div className="bg-card rounded-4xl border border-border shadow-2xl overflow-hidden p-2">
-            <DataTable
-                columns={columns}
-                data={data}
-                isLoading={isLoading}
-                total={total}
-                currentPage={currentPage}
-                pageSize={pageSize}
-                onPageChange={onPageChange}
-            />
+        <div className="bg-card rounded-3xl sm:rounded-4xl border border-border shadow-2xl overflow-hidden p-1 sm:p-2">
+            <div className="overflow-x-auto custom-scrollbar">
+                <DataTable
+                    columns={columns}
+                    data={data}
+                    isLoading={isLoading}
+                    total={total}
+                    currentPage={currentPage}
+                    pageSize={pageSize}
+                    onPageChange={onPageChange}
+                />
+            </div>
         </div>
     );
 }

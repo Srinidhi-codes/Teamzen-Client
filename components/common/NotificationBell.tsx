@@ -112,18 +112,18 @@ export function NotificationBell() {
 
             <DropdownMenuContent
                 align="end"
-                className="w-80 sm:w-96 p-0 overflow-hidden border-border/50 bg-card/80 backdrop-blur-2xl rounded-3xl shadow-2xl animate-in zoom-in-95 duration-200"
+                className="w-[calc(100vw-20px)] sm:w-96 p-0 overflow-hidden border-border/50 bg-card/80 backdrop-blur-2xl rounded-3xl shadow-2xl animate-in zoom-in-95 duration-200"
             >
                 <DropdownMenuLabel className="p-0">
-                    <div className="px-5 py-4 flex justify-between items-center bg-linear-to-b from-primary/10 to-transparent">
+                    <div className="px-4 sm:px-5 py-4 flex justify-between items-center bg-linear-to-b from-primary/10 to-transparent">
                         <div>
-                            <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-0.5">Notifications</p>
-                            <p className="text-lg font-black text-foreground">Stay Updated</p>
+                            <p className="text-[8px] sm:text-[10px] font-black text-primary uppercase tracking-widest mb-0.5">Notifications</p>
+                            <p className="text-base sm:text-lg font-black text-foreground">Stay Updated</p>
                         </div>
                         {unreadCount > 0 && (
                             <button
                                 onClick={handleMarkAllRead}
-                                className="text-[10px] font-black text-muted-foreground hover:text-primary uppercase tracking-widest transition-colors py-1 px-2 hover:bg-primary/5 rounded-lg"
+                                className="text-[9px] sm:text-[10px] font-black text-muted-foreground hover:text-primary uppercase tracking-widest transition-colors py-1.5 px-3 hover:bg-primary/5 rounded-xl border border-border sm:border-transparent"
                             >
                                 Mark All Read
                             </button>
@@ -133,13 +133,13 @@ export function NotificationBell() {
 
                 <DropdownMenuSeparator className="m-0 opacity-50" />
 
-                <div className="max-h-[420px] overflow-y-auto no-scrollbar py-1">
+                <div className="max-h-[60vh] sm:max-h-[420px] overflow-y-auto no-scrollbar py-1">
                     {notifications.length > 0 ? (
                         notifications.map((notif: any) => (
                             <DropdownMenuItem
                                 key={notif.id}
                                 className={cn(
-                                    "px-5 py-4 focus:bg-primary/5 transition-colors cursor-pointer relative group flex items-start mb-2 mx-1 rounded-2xl",
+                                    "px-4 sm:px-5 py-3 sm:py-4 focus:bg-primary/5 transition-colors cursor-pointer relative group flex items-start gap-3 sm:gap-4 mb-1 sm:mb-2 mx-1 rounded-2xl",
                                     !notif.isRead && "bg-primary/5"
                                 )}
                                 onClick={() => handleRedirect(notif)}

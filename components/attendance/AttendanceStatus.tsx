@@ -35,23 +35,23 @@ export function AttendanceStatus({
   const config = statusConfig[status];
 
   return (
-    <div className="group bg-card/60 backdrop-blur-md rounded-4xl p-6 border border-border shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-all duration-500 w-full lg:w-fit min-w-[300px]">
-      <div className="flex items-center gap-4 mb-6">
+    <div className="group bg-card/60 backdrop-blur-md rounded-3xl sm:rounded-4xl p-4 sm:p-6 border border-border shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-all duration-500 w-full lg:w-fit min-w-[280px]">
+      <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
         <div
-          className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-500 ${config.color === 'emerald' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
-              config.color === 'destructive' ? 'bg-destructive/10 text-destructive' :
-                config.color === 'amber' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' :
-                  'bg-primary/10 text-primary'
+          className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-500 ${config.color === 'emerald' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+            config.color === 'destructive' ? 'bg-destructive/10 text-destructive' :
+              config.color === 'amber' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' :
+                'bg-primary/10 text-primary'
             }`}
         >
-          <config.icon className="w-7 h-7" />
+          <config.icon className="w-6 h-6 sm:w-7 sm:h-7" />
         </div>
         <div>
-          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">Current Status</p>
-          <p className={`text-lg font-black tracking-tight ${config.color === 'emerald' ? 'text-emerald-600 dark:text-emerald-400' :
-              config.color === 'destructive' ? 'text-destructive' :
-                config.color === 'amber' ? 'text-amber-600 dark:text-amber-400' :
-                  'text-primary'
+          <p className="text-[8px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">Current Status</p>
+          <p className={`text-base sm:text-lg font-black tracking-tight ${config.color === 'emerald' ? 'text-emerald-600 dark:text-emerald-400' :
+            config.color === 'destructive' ? 'text-destructive' :
+              config.color === 'amber' ? 'text-amber-600 dark:text-amber-400' :
+                'text-primary'
             }`}>
             {config.label}
           </p>

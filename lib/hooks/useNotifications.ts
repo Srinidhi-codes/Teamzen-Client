@@ -1,5 +1,6 @@
 "use client";
 
+import client from "@/lib/api/client";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
@@ -23,13 +24,14 @@ export function useNotifications(onMessageReceived?: (msg: any) => void) {
 
             let token = "";
             try {
-                const res = await fetch('/api/auth/ws-token');
-                if (res.ok) {
-                    const data = await res.json();
-                    token = data.token;
-                }
+                // 🔐 Use the authenticated client to benefit from proxy/refresh interceptors
+                // Note: We call /auth/ws-token which is our local Next.js route
+                const res = await client.get('/auth/ws-token');
+                token = res.data.token;
             } catch (e) {
                 console.error("Failed to fetch WebSocket token:", e);
+                // If it's a 401, the client.ts interceptor should have triggered a redirect 
+                // or attempted a refresh already.
             }
 
             const url = `${protocol}//${host}/ws/notifications/${token ? `?token=${token}` : ''}`;
