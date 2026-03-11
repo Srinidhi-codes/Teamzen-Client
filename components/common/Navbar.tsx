@@ -8,6 +8,7 @@ import { useStore } from "@/lib/store/useStore";
 import { ThemeSelector } from "./ThemeSelector";
 import client from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { cn } from "@/lib/utils";
 
 import { NotificationBell } from "./NotificationBell";
 import { Calendar, CircleDollarSign, Clock, LayoutDashboard, LogOut, Menu, Plane, Settings, User } from "lucide-react";
@@ -72,10 +73,18 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
   };
 
   return (
-    <nav className="bg-background/80 backdrop-blur-sm border-b border-border/50 sticky top-0 z-50">
-      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20 gap-4">
-          <div className="flex items-center space-x-4">
+    <nav className={cn(
+      "fixed top-0 left-0 right-0 z-50 pointer-events-none transition-all duration-500 ease-in-out",
+      isScrolled ? "px-4 sm:px-6 py-4" : "px-0 py-0"
+    )}>
+      <div className={cn(
+        "flex justify-between items-center pointer-events-auto transition-all duration-500 ease-in-out",
+        isScrolled
+          ? "gap-4 bg-background px-4 sm:px-6 py-3 rounded-2xl sm:rounded-3xl shadow-2xl shadow-primary/10 border-border/40 max-w-7xl mx-auto w-full"
+          : "gap-4 bg-background border-b border-border/30 px-4 sm:px-8 py-4 shadow-xs"
+      )}>
+        <div className="flex justify-between items-center w-full gap-4">
+          <div className="flex items-center space-x-3 sm:space-x-4 shrink-0">
             {/* Mobile Menu Toggle */}
             {onMenuClick && (
               <button
@@ -102,11 +111,11 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                 )}
               </div>
               <div className="flex-col hidden sm:flex">
-                <span className="font-black text-lg text-foreground tracking-tighter leading-none group-hover:text-primary transition-colors">
-                  {user?.organization?.name || 'Payroll'}
+                <span className="font-black text-sm text-foreground tracking-tighter leading-none group-hover:text-primary transition-colors">
+                  {user?.organization?.name || 'Teamzen'}
                 </span>
-                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] leading-none mt-1">
-                  {user?.role === 'admin' ? 'Admin Panel' : 'User Panel'}
+                <span className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] leading-none mt-1">
+                  {user?.role === 'admin' ? 'Strategic Intelligence' : 'Workforce Cluster'}
                 </span>
               </div>
             </Link>
@@ -164,15 +173,15 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
           </div>
 
 
-          {/* User Menu */}
+          {/* Right Section: User Menu & Tools */}
           <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
-            <div className="flex items-center bg-muted/30 p-1.5 rounded-2xl border border-border/50 space-x-1">
+            <div className="flex items-center bg-muted/30 p-1 rounded-xl sm:rounded-2xl border border-border/50 space-x-1">
               <NotificationBell />
               <ThemeSelector />
             </div>
 
             {user && (
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center space-x-3 px-2 py-2 rounded-2xl transition-all hover:bg-muted/50 text-foreground group focus:outline-none">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-border/50 shadow-sm ${!user.profilePictureUrl ? 'bg-linear-to-br from-primary to-primary/60 text-primary-foreground text-sm font-black' : ''
@@ -192,19 +201,19 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                         </>
                       )}
                     </div>
-                    <div className="flex-col items-start hidden sm:flex">
-                      <span className="text-sm font-black tracking-tight leading-none group-hover:text-primary transition-colors">
+                    <div className="flex-col items-start hidden xl:flex">
+                      <span className="text-[11px] font-black tracking-tight leading-none group-hover:text-primary transition-colors">
                         {user.firstName} {user.lastName}
                       </span>
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">
-                        {user.role}
+                      <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mt-1">
+                        {user.role} Member
                       </span>
                     </div>
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 p-2 rounded-3xl shadow-2xl border-border bg-white/20 backdrop-blur-sm">
+                <DropdownMenuContent align="end" className="w-64 p-2 rounded-3xl shadow-2xl border-border bg-card/80 backdrop-blur-xl">
                   <DropdownMenuLabel className="px-4 py-3 bg-muted/20 rounded-2xl mb-1">
-                    <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Signed in as</p>
+                    <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Account Protocol</p>
                     <p className="text-sm font-bold text-foreground truncate">{user.email}</p>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-border/50 my-1" />
@@ -213,8 +222,8 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                       href="/profile"
                       className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-primary/5 cursor-pointer group"
                     >
-                      <span className="text-lg group-hover:scale-110 transition-transform"><User /></span>
-                      <span className="text-sm font-bold">My Profile</span>
+                      <span className="text-lg group-hover:scale-110 transition-transform"><User className="w-5 h-5" /></span>
+                      <span className="text-sm font-bold">Personal Profile</span>
                     </Link>
                   </DropdownMenuItem>
 
@@ -224,7 +233,7 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                         href={process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001/dashboard"}
                         className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-orange-500 hover:text-orange-600 cursor-pointer group"
                       >
-                        <span className="text-lg group-hover:scale-110 transition-transform"><Plane /></span>
+                        <span className="text-lg group-hover:scale-110 transition-transform"><Plane className="w-5 h-5" /></span>
                         <div className="flex flex-col">
                           <span className="text-sm font-bold">Admin Panel</span>
                           <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Manager View</span>
@@ -237,8 +246,8 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                       href="/settings"
                       className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-primary/5 cursor-pointer group"
                     >
-                      <span className="text-lg group-hover:scale-110 transition-transform"><Settings /></span>
-                      <span className="text-sm font-bold">Settings</span>
+                      <span className="text-lg group-hover:scale-110 transition-transform"><Settings className="w-5 h-5" /></span>
+                      <span className="text-sm font-bold">System Configuration</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-border/50 my-1" />
@@ -246,14 +255,13 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                     onClick={handleLogout}
                     className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-destructive/10 text-destructive cursor-pointer group focus:bg-destructive/10 focus:text-destructive"
                   >
-                    <span className="text-lg group-hover:scale-110 transition-transform"><LogOut /></span>
-                    <span className="text-sm font-bold">Logout</span>
+                    <span className="text-lg group-hover:scale-110 transition-transform"><LogOut className="w-5 h-5" /></span>
+                    <span className="text-sm font-bold">Terminate Session</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
           </div>
-
         </div>
       </div>
     </nav>

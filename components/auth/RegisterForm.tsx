@@ -21,6 +21,7 @@ import {
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { FormSelect } from "../common/FormSelect";
+import Image from "next/image";
 
 export default function RegisterForm() {
     const router = useRouter();
@@ -91,11 +92,18 @@ export default function RegisterForm() {
 
             <div className="max-w-xl w-full space-y-8 relative z-10">
                 <div className="animate-fade-in text-center">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-linear-to-tr from-primary to-primary/60 shadow-lg shadow-primary/20 mb-6 transform hover:rotate-6 transition-transform duration-300">
-                        <Fingerprint className="w-10 h-10 text-primary-foreground" />
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 border border-primary/20 shadow-xl shadow-primary/5 mb-6 transform hover:rotate-6 transition-transform duration-300 overflow-hidden p-3 backdrop-blur-sm">
+                        <Image 
+                            src="/images/teamzen_zoomed.png" 
+                            alt="Teamzen" 
+                            width={64} 
+                            height={64} 
+                            className="w-full h-full object-contain"
+                            loading="lazy"
+                        />
                     </div>
                     <h2 className="text-4xl font-black text-foreground tracking-tight">Establish Organization</h2>
-                    <p className="mt-2 text-sm text-muted-foreground">Join the elite payroll management ecosystem</p>
+                    <p className="mt-2 text-sm text-muted-foreground font-medium uppercase tracking-widest">Join the elite payroll management ecosystem</p>
                 </div>
 
 

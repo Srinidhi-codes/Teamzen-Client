@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -70,12 +69,12 @@ export function AssistantWidget() {
     };
 
     return (
-        <div className="fixed bottom-6 right-6 z-100 flex flex-col items-end transition-all duration-300">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-100 flex flex-col items-end transition-all duration-300">
             {/* Chat Window */}
             {isOpen && (
-                <div className="mb-4 w-[400px] h-[600px] bg-card border border-border rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
+                <div className="mb-4 w-[calc(100vw-2rem)] sm:w-[500px] h-[calc(100dvh-8rem)] sm:h-[650px] max-h-[85vh] sm:max-h-[700px] bg-card/95 backdrop-blur-xl border border-border/50 rounded-4xl sm:rounded-[2.5rem] shadow-3xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
                     {/* Header */}
-                    <div className="p-6 border-b border-border bg-muted/20 backdrop-blur-sm flex justify-between items-center group">
+                    <div className="p-4 sm:p-6 border-b border-border bg-muted/20 backdrop-blur-sm flex justify-between items-center group">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 relative overflow-hidden">
                                 <Bot className="w-6 h-6 text-primary-foreground relative z-10" />
@@ -109,7 +108,7 @@ export function AssistantWidget() {
                     {/* Messages */}
                     <div
                         ref={scrollRef}
-                        className="grow overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+                        className="grow overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
                     >
                         {messages.length === 0 && (
                             <div className="h-full flex flex-col items-center justify-center text-center space-y-4 px-4">
@@ -188,7 +187,7 @@ export function AssistantWidget() {
                     </div>
 
                     {/* Input Area */}
-                    <div className="p-6 border-t border-border bg-card">
+                    <div className="p-4 sm:p-6 border-t border-border bg-card">
                         <form
                             onSubmit={handleSend}
                             className="relative group"
@@ -197,7 +196,7 @@ export function AssistantWidget() {
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 placeholder="Message assistant..."
-                                className="pr-14 h-14 rounded-2xl bg-muted/30 border-border focus-visible:ring-primary/20 transition-all font-medium py-4 px-6"
+                                className="h-14 rounded-2xl bg-muted/30 border-border focus-visible:ring-primary/20 transition-all font-medium py-4 pl-6 pr-16"
                                 disabled={isLoading}
                             />
                             <button

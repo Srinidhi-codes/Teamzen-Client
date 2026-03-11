@@ -2,7 +2,8 @@
 
 import { useGraphQLCancelLeaveRequest, useGraphQLCreateLeaveRequest, useGraphQlLeaveBalance, useGraphQLLeaveRequests, useGraphQLTeamLeaves, useGraphQLCompanyHolidays } from "@/lib/graphql/leaves/leavesHook";
 import { useStore } from "@/lib/store/useStore";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNotifications } from "@/lib/hooks/useNotifications";
 import { Card } from "@/components/common/Card";
 import moment from "moment";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
@@ -35,6 +36,7 @@ import { Button } from "@/components/ui/button";
 import { DataTable, Column } from "@/components/common/DataTable";
 import { LeaveRequestModal } from "@/components/leaves/LeaveRequestModal";
 import { LeaveReviewModal } from "@/components/leaves/LeaveReviewModal";
+import { cn } from "@/lib/utils";
 import Image from "next/image";
 
 export default function LeavesPage() {
@@ -49,8 +51,8 @@ export default function LeavesPage() {
   const [viewDetails, setViewDetails] = useState<any>(null);
   const [leaveToCancel, setLeaveToCancel] = useState<any>(null);
   const { user } = useStore();
-  const { leaveBalanceData, isLoading: leaveBalanceLoading } = useGraphQlLeaveBalance();
-  const { leaveRequestData, isLoading: leaveRequestLoading } = useGraphQLLeaveRequests();
+  const { leaveBalanceData, isLoading: leaveBalanceLoading, refetch: refetchBalance } = useGraphQlLeaveBalance();
+  const { leaveRequestData, isLoading: leaveRequestLoading, refetch: refetchRequests } = useGraphQLLeaveRequests();
   const { cancelLeaveRequest, cancelLeaveRequestLoading } = useGraphQLCancelLeaveRequest();
   const { createLeaveRequest, createLeaveRequestLoading } = useGraphQLCreateLeaveRequest();
   const { teamLeavesData, isLoading: teamLeavesLoading, refetch: refetchTeam } = useGraphQLTeamLeaves();
@@ -58,11 +60,22 @@ export default function LeavesPage() {
   const [activeTab, setActiveTab] = useState<"overview" | "calendar">("overview");
   const router = useRouter();
 
+  // Socket-based Real-time Refresh
+  useNotifications((msg) => {
+    if (msg.target_type === "Leave Request") {
+      console.log("Real-time Leave Update Received 🔃");
+      refetchBalance();
+      refetchRequests();
+      refetchTeam();
+    }
+  });
+
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
   const total = leaveRequestData?.length || 0;
   const paginatedData = leaveRequestData?.slice((currentPage - 1) * pageSize, currentPage * pageSize) || [];
+  const pendingCount = leaveRequestData?.filter((r: any) => r.status === "pending").length || 0;
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -195,19 +208,32 @@ export default function LeavesPage() {
   ];
 
   return (
-    <div className="space-y-10 animate-fade-in">
+    <div className="p-4 sm:p-6 space-y-8 sm:space-y-10 animate-fade-in relative min-h-screen bg-background/50">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6">
         <div className="space-y-1">
-          <h1 className="text-premium-h1">Leave Management</h1>
-          <p className="text-muted-foreground font-medium flex items-center gap-2">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Leave Management</h1>
+          <p className="text-muted-foreground font-medium text-sm sm:text-base flex items-center gap-2">
             Validate and monitor your operational downtime.
           </p>
         </div>
-        <div className="flex items-center gap-2 ">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              refetchBalance();
+              refetchRequests();
+              refetchTeam();
+            }}
+            className="rounded-xl h-10 w-10 hover:bg-primary/10 hover:text-primary transition-all active:rotate-180 duration-500 border border-border"
+            title="Refresh Ecosystem"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </Button>
           <Button
             onClick={() => setShowForm(!showForm)}
-            className={showForm ? "btn-secondary" : "btn-primary"}
+            className={cn("flex-1 sm:w-auto", showForm ? "btn-secondary" : "btn-primary")}
           >
             {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
             {showForm ? "Cancel Request" : "Request Leave"}

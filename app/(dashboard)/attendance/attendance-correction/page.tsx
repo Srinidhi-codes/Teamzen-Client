@@ -75,17 +75,16 @@ export default function AttendanceCorrectionPage() {
                     <ArrowLeftIcon onClick={router.back} />
                 </div>
                 <div className="space-y-1">
-                    <h1 className="text-premium-h1">Attendance Correction</h1>
+                    <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Attendance Correction</h1>
                     <p className="text-muted-foreground font-medium flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                        Attendance marker correction and verification.
+                        Attendance correction and verification.
                     </p>
                 </div>
             </div>
 
             {/* Filter Section */}
             <Card>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end p-8 border border-gray-200 rounded-3xl">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-end p-6 sm:p-8 border border-border/50 rounded-3xl bg-muted/5">
                     <DatePickerSimple
                         label="From"
                         value={startDate}
@@ -101,11 +100,11 @@ export default function AttendanceCorrectionPage() {
                         minDate={startDate || undefined}
                     />
                     <Button
-                        className="btn-primary h-[52px] group"
+                        className="btn-primary h-12 sm:h-[52px] group w-full"
                         onClick={() => loadAttendance(startDate, endDate)}
                     >
                         <Search className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
-                        Search Attendance
+                        Search Records
                     </Button>
                 </div>
             </Card>

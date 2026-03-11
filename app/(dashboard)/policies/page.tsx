@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2, FileText, Upload, Trash2, RotateCcw } from "lucide-react";
 import moment from "moment";
+import Link from "next/link";
 
 export default function PoliciesPage() {
     const { policies, isLoading, isUploading, upload, remove } = usePolicies();
@@ -17,6 +18,7 @@ export default function PoliciesPage() {
     const [isOpen, setIsOpen] = useState(false);
     const [isViewOpen, setIsViewOpen] = useState(false);
     const [selectedPdf, setSelectedPdf] = useState<{ url: string; title: string } | null>(null);
+    const [zoom, setZoom] = useState(1);
 
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
@@ -144,7 +146,6 @@ export default function PoliciesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {policies?.map((policy: any) => (
                         <div key={policy.id} className="group relative bg-card rounded-4xl p-6 border border-border hover:shadow-primary/5 shadow-xl shadow-border/5 overflow-hidden hover:scale-102 transition-all duration-500 flex flex-col min-h-[220px]">
-                            {/* Background Decorative Icon */}
                             <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity group-hover:opacity-10 pointer-events-none">
                                 <FileText className="w-24 h-24 rotate-12 text-primary" />
                             </div>
@@ -185,6 +186,7 @@ export default function PoliciesPage() {
                                                 title: policy.title
                                             });
                                             setIsViewOpen(true);
+                                            setZoom(1);
                                         }}
                                         className="text-[11px] font-black uppercase tracking-widest text-primary hover:text-primary/80 flex items-center gap-2 group/btn"
                                     >
@@ -202,27 +204,48 @@ export default function PoliciesPage() {
                 </div>
             )}
 
-            {/* PDF Viewer Modal */}
             <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-                <DialogContent className="max-w-5xl h-[calc(100vh-12rem)] flex flex-col p-0 overflow-hidden rounded-3xl border-none shadow-2xl">
-                    <DialogHeader className="p-6 pb-4 border-b bg-card">
+                <DialogContent className="max-w-7xl w-[95vw] h-[90vh] sm:h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl sm:rounded-4xl border-none shadow-2xl transition-all duration-300">
+                    <DialogHeader className="p-4 sm:p-6 pb-2 sm:pb-4 border-b bg-card flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <DialogTitle className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
                                 <FileText className="w-5 h-5" />
                             </div>
-                            <div className="flex flex-col">
-                                <span className="font-black tracking-tight">{selectedPdf?.title}</span>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Document Viewer</span>
+                            <div className="flex flex-col min-w-0">
+                                <span className="font-black tracking-tight truncate max-w-[200px] sm:max-w-sm">{selectedPdf?.title}</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Protocol Terminal</span>
                             </div>
                         </DialogTitle>
+
+                        <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-xl self-end sm:self-auto">
+                            <div className="w-px h-4 bg-border mx-1" />
+                            <button
+                                onClick={() => {
+                                    if (selectedPdf?.url) window.open(selectedPdf.url, '_blank')
+                                }}
+                                className="w-8 h-8 rounded-lg hover:bg-background flex items-center justify-center transition-all"
+                                title="Full Screen"
+                            >
+                                <Maximize2 className="w-4 h-4" />
+                            </button>
+                        </div>
                     </DialogHeader>
-                    <div className="grow bg-muted/50 relative">
+                    <div className="grow bg-[#525659] relative overflow-auto custom-scrollbar flex items-center justify-center p-4">
                         {selectedPdf?.url ? (
-                            <iframe
-                                src={`${selectedPdf.url}#toolbar=0`}
-                                className="w-full h-full border-none"
-                                title={selectedPdf.title}
-                            />
+                            <div
+                                className="origin-top transition-transform duration-200 shadow-2xl bg-white w-full h-full min-h-[500px]"
+                                style={{
+                                    transform: `scale(${zoom})`,
+                                    height: `${100 / zoom}%`,
+                                    width: `${100 / zoom}%`
+                                }}
+                            >
+                                <iframe
+                                    src={`${selectedPdf.url}#toolbar=0&navpanes=0&scrollbar=0`}
+                                    className="w-full h-full border-none"
+                                    title={selectedPdf.title}
+                                />
+                            </div>
                         ) : (
                             <div className="flex items-center justify-center h-full text-muted-foreground">
                                 <Loader2 className="w-8 h-8 animate-spin" />

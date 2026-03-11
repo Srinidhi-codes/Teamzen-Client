@@ -21,7 +21,7 @@ export const useAssistant = () => {
     const { data, isLoading: isHistoryLoading } = useQuery({
         queryKey: ['assistant-history'],
         queryFn: async () => {
-            const response = await client.get<{ history: ChatMessage[] }>(API_ENDPOINTS.SMART_CHAT);
+            const response = await client.get<{ history: ChatMessage[] }>(API_ENDPOINTS.CHAT);
             return response.data;
         },
     });
@@ -36,7 +36,7 @@ export const useAssistant = () => {
 
     const chatMutation = useMutation({
         mutationFn: async ({ query, latitude, longitude }: { query: string, latitude?: number, longitude?: number }) => {
-            const response = await client.post<AssistantResponse>(API_ENDPOINTS.SMART_CHAT, {
+            const response = await client.post<AssistantResponse>(API_ENDPOINTS.CHAT, {
                 query,
                 latitude,
                 longitude
@@ -78,7 +78,7 @@ export const useAssistant = () => {
 
     const clearHistory = async () => {
         try {
-            await client.delete(API_ENDPOINTS.SMART_CHAT);
+            await client.delete(API_ENDPOINTS.CHAT);
             setHistory([]);
             queryClient.invalidateQueries({ queryKey: ['assistant-history'] });
         } catch (error) {

@@ -10,6 +10,12 @@ export const metadata: Metadata = {
   description: "Enterprise payroll and leave management solution",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5, // Allow user zoom but prevent auto-zoom loops
+};
+
 export default function RootLayout({
   children,
 }: {
