@@ -24,7 +24,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       />
 
       <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 w-full ${isCollapsed ? "md:ml-24" : "md:ml-72"}`}>
-        <Navbar onMenuClick={() => setIsMobileOpen(true)} />
+        <Navbar onMenuClick={() => setIsMobileOpen(true)} isSidebarCollapsed={isCollapsed} />
 
         <main className="flex-1 p-4 sm:p-8 bg-background">
           {children}
