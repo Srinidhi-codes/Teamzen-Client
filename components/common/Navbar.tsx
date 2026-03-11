@@ -45,7 +45,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
   };
 
   return (
-    <nav className="bg-background/80 backdrop-blur-sm border-b border-border/50 sticky top-0 z-50">
+    <nav className="bg-background/80 backdrop-blur-sm border-b border-border/50 sticky top-0 z-35">
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20 gap-4">
           <div className="flex items-center space-x-4">

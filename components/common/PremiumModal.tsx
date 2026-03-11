@@ -38,7 +38,7 @@ export function PremiumModal({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="p-0 border-none bg-transparent shadow-none w-full min-w-fit max-w-[90vw] lg:max-w-3xl">
                 <div className={cn(
-                    "bg-card rounded-4xl sm:rounded-[3rem] w-full shadow-[0_32px_128px_-16px_rgba(0,0,0,0.3)] border border-border text-start overflow-hidden flex flex-col animate-in zoom-in-95 duration-500",
+                    "bg-card rounded-4xl sm:rounded-[3rem] w-full shadow-[0_32px_128px_-16px_rgba(0,0,0,0.3)] border border-border text-start overflow-hidden flex flex-col animate-in zoom-in-95 duration-500 max-h-[min(90dvh,800px)]",
                     containerClassName
                 )}>
                     {/* Premium Header */}
@@ -72,7 +72,7 @@ export function PremiumModal({
                     </div>
 
                     {/* Content Area */}
-                    <div className="p-6 sm:p-10 overflow-y-auto max-h-[70vh] custom-scrollbar">
+                    <div className="p-6 sm:p-10 overflow-y-auto flex-1 min-h-0 max-h-[60vh] sm:max-h-[70vh] custom-scrollbar">
                         {children}
                     </div>
                 </div>

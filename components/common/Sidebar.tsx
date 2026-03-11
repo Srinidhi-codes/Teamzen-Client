@@ -52,7 +52,7 @@ export function Sidebar({
   const pathname = usePathname();
 
   const sidebarClasses = `
-    fixed inset-y-0 left-0 z-60
+    fixed inset-y-0 left-0 z-40
     flex flex-col
     bg-sidebar text-sidebar-foreground
     transition-all duration-500 ease-in-out

@@ -2,7 +2,8 @@
 
 import { useGraphQLCancelLeaveRequest, useGraphQLCreateLeaveRequest, useGraphQlLeaveBalance, useGraphQLLeaveRequests, useGraphQLTeamLeaves } from "@/lib/graphql/leaves/leavesHook";
 import { useStore } from "@/lib/store/useStore";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNotifications } from "@/lib/hooks/useNotifications";
 import { Card } from "@/components/common/Card";
 import moment from "moment";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
@@ -25,7 +26,8 @@ import {
   User,
   MoreVertical,
   XCircle,
-  Users
+  Users,
+  RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataTable, Column } from "@/components/common/DataTable";
@@ -46,18 +48,29 @@ export default function LeavesPage() {
   const [viewDetails, setViewDetails] = useState<any>(null);
   const [leaveToCancel, setLeaveToCancel] = useState<any>(null);
   const { user } = useStore();
-  const { leaveBalanceData, isLoading: leaveBalanceLoading } = useGraphQlLeaveBalance();
-  const { leaveRequestData, isLoading: leaveRequestLoading } = useGraphQLLeaveRequests();
+  const { leaveBalanceData, isLoading: leaveBalanceLoading, refetch: refetchBalance } = useGraphQlLeaveBalance();
+  const { leaveRequestData, isLoading: leaveRequestLoading, refetch: refetchRequests } = useGraphQLLeaveRequests();
   const { cancelLeaveRequest, cancelLeaveRequestLoading } = useGraphQLCancelLeaveRequest();
   const { createLeaveRequest, createLeaveRequestLoading } = useGraphQLCreateLeaveRequest();
-  const { teamLeavesData, isLoading: teamLeavesLoading } = useGraphQLTeamLeaves();
+  const { teamLeavesData, isLoading: teamLeavesLoading, refetch: refetchTeam } = useGraphQLTeamLeaves();
   const router = useRouter();
+
+  // Socket-based Real-time Refresh
+  useNotifications((msg) => {
+    if (msg.target_type === "Leave Request") {
+      console.log("Real-time Leave Update Received 🔃");
+      refetchBalance();
+      refetchRequests();
+      refetchTeam();
+    }
+  });
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
   const total = leaveRequestData?.length || 0;
   const paginatedData = leaveRequestData?.slice((currentPage - 1) * pageSize, currentPage * pageSize) || [];
+  const pendingCount = leaveRequestData?.filter((r: any) => r.status === "pending").length || 0;
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -197,8 +210,21 @@ export default function LeavesPage() {
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              refetchBalance();
+              refetchRequests();
+              refetchTeam();
+            }}
+            className="rounded-xl h-10 w-10 hover:bg-primary/10 hover:text-primary transition-all active:rotate-180 duration-500 border border-border"
+            title="Refresh Ecosystem"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </Button>
+          <Button
             onClick={() => setShowForm(!showForm)}
-            className={cn("w-full sm:w-auto", showForm ? "btn-secondary" : "btn-primary")}
+            className={cn("flex-1 sm:w-auto", showForm ? "btn-secondary" : "btn-primary")}
           >
             {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
             {showForm ? "Cancel Request" : "Request Leave"}
@@ -266,10 +292,15 @@ export default function LeavesPage() {
         {/* Left Column: Form or History */}
         <div className="lg:col-span-8 space-y-6 sm:space-y-8">
           <div className="space-y-4 sm:space-y-6">
-            <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-3">
-              <History className="w-4 h-4 text-primary" />
-              History Protocol
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-3">
+                <History className="w-4 h-4 text-primary" />
+                History Protocol
+              </h2>
+              <div className="px-6 py-2 bg-primary/5 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest border border-primary/10">
+                {pendingCount} Pending Requests
+              </div>
+            </div>
             <div className="bg-card rounded-3xl sm:rounded-4xl border border-border shadow-xl overflow-hidden p-1 sm:p-2">
               <DataTable
                 columns={columns}
