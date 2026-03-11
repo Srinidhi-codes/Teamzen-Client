@@ -1,13 +1,37 @@
 "use client";
 
-import { useGraphQLCancelLeaveRequest, useGraphQLCreateLeaveRequest, useGraphQlLeaveBalance, useGraphQLLeaveRequests, useGraphQlLeaves } from "@/lib/graphql/leaves/leavesHook";
+import { useGraphQLCancelLeaveRequest, useGraphQLCreateLeaveRequest, useGraphQlLeaveBalance, useGraphQLLeaveRequests, useGraphQLTeamLeaves } from "@/lib/graphql/leaves/leavesHook";
 import { useStore } from "@/lib/store/useStore";
 import { useState } from "react";
 import { Card } from "@/components/common/Card";
 import moment from "moment";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-import router from "next/router";
 import { useRouter } from "next/navigation";
+import { Badge } from "@/components/common/Badge";
+import {
+  Plus,
+  X,
+  Calendar,
+  Clock,
+  CheckCircle2,
+  Info,
+  ArrowRight,
+  TrendingDown,
+  ChevronRight,
+  AlertCircle,
+  Zap,
+  History,
+  FileText,
+  User,
+  MoreVertical,
+  XCircle,
+  Users
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DataTable, Column } from "@/components/common/DataTable";
+import { LeaveRequestModal } from "@/components/leaves/LeaveRequestModal";
+import { LeaveReviewModal } from "@/components/leaves/LeaveReviewModal";
+import Image from "next/image";
 
 export default function LeavesPage() {
   const [showForm, setShowForm] = useState(false);
@@ -18,67 +42,35 @@ export default function LeavesPage() {
     reason: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [viewDetails, setViewDetails] = useState("");
-  const { user, isAuthenticated } = useStore();
+  const [viewDetails, setViewDetails] = useState<any>(null);
+  const [leaveToCancel, setLeaveToCancel] = useState<any>(null);
+  const { user } = useStore();
   const { leaveBalanceData, isLoading: leaveBalanceLoading } = useGraphQlLeaveBalance();
   const { leaveRequestData, isLoading: leaveRequestLoading } = useGraphQLLeaveRequests();
-  const { cancelLeaveRequest, cancelLeaveRequestLoading, cancelLeaveRequestError } = useGraphQLCancelLeaveRequest();
-  const { createLeaveRequest, createLeaveRequestLoading, createLeaveRequestError } = useGraphQLCreateLeaveRequest();
+  const { cancelLeaveRequest, cancelLeaveRequestLoading } = useGraphQLCancelLeaveRequest();
+  const { createLeaveRequest, createLeaveRequestLoading } = useGraphQLCreateLeaveRequest();
+  const { teamLeavesData, isLoading: teamLeavesLoading } = useGraphQLTeamLeaves();
   const router = useRouter();
-  // Mock leave requests data - Replace with actual API call
-  const leaveRequests = [
-    {
-      id: "1",
-      leave_type_name: "Casual Leave",
-      fromDate: "2025-01-15",
-      toDate: "2025-01-17",
-      status: "approved",
-      reason: "Family function",
-      days: 3,
-    },
-    {
-      id: "2",
-      leave_type_name: "Earned Leave",
-      fromDate: "2025-01-20",
-      toDate: "2025-01-22",
-      status: "pending",
-      reason: "Personal work",
-      days: 3,
-    },
-    {
-      id: "3",
-      leave_type_name: "Sick Leave",
-      fromDate: "2025-01-10",
-      toDate: "2025-01-10",
-      status: "rejected",
-      reason: "Medical checkup",
-      days: 1,
-    },
-  ];
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
+  const total = leaveRequestData?.length || 0;
+  const paginatedData = leaveRequestData?.slice((currentPage - 1) * pageSize, currentPage * pageSize) || [];
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.leaveTypeId) {
-      newErrors.leaveTypeId = "Please select a leave type";
-    }
-    if (!formData.fromDate) {
-      newErrors.fromDate = "From date is required";
-    }
-    if (!formData.toDate) {
-      newErrors.toDate = "To date is required";
-    }
+    if (!formData.leaveTypeId) newErrors.leaveTypeId = "Required";
+    if (!formData.fromDate) newErrors.fromDate = "Required";
+    if (!formData.toDate) newErrors.toDate = "Required";
     if (!formData.reason || formData.reason.trim().length < 10) {
-      newErrors.reason = "Reason must be at least 10 characters";
+      newErrors.reason = "Minimum 10 characters required";
     }
 
-    // Validate date range
     if (formData.fromDate && formData.toDate) {
-      const fromDate = moment(formData.fromDate);
-      const toDate = moment(formData.toDate);
-
-      if (toDate.isBefore(fromDate)) {
-        newErrors.toDate = "To date must be after from date";
+      if (moment(formData.toDate).isBefore(moment(formData.fromDate))) {
+        newErrors.toDate = "Invalid range";
       }
     }
 
@@ -88,131 +80,178 @@ export default function LeavesPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
 
-    if (!validateForm()) {
-      return;
-    }
-
-    setShowForm(false);
-    setFormData({
-      leaveTypeId: "",
-      fromDate: "",
-      toDate: "",
-      reason: "",
-    });
     createLeaveRequest({
       leave_type_id: formData.leaveTypeId,
       start_date: formData.fromDate,
       end_date: formData.toDate,
       reason: formData.reason,
     });
-    setErrors({});
-  };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { label: string; className: string }> = {
-      approved: { label: "Approved", className: "badge-success" },
-      pending: { label: "Pending", className: "badge-warning" },
-      rejected: { label: "Rejected", className: "badge-danger" },
-    };
-
-    const config = statusConfig[status] || { label: status, className: "badge-info" };
-    return <span className={`badge ${config.className}`}>{config.label}</span>;
+    setShowForm(false);
+    setFormData({ leaveTypeId: "", fromDate: "", toDate: "", reason: "" });
   };
 
   const calculateDays = () => {
     if (formData.fromDate && formData.toDate) {
       const from = moment(formData.fromDate);
       const to = moment(formData.toDate);
-      return to.diff(from, "days") + 1;
+      let count = 0;
+      let curr = from.clone();
+      while (curr.isSameOrBefore(to)) {
+        if (curr.day() !== 0) { // Only exclude Sundays
+          count++;
+        }
+        curr.add(1, "days");
+      }
+      return count;
     }
     return 0;
   };
 
-  return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Leave Management</h1>
-          <p className="text-gray-600 mt-1">Manage your leave requests and balance</p>
+  const getStatusVariant = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "approved": return "success";
+      case "pending": return "warning";
+      case "rejected": return "danger";
+      default: return "info";
+    }
+  };
+
+  const columns: Column<any>[] = [
+    {
+      key: "leaveType.name",
+      label: "Leave Type",
+      render: (name: string) => (
+        <span className="font-black italic group-hover:px-2 transition-all">{name}</span>
+      )
+    },
+    {
+      key: "fromDate",
+      label: "Duration",
+      render: (_: any, row: any) => (
+        <div className="flex items-center justify-center gap-2 bg-foreground/5 p-1 w-34 rounded-xl border border-border">
+          <span className="font-bold tabular-nums">{moment(row.fromDate).format("MMM DD")}</span>
+          <ArrowRight className="w-3 h-3" />
+          <span className="font-bold tabular-nums">{moment(row.toDate).format("MMM DD")}</span>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="btn-primary flex items-center space-x-2"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          <span>{showForm ? "Cancel" : "Request Leave"}</span>
-        </button>
+      )
+    },
+    {
+      key: "durationDays",
+      label: "Days",
+      render: (val: number) => <span className="font-black tabular-nums">{Number(val)}</span>
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (status: string) => (
+        <Badge variant={getStatusVariant(status)}>
+          {status}
+        </Badge>
+      )
+    },
+    {
+      key: "actions",
+      label: "Action",
+      render: (_: any, row: any) => (
+        <div className="flex items-center justify-start gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 px-3 text-[9px] font-black tracking-widest bg-muted/20 border-border group-hover:border-primary/50"
+            onClick={() => setViewDetails(row)}
+          >
+            REVIEW
+          </Button>
+          {row.status === "pending" && (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="h-8 px-3 text-[9px] transition-all font-black"
+              onClick={(e) => {
+                e.stopPropagation();
+                cancelLeaveRequest(row.id);
+              }}
+              disabled={cancelLeaveRequestLoading}
+            >
+              Cancel
+            </Button>
+          )}
+        </div>
+      )
+    }
+  ];
+
+  return (
+    <div className="space-y-10 animate-fade-in">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="space-y-1">
+          <h1 className="text-premium-h1">Leave Management</h1>
+          <p className="text-muted-foreground font-medium flex items-center gap-2">
+            Validate and monitor your operational downtime.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 ">
+          <Button
+            onClick={() => setShowForm(!showForm)}
+            className={showForm ? "btn-secondary" : "btn-primary"}
+          >
+            {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+            {showForm ? "Cancel Request" : "Request Leave"}
+          </Button>
+        </div>
       </div>
 
-      {/* Leave Balance Cards */}
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
-          <svg className="w-6 h-6 mr-2 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Leave Balance
-        </h2>
+      {/* Leave Balance Grid */}
+      <div className="space-y-6">
         {leaveBalanceLoading ? (
-          <LoadingSpinner />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="premium-card h-48 animate-pulse bg-muted/50" />
+            ))}
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {leaveBalanceData?.map((balance: any) => (
-              <div
-                key={balance.id}
-                className="glass p-6 rounded-2xl border border-white/30 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900">
-                      {balance.leaveType.name}
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-1">Annual Allocation</p>
+              <div key={balance.id} className="premium-card card-hover group cursor-default">
+                <div className="flex justify-between items-start mb-8">
+                  <div className="space-y-1">
+                    <h3 className="text-premium-h2 group-hover:text-primary transition-colors italic">{balance.leaveType.name}</h3>
+                    <p className="text-premium-label opacity-40">Entitlement</p>
+                    <span className="text-foreground/70 font-black">{balance.totalEntitled}</span>
                   </div>
-                  <div className="w-12 h-12 bg-linear-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                    <Calendar className="w-6 h-6" />
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Total Entitled</span>
-                    <span className="text-lg font-bold text-gray-900">{balance.totalEntitled}</span>
+                <div className="grid grid-cols-2 gap-6 pb-6 border-b border-border/50">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Available</p>
+                    <p className="text-3xl font-black text-emerald-500 tabular-nums">{balance.availableBalance}</p>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Used</span>
-                    <span className="text-lg font-bold text-red-600">{balance.used}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Pending</span>
-                    <span className="text-lg font-bold text-yellow-600">{balance.pendingApproval}</span>
-                  </div>
-                  <div className="pt-3 border-t border-gray-200">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-semibold text-gray-700">Available</span>
-                      <span className="text-2xl font-bold text-green-600">{balance.availableBalance}</span>
-                    </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Utilized</p>
+                    <p className="text-3xl font-black text-foreground tabular-nums opacity-20 group-hover:opacity-100 transition-opacity">
+                      {Number(balance.used) + Number(balance.pendingApproval)}
+                    </p>
                   </div>
                 </div>
 
-                {/* Progress Bar */}
-                <div className="mt-4">
-                  <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                <div className="mt-6 space-y-3">
+                  <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                    <span className="text-muted-foreground">Allocation efficiency</span>
+                    <span className="text-primary">{Math.round((balance.availableBalance / balance.totalEntitled) * 100)}%</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden shadow-inner">
                     <div
-                      className="bg-linear-to-r from-green-500 to-emerald-600 h-2 rounded-full transition-all duration-300"
-                      style={{
-                        width: `${(balance.availableBalance / balance.totalEntitled) * 100}%`,
-                      }}
-                    ></div>
+                      className="h-full bg-primary transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(var(--primary),0.5)]"
+                      style={{ width: `${(balance.availableBalance / balance.totalEntitled) * 100}%` }}
+                    />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1 text-right">
-                    {Math.round((balance.availableBalance / balance.totalEntitled) * 100)}% remaining
-                  </p>
                 </div>
               </div>
             ))}
@@ -220,221 +259,186 @@ export default function LeavesPage() {
         )}
       </div>
 
-      {/* Leave Request Form */}
-      {showForm && (
-        <Card title="New Leave Request" hover gradient>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Leave Type */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Leave Type <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={formData.leaveTypeId}
-                onChange={(e) => {
-                  setFormData({ ...formData, leaveTypeId: e.target.value });
-                  setErrors({ ...errors, leaveTypeId: "" });
-                }}
-                className={`w-full text-gray-800 ${errors.leaveTypeId ? "input-error" : ""}`}
-              >
-                <option value="">Select leave type</option>
-                {leaveBalanceData?.map((balance: any) => (
-                  <option key={balance.id} value={balance.leaveType.id}>
-                    {balance.leaveType.name} (Available: {balance.availableBalance})
-                  </option>
-                ))}
-              </select>
-              {errors.leaveTypeId && (
-                <p className="text-red-600 text-sm mt-1">{errors.leaveTypeId}</p>
-              )}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+        {/* Left Column: Form or History */}
+        <div className="lg:col-span-8 space-y-8">
+          <div className="space-y-6">
+            <h2 className="text-premium-label flex items-center gap-3">
+              <History className="w-4 h-4 text-primary" />
+              History Protocol
+            </h2>
+            <div className="bg-card rounded-4xl border border-border shadow-xl overflow-hidden p-2">
+              <DataTable
+                columns={columns}
+                data={paginatedData}
+                isLoading={leaveRequestLoading}
+                total={total}
+                currentPage={currentPage}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onRowClick={setViewDetails}
+              />
             </div>
+          </div>
+        </div>
 
-            {/* Date Range */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-800">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  From Date <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={formData.fromDate}
-                  onChange={(e) => {
-                    setFormData({ ...formData, fromDate: e.target.value });
-                    setErrors({ ...errors, fromDate: "" });
-                  }}
-                  className={`input w-full ${errors.fromDate ? "input-error" : ""}`}
-                  min={moment().format("YYYY-MM-DD")}
-                />
-                {errors.fromDate && (
-                  <p className="text-red-600 text-sm mt-1">{errors.fromDate}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  To Date <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={formData.toDate}
-                  onChange={(e) => {
-                    setFormData({ ...formData, toDate: e.target.value });
-                    setErrors({ ...errors, toDate: "" });
-                  }}
-                  className={`w-full ${errors.toDate ? "input-error" : ""}`}
-                  min={formData.fromDate || moment().format("YYYY-MM-DD")}
-                />
-                {errors.toDate && (
-                  <p className="text-red-600 text-sm mt-1">{errors.toDate}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Days Calculation */}
-            {formData.fromDate && formData.toDate && (
-              <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-indigo-700">Total Days</span>
-                  <span className="text-2xl font-bold text-indigo-900">{calculateDays()} days</span>
+        {/* Right Column: Insights */}
+        <div className="lg:col-span-4 space-y-8 p-5 bg-card border border-border shadow-xl rounded-4xl min-h-1/2">
+          <Card title="System Insights">
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-xs font-black uppercase tracking-widest">
+                  <span className="text-muted-foreground">Annual Usage</span>
+                  <span className="text-primary font-black">
+                    {Math.round(
+                      ((leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.used), 0) || 0) /
+                        (leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.totalEntitled), 0) || 1)) * 100
+                    )}%
+                  </span>
+                </div>
+                <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.8)] transition-all duration-1000"
+                    style={{
+                      width: `${Math.round(
+                        ((leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.used), 0) || 0) /
+                          (leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.totalEntitled), 0) || 1)) * 100
+                      )}%`
+                    }}
+                  />
                 </div>
               </div>
-            )}
 
-            {/* Reason */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Reason <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={formData.reason}
-                onChange={(e) => {
-                  setFormData({ ...formData, reason: e.target.value });
-                  setErrors({ ...errors, reason: "" });
-                }}
-                className={`w-full min-h-[120px] text-gray-800 ${errors.reason ? "input-error" : ""}`}
-                placeholder="Please provide a detailed reason for your leave request (minimum 10 characters)"
-              />
-              {errors.reason && (
-                <p className="text-red-600 text-sm mt-1">{errors.reason}</p>
-              )}
-              <p className="text-xs text-gray-500 mt-1">
-                {formData.reason.length} / 10 characters minimum
-              </p>
-            </div>
+              <div className="space-y-5">
+                {[
+                  {
+                    label: "Optimal Approval Rate",
+                    val: `${leaveRequestData && leaveRequestData.length > 0
+                      ? Math.round(
+                        (leaveRequestData.filter((r: any) => r.status === "approved").length /
+                          (leaveRequestData.filter((r: any) => r.status !== "pending").length || 1)) *
+                        100
+                      )
+                      : 0
+                      }%`,
+                    icon: CheckCircle2,
+                    color: "text-emerald-500"
+                  },
+                  {
+                    label: "Pending Evaluations",
+                    val: `${leaveRequestData?.filter((r: any) => r.status === "pending").length || 0}`,
+                    icon: Clock,
+                    color: "text-orange-500"
+                  },
+                  {
+                    label: "Rejected Requests",
+                    val: `${leaveRequestData?.filter((r: any) => r.status === "rejected").length || 0}`,
+                    icon: XCircle,
+                    color: "text-red-500"
+                  },
+                ].map((insight, i) => (
+                  <div key={i} className="flex items-center justify-between group">
+                    <div className="flex items-center gap-3">
+                      <insight.icon className={`w-4 h-4 ${insight.color}`} />
+                      <span className="text-xs font-bold text-muted-foreground group-hover:text-foreground transition-colors">{insight.label}</span>
+                    </div>
+                    <span className="text-xs font-black tabular-nums">{insight.val}</span>
+                  </div>
+                ))}
+              </div>
 
-            {/* Info Box */}
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-              <div className="flex items-start space-x-3">
-                <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div className="flex-1">
-                  <p className="text-sm text-blue-800 font-semibold">Important Information</p>
-                  <p className="text-sm text-blue-700 mt-1">
-                    Your leave request will be sent to your manager for approval. Please ensure you have sufficient leave balance before submitting.
+              {leaveBalanceData?.find((b: any) => b.availableBalance <= 2) && (
+                <div className="p-5 rounded-2xl bg-destructive/5 border border-destructive/20 space-y-3">
+                  <div className="flex items-center gap-2 text-destructive">
+                    <AlertCircle className="w-4 h-4" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Critical Alert</span>
+                  </div>
+                  <p className="text-[11px] font-medium text-destructive/80 leading-relaxed">
+                    Your <span className="font-bold underline italic">{leaveBalanceData?.find((b: any) => b.availableBalance <= 2)?.leaveType.name}</span> balance is nearing critical threshold ({leaveBalanceData?.find((b: any) => b.availableBalance <= 2)?.availableBalance} units remaining).
                   </p>
                 </div>
+              )}
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      {/* Team on Leave Section */}
+      <div className="space-y-6">
+        <h2 className="text-premium-label flex items-center gap-3">
+          <Users className="w-4 h-4 text-primary" />
+          Team on Leave
+        </h2>
+        <div className="premium-card overflow-hidden">
+          {teamLeavesLoading ? (
+            <div className="p-8 flex justify-center">
+              <LoadingSpinner />
+            </div>
+          ) : teamLeavesData.length === 0 ? (
+            <div className="p-12 text-center space-y-3">
+              <Users className="w-12 h-12 text-muted-foreground/20 mx-auto" />
+              <p className="text-sm text-muted-foreground font-medium italic">No colleagues currently on leave. Maximum operational capacity.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto no-scrollbar">
+              <div className="flex gap-6 p-2 min-w-max">
+                {teamLeavesData.map((leave: any) => (
+                  <div key={leave.id} className="w-64 border border-border shadow-md rounded-3xl p-6 relative group hover:border-primary/30 transition-all hover:bg-muted/30">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden border border-border/40">
+                        {leave.user.profilePicture ? (
+                          <Image src={leave.user.profilePicture.url as string} alt={leave.user.firstName} width={48} height={48} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-primary font-black text-sm">
+                            {leave.user.firstName.charAt(0)}{leave.user.lastName ? leave.user.lastName.charAt(0) : ''}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-black text-foreground truncate max-w-[120px]">
+                          {leave.user.firstName} {leave.user.lastName || ''}
+                        </span>
+                        <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{leave.leaveType.name}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 bg-background/50 p-2 rounded-xl border border-border">
+                      <Calendar className="w-3 h-3 text-muted-foreground" />
+                      <div className="flex items-center gap-1.5 text-[10px] font-black tracking-tight text-foreground/80">
+                        <span className="tabular-nums">{moment(leave.fromDate).format("MMM DD")}</span>
+                        <ArrowRight className="w-2 h-2 opacity-30" />
+                        <span className="tabular-nums">{moment(leave.toDate).format("MMM DD")}</span>
+                      </div>
+                      <div className="ml-auto bg-primary/10 px-1.5 py-0.5 rounded-lg text-primary text-[9px] font-black">
+                        {Math.round(leave.durationDays)}d
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
+          )}
+        </div>
+      </div>
 
-            {/* Submit Button */}
-            <div className="flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowForm(false);
-                  setFormData({
-                    leaveTypeId: "",
-                    fromDate: "",
-                    toDate: "",
-                    reason: "",
-                  });
-                  setErrors({});
-                }}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-              <button type="submit" className="btn-primary flex items-center space-x-2">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Submit Request</span>
-              </button>
-            </div>
-          </form>
-        </Card>
-      )}
+      <LeaveReviewModal
+        isOpen={!!viewDetails}
+        onClose={() => setViewDetails(null)}
+        viewDetails={viewDetails}
+        getStatusVariant={getStatusVariant}
+      />
 
-      {/* Leave Requests History */}
-      <Card title="Leave Requests History" hover gradient>
-        {leaveRequestLoading ? <LoadingSpinner /> : <div className="space-y-4 min-h-34">
-          {leaveRequestData?.length > 0 ? leaveRequestData?.map((request) => (
-            <div
-              key={request.id}
-              className="p-6 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200"
-            >
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h3 className="text-lg font-bold text-gray-900">{request.leaveType.name}</h3>
-                    {getStatusBadge(request.status)}
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 text-sm">
-                    <div className="flex items-center space-x-2">
-                      <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span className="text-gray-600">
-                        From: <span className="font-semibold text-gray-900">{moment(request.fromDate).format("MMM DD, YYYY")}</span>
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span className="text-gray-600">
-                        To: <span className="font-semibold text-gray-900">{moment(request.toDate).format("MMM DD, YYYY")}</span>
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-gray-600">
-                        Duration: <span className="font-semibold text-gray-900">{Number(request.durationDays)} day{Number(request.durationDays) > 1 ? "s" : ""}</span>
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      <span className="font-semibold">Reason:</span> {request.reason}
-                    </p>
-                  </div>
-                  <div className="mt-3">
-                    {request.approvalComments && viewDetails === request.id && <p className="text-sm text-gray-600">
-                      <span className="font-semibold">Comment:</span> {request.approvalComments}
-                    </p>}
-                  </div>
-                </div>
-                <div className="flex md:flex-col gap-2 pt-4">
-                  <button onClick={() => { setViewDetails(request.id) }} className="btn-secondary text-sm cursor-pointer">
-                    View Details
-                  </button>
-                  {request.status === "pending" && (
-                    <button onClick={() => { cancelLeaveRequest(request.id) }} className="btn-danger text-sm cursor-pointer">
-                      Cancel
-                    </button>
-                  )}
-                  {true &&
-                    <button onClick={() => { router.push(`/leaves/approvals`) }} className="btn-primary text-sm cursor-pointer">
-                      Approve/Reject
-                    </button>
-                  }
-                </div>
-              </div>
-            </div>
-          )) : <p className="text-center my-32 font-md text-xl text-gray-800">No leave requests found 🧾</p>}
-        </div>}
-      </Card>
-    </div>
+      <LeaveRequestModal
+        isOpen={showForm}
+        onClose={() => setShowForm(false)}
+        formData={formData}
+        setFormData={setFormData}
+        onSubmit={handleSubmit}
+        leaveBalanceData={leaveBalanceData}
+        isLoading={createLeaveRequestLoading}
+        calculateDays={calculateDays}
+        errors={errors}
+        teamLeavesData={teamLeavesData}
+      />
+    </div >
   );
 }

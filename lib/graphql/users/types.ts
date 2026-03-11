@@ -23,6 +23,9 @@ export interface GraphQLUser {
   organization?: {
     id: string;
     name: string;
+    logo?: {
+      url: string;
+    } | null;
   } | null;
 
   manager?: {
@@ -45,6 +48,11 @@ export interface GraphQLUser {
     id: string;
     name: string;
     address: string;
+    geoRadiusMeters: number;
+    latitude: number;
+    longitude: number;
+    loginTime: string;
+    logoutTime: string;
   } | null;
 
   bankAccountNumber?: string | null;
@@ -52,4 +60,8 @@ export interface GraphQLUser {
   panNumber?: string | null;
   aadharNumber?: string | null;
   uanNumber?: string | null;
+  attendanceRate?: number;
+  leaveBalance?: number;
+  totalLeaveEntitlement?: number;
+  tenureDisplay?: string;
 }

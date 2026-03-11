@@ -35,10 +35,18 @@ export const GET_ME = gql`
         id
         name
         address
+        geoRadiusMeters
+        latitude
+        longitude
+        loginTime
+        logoutTime
       }
       organization {
         id
         name
+        logo{
+          url
+        }
       }
       bankAccountNumber
       bankIfscCode
@@ -51,6 +59,61 @@ export const GET_ME = gql`
       tenureDisplay
       createdAt
       updatedAt
+    }
+  }
+`;
+
+export const GET_TEAM_HIERARCHY = gql`
+  query GetTeamHierarchy($userId: ID) {
+    teamHierarchy(userId: $userId) {
+      manager {
+        id
+        firstName
+        lastName
+        profilePictureUrl
+        designation {
+          name
+        }
+        department {
+          name
+        }
+      }
+      user {
+        id
+        firstName
+        lastName
+        profilePictureUrl
+        designation {
+          name
+        }
+        department {
+          name
+        }
+      }
+      peers {
+        id
+        firstName
+        lastName
+        profilePictureUrl
+        designation {
+          name
+        }
+        department {
+          name
+        }
+      }
+      subordinates {
+        id
+        firstName
+        lastName
+        profilePictureUrl
+        designation {
+          name
+        }
+        department {
+          name
+        }
+      }
     }
   }
 `;

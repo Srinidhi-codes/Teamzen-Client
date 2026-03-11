@@ -23,34 +23,36 @@ export function Pagination({
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-5 py-2.5 rounded-xl bg-muted text-foreground font-bold text-xs uppercase tracking-widest hover:bg-muted/80 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
       >
-        ← Previous
+        Prev
       </button>
+
 
       {/* Page Numbers */}
       {visiblePages.map((page) => (
         <button
           key={page}
           onClick={() => onPageChange(page)}
-          className={`w-10 h-10 rounded-lg transition ${
-            page === currentPage
-              ? "bg-indigo-600 text-white"
-              : "bg-white border border-gray-300 hover:bg-gray-50"
-          }`}
+          className={`w-10 h-10 rounded-xl font-black text-xs transition-all duration-300 active:scale-90 ${page === currentPage
+              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-110"
+              : "bg-card border border-border text-foreground hover:bg-muted"
+            }`}
         >
           {page}
         </button>
       ))}
 
+
       {/* Next */}
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-5 py-2.5 rounded-xl bg-muted text-foreground font-bold text-xs uppercase tracking-widest hover:bg-muted/80 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
       >
-        Next →
+        Next
       </button>
+
     </div>
   );
 }

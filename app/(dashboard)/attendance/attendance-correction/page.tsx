@@ -4,8 +4,13 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/common/Card";
 import { useGraphQlAttendance, useAttendanceMutations, useCancelAttendanceCorrection } from "@/lib/graphql/attendance/attendanceHooks";
 import { AttendanceTable, AttendanceRow } from "@/components/attendance/AttendanceTable";
-import { CorrectionModal } from "@/components/attendance/CorrectionModal";
+import { CorrectionModal, CorrectionPayload } from "@/components/attendance/CorrectionModal";
 import moment from "moment";
+import { Calendar, Search, Zap, Info, ChevronRight, History, ArrowLeftIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DatePickerSimple } from "@/components/ui/datePicker";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function AttendanceCorrectionPage() {
     const [startDate, setStartDate] = useState(moment().startOf("month").format("YYYY-MM-DD"));
@@ -14,42 +19,39 @@ export default function AttendanceCorrectionPage() {
 
     const { cancelAttendanceCorrection, cancelAttendanceCorrectionLoading } = useCancelAttendanceCorrection();
     const { attendance, isLoading, refetchAttendance } = useGraphQlAttendance();
+    const { requestCorrection, requestCorrectionLoading } = useAttendanceMutations();
+    const router = useRouter();
 
-    /** Fetch attendance */
-    const loadAttendance = async (startDate: string, endDate: string) => {
-        if (!startDate || !endDate) return;
-        await refetchAttendance({ startDate, endDate });
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 10;
+    const total = attendance?.length || 0;
+    const paginatedData = attendance?.slice((currentPage - 1) * pageSize, currentPage * pageSize) || [];
+
+    const loadAttendance = async (start: string, end: string) => {
+        if (!start || !end) return;
+        try {
+            await refetchAttendance({ startDate: start, endDate: end });
+            setCurrentPage(1);
+        } catch (e) {
+            toast.error("Failed to synchronize attendance data.");
+        }
     };
+
+    useEffect(() => {
+        loadAttendance(startDate, endDate);
+    }, []);
 
     const handleCancelCorrection = async (correctionId: string) => {
         try {
             await cancelAttendanceCorrection(correctionId);
+            toast.success("Correction protocol terminated successfully.");
             await refetchAttendance({ startDate, endDate });
         } catch (e) {
-            console.error(e);
-            alert("Failed to cancel correction");
+            toast.error("Failed to abort correction protocol.");
         }
     };
 
-
-    useEffect(() => {
-        const startDate = moment().startOf("month").format("YYYY-MM-DD");
-        const endDate = moment().format("YYYY-MM-DD");
-
-        loadAttendance(startDate, endDate);
-    }, []);
-
-    useEffect(() => {
-        if (startDate && endDate) {
-            loadAttendance(startDate, endDate);
-        }
-    }, [startDate, endDate]);
-
-
-
-    const { requestCorrection, requestCorrectionLoading } = useAttendanceMutations();
-
-    const handleSubmit = async (data: any) => {
+    const handleSubmit = async (data: CorrectionPayload) => {
         try {
             await requestCorrection({
                 attendanceRecordId: data.attendanceRecordId,
@@ -57,45 +59,78 @@ export default function AttendanceCorrectionPage() {
                 correctedLogoutTime: data.correctedLogoutTime,
                 reason: data.reason,
             });
-            alert("Correction request submitted!");
+            toast.success("Correction request broadcasted.");
             setSelected(null);
-            refetchAttendance({ startDate, endDate }); // Refresh table
+            await refetchAttendance({ startDate, endDate });
         } catch (err: any) {
-            console.error(err);
-            alert("Failed to submit correction");
+            toast.error("Failed to transmit correction request.");
         }
     };
 
     return (
-        <div className="space-y-6">
-            <header>
-                <h1 className="text-black text-3xl font-bold">Attendance Correction</h1>
-                <p className="text-gray-600">Request corrections for attendance records</p>
-            </header>
+        <div className="space-y-10 animate-fade-in pb-20">
+            {/* Header Section */}
+            <div className="flex flex-col justify-start items-start gap-6">
+                <div className="hover:scale-110 transition-transform hover:-translate-x-1 cursor-pointer">
+                    <ArrowLeftIcon onClick={router.back} />
+                </div>
+                <div className="space-y-1">
+                    <h1 className="text-premium-h1">Attendance Correction</h1>
+                    <p className="text-muted-foreground font-medium flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                        Attendance marker correction and verification.
+                    </p>
+                </div>
+            </div>
 
-            {/* Filters */}
-            <Card title="Filter Attendance">
-                <div className="grid md:grid-cols-3 gap-4 text-black">
-                    <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-                    <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-                    <button
-                        className="btn-primary"
+            {/* Filter Section */}
+            <Card>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end p-8 border border-gray-200 rounded-3xl">
+                    <DatePickerSimple
+                        label="From"
+                        value={startDate}
+                        onChange={(date) => setStartDate(moment(date).format("YYYY-MM-DD"))}
+                        disableFuture={true}
+                    />
+                    <DatePickerSimple
+                        label="To"
+                        value={endDate}
+                        onChange={(date) => setEndDate(moment(date).format("YYYY-MM-DD"))}
+                        disableFuture={true}
+                    />
+                    <Button
+                        className="btn-primary h-[52px] group"
                         onClick={() => loadAttendance(startDate, endDate)}
                     >
-                        Search
-                    </button>
+                        <Search className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
+                        Search Attendance
+                    </Button>
                 </div>
             </Card>
 
-            {/* Table */}
-            <Card title="Attendance Records">
+            {/* Main Table Section */}
+            <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-premium-label flex items-center gap-3">
+                        <History className="w-4 h-4 text-primary" />
+                        Attendance Correction Ledgers
+                    </h2>
+                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-40">
+                        {attendance?.length || 0} Records Identified
+                    </span>
+                </div>
+
                 <AttendanceTable
-                    data={attendance}
+                    data={paginatedData}
                     isLoading={isLoading}
                     onRequestCorrection={setSelected}
                     onCancelCorrection={handleCancelCorrection}
+                    total={total}
+                    currentPage={currentPage}
+                    pageSize={pageSize}
+                    onPageChange={setCurrentPage}
                 />
-            </Card>
+            </div>
 
             {/* Correction Modal */}
             {selected && (

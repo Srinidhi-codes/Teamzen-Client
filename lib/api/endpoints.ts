@@ -2,6 +2,7 @@ export const API_ENDPOINTS = {
   // Auth
   REGISTER: "/auth/register/",
   LOGIN: "/auth/login/",
+  LOGOUT: "/users/logout/",
   REFRESH: "/auth/refresh/",
 
   // Users
@@ -23,4 +24,11 @@ export const API_ENDPOINTS = {
   SALARY_STRUCTURES: "/payroll/salary-structures/",
   PAYROLL_RUNS: "/payroll/runs/",
   PAYROLL_RECORDS: "/payroll/records/",
+  // AI
+  POLICIES: "/ai/policies/",
+  SMART_CHAT: "/ai/chat/",
+
+  // Password Reset
+  PASSWORD_RESET_REQUEST: "/users/password-reset/",
+  PASSWORD_RESET_CONFIRM: "/users/password-reset-confirm/",
 };

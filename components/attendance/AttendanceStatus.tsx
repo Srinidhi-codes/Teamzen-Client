@@ -1,5 +1,16 @@
 "use client";
 
+import {
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Calendar,
+  PartyPopper,
+  Timer,
+  ArrowUpRight,
+  ArrowDownRight
+} from "lucide-react";
+
 interface AttendanceStatusProps {
   status: "present" | "absent" | "half_day" | "leave" | "holiday";
   loginTime?: string;
@@ -14,50 +25,70 @@ export function AttendanceStatus({
   workedHours,
 }: AttendanceStatusProps) {
   const statusConfig = {
-    present: { color: "bg-green-100 text-green-800", icon: "✓" },
-    absent: { color: "bg-red-100 text-red-800", icon: "✕" },
-    half_day: { color: "bg-yellow-100 text-yellow-800", icon: "◐" },
-    leave: { color: "bg-blue-100 text-blue-800", icon: "📅" },
-    holiday: { color: "bg-purple-100 text-purple-800", icon: "🎉" },
+    present: { color: "emerald", icon: CheckCircle2, label: "On Duty" },
+    absent: { color: "destructive", icon: XCircle, label: "Not Present" },
+    half_day: { color: "amber", icon: Timer, label: "Half Shift" },
+    leave: { color: "primary", icon: Calendar, label: "On Leave" },
+    holiday: { color: "primary", icon: PartyPopper, label: "Holiday" },
   };
 
   const config = statusConfig[status];
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
-      <div className="flex items-center space-x-3 mb-4">
+    <div className="group bg-card/60 backdrop-blur-md rounded-4xl p-6 border border-border shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-all duration-500 w-full lg:w-fit min-w-[300px]">
+      <div className="flex items-center gap-4 mb-6">
         <div
-          className={`w-12 h-12 rounded-full ${config.color} flex items-center justify-center text-xl font-bold`}
+          className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-500 ${config.color === 'emerald' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+              config.color === 'destructive' ? 'bg-destructive/10 text-destructive' :
+                config.color === 'amber' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' :
+                  'bg-primary/10 text-primary'
+            }`}
         >
-          {config.icon}
+          <config.icon className="w-7 h-7" />
         </div>
         <div>
-          <p className="text-sm text-gray-600">Status</p>
-          <p className="font-bold text-gray-900 capitalize">
-            {status.replace("_", " ")}
+          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">Current Status</p>
+          <p className={`text-lg font-black tracking-tight ${config.color === 'emerald' ? 'text-emerald-600 dark:text-emerald-400' :
+              config.color === 'destructive' ? 'text-destructive' :
+                config.color === 'amber' ? 'text-amber-600 dark:text-amber-400' :
+                  'text-primary'
+            }`}>
+            {config.label}
           </p>
         </div>
       </div>
 
       {(loginTime || logoutTime || workedHours) && (
-        <div className="space-y-2">
-          {loginTime && (
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Check In:</span>
-              <span className="font-medium text-gray-900">{loginTime}</span>
-            </div>
-          )}
-          {logoutTime && (
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Check Out:</span>
-              <span className="font-medium text-gray-900">{logoutTime}</span>
-            </div>
-          )}
-          {workedHours && (
-            <div className="flex justify-between text-sm pt-2 border-t border-gray-200">
-              <span className="text-gray-600">Hours Worked:</span>
-              <span className="font-bold text-indigo-600">
-                {workedHours.toFixed(2)}h
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            {loginTime && (
+              <div className="bg-muted/30 p-3 rounded-xl border border-border flex flex-col gap-1">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+                  <ArrowDownRight className="w-3 h-3 text-emerald-500" />
+                  Check In
+                </span>
+                <span className="text-xs font-black text-foreground">{loginTime}</span>
+              </div>
+            )}
+            {logoutTime && (
+              <div className="bg-muted/30 p-3 rounded-xl border border-border flex flex-col gap-1">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+                  <ArrowUpRight className="w-3 h-3 text-destructive" />
+                  Check Out
+                </span>
+                <span className="text-xs font-black text-foreground">{logoutTime}</span>
+              </div>
+            )}
+          </div>
+
+          {workedHours !== undefined && (
+            <div className="pt-4 border-t border-border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Timer className="w-4 h-4 text-primary" />
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Productive Time</span>
+              </div>
+              <span className="text-lg font-black text-primary tracking-tighter">
+                {workedHours.toFixed(2)}<span className="text-[10px] uppercase ml-0.5 text-primary/70">hrs</span>
               </span>
             </div>
           )}
