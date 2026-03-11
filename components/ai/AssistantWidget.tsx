@@ -69,7 +69,7 @@ export function AssistantWidget() {
     };
 
     return (
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[100] flex flex-col items-end transition-all duration-300">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-100 flex flex-col items-end transition-all duration-300">
             {/* Chat Window */}
             {isOpen && (
                 <div className="mb-4 w-[calc(100vw-2rem)] sm:w-[500px] h-[calc(100dvh-8rem)] sm:h-[650px] max-h-[85vh] sm:max-h-[700px] bg-card/95 backdrop-blur-xl border border-border/50 rounded-4xl sm:rounded-[2.5rem] shadow-3xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">

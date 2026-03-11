@@ -14,9 +14,11 @@ import {
   ChevronRight,
   UserCircle,
   BookCheck,
-  Bell
+  Bell,
+  LogOut
 } from "lucide-react";
 import Image from "next/image";
+import { useStore } from "@/lib/store/useStore";
 
 interface NavItem {
   name: string;
@@ -50,18 +52,32 @@ export function Sidebar({
   closeMobile,
 }: SidebarProps) {
   const pathname = usePathname();
+  const { logoutUser } = useStore();
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      logoutUser();
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+  };
 
   const sidebarClasses = `
     fixed inset-y-0 left-0 z-40
     flex flex-col
-    bg-sidebar text-sidebar-foreground
+    bg-primary/5 backdrop-blur-md text-sidebar-foreground
     transition-all duration-500 ease-in-out
     ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
     md:translate-x-0
     ${isCollapsed ? "md:w-24" : "md:w-72"}
-    w-72
+    w-70
     border-r border-sidebar-border
     shadow-2xl md:shadow-none
+    overflow-x-hidden
   `;
 
   return (
@@ -78,11 +94,19 @@ export function Sidebar({
         {/* Header */}
         <div className="h-20 flex items-center justify-between px-6 border-b border-sidebar-border/50">
           {(!isCollapsed || isMobileOpen) && (
-            <div className="flex items-center animate-in fade-in slide-in-from-left-4 duration-500">
-              <div className="w-24 h-24 rounded-lg flex items-center justify-center">
-                <Image src={"/images/teamzen_zoomed.png"} alt="Logo" width={60} height={60} style={{ width: "auto", height: "auto" }} />
+            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-4 duration-500">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                <Image
+                  src={"/images/teamzen_zoomed.png"}
+                  alt="Logo"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 object-contain"
+                />
               </div>
-              <h1 className="text-sm font-black text-foreground uppercase text-nowrap">Teamzen <span className="text-primary">CORE</span></h1>
+              <h1 className="text-sm font-black text-foreground uppercase text-nowrap tracking-tight">
+                Teamzen <span className="text-primary">CORE</span>
+              </h1>
             </div>
           )}
 
@@ -130,7 +154,7 @@ export function Sidebar({
               >
                 <Icon className={`w-5 h-5 shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'scale-110' : ''}`} />
                 {(!isCollapsed || isMobileOpen) && (
-                  <span className={`font-black text-[13px] uppercase tracking-wider truncate transition-all ${isActive ? 'translate-x-1' : 'group-hover:translate-x-1'}`}>
+                  <span className={`font-black text-[11px] uppercase tracking-wider truncate transition-all ${isActive ? 'translate-x-1' : 'group-hover:translate-x-1'}`}>
                     {item.name}
                   </span>
                 )}
@@ -143,20 +167,20 @@ export function Sidebar({
         </nav>
 
         {/* Footer */}
-        <div className="p-6 border-t border-sidebar-border/50">
-          {(!isCollapsed || isMobileOpen) ? (
-            <div className="animate-in fade-in duration-700">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-relaxed">© 2025 Teamzen <span className="text-primary/50">Core</span></p>
-              <div className="mt-3 flex items-center space-x-2 bg-muted/30 p-2 rounded-xl border border-border/50">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <p className="text-[10px] font-bold text-muted-foreground uppercase truncate">System Active</p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex justify-center">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50" />
-            </div>
-          )}
+        <div className={`p-4 sm:p-6 border-t border-sidebar-border/50 transition-all duration-300 space-y-3 ${isCollapsed ? 'px-3' : ''}`}>
+
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            title="Logout"
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-300 group text-destructive/70 hover:bg-destructive/10 hover:text-destructive active:scale-95 ${isCollapsed && !isMobileOpen ? 'justify-center' : ''
+              }`}
+          >
+            <LogOut className="w-5 h-5 shrink-0 transition-transform group-hover:scale-110 group-hover:-translate-x-0.5" />
+            {(!isCollapsed || isMobileOpen) && (
+              <span className="font-black text-[11px] uppercase tracking-wider">Logout</span>
+            )}
+          </button>
         </div>
       </aside>
     </>

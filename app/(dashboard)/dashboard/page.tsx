@@ -1,7 +1,7 @@
 "use strict";
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import moment from "moment";
 import {
@@ -53,17 +53,35 @@ import { GET_USER_DASHBOARD_STATS } from "@/lib/graphql/dashboard/queries";
 import Image from "next/image";
 
 export default function DashboardPage() {
-  const { user, isLoading: isUserLoading } = useGraphQLUser();
-  const { data: dashboardData, loading: isDashboardLoading } = useQuery(GET_USER_DASHBOARD_STATS);
+  const { user, isLoading: isUserLoading, error: userError } = useGraphQLUser();
+  const { data: dashboardData, loading: isDashboardLoading, error: dashboardError } = useQuery(GET_USER_DASHBOARD_STATS);
   const [isFabOpen, setIsFabOpen] = useState(false);
 
   const isLoading = isUserLoading || isDashboardLoading;
 
+  // 🛡️ Redirect to login if user session is invalid after loading
+  useEffect(() => {
+    if (!isLoading && !user && userError) {
+      window.location.href = "/login";
+    }
+  }, [isLoading, user, userError]);
+
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen space-y-6">
+      <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-6">
         <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
         <p className="text-premium-label animate-pulse">Initializing Dashboard...</p>
+      </div>
+    );
+  }
+
+  if (dashboardError && !user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-4">
+        <AlertCircle className="w-12 h-12 text-destructive" />
+        <h2 className="text-xl font-bold">Session Encountered an Issue</h2>
+        <p className="text-muted-foreground">Refreshing your access...</p>
+        <Button onClick={() => window.location.reload()}>Try Again</Button>
       </div>
     );
   }

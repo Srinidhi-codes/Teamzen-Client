@@ -92,7 +92,7 @@ export function NotificationBell() {
     }
 
     return (
-        <DropdownMenu>
+        <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
                 <button
                     className="p-2.5 rounded-2xl transition-all relative hover:bg-primary/10 text-muted-foreground hover:text-primary active:scale-95 group"

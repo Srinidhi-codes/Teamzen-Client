@@ -210,6 +210,17 @@
   --primary: oklch(0.706 0 0);
 }
 
+[data-accent="neutral"] {
+  --primary: oklch(0.145 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+}
+
+.dark [data-accent="neutral"],
+[data-accent="neutral"].dark {
+  --primary: oklch(0.92 0 0);
+  --primary-foreground: oklch(0.145 0 0);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -217,8 +228,9 @@
 
   body {
     @apply bg-background text-foreground overflow-x-hidden;
-    touch-action: manipulation; /* Prevents double-tap zoom behavior */
-    -webkit-text-size-adjust: 100%; /* Prevents automatic text scaling */
+    touch-action: manipulation;
+    -webkit-text-size-adjust: 100%;
+    scrollbar-gutter: stable; /* Reserves scrollbar space to prevent layout shift */
   }
 
   /* 📱 Fix for iOS auto-zoom on input focus: font-size must be >= 16px */
