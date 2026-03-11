@@ -2,7 +2,8 @@
 
 import { useGraphQLCancelLeaveRequest, useGraphQLCreateLeaveRequest, useGraphQlLeaveBalance, useGraphQLLeaveRequests, useGraphQLTeamLeaves } from "@/lib/graphql/leaves/leavesHook";
 import { useStore } from "@/lib/store/useStore";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNotifications } from "@/lib/hooks/useNotifications";
 import { Card } from "@/components/common/Card";
 import moment from "moment";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
@@ -25,12 +26,14 @@ import {
   User,
   MoreVertical,
   XCircle,
-  Users
+  Users,
+  RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataTable, Column } from "@/components/common/DataTable";
 import { LeaveRequestModal } from "@/components/leaves/LeaveRequestModal";
 import { LeaveReviewModal } from "@/components/leaves/LeaveReviewModal";
+import { cn } from "@/lib/utils";
 import Image from "next/image";
 
 export default function LeavesPage() {
@@ -45,18 +48,29 @@ export default function LeavesPage() {
   const [viewDetails, setViewDetails] = useState<any>(null);
   const [leaveToCancel, setLeaveToCancel] = useState<any>(null);
   const { user } = useStore();
-  const { leaveBalanceData, isLoading: leaveBalanceLoading } = useGraphQlLeaveBalance();
-  const { leaveRequestData, isLoading: leaveRequestLoading } = useGraphQLLeaveRequests();
+  const { leaveBalanceData, isLoading: leaveBalanceLoading, refetch: refetchBalance } = useGraphQlLeaveBalance();
+  const { leaveRequestData, isLoading: leaveRequestLoading, refetch: refetchRequests } = useGraphQLLeaveRequests();
   const { cancelLeaveRequest, cancelLeaveRequestLoading } = useGraphQLCancelLeaveRequest();
   const { createLeaveRequest, createLeaveRequestLoading } = useGraphQLCreateLeaveRequest();
-  const { teamLeavesData, isLoading: teamLeavesLoading } = useGraphQLTeamLeaves();
+  const { teamLeavesData, isLoading: teamLeavesLoading, refetch: refetchTeam } = useGraphQLTeamLeaves();
   const router = useRouter();
+
+  // Socket-based Real-time Refresh
+  useNotifications((msg) => {
+    if (msg.target_type === "Leave Request") {
+      console.log("Real-time Leave Update Received 🔃");
+      refetchBalance();
+      refetchRequests();
+      refetchTeam();
+    }
+  });
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
   const total = leaveRequestData?.length || 0;
   const paginatedData = leaveRequestData?.slice((currentPage - 1) * pageSize, currentPage * pageSize) || [];
+  const pendingCount = leaveRequestData?.filter((r: any) => r.status === "pending").length || 0;
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -185,19 +199,32 @@ export default function LeavesPage() {
   ];
 
   return (
-    <div className="space-y-10 animate-fade-in">
+    <div className="p-4 sm:p-6 space-y-8 sm:space-y-10 animate-fade-in relative min-h-screen bg-background/50">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6">
         <div className="space-y-1">
-          <h1 className="text-premium-h1">Leave Management</h1>
-          <p className="text-muted-foreground font-medium flex items-center gap-2">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Leave Management</h1>
+          <p className="text-muted-foreground font-medium text-sm sm:text-base flex items-center gap-2">
             Validate and monitor your operational downtime.
           </p>
         </div>
-        <div className="flex items-center gap-2 ">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              refetchBalance();
+              refetchRequests();
+              refetchTeam();
+            }}
+            className="rounded-xl h-10 w-10 hover:bg-primary/10 hover:text-primary transition-all active:rotate-180 duration-500 border border-border"
+            title="Refresh Ecosystem"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </Button>
           <Button
             onClick={() => setShowForm(!showForm)}
-            className={showForm ? "btn-secondary" : "btn-primary"}
+            className={cn("flex-1 sm:w-auto", showForm ? "btn-secondary" : "btn-primary")}
           >
             {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
             {showForm ? "Cancel Request" : "Request Leave"}
@@ -208,47 +235,49 @@ export default function LeavesPage() {
       {/* Leave Balance Grid */}
       <div className="space-y-6">
         {leaveBalanceLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="premium-card h-48 animate-pulse bg-muted/50" />
+              <div key={i} className="premium-card h-40 sm:h-48 animate-pulse bg-muted/50" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
             {leaveBalanceData?.map((balance: any) => (
-              <div key={balance.id} className="premium-card card-hover group cursor-default">
-                <div className="flex justify-between items-start mb-8">
-                  <div className="space-y-1">
-                    <h3 className="text-premium-h2 group-hover:text-primary transition-colors italic">{balance.leaveType.name}</h3>
-                    <p className="text-premium-label opacity-40">Entitlement</p>
-                    <span className="text-foreground/70 font-black">{balance.totalEntitled}</span>
+              <div key={balance.id} className="premium-card card-hover group cursor-default p-4 sm:p-6 overflow-hidden">
+                <div className="flex justify-between items-start mb-4 sm:mb-8">
+                  <div className="space-y-0.5 sm:space-y-1 min-w-0">
+                    <h3 className="text-lg sm:text-xl font-black group-hover:text-primary transition-colors italic truncate">{balance.leaveType.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <p className="text-[10px] font-black uppercase text-muted-foreground/40 tracking-widest">Entitlement</p>
+                      <span className="text-[10px] sm:text-xs font-black text-foreground/70">{balance.totalEntitled}</span>
+                    </div>
                   </div>
-                  <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
-                    <Calendar className="w-6 h-6" />
+                  <div className="shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                    <Calendar className="w-5 h-5 sm:w-6 sm:h-6" />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6 pb-6 border-b border-border/50">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Available</p>
-                    <p className="text-3xl font-black text-emerald-500 tabular-nums">{balance.availableBalance}</p>
+                <div className="grid grid-cols-2 gap-4 sm:gap-6 pb-4 sm:pb-6 border-b border-border/50">
+                  <div className="space-y-0.5 sm:space-y-1">
+                    <p className="text-[9px] sm:text-[10px] font-black uppercase text-muted-foreground tracking-widest">Available</p>
+                    <p className="text-2xl sm:text-3xl font-black text-emerald-500 tabular-nums">{balance.availableBalance}</p>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Utilized</p>
-                    <p className="text-3xl font-black text-foreground tabular-nums opacity-20 group-hover:opacity-100 transition-opacity">
+                  <div className="space-y-0.5 sm:space-y-1">
+                    <p className="text-[9px] sm:text-[10px] font-black uppercase text-muted-foreground tracking-widest">Utilized</p>
+                    <p className="text-2xl sm:text-3xl font-black text-foreground tabular-nums opacity-20 group-hover:opacity-100 transition-opacity">
                       {Number(balance.used) + Number(balance.pendingApproval)}
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-6 space-y-3">
-                  <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-3">
+                  <div className="flex justify-between items-center text-[9px] sm:text-[10px] font-black uppercase tracking-widest">
                     <span className="text-muted-foreground">Allocation efficiency</span>
                     <span className="text-primary">{Math.round((balance.availableBalance / balance.totalEntitled) * 100)}%</span>
                   </div>
-                  <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden shadow-inner">
+                  <div className="w-full h-1 sm:h-1.5 bg-muted rounded-full overflow-hidden shadow-inner p-px sm:p-0">
                     <div
-                      className="h-full bg-primary transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(var(--primary),0.5)]"
+                      className="h-full bg-primary transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(var(--primary),0.5)] rounded-full"
                       style={{ width: `${(balance.availableBalance / balance.totalEntitled) * 100}%` }}
                     />
                   </div>
@@ -259,15 +288,20 @@ export default function LeavesPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10">
         {/* Left Column: Form or History */}
-        <div className="lg:col-span-8 space-y-8">
-          <div className="space-y-6">
-            <h2 className="text-premium-label flex items-center gap-3">
-              <History className="w-4 h-4 text-primary" />
-              History Protocol
-            </h2>
-            <div className="bg-card rounded-4xl border border-border shadow-xl overflow-hidden p-2">
+        <div className="lg:col-span-8 space-y-6 sm:space-y-8">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-3">
+                <History className="w-4 h-4 text-primary" />
+                History Protocol
+              </h2>
+              <div className="px-6 py-2 bg-primary/5 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest border border-primary/10">
+                {pendingCount} Pending Requests
+              </div>
+            </div>
+            <div className="bg-card rounded-3xl sm:rounded-4xl border border-border shadow-xl overflow-hidden p-1 sm:p-2">
               <DataTable
                 columns={columns}
                 data={paginatedData}
@@ -283,7 +317,7 @@ export default function LeavesPage() {
         </div>
 
         {/* Right Column: Insights */}
-        <div className="lg:col-span-4 space-y-8 p-5 bg-card border border-border shadow-xl rounded-4xl min-h-1/2">
+        <div className="lg:col-span-4 space-y-6 sm:space-y-8 p-6 sm:p-8 bg-card border border-border shadow-xl rounded-3xl sm:rounded-4xl min-h-1/2">
           <Card title="System Insights">
             <div className="space-y-8">
               <div className="space-y-4">
@@ -365,11 +399,11 @@ export default function LeavesPage() {
 
       {/* Team on Leave Section */}
       <div className="space-y-6">
-        <h2 className="text-premium-label flex items-center gap-3">
+        <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-3">
           <Users className="w-4 h-4 text-primary" />
           Team on Leave
         </h2>
-        <div className="premium-card overflow-hidden">
+        <div className="premium-card rounded-3xl sm:rounded-4xl overflow-hidden px-1">
           {teamLeavesLoading ? (
             <div className="p-8 flex justify-center">
               <LoadingSpinner />

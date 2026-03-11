@@ -23,6 +23,7 @@ import { Card } from "@/components/common/Card";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store/useStore";
+import { cn } from "@/lib/utils";
 
 export default function AttendancePage() {
   const [currentTime, setCurrentTime] = useState(moment().format("hh:mm:ss A"));
@@ -90,8 +91,8 @@ export default function AttendancePage() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="space-y-1">
-          <h1 className="text-premium-h1">Attendance</h1>
-          <p className="text-muted-foreground font-medium flex items-center gap-2">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Attendance Management</h1>
+          <p className="text-muted-foreground font-medium text-sm sm:text-base flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             Station: <span className="text-foreground font-bold">{user?.officeLocation?.name}</span>
           </p>
@@ -99,7 +100,7 @@ export default function AttendancePage() {
         <Button
           variant="outline"
           onClick={() => router.push("/attendance/attendance-correction")}
-          className="border-dashed hover:border-primary hover:text-primary active:scale-95 px-6"
+          className={cn("w-full sm:w-auto btn-primary text-primary")}
         >
           <Edit className="w-4 h-4 mr-2" />
           Data Correction Request
@@ -111,20 +112,21 @@ export default function AttendancePage() {
         <div className="lg:col-span-8 space-y-10">
 
           {/* Main Visualizer */}
-          <div className="premium-card bg-primary text-primary-foreground relative overflow-hidden flex flex-col items-center justify-center py-16 shadow-2xl shadow-primary/40">
+          <div className="premium-card bg-primary text-primary-foreground relative overflow-hidden flex flex-col items-center justify-center py-10 sm:py-16 shadow-2xl shadow-primary/40">
             <div className="absolute inset-0 bg-linear-to-b from-white/10 to-transparent pointer-events-none" />
-            <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
-            <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
+            <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/5 rounded-full blur-3xl opacity-20" />
+            <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-white/5 rounded-full blur-3xl opacity-20" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-white/5 rounded-full blur-2xl" />
 
-            <div className="relative z-10 flex flex-col items-center text-center space-y-4">
-              <div className="flex items-center gap-3 bg-white/10 px-4 py-1.5 rounded-full backdrop-blur-md border border-white/20">
-                <Clock className="w-4 h-4 animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Current Time</span>
+            <div className="relative z-10 flex flex-col items-center text-center space-y-3 sm:space-y-4 px-4">
+              <div className="flex items-center gap-2 sm:gap-3 bg-white/10 px-4 py-1.5 rounded-full backdrop-blur-md border border-white/20">
+                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-pulse" />
+                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.3em]">Current Time</span>
               </div>
-              <div className="text-7xl font-black tracking-tighter tabular-nums drop-shadow-2xl">
+              <div className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tighter tabular-nums drop-shadow-2xl">
                 {currentTime}
               </div>
-              <p className="text-sm font-medium opacity-60 italic">{moment().format("dddd, MMMM Do YYYY")}</p>
+              <p className="text-xs sm:text-sm font-medium opacity-60 italic">{moment().format("dddd, MMMM Do YYYY")}</p>
             </div>
           </div>
 
@@ -134,13 +136,13 @@ export default function AttendancePage() {
               className={`premium-card p-1 group transition-all duration-500 ${!todayAttendance?.loginTime ? 'hover:scale-[1.02] cursor-pointer' : 'opacity-40 grayscale pointer-events-none'}`}
               onClick={() => !todayAttendance?.loginTime && handleAction('in')}
             >
-              <div className="p-8 rounded-4xl border border-border/50 flex flex-col items-center text-center space-y-6 group-hover:bg-primary/5 transition-colors">
-                <div className="w-20 h-20 rounded-3xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
-                  <Check className="w-10 h-10" />
+              <div className="p-6 sm:p-8 rounded-3xl sm:rounded-4xl border border-border/50 flex flex-col items-center text-center space-y-4 sm:space-y-6 group-hover:bg-primary/5 transition-colors">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                  <Check className="w-8 h-8 sm:w-10 sm:h-10" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black tracking-tight">{checkInLoading ? "Verifying..." : "Check In"}</h3>
-                  <p className="text-xs font-medium text-muted-foreground mt-2 uppercase tracking-widest">Mark Attendance (IN)</p>
+                  <h3 className="text-lg sm:text-xl font-black tracking-tight">{checkInLoading ? "Verifying..." : "Check In"}</h3>
+                  <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mt-1 sm:mt-2 uppercase tracking-widest">Mark Attendance (IN)</p>
                 </div>
                 {todayAttendance?.loginTime && (
                   <Badge variant="success">Logged at {todayAttendance.loginTime}</Badge>
@@ -152,13 +154,13 @@ export default function AttendancePage() {
               className={`premium-card p-1 group transition-all duration-500 ${todayAttendance?.loginTime && !todayAttendance?.logoutTime ? 'hover:scale-[1.02] cursor-pointer' : 'opacity-40 grayscale pointer-events-none'}`}
               onClick={() => todayAttendance?.loginTime && !todayAttendance?.logoutTime && handleAction('out')}
             >
-              <div className="p-8 rounded-4xl border border-border/50 flex flex-col items-center text-center space-y-6 group-hover:bg-primary/5 transition-colors">
-                <div className="w-20 h-20 rounded-3xl bg-destructive/10 text-destructive flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
-                  <X className="w-10 h-10" />
+              <div className="p-6 sm:p-8 rounded-3xl sm:rounded-4xl border border-border/50 flex flex-col items-center text-center space-y-4 sm:space-y-6 group-hover:bg-primary/5 transition-colors">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-destructive/10 text-destructive flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                  <X className="w-8 h-8 sm:w-10 sm:h-10" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black tracking-tight">{checkOutLoading ? "Verifying..." : "Check Out"}</h3>
-                  <p className="text-xs font-medium text-muted-foreground mt-2 uppercase tracking-widest">Mark Attendance (OUT)</p>
+                  <h3 className="text-lg sm:text-xl font-black tracking-tight">{checkOutLoading ? "Verifying..." : "Check Out"}</h3>
+                  <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mt-1 sm:mt-2 uppercase tracking-widest">Mark Attendance (OUT)</p>
                 </div>
                 {todayAttendance?.logoutTime && (
                   <Badge variant="danger">Exited at {todayAttendance.logoutTime}</Badge>
@@ -173,9 +175,9 @@ export default function AttendancePage() {
           <Card title="Today's Attendance">
             <div className="space-y-8">
               {statusConfig && (
-                <div className="p-6 rounded-3xl bg-muted/20 border border-border/50 space-y-4">
+                <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-muted/20 border border-border/50 space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-premium-label opacity-40">System Status</span>
+                    <span className="text-[10px] font-black uppercase text-muted-foreground/40 tracking-widest">System Status</span>
                     <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
                   </div>
                   <div className="flex items-center gap-4">
@@ -191,18 +193,18 @@ export default function AttendancePage() {
               )}
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="premium-card p-6 bg-muted/10 border-none space-y-4">
+                <div className="premium-card p-4 sm:p-6 bg-muted/10 border-none space-y-3 sm:space-y-4">
                   <LogIn className="w-4 h-4 text-primary" />
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">IN Distance</p>
-                    <p className={`${(parseFloat(loginDistance) * 1000) > (user?.officeLocation?.geoRadiusMeters || 0) ? 'text-red-500' : 'text-green-500'} text-xl font-black tabular-nums`}>{loginDistance}<span className="text-[10px] ml-1">km</span></p>
+                    <p className={`${(parseFloat(loginDistance) * 1000) > (user?.officeLocation?.geoRadiusMeters || 0) ? 'text-red-500' : 'text-green-500'} text-lg sm:text-xl font-black tabular-nums`}>{loginDistance}<span className="text-[10px] ml-1">km</span></p>
                   </div>
                 </div>
-                <div className="premium-card p-6 bg-muted/10 border-none space-y-4">
+                <div className="premium-card p-4 sm:p-6 bg-muted/10 border-none space-y-3 sm:space-y-4">
                   <LogOut className="w-4 h-4 text-primary" />
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">OUT Distance</p>
-                    <p className={`${(parseFloat(logoutDistance) * 1000) > (user?.officeLocation?.geoRadiusMeters || 0) ? 'text-red-500' : 'text-green-500'} text-xl font-black tabular-nums`}>{logoutDistance}<span className="text-[10px] ml-1">km</span></p>
+                    <p className={`${(parseFloat(logoutDistance) * 1000) > (user?.officeLocation?.geoRadiusMeters || 0) ? 'text-red-500' : 'text-green-500'} text-lg sm:text-xl font-black tabular-nums`}>{logoutDistance}<span className="text-[10px] ml-1">km</span></p>
                   </div>
                 </div>
               </div>

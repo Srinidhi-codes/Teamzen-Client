@@ -39,7 +39,7 @@ export function EditableField({
 
     return (
         <div className="p-4 rounded-4xl border border-border/20 hover:bg-muted/30 shadow-md transition-colors group bg-linear-to-r from-primary/10 via-primary/10">
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between truncate">
                 <div className="flex items-start space-x-4 flex-1">
                     <span className="text-2xl pt-1 opacity-80 group-hover:opacity-100 transition-opacity">{icon}</span>
                     <div className="flex-1 space-y-1">

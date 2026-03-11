@@ -6,7 +6,7 @@ interface ProfileTabsProps {
 
 export function ProfileTabs({ tabs, activeTab, setActiveTab }: ProfileTabsProps) {
     return (
-        <div className="p-2 rounded-4xl border glass-dark shadow-lg inline-flex space-x-2 overflow-x-auto">
+        <div className="p-2 rounded-3xl sm:rounded-4xl border glass-dark shadow-lg flex w-full max-w-full space-x-2 overflow-x-auto custom-scrollbar no-scrollbar sm:no-scrollbar-none">
             {tabs.map((tab) => (
                 <button
                     key={tab.id}

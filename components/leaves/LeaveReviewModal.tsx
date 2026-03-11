@@ -43,43 +43,44 @@ export function LeaveReviewModal({
             icon={FileText}
         >
             <div className="space-y-10">
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
                     <div className="space-y-1">
                         <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Leave Type</label>
-                        <p className="text-lg font-black italic text-primary">{viewDetails.leaveType.name}</p>
+                        <p className="text-base sm:text-lg font-black italic text-primary">{viewDetails.leaveType.name}</p>
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-1 border-l sm:border-l-0 sm:pl-0 pl-4 border-border/50">
                         <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Duration</label>
-                        <p className="text-lg font-black tabular-nums">{viewDetails.durationDays}</p>
+                        <p className="text-base sm:text-lg font-black tabular-nums">{viewDetails.durationDays} Operational Days</p>
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-1 flex flex-col items-start">
+                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Status</label>
                         <Badge variant={getStatusVariant(viewDetails.status)}>{viewDetails.status}</Badge>
                     </div>
                 </div>
 
-                <div className="space-y-2 bg-muted/30 p-6 rounded-3xl border border-border/50 max-w-fit">
+                <div className="space-y-2 bg-muted/30 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border/50 w-full sm:w-fit">
                     <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                        <Calendar className="w-3 h-3 text-primary" /> Duration
+                        <Calendar className="w-3 h-3 text-primary" /> Validity Period
                     </label>
-                    <p className="text-sm font-black text-foreground tracking-widest uppercase flex items-center gap-3">
-                        {moment(viewDetails.fromDate).format("MMMM DD")}
+                    <p className="text-xs sm:text-sm font-black text-foreground uppercase flex flex-wrap items-center gap-2 sm:gap-3">
+                        {moment(viewDetails.fromDate).format("MMMM DD, YY")}
                         <ArrowRight className="w-4 h-4 text-primary opacity-30" />
-                        {moment(viewDetails.toDate).format("MMMM DD, YYYY")}
+                        {moment(viewDetails.toDate).format("MMMM DD, YY")}
                     </p>
                 </div>
 
                 <div className="space-y-3">
                     <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                        <Info className="w-3 h-3 text-primary" /> Reason
+                        <Info className="w-3 h-3 text-primary" /> Protocol Justification
                     </label>
-                    <p className="text-sm font-medium text-foreground/80 leading-relaxed italic border-l-4 border-primary/20 pl-6">
+                    <p className="text-sm font-medium text-foreground/80 leading-relaxed italic border-l-4 border-primary/20 pl-4 sm:pl-6">
                         "{viewDetails.reason}"
                     </p>
                 </div>
 
                 <div className="flex justify-end pt-4">
-                    <Button variant="secondary" onClick={onClose} className="px-10">
-                        Close
+                    <Button variant="secondary" onClick={onClose} className="w-full sm:w-auto px-10 h-12 rounded-xl sm:rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-primary/5">
+                        Terminate View
                     </Button>
                 </div>
             </div>
