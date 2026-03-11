@@ -1,6 +1,6 @@
 "use client";
 
-import { useGraphQLCancelLeaveRequest, useGraphQLCreateLeaveRequest, useGraphQlLeaveBalance, useGraphQLLeaveRequests, useGraphQLTeamLeaves } from "@/lib/graphql/leaves/leavesHook";
+import { useGraphQLCancelLeaveRequest, useGraphQLCreateLeaveRequest, useGraphQlLeaveBalance, useGraphQLLeaveRequests, useGraphQLTeamLeaves, useGraphQLCompanyHolidays } from "@/lib/graphql/leaves/leavesHook";
 import { useStore } from "@/lib/store/useStore";
 import { useState } from "react";
 import { Card } from "@/components/common/Card";
@@ -8,10 +8,12 @@ import moment from "moment";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/common/Badge";
+import { LeaveCalendar } from "@/components/leaves/LeaveCalendar";
 import {
   Plus,
   X,
   Calendar,
+  CalendarDays,
   Clock,
   CheckCircle2,
   Info,
@@ -25,7 +27,9 @@ import {
   User,
   MoreVertical,
   XCircle,
-  Users
+  Users,
+  RotateCcw,
+  LayoutList
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataTable, Column } from "@/components/common/DataTable";
@@ -49,7 +53,9 @@ export default function LeavesPage() {
   const { leaveRequestData, isLoading: leaveRequestLoading } = useGraphQLLeaveRequests();
   const { cancelLeaveRequest, cancelLeaveRequestLoading } = useGraphQLCancelLeaveRequest();
   const { createLeaveRequest, createLeaveRequestLoading } = useGraphQLCreateLeaveRequest();
-  const { teamLeavesData, isLoading: teamLeavesLoading } = useGraphQLTeamLeaves();
+  const { teamLeavesData, isLoading: teamLeavesLoading, refetch: refetchTeam } = useGraphQLTeamLeaves();
+  const { companyHolidaysData } = useGraphQLCompanyHolidays();
+  const [activeTab, setActiveTab] = useState<"overview" | "calendar">("overview");
   const router = useRouter();
 
   // Pagination State
@@ -66,6 +72,10 @@ export default function LeavesPage() {
     if (!formData.toDate) newErrors.toDate = "Required";
     if (!formData.reason || formData.reason.trim().length < 10) {
       newErrors.reason = "Minimum 10 characters required";
+    }
+
+    if (formData.fromDate && moment(formData.fromDate).isBefore(moment().startOf("day"))) {
+      newErrors.fromDate = "Cannot request leave for a past date";
     }
 
     if (formData.fromDate && formData.toDate) {
@@ -204,221 +214,256 @@ export default function LeavesPage() {
           </Button>
         </div>
       </div>
-
-      {/* Leave Balance Grid */}
-      <div className="space-y-6">
-        {leaveBalanceLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="premium-card h-48 animate-pulse bg-muted/50" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {leaveBalanceData?.map((balance: any) => (
-              <div key={balance.id} className="premium-card card-hover group cursor-default">
-                <div className="flex justify-between items-start mb-8">
-                  <div className="space-y-1">
-                    <h3 className="text-premium-h2 group-hover:text-primary transition-colors italic">{balance.leaveType.name}</h3>
-                    <p className="text-premium-label opacity-40">Entitlement</p>
-                    <span className="text-foreground/70 font-black">{balance.totalEntitled}</span>
-                  </div>
-                  <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
-                    <Calendar className="w-6 h-6" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6 pb-6 border-b border-border/50">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Available</p>
-                    <p className="text-3xl font-black text-emerald-500 tabular-nums">{balance.availableBalance}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Utilized</p>
-                    <p className="text-3xl font-black text-foreground tabular-nums opacity-20 group-hover:opacity-100 transition-opacity">
-                      {Number(balance.used) + Number(balance.pendingApproval)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-6 space-y-3">
-                  <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                    <span className="text-muted-foreground">Allocation efficiency</span>
-                    <span className="text-primary">{Math.round((balance.availableBalance / balance.totalEntitled) * 100)}%</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden shadow-inner">
-                    <div
-                      className="h-full bg-primary transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(var(--primary),0.5)]"
-                      style={{ width: `${(balance.availableBalance / balance.totalEntitled) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Tab Bar */}
+      <div className="flex items-center bg-muted/40 p-1 rounded-2xl border border-border/50 w-fit">
+        {([
+          { key: "overview", label: "Overview", icon: LayoutList },
+          { key: "calendar", label: "Calendar", icon: CalendarDays },
+        ] as const).map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${activeTab === tab.key
+              ? "bg-background text-primary shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+              }`}
+          >
+            <tab.icon className="w-3.5 h-3.5" />
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-        {/* Left Column: Form or History */}
-        <div className="lg:col-span-8 space-y-8">
-          <div className="space-y-6">
-            <h2 className="text-premium-label flex items-center gap-3">
-              <History className="w-4 h-4 text-primary" />
-              History Protocol
-            </h2>
-            <div className="bg-card rounded-4xl border border-border shadow-xl overflow-hidden p-2">
-              <DataTable
-                columns={columns}
-                data={paginatedData}
-                isLoading={leaveRequestLoading}
-                total={total}
-                currentPage={currentPage}
-                pageSize={pageSize}
-                onPageChange={setCurrentPage}
-                onRowClick={setViewDetails}
-              />
-            </div>
-          </div>
-        </div>
+      {activeTab === "calendar" && (
+        <LeaveCalendar
+          myLeaves={leaveRequestData || []}
+          teamLeaves={teamLeavesData || []}
+          holidays={companyHolidaysData || []}
+        />
+      )}
 
-        {/* Right Column: Insights */}
-        <div className="lg:col-span-4 space-y-8 p-5 bg-card border border-border shadow-xl rounded-4xl min-h-1/2">
-          <Card title="System Insights">
-            <div className="space-y-8">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between text-xs font-black uppercase tracking-widest">
-                  <span className="text-muted-foreground">Annual Usage</span>
-                  <span className="text-primary font-black">
-                    {Math.round(
-                      ((leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.used), 0) || 0) /
-                        (leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.totalEntitled), 0) || 1)) * 100
-                    )}%
-                  </span>
-                </div>
-                <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.8)] transition-all duration-1000"
-                    style={{
-                      width: `${Math.round(
-                        ((leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.used), 0) || 0) /
-                          (leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.totalEntitled), 0) || 1)) * 100
-                      )}%`
-                    }}
+      {activeTab === "overview" && (
+        <>
+          <div className="space-y-6">
+            {leaveBalanceLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="premium-card h-48 animate-pulse bg-muted/50" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {leaveBalanceData?.map((balance: any) => (
+                  <div key={balance.id} className="premium-card card-hover group cursor-default">
+                    <div className="flex justify-between items-start mb-8">
+                      <div className="space-y-1">
+                        <h3 className="text-premium-h2 group-hover:text-primary transition-colors italic">{balance.leaveType.name}</h3>
+                        <p className="text-premium-label opacity-40">Entitlement</p>
+                        <span className="text-foreground/70 font-black">{balance.totalEntitled}</span>
+                      </div>
+                      <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                        <Calendar className="w-6 h-6" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-6 pb-6 border-b border-border/50">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Available</p>
+                        <p className="text-3xl font-black text-emerald-500 tabular-nums">{balance.availableBalance}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Utilized</p>
+                        <p className="text-3xl font-black text-foreground tabular-nums opacity-20 group-hover:opacity-100 transition-opacity">
+                          {Number(balance.used) + Number(balance.pendingApproval)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 space-y-3">
+                      <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                        <span className="text-muted-foreground">Allocation efficiency</span>
+                        <span className="text-primary">
+                          {balance.totalEntitled > 0
+                            ? `${Math.round((balance.availableBalance / balance.totalEntitled) * 100)}%`
+                            : "—"}
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden shadow-inner">
+                        <div
+                          className="h-full bg-primary transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(var(--primary),0.5)] rounded-full"
+                          style={{ width: balance.totalEntitled > 0 ? `${Math.min((balance.availableBalance / balance.totalEntitled) * 100, 100)}%` : "0%" }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+            {/* Left Column: Form or History */}
+            <div className="lg:col-span-8 space-y-8">
+              <div className="space-y-6">
+                <h2 className="text-premium-label flex items-center gap-3">
+                  <History className="w-4 h-4 text-primary" />
+                  History Protocol
+                </h2>
+                <div className="bg-card rounded-4xl border border-border shadow-xl overflow-hidden p-2">
+                  <DataTable
+                    columns={columns}
+                    data={paginatedData}
+                    isLoading={leaveRequestLoading}
+                    total={total}
+                    currentPage={currentPage}
+                    pageSize={pageSize}
+                    onPageChange={setCurrentPage}
+                    onRowClick={setViewDetails}
                   />
                 </div>
               </div>
+            </div>
 
-              <div className="space-y-5">
-                {[
-                  {
-                    label: "Optimal Approval Rate",
-                    val: `${leaveRequestData && leaveRequestData.length > 0
-                      ? Math.round(
-                        (leaveRequestData.filter((r: any) => r.status === "approved").length /
-                          (leaveRequestData.filter((r: any) => r.status !== "pending").length || 1)) *
-                        100
-                      )
-                      : 0
-                      }%`,
-                    icon: CheckCircle2,
-                    color: "text-emerald-500"
-                  },
-                  {
-                    label: "Pending Evaluations",
-                    val: `${leaveRequestData?.filter((r: any) => r.status === "pending").length || 0}`,
-                    icon: Clock,
-                    color: "text-orange-500"
-                  },
-                  {
-                    label: "Rejected Requests",
-                    val: `${leaveRequestData?.filter((r: any) => r.status === "rejected").length || 0}`,
-                    icon: XCircle,
-                    color: "text-red-500"
-                  },
-                ].map((insight, i) => (
-                  <div key={i} className="flex items-center justify-between group">
-                    <div className="flex items-center gap-3">
-                      <insight.icon className={`w-4 h-4 ${insight.color}`} />
-                      <span className="text-xs font-bold text-muted-foreground group-hover:text-foreground transition-colors">{insight.label}</span>
+            {/* Right Column: Insights */}
+            <div className="lg:col-span-4 space-y-8 p-5 bg-card border border-border shadow-xl rounded-4xl min-h-1/2">
+              <Card title="System Insights">
+                <div className="space-y-8">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between text-xs font-black uppercase tracking-widest">
+                      <span className="text-muted-foreground">Annual Usage</span>
+                      <span className="text-primary font-black">
+                        {Math.round(
+                          ((leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.used), 0) || 0) /
+                            (leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.totalEntitled), 0) || 1)) * 100
+                        )}%
+                      </span>
                     </div>
-                    <span className="text-xs font-black tabular-nums">{insight.val}</span>
+                    <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.8)] transition-all duration-1000"
+                        style={{
+                          width: `${Math.round(
+                            ((leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.used), 0) || 0) /
+                              (leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.totalEntitled), 0) || 1)) * 100
+                          )}%`
+                        }}
+                      />
+                    </div>
                   </div>
-                ))}
-              </div>
 
-              {leaveBalanceData?.find((b: any) => b.availableBalance <= 2) && (
-                <div className="p-5 rounded-2xl bg-destructive/5 border border-destructive/20 space-y-3">
-                  <div className="flex items-center gap-2 text-destructive">
-                    <AlertCircle className="w-4 h-4" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Critical Alert</span>
+                  <div className="space-y-5">
+                    {[
+                      {
+                        label: "Optimal Approval Rate",
+                        val: `${leaveRequestData && leaveRequestData.length > 0
+                          ? Math.round(
+                            (leaveRequestData.filter((r: any) => r.status === "approved").length /
+                              (leaveRequestData.filter((r: any) => r.status !== "pending").length || 1)) *
+                            100
+                          )
+                          : 0
+                          }%`,
+                        icon: CheckCircle2,
+                        color: "text-emerald-500"
+                      },
+                      {
+                        label: "Pending Evaluations",
+                        val: `${leaveRequestData?.filter((r: any) => r.status === "pending").length || 0}`,
+                        icon: Clock,
+                        color: "text-orange-500"
+                      },
+                      {
+                        label: "Rejected Requests",
+                        val: `${leaveRequestData?.filter((r: any) => r.status === "rejected").length || 0}`,
+                        icon: XCircle,
+                        color: "text-red-500"
+                      },
+                    ].map((insight, i) => (
+                      <div key={i} className="flex items-center justify-between group">
+                        <div className="flex items-center gap-3">
+                          <insight.icon className={`w-4 h-4 ${insight.color}`} />
+                          <span className="text-xs font-bold text-muted-foreground group-hover:text-foreground transition-colors">{insight.label}</span>
+                        </div>
+                        <span className="text-xs font-black tabular-nums">{insight.val}</span>
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-[11px] font-medium text-destructive/80 leading-relaxed">
-                    Your <span className="font-bold underline italic">{leaveBalanceData?.find((b: any) => b.availableBalance <= 2)?.leaveType.name}</span> balance is nearing critical threshold ({leaveBalanceData?.find((b: any) => b.availableBalance <= 2)?.availableBalance} units remaining).
-                  </p>
+
+                  {leaveBalanceData?.find((b: any) => b.availableBalance <= 2) && (
+                    <div className="p-5 rounded-2xl bg-destructive/5 border border-destructive/20 space-y-3">
+                      <div className="flex items-center gap-2 text-destructive">
+                        <AlertCircle className="w-4 h-4" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Critical Alert</span>
+                      </div>
+                      <p className="text-[11px] font-medium text-destructive/80 leading-relaxed">
+                        Your <span className="font-bold underline italic">{leaveBalanceData?.find((b: any) => b.availableBalance <= 2)?.leaveType.name}</span> balance is nearing critical threshold ({leaveBalanceData?.find((b: any) => b.availableBalance <= 2)?.availableBalance} units remaining).
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
+          </div>
+
+          {/* Team on Leave Section */}
+          <div className="space-y-6">
+            <h2 className="text-premium-label flex items-center gap-3">
+              <Users className="w-4 h-4 text-primary" />
+              Team on Leave
+            </h2>
+            <div className="premium-card overflow-hidden">
+              {teamLeavesLoading ? (
+                <div className="p-8 flex justify-center">
+                  <LoadingSpinner />
+                </div>
+              ) : teamLeavesData.length === 0 ? (
+                <div className="p-12 text-center space-y-3">
+                  <Users className="w-12 h-12 text-muted-foreground/20 mx-auto" />
+                  <p className="text-sm text-muted-foreground font-medium italic">No colleagues currently on leave. Maximum operational capacity.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto no-scrollbar">
+                  <div className="flex gap-6 p-2 min-w-max">
+                    {teamLeavesData.map((leave: any) => (
+                      <div key={leave.id} className="w-64 border border-border shadow-md rounded-3xl p-6 relative group hover:border-primary/30 transition-all hover:bg-muted/30">
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden border border-border/40">
+                            {leave.user.profilePicture ? (
+                              <Image src={leave.user.profilePicture.url as string} alt={leave.user.firstName} width={48} height={48} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-primary font-black text-sm">
+                                {leave.user.firstName.charAt(0)}{leave.user.lastName ? leave.user.lastName.charAt(0) : ''}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-black text-foreground truncate max-w-[120px]">
+                              {leave.user.firstName} {leave.user.lastName || ''}
+                            </span>
+                            <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{leave.leaveType.name}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 bg-background/50 p-2 rounded-xl border border-border">
+                          <Calendar className="w-3 h-3 text-muted-foreground" />
+                          <div className="flex items-center gap-1.5 text-[10px] font-black tracking-tight text-foreground/80">
+                            <span className="tabular-nums">{moment(leave.fromDate).format("MMM DD")}</span>
+                            <ArrowRight className="w-2 h-2 opacity-30" />
+                            <span className="tabular-nums">{moment(leave.toDate).format("MMM DD")}</span>
+                          </div>
+                          <div className="ml-auto bg-primary/10 px-1.5 py-0.5 rounded-lg text-primary text-[9px] font-black">
+                            {Math.round(leave.durationDays)}d
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
-          </Card>
-        </div>
-      </div>
+          </div>
 
-      {/* Team on Leave Section */}
-      <div className="space-y-6">
-        <h2 className="text-premium-label flex items-center gap-3">
-          <Users className="w-4 h-4 text-primary" />
-          Team on Leave
-        </h2>
-        <div className="premium-card overflow-hidden">
-          {teamLeavesLoading ? (
-            <div className="p-8 flex justify-center">
-              <LoadingSpinner />
-            </div>
-          ) : teamLeavesData.length === 0 ? (
-            <div className="p-12 text-center space-y-3">
-              <Users className="w-12 h-12 text-muted-foreground/20 mx-auto" />
-              <p className="text-sm text-muted-foreground font-medium italic">No colleagues currently on leave. Maximum operational capacity.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto no-scrollbar">
-              <div className="flex gap-6 p-2 min-w-max">
-                {teamLeavesData.map((leave: any) => (
-                  <div key={leave.id} className="w-64 border border-border shadow-md rounded-3xl p-6 relative group hover:border-primary/30 transition-all hover:bg-muted/30">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden border border-border/40">
-                        {leave.user.profilePicture ? (
-                          <Image src={leave.user.profilePicture.url as string} alt={leave.user.firstName} width={48} height={48} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-primary font-black text-sm">
-                            {leave.user.firstName.charAt(0)}{leave.user.lastName ? leave.user.lastName.charAt(0) : ''}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-black text-foreground truncate max-w-[120px]">
-                          {leave.user.firstName} {leave.user.lastName || ''}
-                        </span>
-                        <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{leave.leaveType.name}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 bg-background/50 p-2 rounded-xl border border-border">
-                      <Calendar className="w-3 h-3 text-muted-foreground" />
-                      <div className="flex items-center gap-1.5 text-[10px] font-black tracking-tight text-foreground/80">
-                        <span className="tabular-nums">{moment(leave.fromDate).format("MMM DD")}</span>
-                        <ArrowRight className="w-2 h-2 opacity-30" />
-                        <span className="tabular-nums">{moment(leave.toDate).format("MMM DD")}</span>
-                      </div>
-                      <div className="ml-auto bg-primary/10 px-1.5 py-0.5 rounded-lg text-primary text-[9px] font-black">
-                        {Math.round(leave.durationDays)}d
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+        </>
+      )}
 
       <LeaveReviewModal
         isOpen={!!viewDetails}

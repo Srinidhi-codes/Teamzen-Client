@@ -91,12 +91,14 @@ export default function AttendanceCorrectionPage() {
                         value={startDate}
                         onChange={(date) => setStartDate(moment(date).format("YYYY-MM-DD"))}
                         disableFuture={true}
+                        maxDate={endDate || undefined}
                     />
                     <DatePickerSimple
                         label="To"
                         value={endDate}
                         onChange={(date) => setEndDate(moment(date).format("YYYY-MM-DD"))}
                         disableFuture={true}
+                        minDate={startDate || undefined}
                     />
                     <Button
                         className="btn-primary h-[52px] group"

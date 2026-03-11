@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@apollo/client/react"
 import { GetLeaveBalanceResponse, GetLeaveRequestResponse, GetLeavesResponse, GetTeamLeavesResponse, LeaveType } from "./types";
-import { GET_LEAVE_BALANCE, GET_LEAVE_REQUESTS, GET_LEAVES, GET_TEAM_LEAVES } from "./queries";
+import { GET_LEAVE_BALANCE, GET_LEAVE_REQUESTS, GET_LEAVES, GET_TEAM_LEAVES, GET_COMPANY_HOLIDAYS } from "./queries";
 import { CANCEL_LEAVE_REQUEST, CREATE_LEAVE_REQUEST, LEAVE_REQUEST_PROCESS } from "./mutations";
 
 export function useGraphQlLeaves(organizationId: string) {
@@ -137,3 +137,26 @@ export function useGraphQLLeaveRequestProcess() {
       processLeaveRequestError: processLeaveRequestState.error,
    }
 }
+
+export function useGraphQLCompanyHolidays() {
+   interface CompanyHolidaysResponse {
+      companyHolidays: Array<{
+         id: string;
+         name: string;
+         holidayDate: string;
+         isOptional: boolean;
+         description: string;
+      }>;
+   }
+   const { data, loading, error, refetch } = useQuery<CompanyHolidaysResponse>(GET_COMPANY_HOLIDAYS, {
+      fetchPolicy: 'network-only',
+   });
+
+   return {
+      companyHolidaysData: data?.companyHolidays ?? [],
+      isLoading: loading,
+      error,
+      refetch,
+   };
+}
+

@@ -80,6 +80,7 @@ export const GET_TEAM_LEAVES = gql`
       leaveType {
         id
         name
+        code
       }
       fromDate
       toDate
@@ -89,3 +90,14 @@ export const GET_TEAM_LEAVES = gql`
   }
 `;
 
+export const GET_COMPANY_HOLIDAYS = gql`
+  query CompanyHolidays {
+    companyHolidays {
+      id
+      name
+      holidayDate
+      isOptional
+      description
+    }
+  }
+`;

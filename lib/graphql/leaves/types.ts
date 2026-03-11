@@ -24,18 +24,35 @@ export interface LeaveBalance {
     lastUpdated: string;
 }
 
+export interface UserSummary {
+    id: string;
+    firstName: string;
+    lastName: string;
+    profilePicture?: { url: string };
+}
+
 export interface LeaveRequest {
     id: string;
-    user: string;
+    user: UserSummary;
     leaveType: LeaveType;
     fromDate: string;
     toDate: string;
     durationDays: number;
     reason: string;
     status: string;
-    approvedBy: string;
+    approvedBy: UserSummary | null;
     approvalComments: string;
     approvedAt: string;
+}
+
+export interface TeamLeave {
+    id: string;
+    user: UserSummary;
+    leaveType: LeaveType;
+    fromDate: string;
+    toDate: string;
+    durationDays: number;
+    status: string;
 }
 
 export type LeaveInput = {
@@ -54,7 +71,7 @@ export interface GetLeaveRequestResponse {
 }
 
 export interface GetTeamLeavesResponse {
-    teamLeaves: LeaveRequest[];
+    teamLeaves: TeamLeave[];
 }
 
 export type GetLeaveBalanceResponse = {

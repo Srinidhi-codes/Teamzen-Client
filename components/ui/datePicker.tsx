@@ -21,9 +21,11 @@ interface DatePickerSimpleProps {
     className?: string
     disableFuture?: boolean
     disablePast?: boolean
+    minDate?: Date | string  // earliest selectable date (inclusive)
+    maxDate?: Date | string  // latest selectable date (inclusive)
 }
 
-export function DatePickerSimple({ label, value, onChange, error, required, className, disableFuture = false, disablePast = false }: DatePickerSimpleProps) {
+export function DatePickerSimple({ label, value, onChange, error, required, className, disableFuture = false, disablePast = false, minDate, maxDate }: DatePickerSimpleProps) {
     const [open, setOpen] = React.useState(false)
 
     const dateValue = value ? (typeof value === 'string' ? moment(value.substring(0, 10), "YYYY-MM-DD").toDate() : value) : undefined;
@@ -70,6 +72,16 @@ export function DatePickerSimple({ label, value, onChange, error, required, clas
                         disabled={(date) => {
                             if (disableFuture && date > new Date()) return true;
                             if (disablePast && date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
+                            if (minDate) {
+                                const min = typeof minDate === 'string' ? new Date(minDate) : minDate;
+                                min.setHours(0, 0, 0, 0);
+                                if (date < min) return true;
+                            }
+                            if (maxDate) {
+                                const max = typeof maxDate === 'string' ? new Date(maxDate) : maxDate;
+                                max.setHours(23, 59, 59, 999);
+                                if (date > max) return true;
+                            }
                             return date < new Date("1900-01-01");
                         }}
                         initialFocus

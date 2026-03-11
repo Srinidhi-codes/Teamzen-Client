@@ -1,16 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store/useStore";
 import { ThemeSelector } from "./ThemeSelector";
 import client from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
 import { NotificationBell } from "./NotificationBell";
-import { LogOut, Menu, Plane, Settings, User } from "lucide-react";
+import { Calendar, CircleDollarSign, Clock, LayoutDashboard, LogOut, Menu, Plane, Settings, User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,15 +20,24 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 interface NavbarProps {
   onMenuClick?: () => void;
+  isSidebarCollapsed?: boolean;
 }
 
-export function Navbar({ onMenuClick }: NavbarProps) {
-  // const { user, isLoading: isUserLoading, error: userError } = useGraphQLUser();
+const IMPORTANT_ROUTES = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Leaves", href: "/leaves", icon: Calendar },
+  { name: "Attendance", href: "/attendance", icon: Clock },
+  { name: "Payroll", href: "/payroll", icon: CircleDollarSign },
+];
+
+export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps) {
   const { navbarTabs, activeNavbarTab, setActiveNavbarTab, logoutUser, user } = useStore();
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogout = async () => {
     try {
@@ -41,6 +50,24 @@ export function Navbar({ onMenuClick }: NavbarProps) {
       localStorage.clear();
       // Use window.location.href to force a full page refresh and clear in-memory state
       window.location.href = "/login";
+    }
+  };
+
+  // Scroll-aware state
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Scroll to top if clicking the currently active route
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    const isActive = href === '/dashboard' ? pathname === href : pathname.startsWith(href);
+    if (isActive) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -60,7 +87,11 @@ export function Navbar({ onMenuClick }: NavbarProps) {
             )}
 
             {/* Logo */}
-            <Link href="/dashboard" className="flex items-center space-x-3 group shrink-0">
+            <Link 
+              href="/dashboard" 
+              onClick={(e) => handleNavClick(e, "/dashboard")}
+              className="flex items-center space-x-3 group shrink-0"
+            >
               <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform overflow-hidden">
                 {user?.organization?.logo?.url ? (
                   <Image src={user.organization.logo.url as string} alt="Logo" width={48} height={48} className="w-full h-full object-cover" />
@@ -81,26 +112,56 @@ export function Navbar({ onMenuClick }: NavbarProps) {
             </Link>
           </div>
 
-          {/* Dynamic Tabs */}
-          {navbarTabs.length > 0 && (
-            <div className="flex-1 flex justify-center px-4 overflow-hidden">
-              <div className="flex items-center bg-muted/20 p-1.5 rounded-2xl border border-border/50 backdrop-blur-md max-w-full overflow-x-auto no-scrollbar">
-                {navbarTabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveNavbarTab(tab.id)}
-                    className={`flex items-center space-x-2.5 px-6 py-2.5 rounded-xl transition-all duration-500 whitespace-nowrap ${activeNavbarTab === tab.id
-                      ? `bg-linear-to-r ${tab.color} text-white shadow-lg shadow-primary/20 -translate-y-0.5`
-                      : 'hover:bg-background/50 text-muted-foreground hover:text-foreground'
-                      }`}
-                  >
-                    <span className="text-lg">{tab.iconElement}</span>
-                    <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">{tab.label}</span>
-                  </button>
-                ))}
+          {/* Center Navigation - Contextual tabs OR Important routes when sidebar is collapsed */}
+          <div className="flex-1 flex justify-center px-4 overflow-hidden">
+            {isSidebarCollapsed ? (
+              /* Important Routes (Show only when sidebar is collapsed) */
+              <div className="flex items-center bg-muted/40 p-1 rounded-2xl border border-border/50 backdrop-blur-md max-w-full overflow-x-auto scrollbar-hide animate-slide-up duration-300">
+                {IMPORTANT_ROUTES.map((route) => {
+                  const isActive = route.href === '/dashboard' ? pathname === route.href : pathname.startsWith(route.href);
+                  return (
+                    <Link
+                      key={route.href}
+                      href={route.href}
+                      onClick={(e) => handleNavClick(e, route.href)}
+                      className={cn(
+                        "flex items-center space-x-2.5 px-4 sm:px-6 py-2 rounded-xl transition-all duration-300 group whitespace-nowrap",
+                        isActive
+                          ? "text-primary bg-primary/10"
+                          : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                      )}
+                    >
+                      <route.icon className={cn("w-5 h-5 transition-transform group-hover:scale-125", isActive && "scale-110")} />
+                      <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">
+                        {route.name}
+                      </span>
+                    </Link>
+                  );
+                })}
               </div>
-            </div>
-          )}
+            ) : (
+              /* Contextual Navbar Tabs (Show when sidebar is open or if contextual tabs exist) */
+              navbarTabs.length > 0 && (
+                <div className="flex items-center bg-muted/30 p-1 rounded-2xl border border-border/50 backdrop-blur-md max-w-full overflow-x-auto scrollbar-hide animate-fade-in duration-500">
+                  {navbarTabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveNavbarTab(tab.id)}
+                      className={cn(
+                        "flex items-center space-x-2.5 px-6 py-2.5 rounded-xl transition-all duration-500 whitespace-nowrap",
+                        activeNavbarTab === tab.id
+                          ? `bg-linear-to-r ${tab.color || 'from-primary to-primary/80'} text-white shadow-xl shadow-primary/20 -translate-y-0.5`
+                          : "hover:bg-background/50 text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <span className="text-base">{tab.iconElement}</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">{tab.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )
+            )}
+          </div>
 
 
           {/* User Menu */}
@@ -113,7 +174,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
             {user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center space-x-3 px-2 py-2 rounded-2xl transition-all hover:bg-muted/50 text-foreground group focus:outline-hidden">
+                  <button className="flex items-center space-x-3 px-2 py-2 rounded-2xl transition-all hover:bg-muted/50 text-foreground group focus:outline-none">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-border/50 shadow-sm ${!user.profilePictureUrl ? 'bg-linear-to-br from-primary to-primary/60 text-primary-foreground text-sm font-black' : ''
                       }`}>
                       {user.profilePictureUrl ? (
@@ -160,7 +221,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
                   {(user.role === 'admin' || user.role === 'manager') && (
                     <DropdownMenuItem asChild>
                       <a
-                        href="http://localhost:3001/dashboard"
+                        href={process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001/dashboard"}
                         className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-orange-500 hover:text-orange-600 cursor-pointer group"
                       >
                         <span className="text-lg group-hover:scale-110 transition-transform"><Plane /></span>

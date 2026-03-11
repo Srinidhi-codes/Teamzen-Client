@@ -14,7 +14,6 @@ import {
   CheckCircle2,
   AlertCircle,
   MoreHorizontal,
-  FileText,
   Briefcase,
   ChevronRight,
   Plane,
@@ -114,7 +113,7 @@ export default function DashboardPage() {
             <PartyPopper className="w-32 h-32 rotate-12" />
           </div>
           <div className="shrink-0 w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30">
-            <Cake className="w-7 h-7" />
+            {wishMessage.includes('birthday') ? <Cake className="w-7 h-7" /> : <PartyPopper className="w-7 h-7" />}
           </div>
           <div className="relative z-10">
             <h2 className="text-xl font-black text-foreground tracking-tight mb-1">Congratulations!</h2>
@@ -180,37 +179,39 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 space-y-8">
 
           {/* Recent Activity Section */}
-          <div className="space-y-6 bg-card p-3 rounded-2xl">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-black tracking-tight">Recent Activity</h2>
-              <Link href="/notifications" className="text-primary text-xs font-bold uppercase tracking-widest cursor-pointer">View All</Link>
-            </div>
-            <div className="space-y-4 max-h-[400px] overflow-y-auto">
+          <Card
+            title="Recent Activity"
+            icon={Zap}
+            gradient
+            hover
+            action={<Link href="/notifications" className="text-primary text-xs font-bold uppercase tracking-widest hover:underline">View All</Link>}
+          >
+            <div className="space-y-3 max-h-[400px] overflow-y-auto -mx-1 px-1">
               {recentActivity.length > 0 ? recentActivity.map((item: any, i: number) => (
                 <Link
                   key={i}
                   href={item.id.includes('notif') ? '/notifications' : item.id.includes('leave') ? '/leaves' : '/attendance'}
-                  className="flex items-center justify-center md:justify-between flex-wrap gap-x-2 p-4 rounded-3xl bg-card border border-border hover:border-primary/20 hover:shadow-lg transition-all group cursor-pointer"
+                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-muted/30 hover:bg-primary/5 border border-transparent hover:border-primary/20 hover:shadow-md transition-all group cursor-pointer"
                 >
                   <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-2xl ${item.bg} ${item.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                      <item.icon className="w-5 h-5" />
+                    <div className={`w-10 h-10 rounded-xl ${item.bg} ${item.color} flex items-center justify-center group-hover:scale-110 transition-transform shrink-0`}>
+                      <item.icon className="w-4 h-4" />
                     </div>
                     <div>
                       <h4 className="font-bold text-foreground text-sm">{item.title}</h4>
                       <p className="text-xs text-muted-foreground text-wrap mt-0.5">{item.desc}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 text-xs font-medium text-muted-foreground/60">
+                  <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground/60 shrink-0">
                     <span>{moment(item.date).fromNow()}</span>
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="w-3.5 h-3.5" />
                   </div>
                 </Link>
               )) : (
                 <div className="text-center py-10 text-muted-foreground text-sm">No recent activity detected.</div>
               )}
             </div>
-          </div>
+          </Card>
 
           {/* Attendance Trend Chart */}
           <Card
@@ -294,24 +295,20 @@ export default function DashboardPage() {
         <div className="lg:col-span-1 space-y-8">
 
           {/* Last 7 Days Widget */}
-          <div className="bg-card rounded-4xl p-6 border border-border/40 space-y-4">
-            <div className="flex items-center gap-x-3">
-              <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500">
-                <Calendar className="w-5 h-5" />
-              </div>
-              <h3 className="font-black text-sm uppercase tracking-wider">Last 7 Days</h3>
-            </div>
-
-            <div className="flex justify-between items-center px-1 overflow-scroll md:overflow-hidden">
+          <Card title="Last 7 Days" icon={Calendar} gradient hover>
+            <div className="flex justify-between items-end px-1 overflow-x-auto pb-2 scrollbar-hide md:pb-0 md:overflow-hidden mt-2">
               {stats.last7Days?.map((d: any, i: number) => (
-                <div key={i} className="w-full flex flex-col items-center px-1 xl:px-0 lg:gap-3">
-                  <Link href="/attendance/attendance-correction" className={`w-8 h-8 rounded-full flex items-center justify-center text-white shadow-sm transition-all hover:scale-110 cursor-default ${d.status === 'present' ? 'bg-emerald-500' :
-                    d.status === 'leave' ? 'bg-orange-500' :
-                      d.status === 'weekend' ? 'bg-muted text-muted-foreground opacity-30 shadow-none' :
-                        d.status === 'pending' ? 'bg-amber-500' :
-                          d.status === 'not_started' ? 'bg-muted/30 border border-dashed border-muted-foreground/20' :
-                            'bg-red-500'
-                    }`}>
+                <div key={i} className="w-full flex flex-col items-center gap-2 px-1 xl:px-0">
+                  <Link
+                    href="/attendance/attendance-correction"
+                    className={`w-9 h-9 rounded-full flex items-center justify-center text-white shadow-sm transition-all hover:scale-110 ${d.status === 'present' ? 'bg-emerald-500 shadow-emerald-500/30' :
+                      d.status === 'leave' ? 'bg-orange-500 shadow-orange-500/30' :
+                        d.status === 'weekend' ? 'bg-muted text-muted-foreground opacity-30 shadow-none' :
+                          d.status === 'pending' ? 'bg-amber-500 shadow-amber-500/30' :
+                            d.status === 'not_started' ? 'bg-muted/30 border-2 border-dashed border-muted-foreground/20' :
+                              'bg-red-500 shadow-red-500/30'
+                      }`}
+                  >
                     {d.status === 'present' && <CheckCircle2 className="w-4 h-4" />}
                     {d.status === 'leave' && <Plane className="w-4 h-4" />}
                     {d.status === 'absent' && <XCircle className="w-4 h-4" />}
@@ -320,68 +317,80 @@ export default function DashboardPage() {
                     {d.status === 'not_started' && <div className="w-2 h-2 rounded-full bg-muted-foreground/20" />}
                   </Link>
                   <div className="text-center">
-                    <span className="block text-xs font-bold text-foreground">{d.date}</span>
+                    <span className="block text-xs font-black text-foreground">{d.date}</span>
                     <span className="block text-[9px] font-bold text-muted-foreground uppercase">{d.dayStr}</span>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+            {/* Status legend */}
+            <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-border/40">
+              {[
+                { label: 'Present', color: 'bg-emerald-500' },
+                { label: 'Holiday', color: 'bg-orange-500' },
+                { label: 'Absent', color: 'bg-red-500' },
+                { label: 'Pending', color: 'bg-amber-500' },
+                { label: 'Weekend', color: 'bg-gray-500' },
+              ].map(({ label, color }) => (
+                <div key={label} className="flex items-center gap-1.5">
+                  <div className={`w-2 h-2 rounded-full ${color}`} />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{label}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
 
-          {/* Payroll Summary */}
+          {/* Leave Summary */}
           <Card
-            title="Payroll Summary"
-            icon={DollarSign}
+            title="Leave Summary"
+            icon={Calendar}
             gradient
             hover
             className="group"
           >
-            {/* <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -mr-10 -mt-10" /> */}
-
             <div className="flex justify-end mb-4 relative z-10 -mt-5">
-              <Link href="/payroll" className="text-[10px] font-bold uppercase tracking-widest text-primary hover:underline flex items-center gap-1">
-                <FileText className="w-3 h-3" /> Payslip
+              <Link href="/leaves" className="text-[10px] font-bold uppercase tracking-widest text-primary hover:underline flex items-center gap-1">
+                <ChevronRight className="w-3 h-3" /> View All
               </Link>
             </div>
 
-            <div className="space-y-6 relative z-10">
-              <div>
-                <p className="text-xs text-muted-foreground font-semibold mb-1">February 2026</p>
-                <div className="flex items-baseline gap-2">
-                  <h2 className="text-4xl font-black text-foreground tracking-tight">$8,750</h2>
-                  <Badge variant="warning">Processing</Badge>
+            <div className="space-y-4 relative z-10">
+              {stats.leaveBalances?.length > 0 ? (
+                stats.leaveBalances.slice(0, 3).map((balance: any, i: number) => (
+                  <div key={i} className="space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-foreground">{balance.name}</span>
+                      <span className="text-xs font-black tabular-nums">
+                        <span className="text-emerald-500">{balance.balance}</span>
+                        <span className="text-muted-foreground"> / {balance.total}</span>
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary rounded-full transition-all duration-700"
+                        style={{ width: `${balance.total > 0 ? Math.round((balance.balance / balance.total) * 100) : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-4">No leave balances found</p>
+              )}
+
+              <div className="pt-3 border-t border-border/40 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-orange-500" />
+                  <span className="text-xs font-bold text-muted-foreground">Pending Approvals</span>
                 </div>
+                <span className="font-black tabular-nums text-orange-500">{stats.pendingRequestsCount || 0}</span>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border/50">
-                <div>
-                  <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Base</p>
-                  <p className="font-bold text-foreground">$8,500</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Allowances</p>
-                  <p className="font-bold text-emerald-500">+$1,200</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Deductions</p>
-                  <p className="font-bold text-red-500">-$950</p>
-                </div>
-              </div>
-
-              <div className="pt-4 flex justify-between items-center border-t border-border/30">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-primary" />
-                  <span className="text-xs font-bold text-muted-foreground">YTD Earnings</span>
-                </div>
-                <span className="font-black tabular-nums">$17,400</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-primary" />
-                  <span className="text-xs font-bold text-muted-foreground">Next Payment</span>
-                </div>
-                <span className="font-black tabular-nums">Feb 28</span>
-              </div>
+              <Link
+                href="/leaves"
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-[10px] font-black uppercase tracking-widest transition-all"
+              >
+                <Plus className="w-3.5 h-3.5" /> Request Leave
+              </Link>
             </div>
           </Card>
 
