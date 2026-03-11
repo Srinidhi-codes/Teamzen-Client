@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useStore, ColorAccent } from "@/lib/store/useStore";
+import { useStore } from "@/lib/store/useStore";
 import { useTheme } from "next-themes";
 import {
   ShieldCheck,
@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { ColorAccent } from "@/lib/store/slices/themeSlice";
 
 export default function Home() {
   const { isAuthenticated, hasHydrated, accent, setAccent } = useStore();
@@ -49,11 +50,11 @@ export default function Home() {
         <div className="glass px-6 py-4 rounded-3xl flex justify-between items-center shadow-2xl shadow-primary/5 border-border/40">
           <div className="flex items-center space-x-3 group text-foreground">
             <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shadow-lg shadow-primary/5 group-hover:rotate-12 transition-transform overflow-hidden p-1.5 border border-primary/20">
-              <Image 
-                src="/images/teamzen_zoomed.png" 
-                alt="Teamzen" 
-                width={32} 
-                height={32} 
+              <Image
+                src="/images/teamzen_zoomed.png"
+                alt="Teamzen"
+                width={32}
+                height={32}
                 className="w-full h-full object-contain"
                 loading="lazy"
               />
@@ -111,12 +112,12 @@ export default function Home() {
               <div className="absolute -inset-1 bg-linear-to-r from-primary to-primary/40 rounded-[4rem] blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
               <div className="relative aspect-video bg-card/50 backdrop-blur-3xl border border-white/20 rounded-[3rem] shadow-2xl overflow-hidden">
                 <div className="absolute inset-0 flex items-center justify-center p-20">
-                  <Image 
-                    src="/images/teamzen_zoomed.png" 
-                    className="w-48 h-48 object-contain animate-pulse-slow" 
-                    alt="Teamzen Logo" 
-                    width={192} 
-                    height={192} 
+                  <Image
+                    src="/images/teamzen_zoomed.png"
+                    className="w-48 h-48 object-contain animate-pulse-slow"
+                    alt="Teamzen Logo"
+                    width={192}
+                    height={192}
                     loading="lazy"
                   />
                 </div>
@@ -193,7 +194,7 @@ export default function Home() {
             <p className="text-lg text-muted-foreground font-medium leading-relaxed">
               We believe software should adapt to you, not the other way around. Experience Teamzen in your preferred aesthetic with our curated system-wide themes.
             </p>
-            
+
             <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
               {[
                 { name: 'indigo', color: 'bg-[#6366f1]' },
@@ -218,7 +219,7 @@ export default function Home() {
                 </button>
               ))}
             </div>
-            
+
             <div className="pt-6 border-t border-border/50 space-y-4">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
                 Apperance Mode
@@ -251,13 +252,13 @@ export default function Home() {
           <div className="relative group perspective">
             <div className="absolute -inset-1 bg-linear-to-r from-primary to-primary/40 rounded-[3rem] blur opacity-25"></div>
             <div className="relative aspect-square sm:aspect-video bg-card border border-border/40 rounded-[3rem] shadow-2xl overflow-hidden flex items-center justify-center p-12">
-               <div className="text-center space-y-4">
-                  <div className="w-24 h-24 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                    <Zap className="w-12 h-12 text-primary animate-pulse" />
-                  </div>
-                  <h3 className="text-2xl font-black text-foreground capitalize">{accent} Interface Active</h3>
-                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest text-[10px]">Previewing {theme?.toUpperCase()} {accent?.toUpperCase()} Mode</p>
-               </div>
+              <div className="text-center space-y-4">
+                <div className="w-24 h-24 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                  <Zap className="w-12 h-12 text-primary animate-pulse" />
+                </div>
+                <h3 className="text-2xl font-black text-foreground capitalize">{accent} Interface Active</h3>
+                <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest text-[10px]">Previewing {theme?.toUpperCase()} {accent?.toUpperCase()} Mode</p>
+              </div>
             </div>
           </div>
         </div>
@@ -400,11 +401,11 @@ export default function Home() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center space-x-3 text-foreground/60 grayscale hover:grayscale-0 transition-all cursor-default group">
             <div className="w-8 h-8 bg-foreground/10 rounded-lg flex items-center justify-center overflow-hidden p-1 border border-border/50 group-hover:border-primary/30">
-              <Image 
-                src="/images/teamzen_zoomed.png" 
-                alt="Logo" 
-                width={24} 
-                height={24} 
+              <Image
+                src="/images/teamzen_zoomed.png"
+                alt="Logo"
+                width={24}
+                height={24}
                 className="w-full h-full object-contain"
                 loading="lazy"
               />
