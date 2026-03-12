@@ -1,8 +1,12 @@
 import axios from "axios";
 import { API_ENDPOINTS } from "./endpoints";
 
+// All client-side requests MUST go through the Next.js same-origin proxy
+// at /api/ so the browser sends/receives cookies correctly.
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+  typeof window !== "undefined"
+    ? "/api"
+    : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/");
 
 const client = axios.create({
   baseURL: API_BASE_URL,
@@ -53,8 +57,12 @@ client.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // 🔄 Refresh token (cookies auto-sent)
-        await client.post(API_ENDPOINTS.REFRESH);
+        // 🔄 Refresh via same-origin proxy
+        const refreshResp = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        if (!refreshResp.ok) throw new Error('Refresh failed');
 
         processQueue();
         return client(originalRequest);
@@ -63,6 +71,10 @@ client.interceptors.response.use(
 
         // ❌ Refresh failed → session expired
         // Clear global store
+        import("@/lib/store/useStore").then(({ useStore }) => {
+          useStore.getState().logoutUser();
+        });
+
         if (typeof window !== "undefined") {
           import("@/lib/store/useStore").then(({ useStore }) => {
             useStore.getState().logoutUser();
@@ -87,21 +99,6 @@ client.interceptors.response.use(
    Manual Token Refresh
 ---------------------------------- */
 export const refreshAuthToken = async () => {
-  // Check if we even have a session flag (non-httponly cookie)
-  if (typeof document !== "undefined") {
-    const hasSession = document.cookie.includes("session_can_refresh=true");
-    if (!hasSession) {
-      console.log("No active session detected, skipping refresh.");
-      throw new Error("No active session");
-    }
-  }
-
-  // If already refreshing, return the existing promise
-  if (isRefreshing && refreshTokenPromise) {
-    return refreshTokenPromise;
-  }
-
-  // If refresh is queued, wait in queue
   if (isRefreshing) {
     return new Promise<void>((resolve, reject) => {
       failedQueue.push({ resolve, reject });
@@ -110,20 +107,19 @@ export const refreshAuthToken = async () => {
 
   isRefreshing = true;
 
-  refreshTokenPromise = (async () => {
-    try {
-      await client.post(API_ENDPOINTS.REFRESH);
-      processQueue();
-    } catch (error) {
-      processQueue(error);
-      throw error;
-    } finally {
-      isRefreshing = false;
-      refreshTokenPromise = null;
-    }
-  })();
-
-  return refreshTokenPromise;
+  try {
+    const r = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (!r.ok) throw new Error('Refresh failed');
+    processQueue();
+  } catch (error) {
+    processQueue(error);
+    throw error;
+  } finally {
+    isRefreshing = false;
+  }
 };
 
 export default client;

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/api/hooks";
 import { useStore } from "@/lib/store/useStore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Mail,
   Lock,
@@ -23,7 +24,14 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { login } = useAuth();
-  const { loginUser } = useStore();
+  const { loginUser, isAuthenticated, hasHydrated } = useStore();
+
+  // 🛡️ Guard: If already authenticated, bypass login
+  useEffect(() => {
+    if (hasHydrated && isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [hasHydrated, isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +43,9 @@ export default function LoginForm() {
         loginUser(response.user);
       }
 
-      router.push("/dashboard");
+      // 🚀 Use window.location to force a fresh document load.
+      // This ensures HttpOnly cookies are fully propagated and Apollo Client is completely re-initialized.
+      window.location.href = "/dashboard";
     } catch (error) {
       alert("Login failed");
     }
@@ -52,12 +62,18 @@ export default function LoginForm() {
 
       <div className="max-w-md w-full space-y-8 relative z-10">
         <div className="animate-fade-in text-center">
-          {/* Enhanced Logo */}
-          {/* <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-linear-to-tr from-primary to-primary/60 shadow-lg shadow-primary/20 mb-6 transform hover:rotate-6 transition-transform duration-300">
-            <Fingerprint className="w-10 h-10 text-primary-foreground" />
-          </div> */}
-          <h2 className="text-3xl font-extrabold text-foreground tracking-tight">Teamzen User Portal</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Enter your identifiers to access your account</p>
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 border border-primary/20 shadow-xl shadow-primary/5 mb-6 transform transition-transform duration-300 overflow-hidden p-3 backdrop-blur-sm">
+            <Image
+              src="/images/teamzen_zoomed.png"
+              alt="Teamzen"
+              width={64}
+              height={64}
+              className="w-full h-full object-contain"
+              loading="lazy"
+            />
+          </div>
+          <h2 className="text-3xl font-black text-foreground tracking-tight">Teamzen User Portal</h2>
+          <p className="mt-2 text-sm text-muted-foreground font-medium uppercase tracking-widest">Verified access session</p>
         </div>
 
         <div className="glass p-8 rounded-3xl animate-slide-up bg-linear-to-b from-primary/10 via-primary/5">

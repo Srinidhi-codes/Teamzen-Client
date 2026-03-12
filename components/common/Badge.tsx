@@ -16,7 +16,7 @@ export function Badge({ variant, children }: BadgeProps) {
 
   return (
     <span
-      className={`px-1.5 py-1.5 w-auto inline-flex items-center gap-1.5 text-premium-label rounded-full transition-all duration-300 hover:scale-105 shadow-lg shadow-primary/5 ${styles[variant]}`}
+      className={`px-1.5 py-1.5 w-fit inline-flex items-center gap-1.5 text-premium-label rounded-full transition-all duration-300 hover:scale-105 shadow-lg shadow-primary/5 ${styles[variant]}`}
     >
       <span className={`w-1.5 h-1.5 rounded-full bg-current opacity-70 animate-pulse`} />
       {children}

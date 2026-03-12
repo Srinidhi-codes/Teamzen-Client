@@ -19,7 +19,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const accents: { name: ColorAccent; color: string; label: string }[] = [
+const accents: { name: ColorAccent; color: string; label: string; splitColor?: string }[] = [
     { name: "indigo", color: "bg-indigo-600", label: "Indigo" },
     { name: "blue", color: "bg-blue-600", label: "Blue" },
     { name: "green", color: "bg-green-600", label: "Green" },
@@ -27,6 +27,7 @@ const accents: { name: ColorAccent; color: string; label: string }[] = [
     { name: "orange", color: "bg-orange-600", label: "Orange" },
     { name: "purple", color: "bg-purple-600", label: "Purple" },
     { name: "slate", color: "bg-slate-600", label: "Slate" },
+    { name: "neutral", color: "bg-neutral-split", label: "Neutral", splitColor: "split" },
 ];
 
 export function ThemeSelector() {
@@ -43,7 +44,7 @@ export function ThemeSelector() {
     if (!mounted) return null;
 
     return (
-        <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+        <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
             <DropdownMenuTrigger asChild>
                 <button
                     className="p-2 rounded-full hover:bg-accent transition-colors flex items-center gap-2 group outline-none"
@@ -119,13 +120,25 @@ export function ThemeSelector() {
                                     }}
                                     className="flex flex-col items-center gap-1.5 group cursor-pointer"
                                 >
-                                    <div className={cn(
-                                        "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ring-offset-2 ring-offset-background",
-                                        item.color,
-                                        accent === item.name ? "ring-2 ring-primary scale-110 shadow-lg shadow-black/20" : "hover:scale-105"
-                                    )}>
-                                        {accent === item.name && <Check className="w-5 h-5 text-white" />}
-                                    </div>
+                                    {item.splitColor === "split" ? (
+                                        <div
+                                            className={cn(
+                                                "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ring-offset-2 ring-offset-background border border-border",
+                                                accent === item.name ? "ring-2 ring-foreground scale-110 shadow-lg shadow-black/20" : "hover:scale-105"
+                                            )}
+                                            style={{ background: "linear-gradient(135deg, #000 50%, #fff 50%)" }}
+                                        >
+                                            {accent === item.name && <Check className="w-5 h-5 text-gray-400" />}
+                                        </div>
+                                    ) : (
+                                        <div className={cn(
+                                            "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ring-offset-2 ring-offset-background",
+                                            item.color,
+                                            accent === item.name ? "ring-2 ring-primary scale-110 shadow-lg shadow-black/20" : "hover:scale-105"
+                                        )}>
+                                            {accent === item.name && <Check className="w-5 h-5 text-white" />}
+                                        </div>
+                                    )}
                                     <span className={cn(
                                         "text-[10px] transition-colors",
                                         accent === item.name ? "text-primary font-bold" : "text-muted-foreground"

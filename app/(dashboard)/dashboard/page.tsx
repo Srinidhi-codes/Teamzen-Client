@@ -1,7 +1,7 @@
 "use strict";
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import moment from "moment";
 import {
@@ -25,7 +25,8 @@ import {
   Star,
   Award,
   UserPlus,
-  Gift
+  Gift,
+  PartyPopperIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/common/Card";
@@ -52,17 +53,35 @@ import { GET_USER_DASHBOARD_STATS } from "@/lib/graphql/dashboard/queries";
 import Image from "next/image";
 
 export default function DashboardPage() {
-  const { user, isLoading: isUserLoading } = useGraphQLUser();
-  const { data: dashboardData, loading: isDashboardLoading } = useQuery(GET_USER_DASHBOARD_STATS);
+  const { user, isLoading: isUserLoading, error: userError } = useGraphQLUser();
+  const { data: dashboardData, loading: isDashboardLoading, error: dashboardError } = useQuery(GET_USER_DASHBOARD_STATS);
   const [isFabOpen, setIsFabOpen] = useState(false);
 
   const isLoading = isUserLoading || isDashboardLoading;
 
+  // 🛡️ Redirect to login if user session is invalid after loading
+  useEffect(() => {
+    if (!isLoading && !user && userError) {
+      window.location.href = "/login";
+    }
+  }, [isLoading, user, userError]);
+
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen space-y-6">
+      <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-6">
         <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
         <p className="text-premium-label animate-pulse">Initializing Dashboard...</p>
+      </div>
+    );
+  }
+
+  if (dashboardError && !user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-4">
+        <AlertCircle className="w-12 h-12 text-destructive" />
+        <h2 className="text-xl font-bold">Session Encountered an Issue</h2>
+        <p className="text-muted-foreground">Refreshing your access...</p>
+        <Button onClick={() => window.location.reload()}>Try Again</Button>
       </div>
     );
   }
@@ -90,12 +109,12 @@ export default function DashboardPage() {
   }) || [];
 
   return (
-    <div className="p-6 space-y-8 animate-fade-in relative min-h-screen bg-background/50">
+    <div className="p-4 sm:p-6 space-y-8 animate-fade-in relative min-h-screen bg-background/50">
 
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-        <div>
-          <h1 className="text-4xl font-black tracking-tight text-foreground">
+        <div className="space-y-1">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
             Welcome back, <span className="text-primary italic">{user?.firstName || 'User'}!</span> 👋
           </h1>
           <p className="text-muted-foreground font-medium mt-2">
@@ -109,7 +128,7 @@ export default function DashboardPage() {
 
       {/* Wish Message Banner */}
       {wishMessage && (
-        <div className="relative overflow-hidden bg-linear-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-4xl p-8 flex items-center gap-6 animate-in slide-in-from-top-4 duration-1000 shadow-xl shadow-primary/5">
+        <div className="relative overflow-hidden bg-linear-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-3xl sm:rounded-4xl p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 animate-in slide-in-from-top-4 duration-1000 shadow-xl shadow-primary/5">
           <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
             <PartyPopper className="w-32 h-32 rotate-12" />
           </div>
@@ -124,7 +143,7 @@ export default function DashboardPage() {
       )}
 
       {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         <Link href="/attendance/attendance-correction">
           <ModernStat
             icon={TrendingUp}
@@ -174,13 +193,13 @@ export default function DashboardPage() {
         </Link> */}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
         {/* Left Column (Main Content) */}
         <div className="lg:col-span-2 space-y-8">
 
           {/* Recent Activity Section */}
-          <div className="space-y-6 bg-card p-3 rounded-2xl">
+          <div className="space-y-6 bg-card p-4 sm:p-6 rounded-3xl sm:rounded-4xl border border-border/50">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-black tracking-tight">Recent Activity</h2>
               <Link href="/notifications" className="text-primary text-xs font-bold uppercase tracking-widest cursor-pointer">View All</Link>
@@ -190,7 +209,7 @@ export default function DashboardPage() {
                 <Link
                   key={i}
                   href={item.id.includes('notif') ? '/notifications' : item.id.includes('leave') ? '/leaves' : '/attendance'}
-                  className="flex items-center justify-center md:justify-between flex-wrap gap-x-2 p-4 rounded-3xl bg-card border border-border hover:border-primary/20 hover:shadow-lg transition-all group cursor-pointer"
+                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl sm:rounded-3xl bg-card border border-border hover:border-primary/20 hover:shadow-lg transition-all group cursor-pointer"
                 >
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-2xl ${item.bg} ${item.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
@@ -242,14 +261,15 @@ export default function DashboardPage() {
           </Card>
 
           {/* Upcoming Events */}
-          <div className="space-y-6">
-            <h2 className="text-lg font-black tracking-tight flex items-center gap-3">
-              <div className="p-2 bg-blue-500/10 rounded-lg"><Calendar className="w-4 h-4 text-blue-500" /></div>
-              Upcoming Events
-            </h2>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 p-4 rounded-4xl bg-card">
+          <Card
+            title="Upcoming Events"
+            icon={Calendar}
+            gradient
+            hover
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4 p-2 sm:p-4 rounded-3xl sm:rounded-4xl bg-card">
               {upcomingEvents.length > 0 ? upcomingEvents.slice(0, 4).map((event: any, i: number) => (
-                <div key={i} className="flex items-center gap-4 p-4 rounded-4xl border border-border hover:border-primary/20 hover:shadow-md hover:translate-y-[-4px] transition-all duration-300 cursor-pointer group">
+                <div key={i} className="flex items-center gap-4 p-4 w-full rounded-2xl sm:rounded-3xl border border-border hover:border-primary/20 hover:shadow-md hover:translate-y-[-4px] transition-all duration-300 cursor-pointer group">
                   <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center border border-border/50 overflow-hidden shrink-0 ${!event.profilePicture ? (event.type === 'birthday' ? 'bg-amber-500/10 text-amber-600' : 'bg-blue-500/10 text-blue-600') : ''
                     }`}>
                     {event.profilePicture ? (
@@ -277,6 +297,19 @@ export default function DashboardPage() {
                         {event.daysUntil === 0 ? 'Today' : `In ${event.daysUntil} d`}
                       </span>
                     </div>
+                    <div>
+                      {event.type === 'birthday' ? (
+                        <div className="flex items-center gap-2">
+                          <Gift className="w-4 h-4 text-amber-500" />
+                          <p className="text-[10px] font-black uppercase text-amber-500">Birthday</p>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <PartyPopperIcon className="w-4 h-4 text-amber-500" />
+                          <p className="text-[10px] font-black uppercase text-amber-500">{event.type}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-primary transition-colors" />
                 </div>
@@ -287,14 +320,14 @@ export default function DashboardPage() {
                 </div>
               )}
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* Right Column (Sidebar) */}
         <div className="lg:col-span-1 space-y-8">
 
           {/* Last 7 Days Widget */}
-          <div className="bg-card rounded-4xl p-6 border border-border/40 space-y-4">
+          <div className="bg-card rounded-3xl sm:rounded-4xl p-4 sm:p-6 border border-border/40 space-y-4">
             <div className="flex items-center gap-x-3">
               <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500">
                 <Calendar className="w-5 h-5" />
@@ -302,7 +335,7 @@ export default function DashboardPage() {
               <h3 className="font-black text-sm uppercase tracking-wider">Last 7 Days</h3>
             </div>
 
-            <div className="flex justify-between items-center px-1 overflow-scroll md:overflow-hidden">
+            <div className="flex justify-between items-center px-1 overflow-x-auto pb-2 scrollbar-hide md:pb-0 md:overflow-hidden">
               {stats.last7Days?.map((d: any, i: number) => (
                 <div key={i} className="w-full flex flex-col items-center px-1 xl:px-0 lg:gap-3">
                   <Link href="/attendance/attendance-correction" className={`w-8 h-8 rounded-full flex items-center justify-center text-white shadow-sm transition-all hover:scale-110 cursor-default ${d.status === 'present' ? 'bg-emerald-500' :
@@ -387,7 +420,7 @@ export default function DashboardPage() {
 
 
           {/* Performance Insights Card */}
-          <div className="relative overflow-hidden rounded-4xl bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 text-white p-8 shadow-xl shadow-purple-500/20 hover:translate-y-[-8px] transition-all duration-500 ease-out">
+          <div className="relative overflow-hidden rounded-3xl sm:rounded-4xl bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 text-white p-6 sm:p-8 shadow-xl shadow-purple-500/20 hover:translate-y-[-8px] transition-all duration-500 ease-out">
             {/* <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl" /> */}
             {/* <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/10 rounded-full -ml-10 -mb-10 blur-xl" /> */}
 
