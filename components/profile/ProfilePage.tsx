@@ -281,23 +281,24 @@ export default function ProfilePage() {
       </div>
 
       {isEditing && activeTab !== "security" && (
-        <div className="glass-dark p-6 rounded-2xl border border-white/30 shadow-xl flex justify-end space-x-4 animate-slide-up sticky bottom-4 z-10">
+        <div className="glass-dark p-4 sm:p-6 rounded-2xl border border-white/30 shadow-2xl flex flex-col sm:flex-row justify-end items-center gap-3 sm:gap-4 animate-slide-up sticky bottom-4 z-20 mx-2 sm:mx-0">
           <Button
             onClick={handleCancel}
             variant={"outline"}
             disabled={isSaving}
+            className="w-full sm:w-auto order-2 sm:order-1"
           >
             Cancel
           </Button>
           <Button
-            className="btn-primary"
+            className="btn-primary w-full sm:w-auto order-1 sm:order-2"
             onClick={handleSave}
             disabled={isSaving}
           >
             {isSaving ? (
               <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Saving Changes
-                <Loader2 className="w-4 h-4 ml-2 animate-spin" />
               </>
             ) : (
               "Save Changes"

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store/useStore";
+import { useTheme } from "next-themes";
 import {
   ShieldCheck,
   Calendar,
@@ -13,14 +14,18 @@ import {
   Zap,
   BarChart3,
   Users,
-  Check
+  Check,
+  Moon,
+  Sun
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { ColorAccent } from "@/lib/store/slices/themeSlice";
 
 export default function Home() {
-  const { isAuthenticated, hasHydrated } = useStore();
+  const { isAuthenticated, hasHydrated, accent, setAccent } = useStore();
+  const { theme, setTheme } = useTheme();
   const router = useRouter();
 
   useEffect(() => {
@@ -44,10 +49,17 @@ export default function Home() {
       <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-5xl">
         <div className="glass px-6 py-4 rounded-3xl flex justify-between items-center shadow-2xl shadow-primary/5 border-border/40">
           <div className="flex items-center space-x-3 group text-foreground">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 group-hover:rotate-12 transition-transform">
-              <span className="text-primary-foreground font-black text-xl">P</span>
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shadow-lg shadow-primary/5 group-hover:rotate-12 transition-transform overflow-hidden p-1.5 border border-primary/20">
+              <Image
+                src="/images/teamzen_zoomed.png"
+                alt="Teamzen"
+                width={32}
+                height={32}
+                className="w-full h-full object-contain"
+                loading="lazy"
+              />
             </div>
-            <span className="font-black text-lg tracking-tighter hidden sm:block">Payroll</span>
+            <span className="font-black text-lg tracking-tighter hidden sm:block uppercase">Teamzen</span>
           </div>
 
           <div className="flex items-center space-x-2">
@@ -77,7 +89,7 @@ export default function Home() {
           </h1>
 
           <p className="text-lg md:text-xl text-muted-foreground font-medium max-w-2xl mx-auto leading-relaxed animate-slide-up [animation-delay:400ms]">
-            An all-in-one platform for attendance, leave management, and automated payroll calculations with precision and elegance.
+            An all-in-one platform for attendance, leave management, and automated payroll calculations with precision, elegance, and <span className="text-primary font-bold">Limitless Customization.</span>
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6 animate-slide-up [animation-delay:600ms]">
@@ -99,8 +111,15 @@ export default function Home() {
             <div className="relative group perspective">
               <div className="absolute -inset-1 bg-linear-to-r from-primary to-primary/40 rounded-[4rem] blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
               <div className="relative aspect-video bg-card/50 backdrop-blur-3xl border border-white/20 rounded-[3rem] shadow-2xl overflow-hidden">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Image src="/images/teamzen_logo2.png" className="w-full h-full object-cover" alt="Logo" width={100} height={100} />
+                <div className="absolute inset-0 flex items-center justify-center p-20">
+                  <Image
+                    src="/images/teamzen_zoomed.png"
+                    className="w-48 h-48 object-contain animate-pulse-slow"
+                    alt="Teamzen Logo"
+                    width={192}
+                    height={192}
+                    loading="lazy"
+                  />
                 </div>
               </div>
             </div>
@@ -157,6 +176,90 @@ export default function Home() {
                 </p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Theme Experience Section */}
+      <section className="py-24 px-6 relative overflow-hidden bg-background">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="space-y-8 animate-slide-up">
+            <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest">
+              Exclusive Experience
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black text-foreground tracking-tight leading-none">
+              Designed to <br />
+              <span className="text-primary italic">Fit Your Vision.</span>
+            </h2>
+            <p className="text-lg text-muted-foreground font-medium leading-relaxed">
+              We believe software should adapt to you, not the other way around. Experience Teamzen in your preferred aesthetic with our curated system-wide themes.
+            </p>
+
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
+              {[
+                { name: 'indigo', color: 'bg-[#6366f1]' },
+                { name: 'green', color: 'bg-[#10b981]' },
+                { name: 'blue', color: 'bg-[#3b82f6]' },
+                { name: 'red', color: 'bg-[#ef4444]' },
+                { name: 'orange', color: 'bg-[#f59e0b]' },
+                { name: 'purple', color: 'bg-[#a855f7]' },
+                { name: 'slate', color: 'bg-[#475569]' }
+              ].map((t) => (
+                <button
+                  key={t.name}
+                  onClick={() => setAccent(t.name as ColorAccent)}
+                  className={cn(
+                    "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95 group",
+                    t.color,
+                    accent === t.name ? "ring-4 ring-primary/30 scale-110 shadow-xl" : "opacity-60 grayscale hover:grayscale-0 hover:opacity-100"
+                  )}
+                  title={t.name.charAt(0).toUpperCase() + t.name.slice(1)}
+                >
+                  {accent === t.name && <Check className="w-5 h-5 text-white" />}
+                </button>
+              ))}
+            </div>
+
+            <div className="pt-6 border-t border-border/50 space-y-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                Apperance Mode
+              </p>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setTheme('light')}
+                  className={cn(
+                    "flex items-center gap-2 px-6 py-2.5 rounded-2xl border transition-all font-black text-[10px] uppercase tracking-widest",
+                    theme === 'light' ? "bg-foreground text-background border-foreground" : "bg-background text-foreground border-border hover:border-primary/50"
+                  )}
+                >
+                  <Sun className="w-4 h-4" />
+                  White Mode
+                </button>
+                <button
+                  onClick={() => setTheme('dark')}
+                  className={cn(
+                    "flex items-center gap-2 px-6 py-2.5 rounded-2xl border transition-all font-black text-[10px] uppercase tracking-widest",
+                    theme === 'dark' ? "bg-foreground text-background border-foreground" : "bg-background text-foreground border-border hover:border-primary/50"
+                  )}
+                >
+                  <Moon className="w-4 h-4" />
+                  Dark Mode
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative group perspective">
+            <div className="absolute -inset-1 bg-linear-to-r from-primary to-primary/40 rounded-[3rem] blur opacity-25"></div>
+            <div className="relative aspect-square sm:aspect-video bg-card border border-border/40 rounded-[3rem] shadow-2xl overflow-hidden flex items-center justify-center p-12">
+              <div className="text-center space-y-4">
+                <div className="w-24 h-24 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                  <Zap className="w-12 h-12 text-primary animate-pulse" />
+                </div>
+                <h3 className="text-2xl font-black text-foreground capitalize">{accent} Interface Active</h3>
+                <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest text-[10px]">Previewing {theme?.toUpperCase()} {accent?.toUpperCase()} Mode</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -296,9 +399,18 @@ export default function Home() {
       {/* Footer */}
       <footer className="py-12 px-6 border-t border-border/50 bg-muted/10">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex items-center space-x-3 text-foreground/60 grayscale">
-            <div className="w-8 h-8 bg-foreground/10 rounded-lg flex items-center justify-center font-black">P</div>
-            <span className="text-xs font-black tracking-widest uppercase">Payroll</span>
+          <div className="flex items-center space-x-3 text-foreground/60 grayscale hover:grayscale-0 transition-all cursor-default group">
+            <div className="w-8 h-8 bg-foreground/10 rounded-lg flex items-center justify-center overflow-hidden p-1 border border-border/50 group-hover:border-primary/30">
+              <Image
+                src="/images/teamzen_zoomed.png"
+                alt="Logo"
+                width={24}
+                height={24}
+                className="w-full h-full object-contain"
+                loading="lazy"
+              />
+            </div>
+            <span className="text-xs font-black tracking-widest uppercase">Teamzen</span>
           </div>
           <div className="flex space-x-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
             <a href="#" className="hover:text-primary transition-colors">Privacy</a>

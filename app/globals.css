@@ -210,13 +210,40 @@
   --primary: oklch(0.706 0 0);
 }
 
+[data-accent="neutral"] {
+  --primary: oklch(0.145 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+}
+
+.dark [data-accent="neutral"],
+[data-accent="neutral"].dark {
+  --primary: oklch(0.92 0 0);
+  --primary-foreground: oklch(0.145 0 0);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground overflow-x-hidden;
+    touch-action: manipulation;
+    -webkit-text-size-adjust: 100%;
+    scrollbar-gutter: stable; /* Reserves scrollbar space to prevent layout shift */
+  }
+
+  /* 📱 Fix for iOS auto-zoom on input focus: font-size must be >= 16px */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+
+  /* 🛡️ Auto-hide Sidebar when a Dialog/Modal is open to prevent UI overlap */
+  body:has([data-slot="dialog-content"]) aside {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-20px);
+    transition: all 0.3s ease-in-out;
   }
 }
 
@@ -243,11 +270,11 @@
 
 
   .input {
-    @apply flex h-[52px] w-full rounded-2xl border border-border/50 bg-background px-5 py-2 text-sm font-medium shadow-inner transition-all placeholder:text-muted-foreground/50 focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply flex h-[52px] w-full rounded-2xl border border-border/50 bg-background px-5 py-2 text-[16px] sm:text-sm font-medium shadow-inner transition-all placeholder:text-muted-foreground/50 focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .textarea {
-    @apply flex min-h-[100px] w-full rounded-2xl border border-border/50 bg-background px-5 py-4 text-sm font-medium shadow-inner transition-all placeholder:text-muted-foreground/50 focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply flex min-h-[100px] w-full rounded-2xl border border-border/50 bg-background px-5 py-4 text-[16px] sm:text-sm font-medium shadow-inner transition-all placeholder:text-muted-foreground/50 focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .glass {

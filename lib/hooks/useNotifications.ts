@@ -1,37 +1,53 @@
 "use client";
 
+import client from "@/lib/api/client";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import { toast } from "sonner";
-import { useEffect, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function useNotifications(onMessageReceived?: (msg: any) => void) {
-    // Use window.location to determine the correct host
-    const getSocketUrl = useCallback(() => {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        let protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        let host = window.location.host;
+    const [socketUrl, setSocketUrl] = useState<string | null>(null);
+    const callbackRef = useRef(onMessageReceived);
 
-        if (apiUrl) {
-            // Deriving WS URL from API URL (e.g., http://localhost:8000/api -> ws://localhost:8000/ws/notifications/)
-            const urlObj = new URL(apiUrl);
-            protocol = urlObj.protocol === "https:" ? "wss:" : "ws:";
-            host = urlObj.host;
-        } else {
-            // Fallback for local development
-            // If we're on a dev port (like 3000 or 3001), the backend is likely on 8000
-            if (window.location.port === "3000" || window.location.port === "3001") {
-                host = `${window.location.hostname}:8000`;
-            } else {
-                host = window.location.host;
+    useEffect(() => {
+        callbackRef.current = onMessageReceived;
+    }, [onMessageReceived]);
+
+    useEffect(() => {
+        const fetchTokenAndConnect = async () => {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/";
+            let protocol = "ws:";
+            let host = "localhost:8000";
+
+            try {
+                const urlObj = new URL(apiUrl);
+                protocol = urlObj.protocol === "https:" ? "wss:" : "ws:";
+                host = urlObj.host;
+            } catch (e) {
+                console.error("Invalid NEXT_PUBLIC_API_URL for WebSocket:", e);
             }
-        }
 
-        const url = `${protocol}//${host}/ws/notifications/`;
-        console.log("Attempting Notification Socket connection to:", url);
-        return url;
+            let token = "";
+            try {
+                // 🔐 Use the authenticated client to benefit from proxy/refresh interceptors
+                // Note: We call /auth/ws-token which is our local Next.js route
+                const res = await client.get('/auth/ws-token');
+                token = res.data.token;
+            } catch (e) {
+                console.error("Failed to fetch WebSocket token:", e);
+                // If it's a 401, the client.ts interceptor should have triggered a redirect 
+                // or attempted a refresh already.
+            }
+
+            const url = `${protocol}//${host}/ws/notifications/${token ? `?token=${token}` : ''}`;
+            console.log("Setting Notification Socket connection to:", url);
+            setSocketUrl(url);
+        };
+
+        fetchTokenAndConnect();
     }, []);
 
-    const { readyState } = useWebSocket(getSocketUrl, {
+    const { readyState } = useWebSocket(socketUrl, {
         shouldReconnect: () => true,
         reconnectInterval: 5000,
         onOpen: () => console.log("Notification Socket Connected ✅"),
@@ -51,12 +67,12 @@ export function useNotifications(onMessageReceived?: (msg: any) => void) {
                     description: `${data.actor?.firstName} ${data.verb}`,
                     duration: 5000,
                 });
-                if (onMessageReceived) {
-                    onMessageReceived(data);
+                if (callbackRef.current) {
+                    callbackRef.current(data);
                 }
             }
         }
-    });
+    }, socketUrl !== null);
 
     return { readyState, isConnected: readyState === ReadyState.OPEN };
 }

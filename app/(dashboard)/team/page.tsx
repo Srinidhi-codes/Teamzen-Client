@@ -57,33 +57,33 @@ export default function TeamPage() {
     return (
         <div className="p-4 sm:p-8 space-y-12 animate-fade-in max-w-7xl mx-auto pb-24">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-16 relative">
-                <div className="space-y-4">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 mb-12 sm:mb-16 relative">
+                <div className="space-y-4 w-full lg:w-auto">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-primary/10 rounded-xl">
                             <RefreshCcw className={cn("w-4 h-4 text-primary", loading ? "animate-spin" : "")} />
                         </div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">Global Talent Map</span>
                     </div>
-                    <h1 className="text-5xl font-black tracking-tighter text-foreground sm:text-6xl lg:text-7xl">
+                    <h1 className="text-premium-h1">
                         {(focusedUserId && (data as any)?.teamHierarchy?.user) ? (
                             <>
-                                <span className="text-primary truncate block max-w-2xl">
+                                <span className="text-primary truncate block max-w-full sm:max-w-2xl">
                                     {(data as any).teamHierarchy.user.firstName}'s
                                 </span>
                                 Environment
                             </>
                         ) : "Our Network"}
                     </h1>
-                    <p className="text-muted-foreground font-medium max-w-xl text-lg leading-relaxed">
+                    <p className="text-muted-foreground font-medium flex items-center gap-2">
                         Explore the intricate connections and reporting lines across our organizational ecosystem.
                     </p>
 
                     {focusedUserId && (
-                        <div className="flex items-center gap-4 pt-4">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-4">
                             <button
                                 onClick={() => setFocusedUserId(null)}
-                                className="group flex items-center gap-2 px-6 py-3 bg-card border border-border rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-primary/30 hover:shadow-lg transition-all"
+                                className="group flex items-center justify-center gap-2 px-6 py-3 bg-card border border-border rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-primary/30 hover:shadow-lg transition-all"
                             >
                                 <ChevronLeft className="w-3 h-3 transition-transform group-hover:-translate-x-1" />
                                 Return to My View
@@ -91,7 +91,7 @@ export default function TeamPage() {
                             {manager && (
                                 <button
                                     onClick={() => setFocusedUserId(manager.id)}
-                                    className="px-6 py-3 bg-primary/5 border border-primary/20 rounded-2xl text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 transition-all"
+                                    className="px-6 py-3 bg-primary/5 border border-primary/20 rounded-2xl text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 transition-all text-center"
                                 >
                                     Focus on Manager
                                 </button>
@@ -100,15 +100,15 @@ export default function TeamPage() {
                     )}
                 </div>
 
-                <div className="flex items-center gap-6 bg-card/50 backdrop-blur-xl px-8 py-6 rounded-[2.5rem] border border-border/50 shadow-2xl">
+                <div className="flex items-center gap-4 sm:gap-6 bg-card/50 backdrop-blur-xl px-6 sm:px-8 py-4 sm:py-6 rounded-3xl sm:rounded-[2.5rem] border border-border/50 shadow-2xl w-full sm:w-auto justify-center">
                     <div className="text-center">
                         <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">Direct Nodes</p>
-                        <p className="text-4xl font-black">{subordinates.length}</p>
+                        <p className="text-3xl sm:text-4xl font-black">{subordinates.length}</p>
                     </div>
-                    <div className="w-px h-12 bg-border/50" />
+                    <div className="w-px h-10 sm:h-12 bg-border/50" />
                     <div className="text-center">
                         <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">Peer Nodes</p>
-                        <p className="text-4xl font-black">{peers.length}</p>
+                        <p className="text-3xl sm:text-4xl font-black">{peers.length}</p>
                     </div>
                 </div>
             </div>
@@ -118,7 +118,7 @@ export default function TeamPage() {
 
                 {/* Manager Node (Clickable to Drill Up) */}
                 {manager ? (
-                    <div className="flex flex-col items-center w-full">
+                    <div className="flex flex-col items-center w-full px-4">
                         <TeamMemberCard
                             member={manager}
                             label="Reporting Manager"
@@ -127,7 +127,7 @@ export default function TeamPage() {
                         />
                         <button
                             onClick={() => scrollToSection(userSectionRef)}
-                            className="h-20 w-px bg-linear-to-b from-primary/30 to-border mt-8 relative group/arrow cursor-pointer hover:bg-primary transition-colors duration-500"
+                            className="h-12 sm:h-20 w-px bg-linear-to-b from-primary/30 to-border mt-6 sm:mt-8 relative group/arrow cursor-pointer hover:bg-primary transition-colors duration-500"
                         >
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-1.5 bg-white dark:bg-zinc-900 border border-border rounded-full shadow-lg group-hover/arrow:border-primary group-hover/arrow:scale-110 transition-all">
                                 <ChevronDown className="w-4 h-4 text-primary" />
@@ -135,9 +135,9 @@ export default function TeamPage() {
                         </button>
                     </div>
                 ) : (
-                    <div className="p-10 border-2 border-dashed border-primary/20 rounded-[3rem] text-center max-w-sm bg-primary/5">
-                        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <Building2 className="w-6 h-6 text-primary" />
+                    <div className="p-6 sm:p-10 border-2 border-dashed border-primary/20 rounded-3xl sm:rounded-[3rem] text-center max-w-xs sm:max-w-sm bg-primary/5 mx-4">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                         </div>
                         <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Corporate Apex</p>
                         <p className="text-xs font-bold text-muted-foreground">This node represents the root of the organizational hierarchy.</p>
@@ -145,8 +145,8 @@ export default function TeamPage() {
                 )}
 
                 {/* User & Peers Node */}
-                <div ref={userSectionRef} className="flex flex-col items-center space-y-16 w-full pt-8 scroll-mt-24">
-                    <div className="flex flex-wrap justify-center gap-10 w-full max-w-7xl px-4">
+                <div ref={userSectionRef} className="flex flex-col items-center space-y-12 sm:space-y-16 w-full pt-4 sm:pt-8 scroll-mt-24">
+                    <div className="flex flex-wrap justify-center gap-6 sm:gap-10 w-full max-w-7xl px-4">
                         {peers.map((peer: any) => (
                             <TeamMemberCard
                                 key={peer.id}
@@ -162,7 +162,7 @@ export default function TeamPage() {
                     {subordinates.length > 0 && (
                         <button
                             onClick={() => scrollToSection(subordinatesSectionRef)}
-                            className="h-20 w-px bg-linear-to-b from-primary/30 to-border relative group/arrow cursor-pointer hover:bg-primary transition-colors duration-500"
+                            className="h-12 sm:h-20 w-px bg-linear-to-b from-primary/30 to-border relative group/arrow cursor-pointer hover:bg-primary transition-colors duration-500"
                         >
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-1.5 bg-white dark:bg-zinc-900 border border-border rounded-full shadow-lg group-hover/arrow:border-primary group-hover/arrow:scale-110 transition-all">
                                 <ChevronDown className="w-4 h-4 text-primary" />
@@ -173,9 +173,9 @@ export default function TeamPage() {
 
                 {/* Subordinates Nodes (Clickable to Drill Down) */}
                 {subordinates.length > 0 && (
-                    <div ref={subordinatesSectionRef} className="flex flex-wrap justify-center gap-10 w-full max-w-7xl px-4 animate-slide-up bg-linear-to-b from-primary/5 to-transparent py-20 rounded-[5rem] border border-primary/10 relative overflow-hidden mb-12 scroll-mt-24">
-                        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-[100px] -mr-48 -mt-48 opacity-50" />
-                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] -ml-32 -mb-32 opacity-30" />
+                    <div ref={subordinatesSectionRef} className="flex flex-wrap justify-center gap-6 sm:gap-10 w-full max-w-7xl px-4 animate-slide-up bg-linear-to-b from-primary/5 to-transparent py-12 sm:py-20 rounded-3xl sm:rounded-[5rem] border border-primary/10 relative overflow-hidden mb-12 scroll-mt-24">
+                        <div className="absolute top-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-[80px] sm:blur-[100px] -mr-32 -mt-32 sm:-mr-48 sm:-mt-48 opacity-50" />
+                        <div className="absolute bottom-0 left-0 w-32 h-32 sm:w-64 sm:h-64 bg-primary/5 rounded-full blur-[60px] sm:blur-[80px] -ml-16 -mb-16 sm:-ml-32 sm:-mb-32 opacity-30" />
 
                         {subordinates.map((sub: any) => (
                             <TeamMemberCard
@@ -205,9 +205,9 @@ function TeamMemberCard({ member, label, variant, onClick }: {
         <Card
             onClick={!isCurrent ? onClick : undefined}
             className={cn(
-                "p-8 w-80 rounded-[3rem] border transition-all duration-700 group relative overflow-hidden",
+                "p-6 sm:p-8 w-full max-w-[20rem] sm:w-80 rounded-[2.5rem] sm:rounded-[3rem] border transition-all duration-700 group relative overflow-hidden",
                 isCurrent
-                    ? "border-primary bg-primary/10 shadow-3xl shadow-primary/20 scale-110 z-10 ring-1 ring-primary/30"
+                    ? "border-primary bg-primary/10 shadow-3xl shadow-primary/20 scale-105 sm:scale-110 z-10 ring-1 ring-primary/30"
                     : "border-border/50 bg-card/60 backdrop-blur-md hover:border-primary/50 hover:shadow-2xl hover:-translate-y-4 cursor-pointer"
             )}
         >
@@ -216,11 +216,11 @@ function TeamMemberCard({ member, label, variant, onClick }: {
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-1000" />
             )}
 
-            <div className="flex flex-col items-center text-center space-y-6 relative z-10">
-                <div className="relative p-1.5 rounded-[2.5rem] bg-linear-to-br from-primary/30 via-transparent to-transparent">
-                    <Avatar className="w-28 h-28 rounded-[2rem] shadow-2xl ring-4 ring-background transition-transform duration-500 group-hover:scale-105">
+            <div className="flex flex-col items-center text-center space-y-4 sm:space-y-6 relative z-10">
+                <div className="relative p-1 rounded-4xl sm:p-1.5 sm:rounded-[2.5rem] bg-linear-to-br from-primary/30 via-transparent to-transparent">
+                    <Avatar className="w-24 h-24 sm:w-28 sm:h-28 rounded-4xl sm:rounded-4xl shadow-2xl ring-4 ring-background transition-transform duration-500 group-hover:scale-105">
                         <AvatarImage src={member.profilePictureUrl} className="object-cover" />
-                        <AvatarFallback className="bg-linear-to-br from-primary to-primary-foreground text-white font-black text-3xl">
+                        <AvatarFallback className="bg-linear-to-br from-primary to-primary-foreground text-white font-black text-2xl sm:text-3xl">
                             {member.firstName[0]}{member.lastName[0]}
                         </AvatarFallback>
                     </Avatar>

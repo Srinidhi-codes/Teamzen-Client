@@ -26,7 +26,7 @@ export const API_ENDPOINTS = {
   PAYROLL_RECORDS: "/payroll/records/",
   // AI
   POLICIES: "/ai/policies/",
-  SMART_CHAT: "/ai/chat/",
+  CHAT: "/ai/chat/",
 
   // Password Reset
   PASSWORD_RESET_REQUEST: "/users/password-reset/",
