@@ -107,51 +107,51 @@ export function LeaveCalendar({ myLeaves, teamLeaves, holidays }: LeaveCalendarP
       <div className="flex-1 bg-card border border-border rounded-3xl shadow-xl overflow-hidden">
 
         {/* Calendar Header */}
-        <div className="px-6 py-5 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-black text-foreground">
+        <div className="px-4 py-3 sm:px-6 sm:py-5 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center justify-between w-full md:w-auto gap-4">
+            <h2 className="text-lg sm:text-xl font-black text-foreground whitespace-nowrap">
               {currentMonth.format("MMMM")}{" "}
               <span className="text-primary">{currentMonth.format("YYYY")}</span>
             </h2>
             <button
               onClick={goToday}
-              className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
+              className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg sm:rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
             >
               Today
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between md:justify-end gap-2 sm:gap-3 w-full md:w-auto">
             {/* Filter Tabs */}
-            <div className="flex items-center bg-muted/40 p-1 rounded-2xl border border-border/50 gap-0.5">
+            <div className="flex items-center bg-muted/40 p-1 rounded-xl sm:rounded-2xl border border-border/50 gap-0.5 overflow-x-auto no-scrollbar">
               {filters.map((f) => (
                 <button
                   key={f.key}
                   onClick={() => setFilter(f.key)}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200",
+                    "flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all duration-200 whitespace-nowrap",
                     filter === f.key
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   <f.icon className={cn("w-3 h-3", filter === f.key ? f.color : "")} />
-                  <span className="hidden sm:inline">{f.label}</span>
+                  <span className="hidden xs:inline sm:inline">{f.label}</span>
                 </button>
               ))}
             </div>
 
             {/* Month Navigation */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
               <button
                 onClick={prevMonth}
-                className="p-2 rounded-xl hover:bg-muted/50 transition-all active:scale-90 text-muted-foreground hover:text-foreground"
+                className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl hover:bg-muted/50 transition-all active:scale-90 text-muted-foreground hover:text-foreground"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={nextMonth}
-                className="p-2 rounded-xl hover:bg-muted/50 transition-all active:scale-90 text-muted-foreground hover:text-foreground"
+                className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl hover:bg-muted/50 transition-all active:scale-90 text-muted-foreground hover:text-foreground"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -182,7 +182,7 @@ export function LeaveCalendar({ myLeaves, teamLeaves, holidays }: LeaveCalendarP
                 key={i}
                 onClick={() => setSelectedDay(isSelected ? null : day.clone())}
                 className={cn(
-                  "min-h-[90px] sm:min-h-[110px] p-1.5 sm:p-2 cursor-pointer transition-all duration-200 relative",
+                  "min-h-[70px] sm:min-h-[110px] p-1 sm:p-2 cursor-pointer transition-all duration-200 relative",
                   !isCurrentMonth && "bg-muted/20",
                   isSelected && "bg-primary/5 ring-2 ring-inset ring-primary/30",
                   !isSelected && "hover:bg-muted/30",
@@ -211,13 +211,13 @@ export function LeaveCalendar({ myLeaves, teamLeaves, holidays }: LeaveCalendarP
                 ))}
 
                 {/* My Leave pills */}
-                {myLeaveEvents.slice(0, holidayEvents.length > 0 ? 1 : 2).map((l) => (
+                {myLeaveEvents.slice(0, holidayEvents.length > 0 ? 1 : 2).filter((l) => l.status !== "cancelled").map((l) => (
                   <div
                     key={l.id}
                     className={cn(
                       "text-[9px] font-black px-1.5 py-0.5 rounded-md truncate mb-0.5 border",
                       l.status === "approved"
-                        ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                        ? "bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/20"
                         : "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/20"
                     )}
                     title={`${l.leaveType.name} (${l.status})`}
@@ -229,20 +229,20 @@ export function LeaveCalendar({ myLeaves, teamLeaves, holidays }: LeaveCalendarP
                 {/* Team member pills */}
                 {teamLeaveEvents.length > 0 && (
                   <div className="space-y-0.5">
-                    {teamLeaveEvents.slice(0, 2).map((l) => (
+                    {teamLeaveEvents.slice(0, 2).filter((l) => l.status !== "cancelled").map((l) => (
                       <div
                         key={l.id}
-                        className="flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 truncate"
+                        className="flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-500/20 truncate"
                         title={`${l.user.firstName} ${l.user.lastName} — ${l.leaveType.name}`}
                       >
-                        <span className="shrink-0 w-3.5 h-3.5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[7px] font-black">
+                        <span className="shrink-0 w-3.5 h-3.5 rounded-full bg-purple-500 text-white flex items-center justify-center text-[7px] font-black">
                           {l.user.firstName.charAt(0)}
                         </span>
                         <span className="truncate">{l.user.firstName} on {l.leaveType.code}</span>
                       </div>
                     ))}
                     {teamLeaveEvents.length > 2 && (
-                      <div className="text-[8px] font-black text-emerald-600 dark:text-emerald-400 px-1.5">
+                      <div className="text-[8px] font-black text-purple-600 dark:text-purple-400 px-1.5">
                         +{teamLeaveEvents.length - 2} more
                       </div>
                     )}
@@ -318,17 +318,17 @@ export function LeaveCalendar({ myLeaves, teamLeaves, holidays }: LeaveCalendarP
               )}
 
               {/* My Leaves */}
-              {selectedDayEvents.myLeaveEvents.length > 0 && (
+              {selectedDayEvents.myLeaveEvents.length > 0 && selectedDayEvents.myLeaveEvents.filter((l) => l.status !== "cancelled").length > 0 && (
                 <div className="space-y-2">
                   <p className="text-[9px] font-black uppercase tracking-widest text-rose-500 flex items-center gap-1.5">
                     <User className="w-3 h-3" /> My Leave
                   </p>
-                  {selectedDayEvents.myLeaveEvents.map((l) => (
+                  {selectedDayEvents.myLeaveEvents.filter((l) => l.status !== "cancelled").map((l) => (
                     <div key={l.id} className={cn(
                       "p-3 rounded-2xl border space-y-1",
                       l.status === "approved"
-                        ? "bg-rose-500/10 border-rose-500/20"
-                        : "bg-orange-500/10 border-orange-500/20"
+                        ? "bg-green-500/10 border-green-500/20"
+                        : "bg-green-500/10 border-green-500/20"
                     )}>
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-black text-foreground">{l.leaveType.name}</p>
@@ -340,7 +340,7 @@ export function LeaveCalendar({ myLeaves, teamLeaves, holidays }: LeaveCalendarP
                         </span>
                       </div>
                       <p className="text-[11px] text-muted-foreground">
-                        {moment(l.fromDate).format("MMM DD")} → {moment(l.toDate).format("MMM DD")} · {l.durationDays}d
+                        {moment(l.fromDate).format("MMM DD")} → {moment(l.toDate).format("MMM DD")} · {Number(l.durationDays).toFixed(0)} Day(s)
                       </p>
                     </div>
                   ))}
@@ -350,11 +350,11 @@ export function LeaveCalendar({ myLeaves, teamLeaves, holidays }: LeaveCalendarP
               {/* Team Leaves */}
               {selectedDayEvents.teamLeaveEvents.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1.5">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-purple-500 flex items-center gap-1.5">
                     <Users className="w-3 h-3" /> Team on Leave ({selectedDayEvents.teamLeaveEvents.length})
                   </p>
-                  {selectedDayEvents.teamLeaveEvents.map((l) => (
-                    <div key={l.id} className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3">
+                  {selectedDayEvents.teamLeaveEvents.filter((l) => l.status !== "cancelled").map((l) => (
+                    <div key={l.id} className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center gap-3">
                       <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden shrink-0">
                         {l.user.profilePicture?.url ? (
                           <Image src={l.user.profilePicture.url} alt={l.user.firstName} width={36} height={36} className="w-full h-full object-cover" />
@@ -368,7 +368,7 @@ export function LeaveCalendar({ myLeaves, teamLeaves, holidays }: LeaveCalendarP
                         <p className="text-sm font-black text-foreground truncate">
                           {l.user.firstName} {l.user.lastName}
                         </p>
-                        <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">{l.leaveType.name}</p>
+                        <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400">{l.leaveType.name}</p>
                       </div>
                     </div>
                   ))}
@@ -393,7 +393,7 @@ export function LeaveCalendar({ myLeaves, teamLeaves, holidays }: LeaveCalendarP
           <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-3">Legend</p>
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-rose-500" />
+              <div className="w-3 h-3 rounded-full bg-green-500" />
               <span className="text-[10px] font-bold text-muted-foreground">My approved leave</span>
             </div>
             <div className="flex items-center gap-2">
@@ -401,7 +401,7 @@ export function LeaveCalendar({ myLeaves, teamLeaves, holidays }: LeaveCalendarP
               <span className="text-[10px] font-bold text-muted-foreground">My pending leave</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-emerald-500" />
+              <div className="w-3 h-3 rounded-full bg-purple-500" />
               <span className="text-[10px] font-bold text-muted-foreground">Team member on leave</span>
             </div>
             <div className="flex items-center gap-2">

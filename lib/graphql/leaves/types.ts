@@ -38,6 +38,7 @@ export interface LeaveRequest {
     fromDate: string;
     toDate: string;
     durationDays: number;
+    halfDayPeriod: string;
     reason: string;
     status: string;
     approvedBy: UserSummary | null;
@@ -52,6 +53,7 @@ export interface TeamLeave {
     fromDate: string;
     toDate: string;
     durationDays: number;
+    halfDayPeriod: string;
     status: string;
 }
 
@@ -64,6 +66,7 @@ export type LeaveRequestInput = {
     fromDate: string;
     toDate: string;
     reason: string;
+    halfDayPeriod?: string;
 }
 
 export interface GetLeaveRequestResponse {

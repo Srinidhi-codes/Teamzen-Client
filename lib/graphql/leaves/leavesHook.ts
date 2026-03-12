@@ -68,6 +68,7 @@ export function useGraphQLCreateLeaveRequest() {
       start_date: string;
       end_date: string;
       reason: string;
+      half_day_period?: string;
    }) => {
       const response = await createLeaveRequestMutation({
          variables: {
@@ -75,7 +76,8 @@ export function useGraphQLCreateLeaveRequest() {
                leaveTypeId: input.leave_type_id,
                fromDate: input.start_date,
                toDate: input.end_date,
-               reason: input.reason
+               reason: input.reason,
+               halfDayPeriod: input.half_day_period
             }
          },
       })

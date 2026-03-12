@@ -46,6 +46,7 @@ export default function LeavesPage() {
     fromDate: "",
     toDate: "",
     reason: "",
+    halfDayPeriod: "full_day",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [viewDetails, setViewDetails] = useState<any>(null);
@@ -110,10 +111,11 @@ export default function LeavesPage() {
       start_date: formData.fromDate,
       end_date: formData.toDate,
       reason: formData.reason,
+      half_day_period: formData.halfDayPeriod,
     });
 
     setShowForm(false);
-    setFormData({ leaveTypeId: "", fromDate: "", toDate: "", reason: "" });
+    setFormData({ leaveTypeId: "", fromDate: "", toDate: "", reason: "", halfDayPeriod: "full_day" });
   };
 
   const calculateDays = () => {
@@ -124,7 +126,11 @@ export default function LeavesPage() {
       let curr = from.clone();
       while (curr.isSameOrBefore(to)) {
         if (curr.day() !== 0) { // Only exclude Sundays
-          count++;
+          if (from.isSame(to) && formData.halfDayPeriod !== "full_day") {
+            count += 0.5;
+          } else {
+            count++;
+          }
         }
         curr.add(1, "days");
       }
@@ -208,7 +214,7 @@ export default function LeavesPage() {
   ];
 
   return (
-    <div className="p-4 sm:p-6 space-y-8 sm:space-y-10 animate-fade-in relative min-h-screen bg-background/50">
+    <div className="p-4 sm:p-6 space-y-8 sm:space-y-10 animate-fade-in relative min-h-screen">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6">
         <div className="space-y-1">
@@ -419,14 +425,14 @@ export default function LeavesPage() {
                     ))}
                   </div>
 
-                  {leaveBalanceData?.find((b: any) => b.availableBalance <= 2) && (
+                  {leaveBalanceData?.find((b: any) => b.availableBalance <= 2 && b.availableBalance >= 1) && (
                     <div className="p-5 rounded-2xl bg-destructive/5 border border-destructive/20 space-y-3">
                       <div className="flex items-center gap-2 text-destructive">
                         <AlertCircle className="w-4 h-4" />
                         <span className="text-[10px] font-black uppercase tracking-widest">Critical Alert</span>
                       </div>
                       <p className="text-[11px] font-medium text-destructive/80 leading-relaxed">
-                        Your <span className="font-bold underline italic">{leaveBalanceData?.find((b: any) => b.availableBalance <= 2)?.leaveType.name}</span> balance is nearing critical threshold ({leaveBalanceData?.find((b: any) => b.availableBalance <= 2)?.availableBalance} units remaining).
+                        Your <span className="font-bold underline italic">{leaveBalanceData?.find((b: any) => b.availableBalance <= 2 && b.availableBalance >= 1)?.leaveType.name}</span> balance is nearing critical threshold ({leaveBalanceData?.find((b: any) => b.availableBalance <= 2 && b.availableBalance >= 1)?.availableBalance} units remaining).
                       </p>
                     </div>
                   )}

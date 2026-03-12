@@ -63,10 +63,23 @@ export function useNotifications(onMessageReceived?: (msg: any) => void) {
             const data = JSON.parse(event.data);
             // Process both personal and admin notifications
             if (data.level === 'personal' || data.level === 'admin') {
-                toast.success(data.message, {
-                    description: `${data.actor?.firstName} ${data.verb}`,
-                    duration: 5000,
-                });
+                const displayVerb = data.verb?.replace(/_self$/, "").replace(/_/g, " ");
+                const description = data.verb?.endsWith('_self') ? "Action confirmed" : `${data.actor?.firstName} ${displayVerb}`;
+                
+                // Color coding based on verb
+                if (data.verb?.includes('rejected')) {
+                    toast.error(data.message, { description, duration: 6000 });
+                } else if (data.verb?.includes('approved')) {
+                    toast.success(data.message, { description, duration: 6000 });
+                } else if (data.verb?.includes('cancelled')) {
+                    toast(data.message, { 
+                        description, 
+                        duration: 6000,
+                        className: "bg-blue-500 text-white border-none shadow-blue-500/50",
+                    });
+                } else {
+                    toast.success(data.message, { description, duration: 5000 });
+                }
                 if (callbackRef.current) {
                     callbackRef.current(data);
                 }
