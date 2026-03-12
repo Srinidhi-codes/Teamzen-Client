@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store/useStore";
 import { ThemeSelector } from "./ThemeSelector";
 import client from "@/lib/api/client";
@@ -11,19 +11,7 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
 
 import { NotificationBell } from "./NotificationBell";
-import {
-  LogOut,
-  Menu,
-  Plane,
-  Settings,
-  User,
-  LayoutDashboard,
-  Users,
-  Calendar,
-  Clock,
-  CircleDollarSign,
-  ChevronRight
-} from "lucide-react";
+import { Calendar, CircleDollarSign, Clock, LayoutDashboard, LogOut, Menu, Plane, Settings, User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -235,7 +223,6 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                       <span className="text-sm font-bold">Personal Profile</span>
                     </Link>
                   </DropdownMenuItem>
-
                   {(user.role === 'admin' || user.role === 'manager') && (
                     <DropdownMenuItem asChild>
                       <a
@@ -276,3 +263,4 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
     </nav>
   );
 }
+

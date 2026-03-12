@@ -206,31 +206,31 @@ export default function DashboardPage() {
             action={<Link href="/notifications" className="text-primary text-xs font-bold uppercase tracking-widest hover:underline">View All</Link>}
           >
             <div className="space-y-4 max-h-[400px] overflow-y-auto -mx-1 px-1">
-          {recentActivity.length > 0 ? recentActivity.map((item: any, i: number) => (
-            <Link
-              key={i}
-              href={item.id.includes('notif') ? '/notifications' : item.id.includes('leave') ? '/leaves' : '/attendance'}
-              className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl sm:rounded-3xl bg-card border border-border hover:border-primary/20 hover:shadow-lg transition-all group cursor-pointer"
-            >
-              <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-xl ${item.bg} ${item.color} flex items-center justify-center group-hover:scale-110 transition-transform shrink-0`}>
-                  <item.icon className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-foreground text-sm">{item.title}</h4>
-                  <p className="text-xs text-muted-foreground text-wrap mt-0.5">{item.desc}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground/60 shrink-0">
-                <span>{moment(item.date).fromNow()}</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </div>
-            </Link>
-          )) : (
-            <div className="text-center py-10 text-muted-foreground text-sm">No recent activity detected.</div>
-          )}
-        </div>
-      </Card>
+              {recentActivity.length > 0 ? recentActivity.map((item: any, i: number) => (
+                <Link
+                  key={i}
+                  href={item.id.includes('notif') ? '/notifications' : item.id.includes('leave') ? '/leaves' : '/attendance'}
+                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl sm:rounded-3xl bg-card border border-border hover:border-primary/20 hover:shadow-lg transition-all group cursor-pointer"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-xl ${item.bg} ${item.color} flex items-center justify-center group-hover:scale-110 transition-transform shrink-0`}>
+                      <item.icon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-foreground text-sm">{item.title}</h4>
+                      <p className="text-xs text-muted-foreground text-wrap mt-0.5">{item.desc}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground/60 shrink-0">
+                    <span>{moment(item.date).fromNow()}</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </div>
+                </Link>
+              )) : (
+                <div className="text-center py-10 text-muted-foreground text-sm">No recent activity detected.</div>
+              )}
+            </div>
+          </Card>
 
       {/* Attendance Trend Chart */}
       <Card
