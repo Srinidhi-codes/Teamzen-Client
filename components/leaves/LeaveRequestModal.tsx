@@ -87,7 +87,14 @@ export function LeaveRequestModal({
                         <DatePickerSimple
                             label="Start Phase"
                             value={formData.fromDate}
-                            onChange={(date) => setFormData({ ...formData, fromDate: moment(date).format("YYYY-MM-DD") })}
+                            onChange={(date) => {
+                                const newDate = moment(date).format("YYYY-MM-DD");
+                                setFormData({
+                                    ...formData,
+                                    fromDate: newDate,
+                                    halfDayPeriod: newDate === formData.toDate ? formData.halfDayPeriod : "full_day"
+                                });
+                            }}
                             error={errors.fromDate}
                             disablePast
                             maxDate={formData.toDate || undefined}
@@ -95,13 +102,36 @@ export function LeaveRequestModal({
                         <DatePickerSimple
                             label="End Phase"
                             value={formData.toDate}
-                            onChange={(date) => setFormData({ ...formData, toDate: moment(date).format("YYYY-MM-DD") })}
+                            onChange={(date) => {
+                                const newDate = moment(date).format("YYYY-MM-DD");
+                                setFormData({
+                                    ...formData,
+                                    toDate: newDate,
+                                    halfDayPeriod: newDate === formData.fromDate ? formData.halfDayPeriod : "full_day"
+                                });
+                            }}
                             error={errors.toDate}
                             disablePast
                             minDate={formData.fromDate || undefined}
                         />
                     </div>
                 </div>
+
+                {formData.fromDate && formData.toDate && formData.fromDate === formData.toDate && (
+                    <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                        <FormSelect
+                            label="Day Allocation"
+                            value={formData.halfDayPeriod}
+                            onValueChange={(value) => setFormData({ ...formData, halfDayPeriod: value })}
+                            placeholder="Select Portion"
+                            options={[
+                                { label: "Full Operational Day", value: "full_day" },
+                                { label: "First Half (Morning)", value: "first_half" },
+                                { label: "Second Half (Afternoon)", value: "second_half" },
+                            ]}
+                        />
+                    </div>
+                )}
 
                 {calculateDays() > 0 && (
                     <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-primary/5 border border-primary/20 flex items-center justify-between animate-in zoom-in-95">
@@ -152,11 +182,11 @@ export function LeaveRequestModal({
 
                 <div className="flex flex-col sm:flex-row justify-end pt-4 gap-3 sm:gap-4">
                     <Button variant="outline" type="button" onClick={onClose} className="w-full sm:w-auto px-10 h-12 sm:h-14 rounded-xl sm:rounded-2xl font-black text-[11px] uppercase tracking-widest order-2 sm:order-1">
-                        Abort
+                        Cancel
                     </Button>
                     <Button type="submit" className="w-full sm:w-auto btn-primary px-12 h-12 sm:h-14 rounded-xl sm:rounded-2xl shadow-xl shadow-primary/20 order-1 sm:order-2" disabled={isLoading}>
                         {isLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                        Transmit Request
+                        Request Leave
                     </Button>
                 </div>
             </form>

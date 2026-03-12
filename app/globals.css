@@ -238,11 +238,12 @@
     font-size: 16px !important;
   }
 
-  /* 🛡️ Auto-hide Sidebar when a Dialog/Modal is open to prevent UI overlap */
-  body:has([data-slot="dialog-content"]) aside {
+  /* 🛡️ Auto-hide Sidebar & Navbar when a Dialog/Modal is open to prevent UI overlap */
+  body:has([data-slot="dialog-content"]) aside,
+  body:has([data-slot="dialog-content"]) nav {
     opacity: 0;
     pointer-events: none;
-    transform: translateX(-20px);
+    transform: translateY(-20px);
     transition: all 0.3s ease-in-out;
   }
 }

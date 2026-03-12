@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
-import { useEffect, useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useStore } from "@/lib/store/useStore";
 import { ThemeSelector } from "./ThemeSelector";
 import client from "@/lib/api/client";
@@ -35,7 +35,7 @@ const IMPORTANT_ROUTES = [
 ];
 
 export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps) {
-  const { navbarTabs, activeNavbarTab, setActiveNavbarTab, logoutUser, user } = useStore();
+  const { logoutUser, user } = useStore();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -53,15 +53,6 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
     }
   };
 
-  // Scroll-aware state
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 10);
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   // Scroll to top if clicking the currently active route
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     const isActive = href === '/dashboard' ? pathname === href : pathname.startsWith(href);
@@ -71,10 +62,55 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
     }
   };
 
+  // Visibility state for smart hiding
+  const [isVisible, setIsVisible] = useState(true);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const lastScrollY = useRef(0);
+  const stopTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Determine theme/styling (Floating vs Full width)
+      setIsScrolled(window.innerWidth >= 768);
+
+      // --- SMART VISIBILITY LOGIC ---
+      // 1. Clear previous timeout
+      if (stopTimeout.current) clearTimeout(stopTimeout.current);
+
+      // 2. Always show at the top
+      if (currentScrollY < 20) {
+        setIsVisible(true);
+      }
+      // 3. Hide if scrolling down, show if scrolling up
+      else {
+        setIsVisible(currentScrollY < lastScrollY.current);
+      }
+
+      // 4. Show when scrolling stops (pattern detection)
+      stopTimeout.current = setTimeout(() => {
+        setIsVisible(true);
+      }, 150);
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+      if (stopTimeout.current) clearTimeout(stopTimeout.current);
+    };
+  }, []);
+
   return (
     <nav className={cn(
-      "fixed top-0 left-0 right-0 z-50 pointer-events-none transition-all duration-500 ease-in-out",
-      isScrolled ? "px-4 sm:px-6 py-4" : "px-0 py-0"
+      "fixed top-0 left-0 right-0 z-70 pointer-events-none transition-all duration-500 ease-in-out transform",
+      isScrolled ? "px-4 sm:px-6 py-4" : "px-0 py-0",
+      isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
     )}>
       <div className={cn(
         "flex justify-between items-center pointer-events-auto transition-all duration-500 ease-in-out",
@@ -88,7 +124,7 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
             {onMenuClick && (
               <button
                 onClick={onMenuClick}
-                className="md:hidden p-2 hover:bg-muted/50 rounded-xl transition-all active:scale-95 text-foreground"
+                className="lg:hidden p-2 hover:bg-muted/50 rounded-xl transition-all active:scale-95 text-foreground"
               >
                 <Menu className="w-6 h-6" />
               </button>
@@ -120,55 +156,31 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
             </Link>
           </div>
 
-          {/* Center Navigation - Contextual tabs OR Important routes when sidebar is collapsed */}
-          <div className="flex-1 flex justify-center px-4 overflow-hidden">
-            {isSidebarCollapsed ? (
-              /* Important Routes (Show only when sidebar is collapsed) */
-              <div className="flex items-center bg-muted/40 p-1 rounded-2xl border border-border/50 backdrop-blur-md max-w-full overflow-x-auto scrollbar-hide animate-slide-up duration-300">
-                {IMPORTANT_ROUTES.map((route) => {
-                  const isActive = route.href === '/dashboard' ? pathname === route.href : pathname.startsWith(route.href);
-                  return (
-                    <Link
-                      key={route.href}
-                      href={route.href}
-                      onClick={(e) => handleNavClick(e, route.href)}
-                      className={cn(
-                        "flex items-center space-x-2.5 px-4 sm:px-6 py-2 rounded-xl transition-all duration-300 group whitespace-nowrap",
-                        isActive
-                          ? "text-primary bg-primary/10"
-                          : "text-muted-foreground hover:text-primary hover:bg-primary/10"
-                      )}
-                    >
-                      <route.icon className={cn("w-5 h-5 transition-transform group-hover:scale-125", isActive && "scale-110")} />
-                      <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">
-                        {route.name}
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
-            ) : (
-              /* Contextual Navbar Tabs (Show when sidebar is open or if contextual tabs exist) */
-              navbarTabs.length > 0 && (
-                <div className="flex items-center bg-muted/30 p-1 rounded-2xl border border-border/50 backdrop-blur-md max-w-full overflow-x-auto scrollbar-hide animate-fade-in duration-500">
-                  {navbarTabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveNavbarTab(tab.id)}
-                      className={cn(
-                        "flex items-center space-x-2.5 px-6 py-2.5 rounded-xl transition-all duration-500 whitespace-nowrap",
-                        activeNavbarTab === tab.id
-                          ? `bg-linear-to-r ${tab.color || 'from-primary to-primary/80'} text-white shadow-xl shadow-primary/20 -translate-y-0.5`
-                          : "hover:bg-background/50 text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      <span className="text-base">{tab.iconElement}</span>
-                      <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">{tab.label}</span>
-                    </button>
-                  ))}
-                </div>
-              )
-            )}
+          {/* Center Navigation - Always show Important routes */}
+          <div className="flex-1 hidden lg:flex justify-center px-4 overflow-hidden">
+            <div className="flex items-center bg-muted/40 p-1 rounded-2xl border border-border/50 backdrop-blur-md max-w-full overflow-x-auto scrollbar-hide animate-slide-up duration-300">
+              {IMPORTANT_ROUTES.map((route) => {
+                const isActive = route.href === '/dashboard' ? pathname === route.href : pathname.startsWith(route.href);
+                return (
+                  <Link
+                    key={route.href}
+                    href={route.href}
+                    onClick={(e) => handleNavClick(e, route.href)}
+                    className={cn(
+                      "flex items-center space-x-2.5 px-4 sm:px-6 py-2 rounded-xl transition-all duration-300 group whitespace-nowrap",
+                      isActive
+                        ? "text-primary bg-primary/10"
+                        : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                    )}
+                  >
+                    <route.icon className={cn("w-5 h-5 transition-transform group-hover:scale-125", isActive && "scale-110")} />
+                    <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">
+                      {route.name}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
 
           {/* Right Section: User Menu & Tools */}
@@ -198,20 +210,18 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                         </>
                       )}
                     </div>
-                    <div className="flex-col items-start hidden xl:flex">
-                      <span className="text-[11px] font-black tracking-tight leading-none group-hover:text-primary transition-colors">
-                        {user.firstName} {user.lastName}
-                      </span>
-                      <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mt-1">
-                        {user.role} Member
-                      </span>
-                    </div>
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64 p-2 rounded-3xl shadow-2xl border-border bg-card/80 backdrop-blur-xl">
                   <DropdownMenuLabel className="px-4 py-3 bg-muted/20 rounded-2xl mb-1">
-                    <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Account Protocol</p>
-                    <p className="text-sm font-bold text-foreground truncate">{user.email}</p>
+                    <div className="flex-col items-start hidden xl:flex">
+                      <span className="text-md font-black text-primary uppercase tracking-widest">
+                        {user.firstName} {user.lastName}
+                      </span>
+                      <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mt-1">
+                        {user.role}
+                      </span>
+                    </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-border/50 my-1" />
                   <DropdownMenuItem asChild>
@@ -220,7 +230,7 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                       className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-primary/5 cursor-pointer group"
                     >
                       <span className="text-lg group-hover:scale-110 transition-transform"><User className="w-5 h-5" /></span>
-                      <span className="text-sm font-bold">Personal Profile</span>
+                      <span className="text-sm font-bold">Profile</span>
                     </Link>
                   </DropdownMenuItem>
                   {(user.role === 'admin' || user.role === 'manager') && (
@@ -252,15 +262,15 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                     className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-destructive/10 text-destructive cursor-pointer group focus:bg-destructive/10 focus:text-destructive"
                   >
                     <span className="text-lg group-hover:scale-110 transition-transform"><LogOut className="w-5 h-5" /></span>
-                    <span className="text-sm font-bold">Terminate Session</span>
+                    <span className="text-sm font-bold">Logout</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
           </div>
         </div>
-      </div>
-    </nav>
+      </div >
+    </nav >
   );
 }
 

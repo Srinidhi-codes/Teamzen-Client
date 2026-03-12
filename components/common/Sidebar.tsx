@@ -67,14 +67,14 @@ export function Sidebar({
   };
 
   const sidebarClasses = `
-    fixed inset-y-0 left-0 z-40
+    fixed inset-y-0 left-0 z-100
     flex flex-col
     bg-primary/5 backdrop-blur-md text-sidebar-foreground
     transition-all duration-500 ease-in-out
     ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
     md:translate-x-0
     ${isCollapsed ? "md:w-24" : "md:w-72"}
-    w-70
+    w-72
     border-r border-sidebar-border
     shadow-2xl md:shadow-none
     overflow-x-hidden
@@ -85,7 +85,7 @@ export function Sidebar({
       {/* Mobile Overlay */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-55 md:hidden"
+          className="fixed inset-0 bg-black/50 z-90 md:hidden"
           onClick={closeMobile}
         />
       )}

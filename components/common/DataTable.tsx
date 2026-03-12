@@ -167,7 +167,7 @@ export function DataTable<T>({
 
       {/* Pagination Footer */}
       {totalPages > 0 && currentPage && onPageChange && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-6 bg-card/50 rounded-4xl border border-border backdrop-blur-sm shadow-sm ring-1 ring-border/50">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 bg-card/50 rounded-4xl border border-border backdrop-blur-sm shadow-sm ring-1 ring-border/50">
           <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-2">
             Showing <span className="text-primary font-black">{(currentPage - 1) * (pageSize || 0) + 1}</span>
             <span className="mx-1.5">—</span>

@@ -50,7 +50,14 @@ export function LeaveReviewModal({
                     </div>
                     <div className="space-y-1 border-l sm:border-l-0 sm:pl-0 pl-4 border-border/50">
                         <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Duration</label>
-                        <p className="text-base sm:text-lg font-black tabular-nums">{viewDetails.durationDays} Operational Days</p>
+                        <p className="text-base sm:text-lg font-black tabular-nums">
+                            {viewDetails.durationDays} Day{viewDetails.durationDays !== 1 ? 's' : ''}
+                            {viewDetails.halfDayPeriod && viewDetails.halfDayPeriod !== 'full_day' && (
+                                <span className="ml-2 text-[10px] sm:text-xs text-primary/60 italic uppercase tracking-wider">
+                                    ({viewDetails.halfDayPeriod.replace('_', ' ')})
+                                </span>
+                            )}
+                        </p>
                     </div>
                     <div className="space-y-1 flex flex-col items-start">
                         <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Status</label>
@@ -60,18 +67,18 @@ export function LeaveReviewModal({
 
                 <div className="space-y-2 bg-muted/30 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border/50 w-full sm:w-fit">
                     <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                        <Calendar className="w-3 h-3 text-primary" /> Validity Period
+                        <Calendar className="w-3 h-3 text-primary" /> Duration
                     </label>
                     <p className="text-xs sm:text-sm font-black text-foreground uppercase flex flex-wrap items-center gap-2 sm:gap-3">
-                        {moment(viewDetails.fromDate).format("MMMM DD, YY")}
+                        {moment(viewDetails.fromDate).format("DD MMM YY")}
                         <ArrowRight className="w-4 h-4 text-primary opacity-30" />
-                        {moment(viewDetails.toDate).format("MMMM DD, YY")}
+                        {moment(viewDetails.toDate).format("DD MMM YY")}
                     </p>
                 </div>
 
                 <div className="space-y-3">
                     <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                        <Info className="w-3 h-3 text-primary" /> Protocol Justification
+                        <Info className="w-3 h-3 text-primary" /> Reason
                     </label>
                     <p className="text-sm font-medium text-foreground/80 leading-relaxed italic border-l-4 border-primary/20 pl-4 sm:pl-6">
                         "{viewDetails.reason}"
@@ -80,7 +87,7 @@ export function LeaveReviewModal({
 
                 <div className="flex justify-end pt-4">
                     <Button variant="secondary" onClick={onClose} className="w-full sm:w-auto px-10 h-12 rounded-xl sm:rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-primary/5">
-                        Terminate View
+                        Close
                     </Button>
                 </div>
             </div>
