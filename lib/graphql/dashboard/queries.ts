@@ -5,8 +5,10 @@ export const GET_USER_DASHBOARD_STATS = gql`
     userDashboardStats {
       attendanceRate
       leaveBalances {
+        name
         leaveType
         balance
+        total
       }
       pendingRequestsCount
       daysPresent

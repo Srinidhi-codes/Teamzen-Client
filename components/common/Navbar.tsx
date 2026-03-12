@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store/useStore";
 import { ThemeSelector } from "./ThemeSelector";
 import client from "@/lib/api/client";
@@ -11,19 +11,7 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
 
 import { NotificationBell } from "./NotificationBell";
-import {
-  LogOut,
-  Menu,
-  Plane,
-  Settings,
-  User,
-  LayoutDashboard,
-  Users,
-  Calendar,
-  Clock,
-  CircleDollarSign,
-  ChevronRight
-} from "lucide-react";
+import { Calendar, CircleDollarSign, Clock, LayoutDashboard, LogOut, Menu, Plane, Settings, User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,7 +29,6 @@ interface NavbarProps {
 
 const IMPORTANT_ROUTES = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Team", href: "/team", icon: Users },
   { name: "Leaves", href: "/leaves", icon: Calendar },
   { name: "Attendance", href: "/attendance", icon: Clock },
   { name: "Payroll", href: "/payroll", icon: CircleDollarSign },
@@ -75,12 +62,14 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Logic to determine which routes to show:
-  // Hide current route and any sub-routes of it
-  const filteredRoutes = IMPORTANT_ROUTES.filter(route => {
-    if (route.href === '/dashboard') return pathname !== '/dashboard';
-    return !pathname.startsWith(route.href);
-  });
+  // Scroll to top if clicking the currently active route
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    const isActive = href === '/dashboard' ? pathname === href : pathname.startsWith(href);
+    if (isActive) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   return (
     <nav className={cn(
@@ -106,18 +95,20 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
             )}
 
             {/* Logo */}
-            <Link href="/dashboard" className="flex items-center space-x-3 group shrink-0">
-              {user?.organization?.logo?.url ? (
-                <Image src={user.organization.logo.url as string} alt="Logo" width={100} height={100} className="w-12 h-12 object-contain rounded-lg" />
-              ) : (
-                <Image
-                  src="/images/teamzen_zoomed.png"
-                  alt="Teamzen"
-                  width={80}
-                  height={80}
-                  className="w-12 h-12 object-contain rounded-lg"
-                />
-              )}
+            <Link
+              href="/dashboard"
+              onClick={(e) => handleNavClick(e, "/dashboard")}
+              className="flex items-center space-x-3 group shrink-0"
+            >
+              <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform overflow-hidden">
+                {user?.organization?.logo?.url ? (
+                  <Image src={user.organization.logo.url as string} alt="Logo" width={48} height={48} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-primary-foreground font-black text-xl">
+                    {user?.organization?.name?.charAt(0) || 'P'}
+                  </span>
+                )}
+              </div>
               <div className="flex-col hidden sm:flex">
                 <span className="font-black text-sm text-foreground tracking-tighter leading-none group-hover:text-primary transition-colors">
                   {user?.organization?.name || 'Teamzen'}
@@ -134,18 +125,27 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
             {isSidebarCollapsed ? (
               /* Important Routes (Show only when sidebar is collapsed) */
               <div className="flex items-center bg-muted/40 p-1 rounded-2xl border border-border/50 backdrop-blur-md max-w-full overflow-x-auto scrollbar-hide animate-slide-up duration-300">
-                {filteredRoutes.map((route) => (
-                  <Link
-                    key={route.href}
-                    href={route.href}
-                    className="flex items-center space-x-2.5 px-4 sm:px-6 py-2 rounded-xl transition-all duration-300 text-muted-foreground hover:text-primary hover:bg-primary/10 group whitespace-nowrap"
-                  >
-                    <route.icon className="w-5 h-5 transition-transform group-hover:scale-125" />
-                    <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">
-                      {route.name}
-                    </span>
-                  </Link>
-                ))}
+                {IMPORTANT_ROUTES.map((route) => {
+                  const isActive = route.href === '/dashboard' ? pathname === route.href : pathname.startsWith(route.href);
+                  return (
+                    <Link
+                      key={route.href}
+                      href={route.href}
+                      onClick={(e) => handleNavClick(e, route.href)}
+                      className={cn(
+                        "flex items-center space-x-2.5 px-4 sm:px-6 py-2 rounded-xl transition-all duration-300 group whitespace-nowrap",
+                        isActive
+                          ? "text-primary bg-primary/10"
+                          : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                      )}
+                    >
+                      <route.icon className={cn("w-5 h-5 transition-transform group-hover:scale-125", isActive && "scale-110")} />
+                      <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">
+                        {route.name}
+                      </span>
+                    </Link>
+                  );
+                })}
               </div>
             ) : (
               /* Contextual Navbar Tabs (Show when sidebar is open or if contextual tabs exist) */
@@ -171,7 +171,6 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
             )}
           </div>
 
-
           {/* Right Section: User Menu & Tools */}
           <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
             <div className="flex items-center bg-muted/30 p-1 rounded-xl sm:rounded-2xl border border-border/50 space-x-1">
@@ -182,9 +181,8 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
             {user && (
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center space-x-3 px-1 sm:px-2 py-2 rounded-2xl transition-all hover:bg-muted/50 text-foreground group focus:outline-hidden">
-                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-border/50 shadow-sm ${!user.profilePictureUrl ? 'bg-linear-to-br from-primary to-primary/60 text-primary-foreground text-[10px] sm:text-xs font-black' : ''
-                      }`}>
+                  <button className="flex items-center space-x-3 px-1 sm:px-2 py-2 rounded-2xl transition-all hover:bg-muted/50 text-foreground group focus:outline-none">
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-border/50 shadow-sm ${!user.profilePictureUrl ? 'bg-linear-to-br from-primary to-primary/60 text-primary-foreground text-[10px] sm:text-xs font-black' : ''}`}>
                       {user.profilePictureUrl ? (
                         <Image
                           src={user.profilePictureUrl as string}
@@ -225,7 +223,6 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                       <span className="text-sm font-bold">Personal Profile</span>
                     </Link>
                   </DropdownMenuItem>
-
                   {(user.role === 'admin' || user.role === 'manager') && (
                     <DropdownMenuItem asChild>
                       <a
@@ -266,3 +263,4 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
     </nav>
   );
 }
+

@@ -89,12 +89,16 @@ export function LeaveRequestModal({
                             value={formData.fromDate}
                             onChange={(date) => setFormData({ ...formData, fromDate: moment(date).format("YYYY-MM-DD") })}
                             error={errors.fromDate}
+                            disablePast
+                            maxDate={formData.toDate || undefined}
                         />
                         <DatePickerSimple
                             label="End Phase"
                             value={formData.toDate}
                             onChange={(date) => setFormData({ ...formData, toDate: moment(date).format("YYYY-MM-DD") })}
                             error={errors.toDate}
+                            disablePast
+                            minDate={formData.fromDate || undefined}
                         />
                     </div>
                 </div>

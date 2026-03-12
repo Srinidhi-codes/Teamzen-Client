@@ -24,6 +24,7 @@ import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store/useStore";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export default function AttendancePage() {
   const [currentTime, setCurrentTime] = useState(moment().format("hh:mm:ss A"));
@@ -241,9 +242,9 @@ export default function AttendancePage() {
                   Always ensure your location services are active for precise distance calculation.
                 </p>
               </div>
-              <button className="text-[9px] font-black uppercase tracking-[0.2em] text-primary hover:underline transition-all">
+              <Link href={'/policies'} className="text-[9px] font-black uppercase tracking-[0.2em] text-primary hover:underline transition-all">
                 Read Policy Docs
-              </button>
+              </Link>
             </div>
           </div>
         </div>

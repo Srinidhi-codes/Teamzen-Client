@@ -53,8 +53,8 @@ export default function PoliciesPage() {
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 animate-fade-in">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6">
                 <div className="space-y-1">
-                    <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground italic uppercase">
-                        Policy <span className="text-primary">Management</span>
+                    <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground capitalize">
+                        Policy Management
                     </h1>
                     <p className="text-muted-foreground font-medium text-sm sm:text-base flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
