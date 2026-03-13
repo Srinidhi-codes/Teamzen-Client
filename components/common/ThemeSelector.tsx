@@ -55,7 +55,7 @@ export function ThemeSelector() {
                 </button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="end" className="w-72 glass-dark shadow-2xl rounded-2xl border border-border p-4 z-50 animate-fade-in origin-top-right">
+            <DropdownMenuContent align="end" className="w-72 glass-dark shadow-2xl rounded-2xl border border-border p-4 z-[301] animate-fade-in origin-top-right">
                 <div className="space-y-6">
                     {/* Appearance Section */}
                     <div>

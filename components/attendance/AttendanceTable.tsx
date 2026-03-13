@@ -20,6 +20,7 @@ export type AttendanceRow = {
 const STATUS_CONFIG: Record<string, { label: string; variant: "success" | "warning" | "danger" | "info" }> = {
     late_login: { label: "Late Login", variant: "warning" },
     early_logout: { label: "Early Logout", variant: "warning" },
+    half_day: { label: "Half Day", variant: "warning" },
     absent: { label: "Absent", variant: "danger" },
     present: { label: "Active", variant: "success" },
     approved: { label: "Approved", variant: "success" },
