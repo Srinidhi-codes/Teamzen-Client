@@ -57,7 +57,7 @@ export default function NotificationsPage() {
         refetch();
         refetchCount();
         refetchActivity();
-    });
+    }, { silent: true });
 
     const notifications = data?.myNotifications || [];
     const unreadCount = countData?.unreadNotificationCount || 0;
@@ -94,14 +94,21 @@ export default function NotificationsPage() {
         }
     };
 
+    const getBgColor = (notif: any) => {
+        if (notif.verb?.includes('approved')) return "bg-emerald-500/10 hover:bg-emerald-500/20 shadow-lg shadow-emerald-500/5 border-emerald-500/20";
+        if (notif.verb?.includes('rejected')) return "bg-destructive/10 hover:bg-destructive/20 shadow-lg shadow-destructive/5 border-destructive/20";
+        if (notif.verb?.includes('cancelled')) return "bg-blue-500/10 hover:bg-blue-500/20 shadow-lg shadow-blue-500/5 border-blue-500/20";
+        return !notif.isRead ? "bg-primary/5 hover:bg-primary/10 border-primary/20" : "hover:bg-muted/30 border-transparent";
+    };
+
     const renderNotifications = (items: any[]) => (
         <div className="divide-y divide-border/30 max-h-[600px] overflow-y-auto custom-scrollbar">
             {items.map((notif: any) => (
                 <div
                     key={notif.id}
                     className={cn(
-                        "group relative p-4 sm:p-6 transition-all duration-300 hover:bg-primary/5",
-                        !notif.isRead && "bg-primary/5"
+                        "group relative p-4 sm:p-6 transition-all duration-300 border-l-4",
+                        getBgColor(notif)
                     )}
                 >
                     <div className="flex gap-3 sm:gap-4">

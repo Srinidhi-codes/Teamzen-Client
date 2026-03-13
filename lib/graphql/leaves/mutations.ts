@@ -1,3 +1,5 @@
+"use client";
+
 import { gql } from "@apollo/client";
 
 export const CREATE_LEAVE_REQUEST = gql`
