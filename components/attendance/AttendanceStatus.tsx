@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 interface AttendanceStatusProps {
-  status: "present" | "absent" | "half_day" | "leave" | "holiday";
+  status: "present" | "absent" | "half_day" | "leave" | "holiday" | "late_login" | "early_logout";
   loginTime?: string;
   logoutTime?: string;
   workedHours?: number;
@@ -28,6 +28,8 @@ export function AttendanceStatus({
     present: { color: "emerald", icon: CheckCircle2, label: "On Duty" },
     absent: { color: "destructive", icon: XCircle, label: "Not Present" },
     half_day: { color: "amber", icon: Timer, label: "Half Shift" },
+    late_login: { color: "amber", icon: Clock, label: "Late Login" },
+    early_logout: { color: "amber", icon: Clock, label: "Early Logout" },
     leave: { color: "primary", icon: Calendar, label: "On Leave" },
     holiday: { color: "primary", icon: PartyPopper, label: "Holiday" },
   };

@@ -4,6 +4,7 @@ import { Sidebar } from "../common/Sidebar";
 import { Menu } from "lucide-react";
 import { Navbar } from "../common/Navbar";
 import AssistantWidget from "../ai";
+import { OnboardingTour } from "../common/OnboardingTour";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -48,6 +49,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </footer>
       </div>
       <AssistantWidget />
+      <OnboardingTour />
     </div>
   );
 }

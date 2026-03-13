@@ -11,7 +11,8 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
 
 import { NotificationBell } from "./NotificationBell";
-import { Calendar, CircleDollarSign, Clock, LayoutDashboard, LogOut, Menu, Plane, Settings, User } from "lucide-react";
+import { Calendar, CircleDollarSign, Clock, LayoutDashboard, LogOut, Menu, Plane, Settings, User, Compass } from "lucide-react";
+import { useOnboardingTour } from "./OnboardingTour";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +37,7 @@ const IMPORTANT_ROUTES = [
 
 export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps) {
   const { logoutUser, user } = useStore();
+  const { startTour } = useOnboardingTour();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -165,6 +167,7 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                   <Link
                     key={route.href}
                     href={route.href}
+                    id={`navbar-nav-${route.name.toLowerCase()}`}
                     onClick={(e) => handleNavClick(e, route.href)}
                     className={cn(
                       "flex items-center space-x-2.5 px-4 sm:px-6 py-2 rounded-xl transition-all duration-300 group whitespace-nowrap",
@@ -193,7 +196,10 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
             {user && (
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center space-x-3 px-1 sm:px-2 py-2 rounded-2xl transition-all hover:bg-muted/50 text-foreground group focus:outline-none">
+                  <button 
+                    id="user-menu-trigger"
+                    className="flex items-center space-x-3 px-1 sm:px-2 py-2 rounded-2xl transition-all hover:bg-muted/50 text-foreground group focus:outline-none"
+                  >
                     <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-border/50 shadow-sm ${!user.profilePictureUrl ? 'bg-linear-to-br from-primary to-primary/60 text-primary-foreground text-[10px] sm:text-xs font-black' : ''}`}>
                       {user.profilePictureUrl ? (
                         <Image
@@ -255,6 +261,13 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                       <span className="text-lg group-hover:scale-110 transition-transform"><Settings className="w-5 h-5" /></span>
                       <span className="text-sm font-bold">System Configuration</span>
                     </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={startTour}
+                    className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-primary/5 cursor-pointer group"
+                  >
+                    <span className="text-lg group-hover:scale-110 transition-transform"><Compass className="w-5 h-5" /></span>
+                    <span className="text-sm font-bold">Take a Tour</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-border/50 my-1" />
                   <DropdownMenuItem

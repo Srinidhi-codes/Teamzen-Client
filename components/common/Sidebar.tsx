@@ -142,6 +142,7 @@ export function Sidebar({
               <Link
                 key={item.href}
                 href={item.href}
+                id={`nav-${item.name.toLowerCase()}`}
                 onClick={() => isMobileOpen && closeMobile()}
                 className={`flex items-center space-x-4 px-4 py-3.5 rounded-2xl ${isCollapsed ? "justify-center" : ""} transition-all duration-300 relative group ${isActive
                   ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02]"

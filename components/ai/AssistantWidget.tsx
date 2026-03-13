@@ -216,6 +216,7 @@ export function AssistantWidget() {
 
             {/* Floating Trigger */}
             <button
+                id="ai-assistant-trigger"
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
                     "w-16 h-16 rounded-4xl shadow-2xl flex items-center justify-center transition-all duration-500 active:scale-90 group relative overflow-hidden",
