@@ -76,6 +76,13 @@ export function NotificationBell() {
         return notif.isRead ? <MailOpen className="w-4 h-4 text-primary/60" /> : <Mail className="w-4 h-4 text-primary" />;
     };
 
+    const getBgColor = (notif: any) => {
+        if (notif.verb === 'approved') return "bg-emerald-500/10 hover:bg-emerald-500/20";
+        if (notif.verb === 'rejected') return "bg-destructive/10 hover:bg-destructive/20";
+        if (notif.verb === 'cancelled') return "bg-blue-500/10 hover:bg-blue-500/20";
+        return !notif.isRead ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/30";
+    };
+
     const handleRedirect = (notif: any) => {
         if (notif.targetType === 'Leave Request') {
             !notif.isRead && handleMarkRead(notif.id);
@@ -139,8 +146,8 @@ export function NotificationBell() {
                             <DropdownMenuItem
                                 key={notif.id}
                                 className={cn(
-                                    "px-4 sm:px-5 py-3 sm:py-4 focus:bg-primary/5 transition-colors cursor-pointer relative group flex items-start gap-3 sm:gap-4 mb-1 sm:mb-2 mx-1 rounded-2xl",
-                                    !notif.isRead && "bg-primary/5"
+                                    "px-4 sm:px-5 py-3 sm:py-4 transition-colors cursor-pointer relative group flex items-start gap-3 sm:gap-4 mb-1 sm:mb-2 mx-1 rounded-2xl",
+                                    getBgColor(notif)
                                 )}
                                 onClick={() => handleRedirect(notif)}
                             >
