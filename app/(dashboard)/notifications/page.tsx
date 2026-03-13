@@ -57,7 +57,7 @@ export default function NotificationsPage() {
         refetch();
         refetchCount();
         refetchActivity();
-    });
+    }, { silent: true });
 
     const notifications = data?.myNotifications || [];
     const unreadCount = countData?.unreadNotificationCount || 0;

@@ -69,7 +69,7 @@ export default function LeavesPage() {
       refetchRequests();
       refetchTeam();
     }
-  });
+  }, { silent: true });
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
