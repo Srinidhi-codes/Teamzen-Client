@@ -47,6 +47,7 @@ export function AttendanceTable({
     currentPage?: number;
     pageSize?: number;
     onPageChange?: (page: number) => void;
+    currentTime?: string;
 }) {
     const columns: Column<AttendanceRow>[] = [
         {
@@ -90,14 +91,39 @@ export function AttendanceTable({
         {
             key: "workedHours",
             label: "Productivity",
-            render: (value: string | number) => (
-                <div className="flex items-center gap-2">
-                    <TrendingUp className={`w-3.5 h-3.5 ${Number(value) >= 8 ? "text-emerald-500" : "text-amber-500"}`} />
-                    <span className="font-black tabular-nums text-foreground">
-                        {value ? `${Number(value).toFixed(1)}h` : "0.0h"}
-                    </span>
-                </div>
-            ),
+            render: (value: string | number, row: AttendanceRow) => {
+                const isToday = moment().isSame(moment(row.attendanceDate), 'day');
+                const isLive = isToday && row.loginTime && !row.logoutTime;
+
+                if (isLive) {
+                    const loginStr = `${row.attendanceDate} ${row.loginTime}`;
+                    const start = moment(loginStr);
+                    const now = moment();
+                    const diffMs = Math.max(0, now.diff(start));
+                    const duration = moment.duration(diffMs);
+                    const h = Math.floor(duration.asHours());
+                    const m = duration.minutes();
+                    const s = duration.seconds();
+
+                    return (
+                        <div className="flex items-center gap-2">
+                            <TrendingUp className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
+                            <span className="font-black tabular-nums text-background-inverse">
+                                {h}h {m}m {s}s
+                            </span>
+                        </div>
+                    );
+                }
+
+                return (
+                    <div className="flex items-center gap-2">
+                        <TrendingUp className={`w-3.5 h-3.5 ${Number(value) >= 8 ? "text-emerald-500" : "text-amber-500"}`} />
+                        <span className="font-black tabular-nums text-foreground">
+                            {value ? `${Number(value).toFixed(1)}h` : "0.0h"}
+                        </span>
+                    </div>
+                );
+            },
         },
         {
             key: "status",

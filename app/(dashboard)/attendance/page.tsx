@@ -216,7 +216,25 @@ export default function AttendancePage() {
                   {[
                     { label: "Login Marker", val: todayAttendance?.loginTime || "N/A", icon: Clock },
                     { label: "Logout Marker", val: todayAttendance?.logoutTime || "N/A", icon: Clock },
-                    { label: "Total Duration", val: todayAttendance?.workingHours || "0.0h", icon: TrendingUp },
+                    { 
+                      label: "Total Duration", 
+                      val: todayAttendance?.loginTime && !todayAttendance?.logoutTime 
+                        ? (() => {
+                            const loginStr = `${todayAttendance.attendanceDate} ${todayAttendance.loginTime}`;
+                            const start = moment(loginStr);
+                            const now = moment();
+                            const diffMs = Math.max(0, now.diff(start));
+                            const duration = moment.duration(diffMs);
+                            const h = Math.floor(duration.asHours());
+                            const m = duration.minutes();
+                            const s = duration.seconds();
+                            return `${h}h ${m}m ${s}s`;
+                          })()
+                        : todayAttendance?.workedHours 
+                          ? `${Number(todayAttendance.workedHours).toFixed(1)}h`
+                          : "0.0h", 
+                      icon: TrendingUp 
+                    },
                   ].map((item, i) => (
                     <div key={i} className="flex justify-between items-center group">
                       <div className="flex items-center gap-3 opacity-60 group-hover:opacity-100 transition-opacity">

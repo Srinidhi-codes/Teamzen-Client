@@ -17,14 +17,22 @@ export interface UISlice {
     setActiveNavbarTab: (id: string) => void;
     setHasHydrated: (state: boolean) => void;
     clearNavbarTabs: () => void;
+    sidebarCollapsed: boolean;
+    sidebarMobileOpen: boolean;
+    setSidebarCollapsed: (state: boolean) => void;
+    setSidebarMobileOpen: (state: boolean) => void;
 }
 
 export const createUISlice: StateCreator<UISlice> = (set) => ({
     navbarTabs: [],
     activeNavbarTab: '',
     hasHydrated: false,
+    sidebarCollapsed: true,
+    sidebarMobileOpen: false,
     setNavbarTabs: (navbarTabs) => set({ navbarTabs }),
     setActiveNavbarTab: (activeNavbarTab) => set({ activeNavbarTab }),
     setHasHydrated: (hasHydrated) => set({ hasHydrated }),
     clearNavbarTabs: () => set({ navbarTabs: [], activeNavbarTab: '' }),
+    setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
+    setSidebarMobileOpen: (sidebarMobileOpen) => set({ sidebarMobileOpen }),
 });

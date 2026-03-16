@@ -5,14 +5,19 @@ import { Menu } from "lucide-react";
 import { Navbar } from "../common/Navbar";
 import AssistantWidget from "../ai";
 import { OnboardingTour } from "../common/OnboardingTour";
+import { useStore } from "@/lib/store/useStore";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const [isCollapsed, setIsCollapsed] = useState(true);
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { 
+    sidebarCollapsed: isCollapsed, 
+    setSidebarCollapsed: setIsCollapsed, 
+    sidebarMobileOpen: isMobileOpen, 
+    setSidebarMobileOpen: setIsMobileOpen 
+  } = useStore();
 
   return (
     <div className="flex min-h-screen bg-background text-foreground relative" style={{ scrollbarGutter: 'stable' }}>
