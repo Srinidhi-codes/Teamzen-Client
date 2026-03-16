@@ -401,7 +401,11 @@ export default function DashboardPage() {
                     <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
                       <div
                         className="h-full bg-primary rounded-full transition-all duration-700"
-                        style={{ width: `${balance.total > 0 ? Math.round((balance.balance / balance.total) * 100) : 0}%` }}
+                        style={{ 
+                          width: `${balance.total > 0 
+                            ? Math.round((balance.balance / balance.total) * 100) 
+                            : (balance.balance > 0 ? 100 : 0)}%` 
+                        }}
                       />
                     </div>
                   </div>

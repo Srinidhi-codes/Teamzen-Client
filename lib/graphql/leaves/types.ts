@@ -17,6 +17,7 @@ export interface LeaveBalance {
     carriedForward: number;
     lastAccruedDate: string;
     availableBalance: number;
+    totalAllocation: number;
     accrued: number;
     expired: number;
     isLocked: boolean;

@@ -33,6 +33,7 @@ export const GET_LEAVE_BALANCE = gql`
     expired
     isLocked
     availableBalance
+    totalAllocation
     lockedAt
     lastUpdated
   }

@@ -6,9 +6,13 @@ import "driver.js/dist/driver.css";
 import { useStore } from "@/lib/store/useStore";
 
 export function useOnboardingTour() {
-    const { user } = useStore();
+    const { user, setSidebarCollapsed, setSidebarMobileOpen } = useStore();
 
     const startTour = useCallback(() => {
+        // Ensure sidebar is visible for the tour
+        setSidebarCollapsed(false);
+        setSidebarMobileOpen(true);
+
         const driverObj = driver({
             showProgress: true,
             animate: true,

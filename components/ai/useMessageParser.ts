@@ -49,14 +49,23 @@ export const useMessageParser = (content: string) => {
         }
 
         const data: any = {};
-        m.data.trim().split('|').forEach((part: string) => {
-            const firstColonIndex = part.indexOf(':');
-            if (firstColonIndex !== -1) {
-                const key = part.slice(0, firstColonIndex).trim();
-                const val = part.slice(firstColonIndex + 1).trim();
-                data[key.toLowerCase()] = val;
+        const contentData = m.data.trim();
+        // Robust parsing for key: value pairs, handles missing pipes
+        const fieldRegex = /(title|message|type|stats|topic):\s*/gi;
+        let fieldMatch;
+        let lastKey = '';
+        let lastIdx = 0;
+
+        while ((fieldMatch = fieldRegex.exec(contentData)) !== null) {
+            if (lastKey) {
+                data[lastKey] = contentData.slice(lastIdx, fieldMatch.index).trim().replace(/^\|+|\|+$/g, '').trim();
             }
-        });
+            lastKey = fieldMatch[1].toLowerCase();
+            lastIdx = fieldMatch.index + fieldMatch[0].length;
+        }
+        if (lastKey) {
+            data[lastKey] = contentData.slice(lastIdx).trim().replace(/^\|+|\|+$/g, '').trim();
+        }
 
         parts.push({ type: m.type, value: data });
         lastIndex = m.lastIndex;

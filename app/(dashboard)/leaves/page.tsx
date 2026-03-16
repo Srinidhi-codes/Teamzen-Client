@@ -292,8 +292,8 @@ export default function LeavesPage() {
                       <div className="space-y-0.5 sm:space-y-1 min-w-0">
                         <h3 className="text-lg sm:text-xl font-black group-hover:text-primary transition-colors italic truncate">{balance.leaveType.name}</h3>
                         <div className="flex items-center gap-2">
-                          <p className="text-[10px] font-black uppercase text-muted-foreground/40 tracking-widest">Entitlement</p>
-                          <span className="text-[10px] sm:text-xs font-black text-foreground/70">{balance.totalEntitled}</span>
+                          <p className="text-[10px] font-black uppercase text-muted-foreground/40 tracking-widest">Total Grant</p>
+                          <span className="text-[10px] sm:text-xs font-black text-foreground/70">{balance.totalAllocation}</span>
                         </div>
                       </div>
                       <div className="shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
@@ -317,12 +317,16 @@ export default function LeavesPage() {
                     <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-3">
                       <div className="flex justify-between items-center text-[9px] sm:text-[10px] font-black uppercase tracking-widest">
                         <span className="text-muted-foreground">Allocation efficiency</span>
-                        <span className="text-primary">{balance.totalEntitled > 0 ? Math.round((balance.availableBalance / balance.totalEntitled) * 100) : 0}%</span>
+                        <span className="text-primary">{balance.totalAllocation > 0 ? Math.round((balance.availableBalance / balance.totalAllocation) * 100) : (balance.availableBalance > 0 ? 100 : 0)}%</span>
                       </div>
                       <div className="w-full h-1 sm:h-1.5 bg-muted rounded-full overflow-hidden shadow-inner p-px sm:p-0">
                         <div
                           className="h-full bg-primary transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(var(--primary),0.5)] rounded-full"
-                          style={{ width: balance.totalEntitled > 0 ? `${(balance.availableBalance / balance.totalEntitled) * 100}%` : "0%" }}
+                          style={{ 
+                            width: balance.totalAllocation > 0 
+                              ? `${(balance.availableBalance / balance.totalAllocation) * 100}%` 
+                              : (balance.availableBalance > 0 ? "100%" : "0%") 
+                          }}
                         />
                       </div>
                     </div>
