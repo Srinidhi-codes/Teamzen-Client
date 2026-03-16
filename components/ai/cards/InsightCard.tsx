@@ -9,14 +9,15 @@ interface InsightCardProps {
     message: string;
     type: string;
     stats?: string;
+    topic?: string;
 }
 
-export const InsightCard = ({ title, message, type, stats }: InsightCardProps) => {
+export const InsightCard = ({ title, message, type, stats, topic }: InsightCardProps) => {
     const isWarning = type === 'warning' || type === 'anomaly';
 
     return (
         <div className={cn(
-            "relative overflow-hidden bg-card border border-border/50 rounded-[2rem] p-6 shadow-2xl space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full group/insight",
+            "relative overflow-hidden bg-card border border-border/50 rounded-4xl p-6 shadow-md space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full group/insight",
             "before:absolute before:inset-0 before:bg-linear-to-br before:opacity-[0.03] before:pointer-events-none",
             isWarning ? "before:from-amber-500 before:to-transparent border-amber-500/20" : "before:from-primary before:to-transparent"
         )}>
@@ -38,13 +39,21 @@ export const InsightCard = ({ title, message, type, stats }: InsightCardProps) =
                         "font-black text-[10px] uppercase tracking-[0.2em]",
                         isWarning ? "text-amber-600" : "text-primary/70"
                     )}>{title || "AI INTELLIGENCE"}</h4>
-                    <div className="h-1 w-8 rounded-full bg-current opacity-20" />
                 </div>
             </div>
 
-            <p className="text-[14px] font-medium text-foreground/90 leading-relaxed italic pr-4">
-                "{message}"
-            </p>
+            {topic && (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/50 border border-border/40 w-fit">
+                    <div className={cn("w-1.5 h-1.5 rounded-full", isWarning ? "bg-amber-500" : "bg-primary")} />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">{topic}</span>
+                </div>
+            )}
+
+            <div className="max-h-[220px] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent pr-2">
+                <div className="text-[14px] font-medium text-foreground/90 leading-relaxed whitespace-pre-line space-y-3">
+                    {message}
+                </div>
+            </div>
 
             {stats && (
                 <div className="pt-5 flex flex-wrap gap-x-10 gap-y-4 border-t border-border/40 relative">

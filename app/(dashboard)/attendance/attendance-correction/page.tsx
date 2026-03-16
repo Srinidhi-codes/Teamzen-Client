@@ -22,6 +22,12 @@ export default function AttendanceCorrectionPage() {
     const { requestCorrection, requestCorrectionLoading } = useAttendanceMutations();
     const router = useRouter();
 
+    const [currentTime, setCurrentTime] = useState(moment().format("hh:mm:ss A"));
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(moment().format("hh:mm:ss A")), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 10;
     const total = attendance?.length || 0;
@@ -130,6 +136,7 @@ export default function AttendanceCorrectionPage() {
                     currentPage={currentPage}
                     pageSize={pageSize}
                     onPageChange={setCurrentPage}
+                    currentTime={currentTime}
                 />
             </div>
 
