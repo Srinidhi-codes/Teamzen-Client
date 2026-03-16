@@ -50,8 +50,12 @@ export const useMessageParser = (content: string) => {
 
         const data: any = {};
         m.data.trim().split('|').forEach((part: string) => {
-            const [key, val] = part.split(':').map(s => s.trim());
-            if (key && val) data[key.toLowerCase()] = val;
+            const firstColonIndex = part.indexOf(':');
+            if (firstColonIndex !== -1) {
+                const key = part.slice(0, firstColonIndex).trim();
+                const val = part.slice(firstColonIndex + 1).trim();
+                data[key.toLowerCase()] = val;
+            }
         });
 
         parts.push({ type: m.type, value: data });

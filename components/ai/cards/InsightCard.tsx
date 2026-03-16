@@ -37,7 +37,9 @@ export const InsightCard = ({ title, message, type, stats }: InsightCardProps) =
             {stats && (
                 <div className="pt-4 flex flex-wrap gap-x-8 gap-y-3 border-t border-border">
                     {stats.split(',').map((s: string, i: number) => {
-                        const [k, v] = s.split(':').map(str => str.trim());
+                        const firstColonIndex = s.indexOf(':');
+                        const k = firstColonIndex !== -1 ? s.slice(0, firstColonIndex).trim() : s.trim();
+                        const v = firstColonIndex !== -1 ? s.slice(firstColonIndex + 1).trim() : '';
                         return (
                             <div key={i}>
                                 <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{k}</p>
