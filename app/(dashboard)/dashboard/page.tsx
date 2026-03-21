@@ -44,6 +44,8 @@ import {
 import { ModernStat } from "@/components/common/Stats";
 import { FAB } from "@/components/common/FAB";
 import { Badge } from "@/components/common/Badge";
+import { AIInsightCard } from "@/components/ai/AIInsightCard";
+import { Sparkles } from "lucide-react";
 
 // Attendance Trend Chart imports handled below
 
@@ -88,6 +90,7 @@ export default function DashboardPage() {
   const stats = (dashboardData as any)?.userDashboardStats || {};
   const wishMessage = stats.wishMessage;
   const upcomingEvents = stats.upcomingEvents || [];
+  const aiInsights = stats.aiInsights || [];
 
   // Recent Activity: Use data from backend
   const recentActivity = stats.recentActivities?.map((item: any) => {
@@ -191,6 +194,29 @@ export default function DashboardPage() {
           />
         </Link> */}
       </div>
+
+      {/* AI Insights Section */}
+      {aiInsights.length > 0 && (
+        <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-700">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+              <Sparkles className="w-4 h-4 animate-pulse" />
+            </div>
+            <h3 className="font-black text-[10px] uppercase tracking-[0.3em] text-muted-foreground/60 leading-none">Proactive Intelligence</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+            {aiInsights.slice(0, 4).map((insight: any, i: number) => (
+              <AIInsightCard
+                key={i}
+                title={insight.title}
+                message={insight.message}
+                type={insight.type}
+                query={insight.query}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 

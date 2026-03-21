@@ -34,47 +34,78 @@ export const useAssistant = () => {
         }
     }, [data]);
 
-    const chatMutation = useMutation({
-        mutationFn: async ({ query, latitude, longitude }: { query: string, latitude?: number, longitude?: number }) => {
-            const response = await client.post<AssistantResponse>(API_ENDPOINTS.CHAT, {
-                query,
-                latitude,
-                longitude
+    const [isStreaming, setIsStreaming] = useState(false);
+
+    const sendMessage = async ({ query, latitude, longitude }: { query: string, latitude?: number, longitude?: number }) => {
+        setIsStreaming(true);
+
+        try {
+            // 1. Optimistic Update
+            const userMsg: ChatMessage = { role: 'user', content: query, timestamp: new Date().toISOString() };
+            setHistory(prev => [...prev, userMsg]);
+
+            // 2. Prepare streaming message
+            const assistantMsg: ChatMessage = { role: 'assistant', content: '', timestamp: new Date().toISOString() };
+            setHistory(prev => [...prev, assistantMsg]);
+
+            // 3. Start Stream
+            const response = await fetch(`/api${API_ENDPOINTS.CHAT}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query, latitude, longitude }),
+                credentials: 'include',
             });
-            return response.data;
-        },
-        onMutate: async ({ query }) => {
-            // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-            await queryClient.cancelQueries({ queryKey: ['assistant-history'] });
 
-            // Snapshot the previous value
-            const previousHistory = history;
+            if (!response.ok) throw new Error('Failed to start chat stream');
+            if (!response.body) throw new Error('No response body');
 
-            // Optimistically update to the new value
-            const newMessage: ChatMessage = {
-                role: 'user',
-                content: query,
-                timestamp: new Date().toISOString()
-            };
-            setHistory(prev => [...prev, newMessage]);
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let fullContent = "";
 
-            return { previousHistory };
-        },
-        onError: (err, newTodo, context) => {
-            if (context?.previousHistory) {
-                setHistory(context.previousHistory);
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const dataStr = line.slice(6).trim();
+                        if (dataStr === '[DONE]') break;
+
+                        try {
+                            const data = JSON.parse(dataStr);
+                            if (data.token) {
+                                fullContent += data.token;
+                                // Update the last message in history with the accumulated content
+                                setHistory(prev => {
+                                    const newHistory = [...prev];
+                                    const last = newHistory[newHistory.length - 1];
+                                    if (last && last.role === 'assistant') {
+                                        last.content = fullContent;
+                                    }
+                                    return newHistory;
+                                });
+                            } else if (data.history) {
+                                // Final sync
+                                setHistory(data.history);
+                            }
+                        } catch (e) {
+                            console.warn("Error parsing stream chunk", e);
+                        }
+                    }
+                }
             }
-        },
-        onSuccess: (data) => {
-            // When the server responds, we get the real history (now with timestamps if we update backend)
-            // For now, let's ensure we keep timestamps if server doesn't provide them
-            const serverHistory = data.history.map(msg => ({
-                ...msg,
-                timestamp: msg.timestamp || new Date().toISOString()
-            }));
-            setHistory(serverHistory);
+        } catch (error) {
+            console.error("Streaming error", error);
+            // Revert optimistic update or show error
+        } finally {
+            setIsStreaming(false);
+            queryClient.invalidateQueries({ queryKey: ['assistant-history'] });
         }
-    });
+    };
 
     const clearHistory = async () => {
         try {
@@ -88,10 +119,9 @@ export const useAssistant = () => {
 
     return {
         messages: history,
-        sendMessage: chatMutation.mutateAsync,
-        isLoading: chatMutation.isPending || isHistoryLoading,
-        isError: chatMutation.isError,
-        error: chatMutation.error,
+        sendMessage,
+        isLoading: isStreaming || isHistoryLoading,
+        isStreaming,
         clearHistory
     };
 };

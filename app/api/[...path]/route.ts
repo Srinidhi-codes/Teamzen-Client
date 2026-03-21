@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // In Docker: INTERNAL_API_URL = http://backend:8000/api (container-to-container via Docker network)
 // In local dev: falls back to NEXT_PUBLIC_API_URL = http://localhost:8000/api
-const RAW_API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/';
+const RAW_API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api/';
 // Strip /api if it exists so we can target root level endpoints like /graphql/
 const DJANGO_BASE = RAW_API_URL.replace(/\/api\/?$/, '');
 

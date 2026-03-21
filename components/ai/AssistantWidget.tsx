@@ -10,13 +10,34 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import moment from "moment";
 import { MessageRenderer } from "./MessageRenderer";
+import { useStore } from "@/lib/store/useStore";
 
 export function AssistantWidget() {
-    const [isOpen, setIsOpen] = useState(false);
+    const { assistantOpen: isOpen, setAssistantOpen: setIsOpen, user } = useStore();
     const [input, setInput] = useState("");
     const [cancelledIds, setCancelledIds] = useState<Set<string>>(new Set());
-    const { messages, sendMessage, isLoading, clearHistory } = useAssistant();
+    const [hasInitialGreeting, setHasInitialGreeting] = useState(false);
+    const { 
+        messages, 
+        sendMessage, 
+        isLoading, 
+        isStreaming,
+        clearHistory 
+    } = useAssistant();
     const scrollRef = useRef<HTMLDivElement>(null);
+
+    // Deep Link Query Handler
+    const { assistantQuery, setAssistantQuery } = useStore();
+    useEffect(() => {
+        if (assistantQuery && isOpen) {
+            // Small delay to ensure any opening animations or state updates settle
+            const timer = setTimeout(() => {
+                handleSend(undefined, assistantQuery);
+                setAssistantQuery(""); // Clear after sending
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [assistantQuery, isOpen]);
 
     // Auto-scroll to bottom
     useEffect(() => {
@@ -111,27 +132,33 @@ export function AssistantWidget() {
                         className="grow overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
                     >
                         {messages.length === 0 && (
-                            <div className="h-full flex flex-col items-center justify-center text-center space-y-4 px-4">
-                                <div className="w-16 h-16 rounded-3xl bg-primary/5 flex items-center justify-center">
-                                    <Sparkles className="w-8 h-8 text-primary opacity-20" />
+                            <div className="space-y-6 animate-in fade-in duration-700 delay-300">
+                                <div className="flex gap-3 flex-row">
+                                    <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-sm">
+                                        <Bot className="w-4 h-4" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="bg-muted/50 border border-border rounded-3xl rounded-tl-none p-4 sm:p-6 text-sm leading-relaxed font-medium">
+                                            Welcome {user?.firstName}! I can help you understand your leaves, attendance, and company policies. What would you like to know?
+                                        </div>
+                                        <div className="text-[10px] text-muted-foreground/60 mt-2 pl-2 font-bold uppercase tracking-widest">
+                                            {moment().format("hh:mm A")}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-sm font-black tracking-tight mb-1">How can I help you?</p>
-                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                        Ask me anything about your leaves, attendance, or company policies.
-                                    </p>
-                                </div>
+                                
                                 <div className="grid grid-cols-1 gap-2 w-full pt-4">
                                     {[
                                         "What's my leave balance?",
-                                        "Did I check in today?",
-                                        "Check me in for today."
+                                        "How many days of casual leave do I have?",
+                                        "What is the company policy for sick leaves?",
                                     ].map((q) => (
                                         <button
                                             key={q}
                                             onClick={() => handleSend(undefined, q)}
-                                            className="text-[10px] font-black uppercase tracking-widest p-3 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-all text-left"
+                                            className="text-[10px] font-black uppercase tracking-widest p-4 rounded-2xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-all text-left flex items-center gap-3 group/btn"
                                         >
+                                            <div className="w-1.5 h-1.5 rounded-full bg-primary/20 group-hover/btn:bg-primary transition-colors" />
                                             {q}
                                         </button>
                                     ))}
@@ -159,6 +186,8 @@ export function AssistantWidget() {
                                         role={msg.role}
                                         cancelledIds={cancelledIds}
                                         handleSend={handleSend}
+                                        isLast={i === messages.length - 1}
+                                        isStreaming={isStreaming}
                                     />
                                     <div className={cn(
                                         "w-full text-xs text-muted-foreground/60 mt-1",
