@@ -31,5 +31,7 @@ export const mapBackendUserToFrontendUser = (backendUser: any): GraphQLUser => {
     panNumber: backendUser.pan_number,
     aadharNumber: backendUser.aadhar_number,
     uanNumber: backendUser.uan_number,
+    hasSeenOnboarding: backendUser.has_seen_onboarding || backendUser.hasSeenOnboarding || false,
+    hasSeenAiOnboarding: backendUser.has_seen_ai_onboarding || backendUser.hasSeenAiOnboarding || false,
   };
 };
