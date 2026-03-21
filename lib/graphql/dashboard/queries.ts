@@ -35,6 +35,12 @@ export const GET_USER_DASHBOARD_STATS = gql`
         profilePicture
         daysUntil
       }
+      aiInsights {
+        title
+        message
+        type
+        query
+      }
       wishMessage
     }
   }

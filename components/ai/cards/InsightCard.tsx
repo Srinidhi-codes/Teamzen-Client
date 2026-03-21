@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { Sparkles, BookOpen, Fingerprint } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface InsightCardProps {
@@ -14,6 +14,7 @@ interface InsightCardProps {
 
 export const InsightCard = ({ title, message, type, stats, topic }: InsightCardProps) => {
     const isWarning = type === 'warning' || type === 'anomaly';
+    const isPolicy = topic?.toLowerCase().includes('policy');
 
     return (
         <div className={cn(
@@ -24,27 +25,28 @@ export const InsightCard = ({ title, message, type, stats, topic }: InsightCardP
             {/* Ambient background glow */}
             <div className={cn(
                 "absolute -right-20 -top-20 w-40 h-40 blur-[80px] rounded-full pointer-events-none opacity-20",
-                isWarning ? "bg-amber-500" : "bg-primary"
+                isWarning ? "bg-amber-500" : isPolicy ? "bg-emerald-500" : "bg-primary"
             )} />
 
             <div className="flex items-center gap-3">
                 <div className={cn(
-                    "w-10 h-10 rounded-2xl flex items-center justify-center border shadow-inner",
-                    isWarning ? "bg-amber-500/10 border-amber-500/20 text-amber-600" : "bg-primary/10 border-primary/20 text-primary"
+                    "w-10 h-10 rounded-2xl flex items-center justify-center border shadow-inner transition-colors duration-500",
+                    isWarning ? "bg-amber-500/10 border-amber-500/20 text-amber-600" : isPolicy ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600" : "bg-primary/10 border-primary/20 text-primary"
                 )}>
-                    <Sparkles className="w-5 h-5 animate-pulse" />
+                    {isPolicy ? <BookOpen className="w-5 h-5 animate-in zoom-in duration-500" /> : <Sparkles className="w-5 h-5 animate-pulse" />}
                 </div>
                 <div className="space-y-0.5">
                     <h4 className={cn(
-                        "font-black text-[10px] uppercase tracking-[0.2em]",
-                        isWarning ? "text-amber-600" : "text-primary/70"
-                    )}>{title || "AI INTELLIGENCE"}</h4>
+                        "font-black text-[10px] uppercase tracking-[0.2em] transition-colors duration-500",
+                        isWarning ? "text-amber-600" : isPolicy ? "text-emerald-600" : "text-primary/70"
+                    )}>{isPolicy ? "Company Protocol" : title || "AI Intelligence"}</h4>
+                    {isPolicy && <p className="text-[14px] font-black tracking-tight text-foreground/90 leading-none">{title}</p>}
                 </div>
             </div>
 
             {topic && (
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/50 border border-border/40 w-fit">
-                    <div className={cn("w-1.5 h-1.5 rounded-full", isWarning ? "bg-amber-500" : "bg-primary")} />
+                    <div className={cn("w-1.5 h-1.5 rounded-full", isWarning ? "bg-amber-500" : isPolicy ? "bg-emerald-500" : "bg-primary")} />
                     <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">{topic}</span>
                 </div>
             )}

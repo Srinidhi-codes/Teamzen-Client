@@ -15,9 +15,11 @@ interface MessageRendererProps {
     role: string;
     cancelledIds: Set<string>;
     handleSend: (e?: React.FormEvent, customQuery?: string) => void;
+    isLast?: boolean;
+    isStreaming?: boolean;
 }
 
-export const MessageRenderer = ({ content, role, cancelledIds, handleSend }: MessageRendererProps) => {
+export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLast, isStreaming }: MessageRendererProps) => {
     const parts = useMessageParser(content);
 
     return (
@@ -25,15 +27,22 @@ export const MessageRenderer = ({ content, role, cancelledIds, handleSend }: Mes
             {parts.map((part, idx) => {
                 if (part.type === 'text') {
                     const text = part.value.trim();
-                    if (!text) return null;
+                    const isFinalPart = idx === parts.length - 1;
+                    
+                    // Show a base message if it's the very first token
+                    if (!text && !(isLast && isStreaming && isFinalPart)) return null;
+                    
                     return (
                         <div key={idx} className={cn(
-                            "max-w-[85%] p-4 rounded-3xl text-sm leading-relaxed",
+                            "max-w-[85%] p-4 rounded-3xl text-sm leading-relaxed relative",
                             role === 'user'
                                 ? "bg-primary text-primary-foreground rounded-tr-none ml-auto shadow-md shadow-primary/10"
-                                : "bg-muted/50 border border-border rounded-tl-none"
+                                : "bg-muted/50 border border-border rounded-tl-none font-medium text-foreground/90"
                         )}>
                             {text}
+                            {isLast && isStreaming && isFinalPart && (
+                                <span className="inline-block w-2 h-4 bg-primary/40 ml-1 animate-pulse align-middle rounded-sm" />
+                            )}
                         </div>
                     );
                 } else if (part.type === 'balance') {

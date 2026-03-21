@@ -8,50 +8,75 @@ export type MessagePart = {
 
 export const useMessageParser = (content: string) => {
     // Regex to find cards
-    const balanceRegex = /\[BALANCE_CARD\]([\s\S]*?)\[\/BALANCE_CARD\]/g;
-    const attendanceRegex = /\[ATTENDANCE_CARD\]([\s\S]*?)\[\/ATTENDANCE_CARD\]/g;
-    const errorRegex = /\[ERROR_CARD\]([\s\S]*?)\[\/ERROR_CARD\]/g;
-    const insightRegex = /\[INSIGHT_CARD\]([\s\S]*?)\[\/INSIGHT_CARD\]/g;
-    const leaveTypeRegex = /\[LEAVE_TYPE_CARD\]([\s\S]*?)\[\/LEAVE_TYPE_CARD\]/g;
-    const pendingLeaveRegex = /\[PENDING_LEAVE_CARD\]([\s\S]*?)\[\/PENDING_LEAVE_CARD\]/g;
+    const cardTypes = [
+        { type: 'balance', start: '[BALANCE_CARD]', end: '[/BALANCE_CARD]' },
+        { type: 'attendance', start: '[ATTENDANCE_CARD]', end: '[/ATTENDANCE_CARD]' },
+        { type: 'error', start: '[ERROR_CARD]', end: '[/ERROR_CARD]' },
+        { type: 'insight', start: '[INSIGHT_CARD]', end: '[/INSIGHT_CARD]' },
+        { type: 'leavetype', start: '[LEAVE_TYPE_CARD]', end: '[/LEAVE_TYPE_CARD]' },
+        { type: 'pendingleave', start: '[PENDING_LEAVE_CARD]', end: '[/PENDING_LEAVE_CARD]' }
+    ];
 
     const parts: MessagePart[] = [];
     let lastIndex = 0;
-
-    // Combined parsing logic
     const allMatches: any[] = [];
 
-    let match;
-    while ((match = balanceRegex.exec(content)) !== null) {
-        allMatches.push({ type: 'balance', index: match.index, lastIndex: balanceRegex.lastIndex, data: match[1] });
-    }
-    while ((match = attendanceRegex.exec(content)) !== null) {
-        allMatches.push({ type: 'attendance', index: match.index, lastIndex: attendanceRegex.lastIndex, data: match[1] });
-    }
-    while ((match = errorRegex.exec(content)) !== null) {
-        allMatches.push({ type: 'error', index: match.index, lastIndex: errorRegex.lastIndex, data: match[1] });
-    }
-    while ((match = insightRegex.exec(content)) !== null) {
-        allMatches.push({ type: 'insight', index: match.index, lastIndex: insightRegex.lastIndex, data: match[1] });
-    }
-    while ((match = leaveTypeRegex.exec(content)) !== null) {
-        allMatches.push({ type: 'leavetype', index: match.index, lastIndex: leaveTypeRegex.lastIndex, data: match[1] });
-    }
-    while ((match = pendingLeaveRegex.exec(content)) !== null) {
-        allMatches.push({ type: 'pendingleave', index: match.index, lastIndex: pendingLeaveRegex.lastIndex, data: match[1] });
+    // First, find all COMPLETE cards
+    cardTypes.forEach(({ type, start, end }) => {
+        const regex = new RegExp(`${start.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([\\s\\S]*?)${end.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g');
+        let match;
+        while ((match = regex.exec(content)) !== null) {
+            allMatches.push({ type, index: match.index, lastIndex: regex.lastIndex, data: match[1] });
+        }
+    });
+
+    // Check for a PARTIAL card at the very end (common during streaming)
+    let partialMatch: any = null;
+    cardTypes.forEach(({ type, start, end }) => {
+        const startIndex = content.lastIndexOf(start);
+        if (startIndex > -1 && startIndex >= lastIndex) {
+            // Check if this start tag has a corresponding end tag later in the content
+            const hasEnd = content.indexOf(end, startIndex) > -1;
+            if (!hasEnd) {
+                // If it's a newer partial card than any we've found
+                if (!partialMatch || startIndex > partialMatch.index) {
+                    partialMatch = { 
+                        type, 
+                        index: startIndex, 
+                        lastIndex: content.length, 
+                        data: content.slice(startIndex + start.length) 
+                    };
+                }
+            }
+        }
+    });
+
+    if (partialMatch) {
+         // Filter out any full matches that are actually inside or after the partial start
+         // (though usually partial is at the very end)
+         allMatches.push(partialMatch);
     }
 
     allMatches.sort((a, b) => a.index - b.index);
 
+    // Dedup: Ensure matches don't overlap (prioritize earlier matches)
+    const finalMatches: any[] = [];
+    let currentLastIndex = 0;
     allMatches.forEach(m => {
+        if (m.index >= currentLastIndex) {
+            finalMatches.push(m);
+            currentLastIndex = m.lastIndex;
+        }
+    });
+
+    finalMatches.forEach(m => {
         if (m.index > lastIndex) {
             parts.push({ type: 'text', value: content.slice(lastIndex, m.index) });
         }
 
         const data: any = {};
         const contentData = m.data.trim();
-        // Robust parsing for key: value pairs, handles missing pipes
-        const fieldRegex = /(title|message|type|stats|topic):\s*/gi;
+        const fieldRegex = /(title|message|type|stats|topic|Name|Total|Used|Available|description|availability|id|Action|Status|Time|Office|from|to|duration|reason):\s*/gi;
         let fieldMatch;
         let lastKey = '';
         let lastIdx = 0;
@@ -67,7 +92,7 @@ export const useMessageParser = (content: string) => {
             data[lastKey] = contentData.slice(lastIdx).trim().replace(/^\|+|\|+$/g, '').trim();
         }
 
-        parts.push({ type: m.type, value: data });
+        parts.push({ type: m.type as any, value: data });
         lastIndex = m.lastIndex;
     });
 

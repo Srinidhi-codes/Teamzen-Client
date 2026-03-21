@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "../common/Sidebar";
 import { Menu } from "lucide-react";
 import { Navbar } from "../common/Navbar";
@@ -16,8 +16,24 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     sidebarCollapsed: isCollapsed, 
     setSidebarCollapsed: setIsCollapsed, 
     sidebarMobileOpen: isMobileOpen, 
-    setSidebarMobileOpen: setIsMobileOpen 
+    setSidebarMobileOpen: setIsMobileOpen,
+    setAssistantOpen,
+    user
   } = useStore();
+
+  // Conversational Onboarding Trigger
+  useEffect(() => {
+    if (user) {
+      const hasSeenAI = localStorage.getItem(`has_seen_ai_onboarding_${user.id}`);
+      if (!hasSeenAI) {
+        const timer = setTimeout(() => {
+          setAssistantOpen(true);
+          localStorage.setItem(`has_seen_ai_onboarding_${user.id}`, 'true');
+        }, 5000); // Wait 5 seconds after login to open Assistant
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [user, setAssistantOpen]);
 
   return (
     <div className="flex min-h-screen bg-background text-foreground relative" style={{ scrollbarGutter: 'stable' }}>
