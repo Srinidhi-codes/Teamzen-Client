@@ -32,18 +32,12 @@ export function useNotifications(
 
             let token = "";
             try {
-                // 🔐 Use the authenticated client to benefit from proxy/refresh interceptors
-                // Note: We call /auth/ws-token which is our local Next.js route
                 const res = await client.get('/auth/ws-token');
                 token = res.data.token;
             } catch (e) {
-                console.error("Failed to fetch WebSocket token:", e);
-                // If it's a 401, the client.ts interceptor should have triggered a redirect 
-                // or attempted a refresh already.
             }
 
             const url = `${protocol}//${host}/ws/notifications/${token ? `?token=${token}` : ''}`;
-            console.log("Setting Notification Socket connection to:", url);
             setSocketUrl(url);
         };
 
@@ -54,11 +48,9 @@ export function useNotifications(
         shouldReconnect: () => true,
         reconnectInterval: 5000,
         share: true,
-        onOpen: () => console.log("Notification Socket Connected ✅"),
-        onClose: () => console.log("Notification Socket Disconnected ❌"),
+        onOpen: () => { },
+        onClose: () => { },
         onError: (err) => {
-            console.error("Notification Socket Error ⚠️:", err);
-            // WebSocket errors are often opaque events, but we can try to extract more info
             if (err instanceof Error) {
                 console.error("Error Message:", err.message);
             }

@@ -40,10 +40,8 @@ export const useAssistant = () => {
         setIsStreaming(true);
 
         try {
-            // 1. Optimistic Update
-            const userMsg: ChatMessage = { role: 'user', content: query, timestamp: new Date().toISOString() };
-            setHistory(prev => [...prev, userMsg]);
-
+            // 1. Optimistic Update (Handled by UI to avoid delay)
+            
             // 2. Prepare streaming message
             const assistantMsg: ChatMessage = { role: 'assistant', content: '', timestamp: new Date().toISOString() };
             setHistory(prev => [...prev, assistantMsg]);
@@ -119,8 +117,10 @@ export const useAssistant = () => {
 
     return {
         messages: history,
+        setMessages: setHistory,
         sendMessage,
         isLoading: isStreaming || isHistoryLoading,
+        isHistoryLoading,
         isStreaming,
         clearHistory
     };

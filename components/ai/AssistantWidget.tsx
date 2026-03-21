@@ -3,14 +3,17 @@
 import { useState, useRef, useEffect } from "react";
 import {
     Send, X, Bot, User, MessageSquare, Trash2,
-    Sparkles, Loader2, Minimize2
+    Sparkles, Loader2, Minimize2, Mic, MicOff
 } from 'lucide-react';
+import { useVoiceWhisper } from "@/lib/hooks/useVoiceWhisper";
+import { VoiceWave } from "./VoiceWave";
 import { useAssistant } from "@/lib/api/assistant";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import moment from "moment";
 import { MessageRenderer } from "./MessageRenderer";
 import { useStore } from "@/lib/store/useStore";
+import ConfirmationModal from "@/components/common/ConfirmationModal";
 
 export function AssistantWidget() {
     const { assistantOpen: isOpen, setAssistantOpen: setIsOpen, user } = useStore();
@@ -19,11 +22,28 @@ export function AssistantWidget() {
     const [hasInitialGreeting, setHasInitialGreeting] = useState(false);
     const { 
         messages, 
+        setMessages,
         sendMessage, 
         isLoading, 
         isStreaming,
         clearHistory 
     } = useAssistant();
+    const { isRecording, isProcessing: isVoiceProcessing, startRecording, stopRecording, error: voiceError } = useVoiceWhisper({
+        onTranscript: (text) => {
+            if (text) {
+                handleSend(undefined, text);
+            }
+        }
+    });
+    const [isMicErrorModalOpen, setIsMicErrorModalOpen] = useState(false);
+    
+    // Watch for mic errors
+    useEffect(() => {
+        if (voiceError === "device-not-found" || voiceError === "permission-denied") {
+            setIsMicErrorModalOpen(true);
+        }
+    }, [voiceError]);
+
     const scrollRef = useRef<HTMLDivElement>(null);
 
     // Deep Link Query Handler
@@ -69,15 +89,22 @@ export function AssistantWidget() {
 
         if (!query.trim() || isLoading) return;
 
+        // --- OPTIMISTIC UPDATE (Instant) ---
+        setMessages(prev => [...prev, { 
+            role: 'user', 
+            content: query, 
+            timestamp: new Date().toISOString() 
+        }]);
+
+        if (!customQuery) {
+            setInput("");
+        }
+
         // Detect if we are cancelling a leave and track the ID for UI reactivity
         const cancelMatch = query.match(/Cancel (?:my )?leave (?:with )?ID\s*(\d+|\w+)/i);
         if (cancelMatch) {
             const id = cancelMatch[1];
             setCancelledIds(prev => new Set(prev).add(id));
-        }
-
-        if (!customQuery) {
-            setInput("");
         }
 
         try {
@@ -103,6 +130,14 @@ export function AssistantWidget() {
             await sendMessage({ query, latitude, longitude });
         } catch (error) {
             console.error("Failed to send message", error);
+        }
+    };
+
+    const handleVoiceToggle = async () => {
+        if (isRecording) {
+            await stopRecording();
+        } else {
+            await startRecording();
         }
     };
 
@@ -216,7 +251,7 @@ export function AssistantWidget() {
                             </div>
                         ))}
 
-                        {isLoading && (
+                        {isLoading && !isStreaming && (
                             <div className="flex gap-3 animate-in fade-in duration-300">
                                 <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
                                     <Bot className="w-4 h-4" />
@@ -241,17 +276,42 @@ export function AssistantWidget() {
                             <Input
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
-                                placeholder="Message assistant..."
-                                className="h-14 rounded-2xl bg-muted/30 border-border focus-visible:ring-primary/20 transition-all font-medium py-4 pl-6 pr-16"
-                                disabled={isLoading}
+                                placeholder={isRecording ? "Listening..." : "Message assistant..."}
+                                className={cn(
+                                    "h-14 rounded-2xl bg-muted/30 border-border focus-visible:ring-primary/20 transition-all font-medium py-4 pl-6 pr-28",
+                                    isRecording && "animate-pulse border-primary/50 bg-primary/5"
+                                )}
+                                disabled={isLoading || isVoiceProcessing}
                             />
-                            <button
-                                type="submit"
-                                disabled={isLoading || !input.trim()}
-                                className="absolute right-2 top-2 w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all active:scale-95 z-20"
-                            >
-                                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                            </button>
+                            <div className="absolute right-2 top-2 flex items-center gap-1.5 z-20">
+                                <button
+                                    type="button"
+                                    onClick={handleVoiceToggle}
+                                    disabled={isLoading || isVoiceProcessing}
+                                    className={cn(
+                                        "w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-lg",
+                                        isRecording 
+                                            ? "bg-destructive text-destructive-foreground shadow-destructive/20" 
+                                            : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                                    )}
+                                >
+                                    {isVoiceProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isLoading || !input.trim() || isRecording || isVoiceProcessing}
+                                    className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all active:scale-95"
+                                >
+                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                </button>
+                            </div>
+                            
+                            {/* Listening Overlay/Wave */}
+                            {(isRecording || isVoiceProcessing) && (
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <VoiceWave isProcessing={isVoiceProcessing} />
+                                </div>
+                            )}
                         </form>
                         <p className="mt-3 text-[10px] text-center font-black uppercase tracking-widest text-muted-foreground/50">
                             Empowered by Teamzen
@@ -284,6 +344,21 @@ export function AssistantWidget() {
                     <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                 )}
             </button>
+
+            {/* Mic Error Modal */}
+            <ConfirmationModal
+                isOpen={isMicErrorModalOpen}
+                onClose={() => setIsMicErrorModalOpen(false)}
+                onConfirm={() => setIsMicErrorModalOpen(false)}
+                title={voiceError === "permission-denied" ? "Microphone Access Denied" : "Microphone Not Found"}
+                description={
+                    voiceError === "permission-denied"
+                        ? "Please enable microphone permissions in your browser settings to use voice input."
+                        : "No microphone was detected. Please connect a recording device to use the voice assistant."
+                }
+                confirmText="Got it"
+                variant={voiceError === "permission-denied" ? "warning" : "destructive"}
+            />
         </div>
     );
 }
