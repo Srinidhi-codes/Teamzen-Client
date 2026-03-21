@@ -64,7 +64,6 @@ export default function LeavesPage() {
   // Socket-based Real-time Refresh
   useNotifications((msg) => {
     if (msg.target_type === "Leave Request") {
-      console.log("Real-time Leave Update Received 🔃");
       refetchBalance();
       refetchRequests();
       refetchTeam();
@@ -322,10 +321,10 @@ export default function LeavesPage() {
                       <div className="w-full h-1 sm:h-1.5 bg-muted rounded-full overflow-hidden shadow-inner p-px sm:p-0">
                         <div
                           className="h-full bg-primary transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(var(--primary),0.5)] rounded-full"
-                          style={{ 
-                            width: balance.totalAllocation > 0 
-                              ? `${(balance.availableBalance / balance.totalAllocation) * 100}%` 
-                              : (balance.availableBalance > 0 ? "100%" : "0%") 
+                          style={{
+                            width: balance.totalAllocation > 0
+                              ? `${(balance.availableBalance / balance.totalAllocation) * 100}%`
+                              : (balance.availableBalance > 0 ? "100%" : "0%")
                           }}
                         />
                       </div>

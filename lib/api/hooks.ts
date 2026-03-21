@@ -44,9 +44,7 @@ export const useTokenRefresh = () => {
     const interval = setInterval(async () => {
       try {
         await refreshAuthToken();
-        console.log('Token refreshed successfully');
       } catch (error) {
-        console.error('Failed to refresh token:', error);
       }
     }, 25 * 60 * 1000); // 25 minutes
 

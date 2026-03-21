@@ -43,14 +43,11 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
     }
 
     try {
-        console.log(`[API Proxy] Forwarding ${method} request to: ${targetUrl}`);
         const djangoResponse = await fetch(targetUrl, {
             method,
             headers: forwardedHeaders,
             body,
         });
-
-        console.log(`[API Proxy] Received status ${djangoResponse.status} from: ${targetUrl}`);
 
         const responseHeaders = new Headers();
         djangoResponse.headers.forEach((value, key) => {
