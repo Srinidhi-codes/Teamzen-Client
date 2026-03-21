@@ -4,7 +4,7 @@
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import { useMessageParser } from "./useMessageParser";
-import { BalanceCard } from "./cards/BalanceCard";
+import { LeaveBalanceCard } from "./cards/LeaveBalanceCard";
 import { AttendanceCard } from "./cards/AttendanceCard";
 import { InsightCard } from "./cards/InsightCard";
 import { LeaveTypeCard } from "./cards/LeaveTypeCard";
@@ -46,7 +46,7 @@ export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLas
                         </div>
                     );
                 } else if (part.type === 'balance') {
-                    return <BalanceCard key={idx} {...part.value} />;
+                    return <LeaveBalanceCard key={idx} {...part.value} />;
                 } else if (part.type === 'attendance') {
                     return <AttendanceCard key={idx} {...part.value} />;
                 } else if (part.type === 'error') {

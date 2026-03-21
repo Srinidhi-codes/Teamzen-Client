@@ -6,8 +6,26 @@ export type MessagePart = {
     value: any;
 };
 
+/**
+ * Extracts key-value pairs from a text string like "Key: Value | Key: Value"
+ */
+const parseContentToData = (content: string): Record<string, string> => {
+    const data: Record<string, string> = {};
+    const lines = content.split(/[|\n]/);
+    
+    lines.forEach(line => {
+        const colonIndex = line.indexOf(':');
+        if (colonIndex !== -1) {
+            const key = line.slice(0, colonIndex).trim().toLowerCase();
+            const value = line.slice(colonIndex + 1).trim();
+            if (key) data[key] = value;
+        }
+    });
+    
+    return data;
+};
+
 export const useMessageParser = (content: string) => {
-    // Regex to find cards
     const cardTypes = [
         { type: 'balance', start: '[BALANCE_CARD]', end: '[/BALANCE_CARD]' },
         { type: 'attendance', start: '[ATTENDANCE_CARD]', end: '[/ATTENDANCE_CARD]' },
@@ -21,24 +39,30 @@ export const useMessageParser = (content: string) => {
     let lastIndex = 0;
     const allMatches: any[] = [];
 
-    // First, find all COMPLETE cards
+    // 1. Find all COMPLETE cards
     cardTypes.forEach(({ type, start, end }) => {
-        const regex = new RegExp(`${start.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([\\s\\S]*?)${end.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g');
+        const startEscaped = start.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const endEscaped = end.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`${startEscaped}([\\s\\S]*?)${endEscaped}`, 'g');
+        
         let match;
         while ((match = regex.exec(content)) !== null) {
-            allMatches.push({ type, index: match.index, lastIndex: regex.lastIndex, data: match[1] });
+            allMatches.push({ 
+                type, 
+                index: match.index, 
+                lastIndex: regex.lastIndex, 
+                data: match[1] 
+            });
         }
     });
 
-    // Check for a PARTIAL card at the very end (common during streaming)
+    // 2. Handle partial cards (streaming)
     let partialMatch: any = null;
     cardTypes.forEach(({ type, start, end }) => {
         const startIndex = content.lastIndexOf(start);
         if (startIndex > -1 && startIndex >= lastIndex) {
-            // Check if this start tag has a corresponding end tag later in the content
             const hasEnd = content.indexOf(end, startIndex) > -1;
             if (!hasEnd) {
-                // If it's a newer partial card than any we've found
                 if (!partialMatch || startIndex > partialMatch.index) {
                     partialMatch = { 
                         type, 
@@ -51,53 +75,32 @@ export const useMessageParser = (content: string) => {
         }
     });
 
-    if (partialMatch) {
-         // Filter out any full matches that are actually inside or after the partial start
-         // (though usually partial is at the very end)
-         allMatches.push(partialMatch);
-    }
-
+    if (partialMatch) allMatches.push(partialMatch);
     allMatches.sort((a, b) => a.index - b.index);
 
-    // Dedup: Ensure matches don't overlap (prioritize earlier matches)
-    const finalMatches: any[] = [];
-    let currentLastIndex = 0;
+    // 3. Assemble parts
+    let currentPos = 0;
     allMatches.forEach(m => {
-        if (m.index >= currentLastIndex) {
-            finalMatches.push(m);
-            currentLastIndex = m.lastIndex;
+        // Skip if this match overlaps with previous processed range
+        if (m.index < currentPos) return;
+
+        // Add text before card
+        if (m.index > currentPos) {
+            parts.push({ type: 'text', value: content.slice(currentPos, m.index) });
         }
+
+        // Add the card part
+        parts.push({ 
+            type: m.type as any, 
+            value: parseContentToData(m.data) 
+        });
+
+        currentPos = m.lastIndex;
     });
 
-    finalMatches.forEach(m => {
-        if (m.index > lastIndex) {
-            parts.push({ type: 'text', value: content.slice(lastIndex, m.index) });
-        }
-
-        const data: any = {};
-        const contentData = m.data.trim();
-        const fieldRegex = /(title|message|type|stats|topic|Name|Total|Used|Available|description|availability|id|Action|Status|Time|Office|from|to|duration|reason):\s*/gi;
-        let fieldMatch;
-        let lastKey = '';
-        let lastIdx = 0;
-
-        while ((fieldMatch = fieldRegex.exec(contentData)) !== null) {
-            if (lastKey) {
-                data[lastKey] = contentData.slice(lastIdx, fieldMatch.index).trim().replace(/^\|+|\|+$/g, '').trim();
-            }
-            lastKey = fieldMatch[1].toLowerCase();
-            lastIdx = fieldMatch.index + fieldMatch[0].length;
-        }
-        if (lastKey) {
-            data[lastKey] = contentData.slice(lastIdx).trim().replace(/^\|+|\|+$/g, '').trim();
-        }
-
-        parts.push({ type: m.type as any, value: data });
-        lastIndex = m.lastIndex;
-    });
-
-    if (lastIndex < content.length) {
-        parts.push({ type: 'text', value: content.slice(lastIndex) });
+    // Add trailing text
+    if (currentPos < content.length) {
+        parts.push({ type: 'text', value: content.slice(currentPos) });
     }
 
     return parts;

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Calendar, Trash2 } from "lucide-react";
+import { Calendar, Trash2, Clock, MapPin, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import moment from "moment";
 
@@ -19,57 +19,65 @@ interface PendingLeaveCardProps {
 export const PendingLeaveCard = ({ id, type, from, to, duration, reason, isCancelled, onCancel }: PendingLeaveCardProps) => {
     return (
         <div className={cn(
-            "bg-linear-to-br from-primary/10 via-card to-card border-b border-border/50 rounded-3xl p-6 space-y-5 animate-in zoom-in-95 duration-500 w-full group/pending",
-            isCancelled ? "opacity-50 border-destructive/20 grayscale-[0.5]" : ""
+            "group relative bg-card border border-border/50 rounded-4xl p-6 shadow-xl transition-all hover:shadow-2xl overflow-hidden w-full animate-in zoom-in-95 duration-700",
+            isCancelled ? "opacity-60 grayscale-[0.3]" : ""
         )}>
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className={cn(
-                        "w-12 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 border",
-                        isCancelled ? "bg-destructive/10 border-destructive/20 text-destructive rotate-12" : "bg-primary/10 border-primary/20 text-primary"
-                    )}>
-                        <Calendar className="w-5 h-5" />
-                    </div>
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-0.5">
-                            {isCancelled ? "Voided Request" : "Pending Request"}
-                        </p>
-                        <h4 className="font-black text-lg text-foreground tracking-tight italic uppercase">{type}</h4>
-                    </div>
-                </div>
+            {/* Status Indicator */}
+            <div className={cn(
+                "absolute top-0 right-0 px-4 py-1.5 rounded-bl-2xl text-[8px] font-black uppercase tracking-[0.2em] border-l border-b",
+                isCancelled ? "bg-destructive/10 border-destructive/20 text-destructive" : "bg-amber-500/10 border-amber-500/20 text-amber-600 animate-pulse"
+            )}>
+                {isCancelled ? "Request Voided" : "Awaiting Review"}
+            </div>
+
+            <div className="flex items-start gap-4 mb-6">
                 <div className={cn(
-                    "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
-                    isCancelled ? "bg-destructive/10 border-destructive/20 text-destructive" : "bg-amber-500/10 border-amber-500/20 text-amber-600 shadow-sm"
+                    "w-12 h-12 rounded-2xl flex items-center justify-center border shadow-inner transition-transform duration-500 group-hover:scale-110",
+                    isCancelled ? "bg-destructive/10 border-destructive/20 text-destructive" : "bg-primary/10 border-primary/20 text-primary"
                 )}>
-                    {isCancelled ? "Cancelled" : "Reviewing"}
+                    <Calendar className="w-6 h-6" />
+                </div>
+                <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 mb-1">Leave Application</p>
+                    <h4 className="font-black text-xl text-foreground tracking-tighter uppercase italic">{type}</h4>
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 py-4 border-y border-border">
-                <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ">From - To</p>
-                    <p className="text-xs font-bold text-foreground leading-none mt-1 border bg-slate-300 rounded-xl p-2">{moment(from).format("DD/MM/YYYY")} {moment(to).format("DD/MM/YYYY")}</p>
+            <div className="grid grid-cols-2 gap-4 py-6 border-y border-border/40 relative">
+                <div className="space-y-1">
+                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Duration Period</p>
+                    <div className="flex items-center gap-2">
+                         <p className="text-xs font-black text-foreground tabular-nums">{moment(from).format("MMM DD")}</p>
+                         <ChevronRight className="w-3 h-3 text-muted-foreground/40" />
+                         <p className="text-xs font-black text-foreground tabular-nums">{moment(to).format("MMM DD")}</p>
+                    </div>
+                    <p className="text-[9px] font-bold text-muted-foreground">{moment(from).format("YYYY")}</p>
                 </div>
-                <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Duration</p>
-                    <p className="text-xs font-bold text-foreground mt-1">{duration} Operational Days</p>
+                <div className="space-y-1 text-right">
+                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Total Units</p>
+                    <p className="text-sm font-black text-foreground">{duration} <span className="text-[10px] font-medium text-muted-foreground">Days</span></p>
                 </div>
             </div>
 
-            {reason && (
-                <p className="text-[11px] font-medium text-muted-foreground italic leading-relaxed">
+            {reason && !isCancelled && (
+                <div className="my-5 p-4 rounded-2xl bg-muted/30 border border-border/30 italic text-[11px] font-medium text-foreground/70 leading-relaxed">
                     "{reason}"
-                </p>
+                </div>
             )}
 
-            {!isCancelled && (
+            {!isCancelled ? (
                 <button
                     onClick={() => onCancel(id)}
-                    className="w-full py-4 rounded-2xl bg-destructive/5 text-destructive hover:bg-destructive hover:text-white text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 shadow-sm active:scale-95"
+                    className="mt-6 w-full py-4 rounded-2xl bg-destructive/5 text-destructive hover:bg-destructive hover:text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-3 shadow-xs active:scale-95 group/btn"
                 >
-                    <Trash2 className="w-4 h-4" />
-                    Void Request
+                    <Trash2 className="w-4 h-4 group-hover/btn:rotate-12 transition-transform" />
+                    Void Application
                 </button>
+            ) : (
+                <div className="mt-6 w-full py-4 rounded-2xl bg-muted/50 text-muted-foreground text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 border border-border/50">
+                    <Clock className="w-4 h-4" />
+                    Action Completed
+                </div>
             )}
         </div>
     );

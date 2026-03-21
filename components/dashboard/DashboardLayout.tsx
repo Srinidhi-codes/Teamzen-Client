@@ -6,34 +6,35 @@ import { Navbar } from "../common/Navbar";
 import AssistantWidget from "../ai";
 import { OnboardingTour } from "../common/OnboardingTour";
 import { useStore } from "@/lib/store/useStore";
+import { useGraphQLUpdateUser } from "@/lib/api/graphqlHooks";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { 
-    sidebarCollapsed: isCollapsed, 
-    setSidebarCollapsed: setIsCollapsed, 
-    sidebarMobileOpen: isMobileOpen, 
+  const {
+    sidebarCollapsed: isCollapsed,
+    setSidebarCollapsed: setIsCollapsed,
+    sidebarMobileOpen: isMobileOpen,
     setSidebarMobileOpen: setIsMobileOpen,
     setAssistantOpen,
     user
   } = useStore();
 
+  const { updateUserAsync } = useGraphQLUpdateUser();
+
   // Conversational Onboarding Trigger
   useEffect(() => {
-    if (user) {
-      const hasSeenAI = localStorage.getItem(`has_seen_ai_onboarding_${user.id}`);
-      if (!hasSeenAI) {
-        const timer = setTimeout(() => {
-          setAssistantOpen(true);
-          localStorage.setItem(`has_seen_ai_onboarding_${user.id}`, 'true');
-        }, 5000); // Wait 5 seconds after login to open Assistant
-        return () => clearTimeout(timer);
-      }
+    if (user && user.hasSeenAiOnboarding === false) {
+      const timer = setTimeout(() => {
+        setAssistantOpen(true);
+        // Persist to DB immediately so it doesn't pop up again this session or next
+        updateUserAsync({ has_seen_ai_onboarding: true }).catch(console.error);
+      }, 5000); // Wait 5 seconds after login to open Assistant
+      return () => clearTimeout(timer);
     }
-  }, [user, setAssistantOpen]);
+  }, [user, setAssistantOpen, updateUserAsync]);
 
   return (
     <div className="flex min-h-screen bg-background text-foreground relative" style={{ scrollbarGutter: 'stable' }}>
@@ -53,7 +54,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         closeMobile={() => setIsMobileOpen(false)}
       />
 
-      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 w-full relative z-10 ${isCollapsed ? "md:ml-24" : "md:ml-72"}`}>
+      <div className="flex-1 flex flex-col min-h-screen transition-all duration-300 w-full relative z-10 md:ml-24">
         <main className="flex-1 p-4 sm:p-8 pt-24 sm:pt-24 bg-transparent">
           {children}
         </main>

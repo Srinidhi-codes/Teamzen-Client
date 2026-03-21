@@ -44,6 +44,8 @@ export function useGraphQLUpdateUser() {
       panNumber: input.pan_number,
       aadharNumber: input.aadhar_number,
       uanNumber: input.uan_number,
+      hasSeenOnboarding: input.has_seen_onboarding,
+      hasSeenAiOnboarding: input.has_seen_ai_onboarding,
     };
 
     // Remove undefined/nulls

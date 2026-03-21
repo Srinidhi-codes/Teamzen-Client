@@ -2,14 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useGraphQLUser } from "@/lib/api/graphqlHooks";
 import {
   LayoutDashboard,
   Calendar,
   Clock,
   DollarSign,
   Users,
-  BarChart3,
   ChevronLeft,
   ChevronRight,
   UserCircle,
@@ -69,24 +67,24 @@ export function Sidebar({
   const sidebarClasses = `
     fixed inset-y-0 left-0 z-100
     flex flex-col
-    bg-primary/5 backdrop-blur-md text-sidebar-foreground
+    bg-background
     transition-all duration-500 ease-in-out
     ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
     md:translate-x-0
     ${isCollapsed ? "md:w-24" : "md:w-72"}
     w-72
     border-r border-sidebar-border
-    shadow-2xl md:shadow-none
+    shadow-2xl
     overflow-x-hidden
   `;
 
   return (
     <>
-      {/* Mobile Overlay */}
-      {isMobileOpen && (
+      {/* Overlay Backdrop */}
+      {(isMobileOpen || !isCollapsed) && (
         <div
-          className="fixed inset-0 bg-black/50 z-90 md:hidden"
-          onClick={closeMobile}
+          className="fixed inset-0 bg-black/50 z-90 transition-opacity duration-500"
+          onClick={isMobileOpen ? closeMobile : toggleCollapse}
         />
       )}
 
@@ -144,7 +142,7 @@ export function Sidebar({
                 href={item.href}
                 id={`nav-${item.name.toLowerCase()}`}
                 onClick={() => isMobileOpen && closeMobile()}
-                className={`flex items-center space-x-4 px-4 py-3.5 rounded-2xl ${isCollapsed ? "justify-center" : ""} transition-all duration-300 relative group ${isActive
+                className={`flex items-center space-x-4 px-4 py-3.5 rounded-2xl ${isCollapsed && !isMobileOpen ? "justify-center" : "justify-start"} transition-all duration-300 relative group ${isActive
                   ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02]"
                   : "text-sidebar-foreground/60 hover:bg-primary/5 hover:text-primary"
                   }`}
@@ -174,7 +172,7 @@ export function Sidebar({
           <button
             onClick={handleLogout}
             title="Logout"
-            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-300 group text-destructive/70 hover:bg-destructive/10 hover:text-destructive active:scale-95 ${isCollapsed && !isMobileOpen ? 'justify-center' : ''
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-300 group text-destructive/70 hover:bg-destructive/10 hover:text-destructive active:scale-95 ${isCollapsed && !isMobileOpen ? 'justify-center' : 'justify-start'
               }`}
           >
             <LogOut className="w-5 h-5 shrink-0 transition-transform group-hover:scale-110 group-hover:-translate-x-0.5" />
