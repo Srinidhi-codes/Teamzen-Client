@@ -4,9 +4,11 @@ import { useEffect, useCallback } from "react";
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 import { useStore } from "@/lib/store/useStore";
+import { useGraphQLUpdateUser } from "@/lib/api/graphqlHooks";
 
 export function useOnboardingTour() {
     const { user, setSidebarCollapsed, setSidebarMobileOpen } = useStore();
+    const { updateUserAsync } = useGraphQLUpdateUser();
 
     const startTour = useCallback(() => {
         // Ensure sidebar is visible for the tour
@@ -67,21 +69,19 @@ export function useOnboardingTour() {
         });
 
         driverObj.drive();
-    }, []);
+    }, [setSidebarCollapsed, setSidebarMobileOpen]);
 
     useEffect(() => {
-        if (user) {
-            const hasSeenTour = localStorage.getItem(`has_seen_tour_${user.id}`);
-            if (!hasSeenTour) {
-                // Give some time for the page to settle
-                const timer = setTimeout(() => {
-                    startTour();
-                    localStorage.setItem(`has_seen_tour_${user.id}`, 'true');
-                }, 2000);
-                return () => clearTimeout(timer);
-            }
+        if (user && user.hasSeenOnboarding === false) {
+            // Give some time for the page to settle
+            const timer = setTimeout(() => {
+                startTour();
+                // Persist to DB immediately
+                updateUserAsync({ has_seen_onboarding: true }).catch(console.error);
+            }, 2000);
+            return () => clearTimeout(timer);
         }
-    }, [user, startTour]);
+    }, [user, startTour, updateUserAsync]);
 
     return { startTour };
 }

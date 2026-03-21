@@ -57,6 +57,8 @@ export const GET_ME = gql`
       leaveBalance
       totalLeaveEntitlement
       tenureDisplay
+      hasSeenOnboarding
+      hasSeenAiOnboarding
       createdAt
       updatedAt
     }
