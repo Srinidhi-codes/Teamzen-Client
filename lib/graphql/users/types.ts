@@ -60,6 +60,8 @@ export interface GraphQLUser {
   panNumber?: string | null;
   aadharNumber?: string | null;
   uanNumber?: string | null;
+  hasSeenOnboarding: boolean;
+  hasSeenAiOnboarding: boolean;
   attendanceRate?: number;
   leaveBalance?: number;
   totalLeaveEntitlement?: number;

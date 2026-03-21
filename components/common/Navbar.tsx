@@ -117,7 +117,7 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
       <div className={cn(
         "flex justify-between items-center pointer-events-auto transition-all duration-500 ease-in-out",
         isScrolled
-          ? "gap-4 bg-background px-4 sm:px-6 py-3 rounded-2xl sm:rounded-3xl shadow-2xl shadow-primary/10 border-border/40 max-w-7xl mx-auto w-full"
+          ? "gap-4 bg-background px-4 sm:px-6 py-3 rounded-2xl sm:rounded-3xl shadow-2xl shadow-primary/10 border-border/40 max-w-[80%] mx-auto w-full"
           : "gap-4 bg-background border-b border-border/30 px-4 sm:px-8 py-4 shadow-xs"
       )}>
         <div className="flex justify-between items-center w-full gap-4">
@@ -126,7 +126,7 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
             {onMenuClick && (
               <button
                 onClick={onMenuClick}
-                className="lg:hidden p-2 hover:bg-muted/50 rounded-xl transition-all active:scale-95 text-foreground"
+                className="p-2 hover:bg-muted/50 rounded-xl transition-all active:scale-95 text-foreground md:hidden"
               >
                 <Menu className="w-6 h-6" />
               </button>
@@ -196,7 +196,7 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
             {user && (
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
-                  <button 
+                  <button
                     id="user-menu-trigger"
                     className="flex items-center space-x-3 px-1 sm:px-2 py-2 rounded-2xl transition-all hover:bg-muted/50 text-foreground group focus:outline-none"
                   >
@@ -220,13 +220,13 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64 p-2 rounded-3xl shadow-2xl border-border bg-card/80 backdrop-blur-xl">
                   <DropdownMenuLabel className="px-4 py-3 bg-muted/20 rounded-2xl mb-1">
-                    <div className="flex-col items-start hidden xl:flex">
-                      <span className="text-md font-black text-primary uppercase tracking-widest">
+                    <div className="flex-col items-start">
+                      <div className="text-md font-black text-primary uppercase tracking-widest">
                         {user.firstName} {user.lastName}
-                      </span>
-                      <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mt-1">
+                      </div>
+                      <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mt-1">
                         {user.role}
-                      </span>
+                      </div>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-border/50 my-1" />
@@ -262,7 +262,7 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                       <span className="text-sm font-bold">System Configuration</span>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={startTour}
                     className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-primary/5 cursor-pointer group"
                   >

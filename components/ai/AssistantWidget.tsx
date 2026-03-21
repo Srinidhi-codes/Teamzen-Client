@@ -39,12 +39,29 @@ export function AssistantWidget() {
         }
     }, [assistantQuery, isOpen]);
 
-    // Auto-scroll to bottom
+    // Body scroll lock on mobile
     useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        if (isOpen && window.innerWidth < 768) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
         }
-    }, [messages, isLoading]);
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
+
+    // Snap to bottom
+    useEffect(() => {
+        if (isOpen && scrollRef.current) {
+            // Micro-task to ensure DOM paint
+            setTimeout(() => {
+                if (scrollRef.current) {
+                    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+                }
+            }, 0);
+        }
+    }, [messages, isLoading, isOpen]);
 
     const handleSend = async (e?: React.FormEvent, customQuery?: string) => {
         e?.preventDefault();
