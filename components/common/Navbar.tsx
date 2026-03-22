@@ -126,6 +126,7 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
             {onMenuClick && (
               <button
                 onClick={onMenuClick}
+                aria-label="Open mobile menu"
                 className="p-2 hover:bg-muted/50 rounded-xl transition-all active:scale-95 text-foreground md:hidden"
               >
                 <Menu className="w-6 h-6" />
@@ -151,7 +152,7 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                 <span className="font-black text-sm text-foreground tracking-tighter leading-none group-hover:text-primary transition-colors">
                   {user?.organization?.name || 'Teamzen'}
                 </span>
-                <span className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] leading-none mt-1">
+                <span className="text-[8px] font-black text-foreground/70 uppercase tracking-[0.2em] leading-none mt-1">
                   {user?.role === 'admin' ? 'Strategic Intelligence' : 'Workforce Cluster'}
                 </span>
               </div>
@@ -198,6 +199,7 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                 <DropdownMenuTrigger asChild>
                   <button
                     id="user-menu-trigger"
+                    aria-label="Open user profile menu"
                     className="flex items-center space-x-3 px-1 sm:px-2 py-2 rounded-2xl transition-all hover:bg-muted/50 text-foreground group focus:outline-none"
                   >
                     <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-border/50 shadow-sm ${!user.profilePictureUrl ? 'bg-linear-to-br from-primary to-primary/60 text-primary-foreground text-[10px] sm:text-xs font-black' : ''}`}>

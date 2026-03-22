@@ -3,10 +3,12 @@ import { useState, useEffect } from "react";
 import { Sidebar } from "../common/Sidebar";
 import { Menu } from "lucide-react";
 import { Navbar } from "../common/Navbar";
-import AssistantWidget from "../ai";
-import { OnboardingTour } from "../common/OnboardingTour";
+import dynamic from "next/dynamic";
 import { useStore } from "@/lib/store/useStore";
 import { useGraphQLUpdateUser } from "@/lib/api/graphqlHooks";
+
+const AssistantWidget = dynamic(() => import("../ai"), { ssr: false });
+const OnboardingTour = dynamic(() => import("../common/OnboardingTour").then(mod => mod.OnboardingTour), { ssr: false });
 
 interface DashboardLayoutProps {
   children: React.ReactNode;

@@ -111,6 +111,7 @@ export function Sidebar({
           {/* Desktop Collapse Toggle */}
           <button
             onClick={toggleCollapse}
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             className="hidden md:flex p-2 hover:bg-primary/10 hover:text-primary rounded-xl transition-all active:scale-90"
           >
             {isCollapsed ? (
@@ -123,6 +124,7 @@ export function Sidebar({
           {/* Mobile Close Button */}
           <button
             onClick={closeMobile}
+            aria-label="Close mobile sidebar"
             className="md:hidden p-2 hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
           >
             <ChevronLeft className="w-6 h-6" />
