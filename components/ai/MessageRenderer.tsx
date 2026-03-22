@@ -21,6 +21,17 @@ interface MessageRendererProps {
 
 export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLast, isStreaming }: MessageRendererProps) => {
     const parts = useMessageParser(content);
+    const showDots = isLast && isStreaming && role === 'assistant' && (parts.length === 0 || (parts.length === 1 && !parts[0].value.trim()));
+
+    if (showDots) {
+        return (
+            <div className="bg-muted/50 border border-border rounded-3xl rounded-tl-none p-4 flex items-center gap-1.5 w-max">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-3 w-full">
@@ -29,20 +40,7 @@ export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLas
                     const text = part.value.trim();
                     const isFinalPart = idx === parts.length - 1;
                     
-                    // Show a base message if it's the very first token
-                    if (!text && !(isLast && isStreaming && isFinalPart)) {
-                        // If it's the only part and it's empty, and we are streaming, show the dots
-                        if (isLast && isStreaming && role === 'assistant' && parts.length === 1) {
-                            return (
-                                <div key={idx} className="bg-muted/50 border border-border rounded-3xl rounded-tl-none p-4 flex items-center gap-1.5 w-max">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
-                                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
-                                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
-                                </div>
-                            );
-                        }
-                        return null;
-                    }
+                    if (!text) return null;
                     
                     return (
                         <div key={idx} className={cn(

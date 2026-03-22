@@ -17,7 +17,7 @@ export function useNotifications(
     }, [onMessageReceived]);
 
     useEffect(() => {
-        const fetchTokenAndConnect = async () => {
+        const connect = () => {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/";
             let protocol = "ws:";
             let host = "localhost:8000";
@@ -30,18 +30,11 @@ export function useNotifications(
                 console.error("Invalid NEXT_PUBLIC_API_URL for WebSocket:", e);
             }
 
-            let token = "";
-            try {
-                const res = await client.get('/auth/ws-token');
-                token = res.data.token;
-            } catch (e) {
-            }
-
-            const url = `${protocol}//${host}/ws/notifications/${token ? `?token=${token}` : ''}`;
+            const url = `${protocol}//${host}/ws/notifications/`;
             setSocketUrl(url);
         };
 
-        fetchTokenAndConnect();
+        connect();
     }, []);
 
     const { readyState } = useWebSocket(socketUrl, {

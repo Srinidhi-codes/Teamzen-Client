@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import {
     Send, X, Bot, User, MessageSquare, Trash2,
-    Sparkles, Loader2, Minimize2, Mic, MicOff
+    Sparkles, Loader2, Minimize2, Mic, MicOff, Cpu
 } from 'lucide-react';
 import { useVoiceWhisper } from "@/lib/hooks/useVoiceWhisper";
 import { VoiceWave } from "./VoiceWave";
@@ -26,7 +26,8 @@ export function AssistantWidget() {
         sendMessage, 
         isLoading, 
         isStreaming,
-        clearHistory 
+        clearHistory,
+        config
     } = useAssistant();
     const { isRecording, isProcessing: isVoiceProcessing, startRecording, stopRecording, error: voiceError } = useVoiceWhisper({
         onTranscript: (text) => {
@@ -313,9 +314,17 @@ export function AssistantWidget() {
                                 </div>
                             )}
                         </form>
-                        <p className="mt-3 text-[10px] text-center font-black uppercase tracking-widest text-muted-foreground/50">
-                            Empowered by Teamzen
-                        </p>
+                        <div className="mt-3 flex items-center justify-between px-1">
+                            <div className="flex items-center gap-1.5 overflow-hidden">
+                                <Cpu className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+                                <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/50 truncate">
+                                    Adaptive Intelligence: {config?.model_name || "GPT-4o Mini"}
+                                </span>
+                            </div>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/30 shrink-0">
+                                Teamzen OS
+                            </p>
+                        </div>
                     </div>
                 </div>
             )}

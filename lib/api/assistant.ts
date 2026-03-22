@@ -17,11 +17,14 @@ export type AssistantResponse = {
 export const useAssistant = () => {
     const queryClient = useQueryClient();
 
-    // 1. Fetch persistent history on mount
+    // 1. Fetch persistent history & config on mount
     const { data, isLoading: isHistoryLoading } = useQuery({
         queryKey: ['assistant-history'],
         queryFn: async () => {
-            const response = await client.get<{ history: ChatMessage[] }>(API_ENDPOINTS.CHAT);
+            const response = await client.get<{ 
+                history: ChatMessage[],
+                config: { model_name: string } 
+            }>(`${API_ENDPOINTS.CHAT}?context=user`);
             return response.data;
         },
     });
@@ -50,7 +53,7 @@ export const useAssistant = () => {
             const response = await fetch(`/api${API_ENDPOINTS.CHAT}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query, latitude, longitude }),
+                body: JSON.stringify({ query, latitude, longitude, context: 'user' }),
                 credentials: 'include',
             });
 
@@ -107,7 +110,7 @@ export const useAssistant = () => {
 
     const clearHistory = async () => {
         try {
-            await client.delete(API_ENDPOINTS.CHAT);
+            await client.delete(`${API_ENDPOINTS.CHAT}?context=user`);
             setHistory([]);
             queryClient.invalidateQueries({ queryKey: ['assistant-history'] });
         } catch (error) {
@@ -122,6 +125,7 @@ export const useAssistant = () => {
         isLoading: isStreaming || isHistoryLoading,
         isHistoryLoading,
         isStreaming,
-        clearHistory
+        clearHistory,
+        config: data?.config
     };
 };
