@@ -3,51 +3,18 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { usePolicies } from "@/lib/api/hooks";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
+
 import { Loader2, FileText, Upload, Trash2, Plus, Minus, Maximize2, ArrowRight, RotateCcw } from "lucide-react";
 import moment from "moment";
 import Link from "next/link";
 
 export default function PoliciesPage() {
-    const { policies, isLoading, isUploading, upload, remove } = usePolicies();
+    const { policies, isLoading } = usePolicies();
 
     // Dialog states
-    const [isOpen, setIsOpen] = useState(false);
     const [isViewOpen, setIsViewOpen] = useState(false);
     const [selectedPdf, setSelectedPdf] = useState<{ url: string; title: string } | null>(null);
     const [zoom, setZoom] = useState(1);
-
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [file, setFile] = useState<File | null>(null);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!file || !title) {
-            toast.error("Please provide title and file");
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append("title", title);
-        formData.append("description", description);
-        formData.append("file", file);
-
-        try {
-            await upload.mutateAsync(formData);
-            toast.success("Policy uploaded successfully");
-            setIsOpen(false);
-            setTitle("");
-            setDescription("");
-            setFile(null);
-        } catch (error) {
-            toast.error("Failed to upload policy");
-            console.error(error);
-        }
-    };
 
     return (
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 animate-fade-in">
@@ -70,71 +37,7 @@ export default function PoliciesPage() {
                     >
                         <RotateCcw className="w-4 h-4" />
                     </button>
-                    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                        <DialogTrigger asChild>
-                            <Button className="w-full sm:w-auto rounded-2xl gap-2 font-black px-6 py-6 shadow-xl shadow-primary/20 hover:scale-105 transition-all text-[11px] uppercase tracking-widest">
-                                <Upload className="w-5 h-5 text-primary-foreground" />
-                                Upload Policy
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-none rounded-4xl shadow-2xl">
-                            <DialogHeader className="p-8 pb-4 bg-linear-to-br from-primary/10 to-transparent">
-                                <DialogTitle className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary">
-                                        <Upload className="w-6 h-6" />
-                                    </div>
-                                    <div className="flex flex-col text-left">
-                                        <span className="text-xl font-black tracking-tight">Upload Protocol</span>
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">New Organization Document</span>
-                                    </div>
-                                </DialogTitle>
-                            </DialogHeader>
-                            <form onSubmit={handleSubmit} className="p-8 pt-4 space-y-6">
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Document Title</Label>
-                                        <Input
-                                            placeholder="e.g. Leave Policy 2024"
-                                            value={title}
-                                            onChange={(e) => setTitle(e.target.value)}
-                                            className="h-12 rounded-xl bg-muted/50 border-border focus:ring-primary/20 font-medium"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Description (Optional)</Label>
-                                        <Textarea
-                                            placeholder="Brief summary of the document contents..."
-                                            value={description}
-                                            onChange={(e) => setDescription(e.target.value)}
-                                            className="min-h-[100px] rounded-xl bg-muted/50 border-border focus:ring-primary/20 font-medium resize-none text-sm"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Document File</Label>
-                                        <div className="relative group/file">
-                                            <Input
-                                                type="file"
-                                                accept=".pdf,.doc,.docx"
-                                                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                                                className="h-14 rounded-xl bg-muted/50 border-dashed border-2 border-border group-hover/file:border-primary/30 transition-all cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-primary/10 file:text-primary hover:file:bg-primary/20 pt-2.5"
-                                                required
-                                            />
-                                        </div>
-                                        <p className="text-[9px] font-medium text-muted-foreground italic px-1">Supported: PDF, DOC, DOCX up to 10MB</p>
-                                    </div>
-                                </div>
-                                <Button
-                                    type="submit"
-                                    className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-lg shadow-primary/20"
-                                    disabled={isUploading}
-                                >
-                                    {isUploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
-                                    Initialize Upload
-                                </Button>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
+                    {/* Upload policy removed for standard users */}
                 </div>
             </div>
 

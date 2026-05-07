@@ -16,7 +16,7 @@ import { useStore } from "@/lib/store/useStore";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
 
 export function AssistantWidget() {
-    const { assistantOpen: isOpen, setAssistantOpen: setIsOpen, user } = useStore();
+    const { assistantOpen: isOpen, setAssistantOpen: setIsOpen, user, assistantPayload, setAssistantPayload } = useStore();
     const [input, setInput] = useState("");
     const [cancelledIds, setCancelledIds] = useState<Set<string>>(new Set());
     const [hasInitialGreeting, setHasInitialGreeting] = useState(false);
@@ -128,7 +128,7 @@ export function AssistantWidget() {
                 }
             }
 
-            await sendMessage({ query, latitude, longitude });
+            await sendMessage({ query, latitude, longitude, payload: assistantPayload });
         } catch (error) {
             console.error("Failed to send message", error);
         }
@@ -146,11 +146,11 @@ export function AssistantWidget() {
         <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-100 flex flex-col items-end transition-all duration-300">
             {/* Chat Window */}
             {isOpen && (
-                <div className="mb-4 w-[calc(100vw-2rem)] sm:w-[500px] h-[calc(100dvh-8rem)] sm:h-[650px] max-h-[85vh] sm:max-h-[700px] bg-card/95 backdrop-blur-xl border border-border/50 rounded-4xl sm:rounded-[2.5rem] shadow-3xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
+                <div className="mb-4 w-[calc(100vw-2rem)] sm:w-[500px] h-[calc(100dvh-8rem)] sm:h-[650px] max-h-[85vh] sm:max-h-[700px] bg-card/95 backdrop-blur-xl border border-border/50 rounded-4xl sm:rounded-[2.5rem] flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
                     {/* Header */}
                     <div className="p-4 sm:p-6 border-b border-border bg-muted/20 backdrop-blur-sm flex justify-between items-center group">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 relative overflow-hidden">
+                            <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center relative overflow-hidden">
                                 <Bot className="w-6 h-6 text-primary-foreground relative z-10" />
                                 <div className="absolute inset-0 bg-linear-to-tr from-white/20 to-transparent opacity-50" />
                             </div>
@@ -301,7 +301,7 @@ export function AssistantWidget() {
                                 <button
                                     type="submit"
                                     disabled={isLoading || !input.trim() || isRecording || isVoiceProcessing}
-                                    className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all active:scale-95"
+                                    className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 disabled:opacity-50 transition-all active:scale-95"
                                 >
                                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                                 </button>
@@ -334,10 +334,10 @@ export function AssistantWidget() {
                 id="ai-assistant-trigger"
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
-                    "w-16 h-16 rounded-4xl shadow-2xl flex items-center justify-center transition-all duration-500 active:scale-90 group relative overflow-hidden",
+                    "w-16 h-16 rounded-4xl flex items-center justify-center transition-all duration-500 active:scale-90 group relative overflow-hidden",
                     isOpen
                         ? "bg-card border border-border text-foreground hover:bg-muted"
-                        : "bg-primary text-primary-foreground hover:shadow-primary/30"
+                        : "bg-primary text-primary-foreground"
                 )}
             >
                 {isOpen ? (

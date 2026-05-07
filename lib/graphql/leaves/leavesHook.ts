@@ -30,8 +30,9 @@ export function useGraphQlLeaveBalance() {
    }
 }
 
-export function useGraphQLLeaveRequests() {
+export function useGraphQLLeaveRequests(approvalsOnly: boolean = false) {
    const { data, loading, error, refetch } = useQuery<GetLeaveRequestResponse>(GET_LEAVE_REQUESTS, {
+      variables: { approvalsOnly },
       fetchPolicy: 'network-only',
    })
 

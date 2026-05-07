@@ -18,11 +18,11 @@ export const AttendanceCard = ({ action, status, time, office, distance, hours }
     const isSuccess = status.toLowerCase() === 'present' || status.toLowerCase().includes('success') || status.toLowerCase().includes('in');
 
     return (
-        <div className="group relative bg-card border border-border/50 rounded-4xl p-0 shadow-xl transition-all hover:shadow-2xl overflow-hidden w-full animate-in slide-in-from-bottom-4 duration-700">
+        <div className="group relative bg-card border border-border/50 rounded-4xl p-0 transition-all overflow-hidden w-full animate-in slide-in-from-bottom-4 duration-700">
             <Link href="/attendance" className="block p-6">
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 text-primary shadow-inner transition-transform duration-500 group-hover:scale-110">
+                        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 text-primary transition-transform duration-500 group-hover:scale-110">
                             <Building2 className="w-7 h-7" />
                         </div>
                         <div>

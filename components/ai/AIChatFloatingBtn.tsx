@@ -12,23 +12,33 @@ export default function AIChatFloatingBtn({ onClick, isOpen }: AIChatFloatingBtn
     return (
         <button
             onClick={onClick}
-            className={`fixed bottom-6 right-6 w-16 h-16 rounded-full flex items-center justify-center transition-all duration-500 shadow-4xl z-50 group hover:-translate-y-1 ${isOpen
-                    ? "bg-muted text-foreground"
-                    : "bg-primary text-primary-foreground"
+            className={`fixed bottom-6 right-6 w-16 h-16 rounded-4xl flex items-center justify-center transition-all duration-500 shadow-2xl z-50 group hover:-translate-y-2 active:scale-90 ${isOpen
+                ? "bg-card border border-border text-foreground"
+                : "bg-linear-to-tr from-primary via-primary to-violet-600 text-primary-foreground"
                 }`}
         >
-            <div className="absolute inset-0 rounded-full bg-primary/20 animate-pulse-slow blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-
-            {isOpen ? (
-                <Bot size={28} className="animate-in fade-in zoom-in duration-300" />
-            ) : (
-                <MessageSquare size={28} className="animate-in fade-in zoom-in duration-300" />
+            {/* Ambient Aura */}
+            {!isOpen && (
+                <>
+                    <div className="absolute inset-0 rounded-4xl bg-primary/40 animate-ping opacity-20 scale-125" />
+                    <div className="absolute inset-0 rounded-4xl bg-linear-to-tr from-primary to-violet-600 blur-xl opacity-40 group-hover:opacity-80 transition-opacity animate-pulse-slow" />
+                </>
             )}
 
-            {/* Unread badge/Sparkle */}
+            <div className="relative z-10 overflow-hidden">
+                {isOpen ? (
+                    <Bot size={28} className="animate-in fade-in zoom-in spin-in-90 duration-500" />
+                ) : (
+                    <div className="relative">
+                        <Sparkles size={28} className="animate-in fade-in zoom-in duration-500 group-hover:rotate-12 transition-transform" />
+                    </div>
+                )}
+            </div>
+
+            {/* Notification Badge */}
             {!isOpen && (
-                <div className="absolute -top-1 -right-1 w-6 h-6 bg-white dark:bg-card text-primary rounded-full flex items-center justify-center shadow-lg border border-primary/10">
-                    <Sparkles size={14} className="animate-pulse" />
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-[10px] font-black text-white rounded-full flex items-center justify-center shadow-lg border-2 border-background animate-in slide-in-from-bottom-2 duration-700">
+                    1
                 </div>
             )}
         </button>

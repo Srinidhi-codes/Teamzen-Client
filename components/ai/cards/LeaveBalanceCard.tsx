@@ -19,13 +19,13 @@ export const LeaveBalanceCard = ({ name, total, used, available }: LeaveBalanceC
     const percentage = Math.min((usedNum / totalNum) * 100, 100);
 
     return (
-        <div className="group relative bg-card border border-border/50 rounded-4xl p-6 shadow-xl transition-all hover:shadow-2xl hover:-translate-y-1 overflow-hidden w-full animate-in zoom-in-95 duration-500">
+        <div className="group relative bg-card border border-border/50 rounded-4xl p-6 transition-all hover:-translate-y-1 overflow-hidden w-full animate-in zoom-in-95 duration-500">
             {/* Background Accent */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-primary/10 transition-colors duration-700" />
 
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 text-primary shadow-inner">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 text-primary">
                         <Calendar className="w-6 h-6" />
                     </div>
                     <div>
@@ -53,7 +53,7 @@ export const LeaveBalanceCard = ({ name, total, used, available }: LeaveBalanceC
 
                 <div className="h-4 w-full bg-muted/50 rounded-full p-1 border border-border/50 relative overflow-hidden">
                     <div
-                        className="h-full bg-linear-to-r from-primary via-primary/80 to-primary/60 rounded-full transition-all duration-1500 shadow-md shadow-primary/20"
+                        className="h-full bg-linear-to-r from-primary via-primary/80 to-primary/60 rounded-full transition-all duration-1500"
                         style={{ width: `${percentage}%` }}
                     />
 

@@ -1,247 +1,242 @@
-// "use client";
+"use client";
 
-// import { usePayrollRuns } from "@/lib/api/hooks";
-// import { useState } from "react";
-// import { Card } from "@/components/common/Card";
-// import { Stat } from "@/components/common/Stats";
-// import { Badge } from "@/components/common/Badge";
-// import {
-//   DollarSign,
-//   Plus,
-//   Calculator,
-//   Users,
-//   FileText,
-//   TrendingUp,
-//   History,
-//   Zap,
-//   ArrowRight,
-//   Download,
-//   Calendar
-// } from "lucide-react";
-// import { Button } from "@/components/ui/button";
-// import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-// import { DataTable } from "@/components/common/DataTable";
+import React from "react";
+import { useQuery } from "@apollo/client/react";
+import { GET_MY_PAYSLIPS } from "@/lib/graphql/payroll/queries";
+import { Card } from "@/components/common/Card";
+import { DataTable } from "@/components/common/DataTable";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { FileText, Download, Calendar, ArrowRight, DollarSign, Sparkles, Eye, EyeOff, LayoutPanelLeft } from "lucide-react";
+import { useStore } from "@/lib/store/useStore";
+import { PayslipDetailsModal } from "@/components/payroll/PayslipDetailsModal";
 
-// export default function PayrollPage() {
-//   const { data: payrollRuns, isLoading, create, calculate } = usePayrollRuns();
-//   const [showForm, setShowForm] = useState(false);
-//   const [formData, setFormData] = useState({
-//     payroll_month: "",
-//   });
-
-//   const [currentPage, setCurrentPage] = useState(1);
-//   const pageSize = 10;
-//   const total = payrollRuns?.length || 0;
-//   const paginatedPayrollRuns = payrollRuns?.slice((currentPage - 1) * pageSize, currentPage * pageSize) || [];
-
-//   const handleCreatePayroll = async () => {
-//     try {
-//       await create.mutateAsync(formData);
-//       setShowForm(false);
-//       // Replace with toast later
-//     } catch (error) {
-//       console.error(error);
-//     }
-//   };
-
-//   const handleCalculate = async (runId: number) => {
-//     try {
-//       await calculate.mutateAsync(runId);
-//     } catch (error) {
-//       console.error(error);
-//     }
-//   };
-
-//   const columns = [
-//     {
-//       key: "payroll_month",
-//       label: "Cycle Month",
-//       render: (val: string) => (
-//         <div className="flex items-center gap-3">
-//           <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-//             <Calendar className="w-4 h-4" />
-//           </div>
-//           <span className="font-bold">
-//             {new Date(val).toLocaleDateString("en-US", { year: "numeric", month: "long" })}
-//           </span>
-//         </div>
-//       )
-//     },
-//     {
-//       key: "total_employees",
-//       label: "Connectivity",
-//       render: (val: number) => <span className="font-black tabular-nums">{val} Nodes</span>
-//     },
-//     {
-//       key: "total_gross_salary",
-//       label: "Gross Value",
-//       render: (val: number) => <span className="font-black tabular-nums text-primary">₹{val?.toLocaleString()}</span>
-//     },
-//     {
-//       key: "status",
-//       label: "State",
-//       render: (val: string) => (
-//         <Badge variant={val === 'approved' ? 'success' : val === 'draft' ? 'default' : 'info'}>
-//           {val}
-//         </Badge>
-//       )
-//     },
-//     {
-//       key: "actions",
-//       label: "Operations",
-//       render: (_: any, run: any) => (
-//         <div className="flex items-center gap-2">
-//           {run.status === "draft" ? (
-//             <Button size="sm" onClick={() => handleCalculate(run.id)} disabled={calculate.isPending}>
-//               Calculate
-//             </Button>
-//           ) : (
-//             <Button size="sm" variant="outline" className="h-8 px-3 text-[9px]">
-//               <Download className="w-3 h-3 mr-1" />
-//               Report
-//             </Button>
-//           )}
-//         </div>
-//       )
-//     }
-//   ];
-
-//   return (
-//     <div className="space-y-10 animate-fade-in pb-20">
-//       {/* Header */}
-//       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-//         <div className="space-y-1">
-//           <h1 className="text-premium-h1">Ledger Console</h1>
-//           <p className="text-muted-foreground font-medium flex items-center gap-2">
-//             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-//             Financial distribution and cycle management.
-//           </p>
-//         </div>
-//         <Button onClick={() => setShowForm(!showForm)} className="btn-primary">
-//           <Plus className="w-4 h-4 mr-2" />
-//           Synchronize Cycle
-//         </Button>
-//       </div>
-
-//       {/* KPI Stats */}
-//       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-//         <Stat
-//           icon={Users}
-//           label="Active Nodes"
-//           value={payrollRuns?.[0]?.total_employees || "0"}
-//           color="text-blue-500"
-//           gradient="bg-blue-500/10"
-//         />
-//         <Stat
-//           icon={TrendingUp}
-//           label="Gross Yield"
-//           value={`₹${(payrollRuns?.[0]?.total_gross_salary || 0).toLocaleString()}`}
-//           color="text-primary"
-//           gradient="bg-primary/10"
-//         />
-//         <Stat
-//           icon={TrendingUp}
-//           label="Total Deductions"
-//           value={`₹${(payrollRuns?.[0]?.total_deductions || 0).toLocaleString()}`}
-//           color="text-destructive"
-//           gradient="bg-destructive/10"
-//         />
-//         <Stat
-//           icon={DollarSign}
-//           label="Net Distribution"
-//           value={`₹${(payrollRuns?.[0]?.total_net_salary || 0).toLocaleString()}`}
-//           color="text-emerald-500"
-//           gradient="bg-emerald-500/10"
-//         />
-//       </div>
-
-//       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-//         <div className="lg:col-span-8 space-y-8">
-//           {showForm && (
-//             <div className="animate-in slide-in-from-top-4 duration-500">
-//               <Card title="Initialize New Cycle" icon={Calculator}>
-//                 <div className="flex flex-col md:flex-row items-end gap-6">
-//                   <div className="flex-1 space-y-2">
-//                     <label className="text-premium-label ml-1">Cycle Pointer (Month)</label>
-//                     <input
-//                       type="month"
-//                       value={formData.payroll_month}
-//                       onChange={(e) => setFormData({ ...formData, payroll_month: e.target.value })}
-//                       className="input"
-//                     />
-//                   </div>
-//                   <Button onClick={handleCreatePayroll} disabled={create.isPending} className="btn-primary px-10">
-//                     {create.isPending ? "Syncing..." : "Execute"}
-//                   </Button>
-//                 </div>
-//               </Card>
-//             </div>
-//           )}
-
-//           <div className="space-y-6">
-//             <h2 className="text-premium-label flex items-center gap-3">
-//               <History className="w-4 h-4 text-primary" />
-//               Historical Ledgers
-//             </h2>
-//             <div className="bg-card rounded-4xl border border-border shadow-2xl overflow-hidden p-2">
-//               <DataTable
-//                 columns={columns}
-//                 data={paginatedPayrollRuns || []}
-//                 isLoading={isLoading}
-//                 total={total}
-//                 currentPage={currentPage}
-//                 pageSize={pageSize}
-//                 onPageChange={setCurrentPage}
-//                 paginationLabel="Ledgers"
-//               />
-//             </div>
-//           </div>
-//         </div>
-
-//         <div className="lg:col-span-4 space-y-8">
-//           <Card title="Financial Insights" icon={Zap}>
-//             <div className="space-y-6">
-//               <div className="p-6 rounded-3xl bg-primary/5 border border-primary/20 space-y-4">
-//                 <div className="flex justify-between items-center">
-//                   <p className="text-premium-label text-primary">Budget Integrity</p>
-//                   <Zap className="w-4 h-4 text-primary" />
-//                 </div>
-//                 <p className="text-2xl font-black italic">NOMINAL</p>
-//                 <p className="text-[11px] font-medium text-muted-foreground leading-relaxed">
-//                   Distribution cycles are currently aligned with the annual projected variance.
-//                 </p>
-//               </div>
-
-//               <div className="space-y-4">
-//                 {[
-//                   { label: "Processing Latency", val: "1.2ms" },
-//                   { label: "Tax Compliance", val: "Validated" },
-//                   { label: "Ledger Consistency", val: "99.9%" },
-//                 ].map((item, i) => (
-//                   <div key={i} className="flex justify-between items-center">
-//                     <span className="text-xs font-bold text-muted-foreground">{item.label}</span>
-//                     <span className="text-xs font-black tabular-nums">{item.val}</span>
-//                   </div>
-//                 ))}
-//               </div>
-//             </div>
-//           </Card>
-
-//           <div className="premium-card bg-muted/30 border-dashed border-2 flex flex-col items-center justify-center py-10 text-center gap-4">
-//             <div className="w-12 h-12 rounded-2xl bg-background border border-border flex items-center justify-center">
-//               <FileText className="w-6 h-6 text-muted-foreground/40" />
-//             </div>
-//             <div className="space-y-1">
-//               <p className="text-sm font-black italic">Archive Portal</p>
-//               <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Legacy Data coming soon</p>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
+const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 export default function PayrollPage() {
-  return <div>Payroll Module Coming Soon</div>;
+    const { setAssistantOpen, setAssistantPayload, setAssistantQuery } = useStore();
+    const [showSalaries, setShowSalaries] = React.useState(false);
+    const [selectedPayslip, setSelectedPayslip] = React.useState<any>(null);
+
+    // Queries
+    const { data: payslipsData, loading } = useQuery(GET_MY_PAYSLIPS) as any;
+    const payslips = payslipsData?.myPayslips || [];
+    const latestPayslip = payslips[0];
+
+    return (
+        <div className="p-8 max-w-6xl mx-auto space-y-10 animate-fade-in">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                    <h1 className="text-premium-h1">My Ledger</h1>
+                    <p className="text-muted-foreground font-medium mt-1">Unified view of your financial disbursements and cycle history.</p>
+                </div>
+                <Button
+                    variant="outline"
+                    className="premium-card bg-card/50 backdrop-blur-sm border-border/40 font-black text-[10px] uppercase tracking-widest gap-2"
+                    onClick={() => setShowSalaries(!showSalaries)}
+                >
+                    {showSalaries ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                    {showSalaries ? "Hide Values" : "Show Values"}
+                </Button>
+            </div>
+
+            {/* Quick Stats / Summary of Latest Payslip */}
+            {latestPayslip && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <Card className="premium-card lg:col-span-2 overflow-hidden relative group/card">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 animate-pulse-slow group-hover/card:scale-150 transition-transform duration-700" />
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 relative z-10">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-primary/10 text-primary flex items-center justify-center rounded-2xl">
+                                    <Calendar className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black">{monthNames[latestPayslip.payrollRun.month - 1]} {latestPayslip.payrollRun.year}</h3>
+                                    <p className="text-premium-label">LATEST CYCLE</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-3 w-full md:w-auto">
+                                <Button
+                                    variant="outline"
+                                    className="premium-card bg-card font-black text-[10px] uppercase tracking-widest gap-2 flex-1 md:flex-initial"
+                                    onClick={() => setSelectedPayslip(latestPayslip)}
+                                >
+                                    <LayoutPanelLeft className="w-4 h-4" /> View Details
+                                </Button>
+                                <Button
+                                    className="btn-primary flex-1 md:flex-initial"
+                                    onClick={() => {
+                                        if (latestPayslip.payslipPdf?.url) {
+                                            window.open(latestPayslip.payslipPdf.url, '_blank');
+                                        } else {
+                                            toast.error("PDF not yet generated for this cycle");
+                                        }
+                                    }}
+                                >
+                                    <Download className="w-4 h-4 mr-2" />
+                                    Export
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pt-6 border-t border-border/50 relative z-10">
+                            <div className="space-y-1">
+                                <p className="text-premium-label">Connectivity</p>
+                                <p className="text-2xl font-black italic">{latestPayslip.workedDays} Days</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-premium-label">Gross Value</p>
+                                <p className="text-2xl font-black italic text-primary">
+                                    {showSalaries ? `₹${Number(latestPayslip.grossEarnings).toLocaleString()}` : "₹ ••••••••"}
+                                </p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-premium-label">Deductions</p>
+                                <p className="text-2xl font-black italic text-destructive">
+                                    {showSalaries ? `₹${Number(latestPayslip.totalDeductions).toLocaleString()}` : "₹ •••"}
+                                </p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-premium-label">Net Credit</p>
+                                <p className="text-2xl font-black italic text-emerald-600">
+                                    {showSalaries ? `₹${Number(latestPayslip.netPay).toLocaleString()}` : "₹ ••••••••"}
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card className="premium-card bg-linear-to-br from-indigo-600 to-violet-700 text-white border-none shadow-xl shadow-indigo-500/20 relative overflow-hidden group/yield">
+                        <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover/yield:scale-150 transition-transform duration-700" />
+                        <div className="flex flex-col h-full justify-between gap-8 relative z-10">
+                            <div className="space-y-4">
+                                <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/10">
+                                    <DollarSign className="w-6 h-6" />
+                                </div>
+                                <div className="space-y-1">
+                                    <h3 className="text-xl font-black mt-2 tracking-tight">Annual Yield</h3>
+                                    <p className="text-sm text-indigo-100/70 font-medium">Cumulative net distribution for the active fiscal year.</p>
+                                </div>
+                            </div>
+                            <div>
+                                <p className="text-4xl font-black tracking-tighter italic">
+                                    {showSalaries ? `₹${payslips.reduce((acc: any, p: any) => acc + Number(p.netPay), 0).toLocaleString()}` : "₹ •••••••••"}
+                                </p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-200/50 mt-2">Authenticated Total</p>
+                            </div>
+                            <button className="flex items-center text-sm font-bold gap-2 text-indigo-100 hover:text-white transition-colors whitespace-nowrap group/link">
+                                View Tax Projections
+                                <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
+                            </button>
+                        </div>
+                    </Card>
+                </div>
+            )}
+
+            {/* History Table */}
+            <div className="space-y-6">
+                <h2 className="text-premium-label flex items-center gap-3">
+                    <FileText className="w-4 h-4 text-primary" />
+                    Historical Archive
+                </h2>
+                <Card className="premium-card overflow-hidden p-2">
+                    <DataTable
+                        isLoading={loading}
+                        data={payslips}
+                        columns={[
+                            {
+                                key: "payrollRun",
+                                label: "Date",
+                                render: (_val: any, row: any) => (
+                                    <div className="font-bold flex items-center gap-2">
+                                        {monthNames[row.payrollRun.month - 1]} {row.payrollRun.year}
+                                    </div>
+                                )
+                            },
+                            {
+                                key: "grossEarnings",
+                                label: "Gross Value",
+                                render: (val: any) => (
+                                    <span className="font-bold tabular-nums">
+                                        {showSalaries ? `₹${Number(val).toLocaleString()}` : "••••••••"}
+                                    </span>
+                                )
+                            },
+                            {
+                                key: "netPay",
+                                label: "Net Distribution",
+                                render: (val: any) => (
+                                    <span className="font-black text-primary tabular-nums">
+                                        {showSalaries ? `₹${Number(val).toLocaleString()}` : "••••••••"}
+                                    </span>
+                                )
+                            },
+                            {
+                                key: "status",
+                                label: "State",
+                                render: (val: any) => (
+                                    <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100/50 text-emerald-700 border border-emerald-200 backdrop-blur-sm">
+                                        {val}
+                                    </span>
+                                )
+                            },
+                            {
+                                key: "actions",
+                                label: "Operations",
+                                render: (_val: any, row: any) => (
+                                    <div className="flex gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            className="font-bold h-10 hover:bg-primary/5"
+                                            onClick={() => setSelectedPayslip(row)}
+                                        >
+                                            <Eye className="w-4 h-4 mr-2" />
+                                            View
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            className="font-bold h-10 hover:bg-primary/5"
+                                            onClick={() => {
+                                                if (row.payslipPdf?.url) {
+                                                    window.open(row.payslipPdf.url, '_blank');
+                                                } else {
+                                                    toast.error("PDF not yet generated");
+                                                }
+                                            }}
+                                        >
+                                            <Download className="w-4 h-4 mr-2" />
+                                            PDF
+                                        </Button>
+                                    </div>
+                                )
+                            },
+                            {
+                                key: "ai",
+                                label: "AI Insight",
+                                render: (_val: any, row: any) => (
+                                    <Button
+                                        variant="ghost"
+                                        className="font-bold h-10 hover:bg-primary/5 text-primary gap-2"
+                                        onClick={() => {
+                                            setAssistantPayload({ payslip_id: row.id });
+                                            setAssistantQuery(`Explain my payslip for ${monthNames[row.payrollRun.month - 1]} ${row.payrollRun.year} in detail.`);
+                                            setAssistantOpen(true);
+                                        }}
+                                    >
+                                        <Sparkles className="w-4 h-4" />
+                                        Analyze
+                                    </Button>
+                                )
+                            },
+                        ]}
+                    />
+                </Card>
+            </div>
+
+            <PayslipDetailsModal 
+                isOpen={!!selectedPayslip} 
+                onClose={() => setSelectedPayslip(null)} 
+                payslip={selectedPayslip} 
+            />
+        </div>
+    );
 }

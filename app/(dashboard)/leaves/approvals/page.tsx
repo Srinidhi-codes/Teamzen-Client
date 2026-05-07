@@ -5,7 +5,7 @@ import { Badge } from "@/components/common/Badge";
 import { useGraphQLLeaveRequests, useGraphQLLeaveRequestProcess } from "@/lib/graphql/leaves/leavesHook";
 
 export default function ApprovalsPage() {
-  const { leaveRequestData: requests, isLoading } = useGraphQLLeaveRequests();
+  const { leaveRequestData: requests, isLoading } = useGraphQLLeaveRequests(true);
   const { processLeaveRequest, processLeaveRequestLoading } = useGraphQLLeaveRequestProcess();
   const [comments, setComments] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
