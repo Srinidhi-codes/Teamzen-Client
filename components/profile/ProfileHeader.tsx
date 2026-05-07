@@ -41,6 +41,7 @@ export function ProfileHeader({
                                     width={176}
                                     height={176}
                                     className="w-full h-full object-cover"
+                                    unoptimized
                                 />
                             ) : (
                                 <div className="w-full h-full bg-linear-to-br from-primary to-primary/60 flex items-center justify-center text-white text-4xl sm:text-6xl font-black italic drop-shadow-lg">

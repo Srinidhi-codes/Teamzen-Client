@@ -28,7 +28,7 @@ export const InsightCard = ({ title, message, type, stats, topic }: InsightCardP
 
     return (
         <div className={cn(
-            "group relative overflow-hidden bg-card border border-border/50 rounded-4xl p-6 shadow-xl transition-all hover:shadow-2xl w-full animate-in fade-in slide-in-from-bottom-4 duration-1000",
+            "group relative overflow-hidden bg-card border border-border/50 rounded-4xl p-6 transition-all w-full animate-in fade-in slide-in-from-bottom-4 duration-1000",
             "before:absolute before:inset-0 before:bg-linear-to-br before:opacity-[0.03] before:pointer-events-none",
             isWarning ? "before:from-amber-600 before:to-transparent border-amber-500/20" : isPolicy ? "before:from-emerald-600 before:to-transparent border-emerald-500/20" : "before:from-primary before:to-transparent"
         )}>
@@ -41,7 +41,7 @@ export const InsightCard = ({ title, message, type, stats, topic }: InsightCardP
             <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-4">
                     <div className={cn(
-                        "w-12 h-12 rounded-2xl flex items-center justify-center border shadow-inner transition-transform duration-500 group-hover:scale-110",
+                        "w-12 h-12 rounded-2xl flex items-center justify-center border transition-transform duration-500 group-hover:scale-110",
                         isWarning ? "bg-amber-600/10 border-amber-500/20 text-amber-600" : isPolicy ? "bg-emerald-600/10 border-emerald-500/20 text-emerald-600" : "bg-primary/10 border-primary/20 text-primary"
                     )}>
                         {isWarning ? <AlertTriangle className="w-6 h-6 animate-pulse" /> : isPolicy ? <BookOpen className="w-6 h-6" /> : isStats ? <TrendingUp className="w-6 h-6" /> : <Sparkles className="w-6 h-6" />}
@@ -86,12 +86,6 @@ export const InsightCard = ({ title, message, type, stats, topic }: InsightCardP
                 )}
             </div>
             
-            <div className="mt-6 flex items-center justify-end">
-                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary/40 group-hover:text-primary/70 transition-colors">
-                    <span>Generated Insight</span>
-                    <ArrowRight className="w-3 h-3" />
-                </div>
-            </div>
         </div>
     );
 };

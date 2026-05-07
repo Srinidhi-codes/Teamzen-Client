@@ -41,8 +41,8 @@ export const GET_LEAVE_BALANCE = gql`
 `;
 
 export const GET_LEAVE_REQUESTS = gql`
-  query getLeaveRequests{
-    getLeaveRequests{
+  query getLeaveRequests($approvalsOnly: Boolean){
+    getLeaveRequests(approvalsOnly: $approvalsOnly){
       id
       user{
         id

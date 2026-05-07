@@ -9,6 +9,7 @@ import { AttendanceCard } from "./cards/AttendanceCard";
 import { InsightCard } from "./cards/InsightCard";
 import { LeaveTypeCard } from "./cards/LeaveTypeCard";
 import { PendingLeaveCard } from "./cards/PendingLeaveCard";
+import { PayrollCard } from "./cards/PayrollCard";
 
 interface MessageRendererProps {
     content: string;
@@ -21,7 +22,18 @@ interface MessageRendererProps {
 
 export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLast, isStreaming }: MessageRendererProps) => {
     const parts = useMessageParser(content);
-    const showDots = isLast && isStreaming && role === 'assistant' && (parts.length === 0 || (parts.length === 1 && !parts[0].value.trim()));
+    const richCardTypes = ['balance', 'attendance', 'insight', 'leavetype', 'pendingleave', 'payroll'];
+    const hasRichCards = role === 'assistant' && parts.some(p => richCardTypes.includes(p.type));
+
+    // Filter parts that should be rendered (only remove truly empty text)
+    const renderableParts = parts.filter(part => {
+        if (part.type === 'text') {
+            return part.value.trim().length > 0;
+        }
+        return true;
+    });
+    // Determine if we should show the typing/thinking indicator
+    const showDots = isLast && isStreaming && role === 'assistant' && renderableParts.length === 0;
 
     if (showDots) {
         return (
@@ -35,18 +47,16 @@ export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLas
 
     return (
         <div className="space-y-3 w-full">
-            {parts.map((part, idx) => {
+            {renderableParts.map((part, idx) => {
+                const isFinalPart = idx === renderableParts.length - 1;
+                
                 if (part.type === 'text') {
                     const text = part.value.trim();
-                    const isFinalPart = idx === parts.length - 1;
-                    
-                    if (!text) return null;
-                    
                     return (
                         <div key={idx} className={cn(
                             "max-w-[85%] p-4 rounded-3xl text-sm leading-relaxed relative",
                             role === 'user'
-                                ? "bg-primary text-primary-foreground rounded-tr-none ml-auto shadow-md shadow-primary/10"
+                                ? "bg-primary text-primary-foreground rounded-tr-none ml-auto"
                                 : "bg-muted/50 border border-border rounded-tl-none font-medium text-foreground/90"
                         )}>
                             {text}
@@ -55,42 +65,52 @@ export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLas
                             )}
                         </div>
                     );
-                } else if (part.type === 'balance') {
-                    return <LeaveBalanceCard key={idx} {...part.value} />;
-                } else if (part.type === 'attendance') {
-                    return <AttendanceCard key={idx} {...part.value} />;
-                } else if (part.type === 'error') {
-                    const { title, message } = part.value;
-                    return (
-                        <div key={idx} className="bg-destructive/5 border border-destructive/20 rounded-3xl p-5 shadow-sm space-y-2 animate-in zoom-in-95 duration-500 w-full">
-                            <div className="flex items-center gap-2 text-destructive">
-                                <X className="w-4 h-4" />
-                                <h4 className="font-black text-xs uppercase tracking-widest">{title || "Error Occurred"}</h4>
-                            </div>
-                            <p className="text-sm text-destructive/80 font-medium">{message}</p>
-                        </div>
-                    );
-                } else if (part.type === 'insight') {
-                    return <InsightCard key={idx} {...part.value} />;
-                } else if (part.type === 'leavetype') {
-                    return (
+                }
+
+                // For card types, we wrap them to potentially show the streaming cursor
+                const cardContent = (() => {
+                    if (part.type === 'balance') return <LeaveBalanceCard {...part.value} />;
+                    if (part.type === 'attendance') return <AttendanceCard {...part.value} />;
+                    if (part.type === 'insight') return <InsightCard {...part.value} />;
+                    if (part.type === 'leavetype') return (
                         <LeaveTypeCard
-                            key={idx}
                             {...part.value}
                             onSelect={(name, id) => handleSend(undefined, `I want to apply for ${name} (ID: ${id})`)}
                         />
                     );
-                } else if (part.type === 'pendingleave') {
-                    return (
+                    if (part.type === 'pendingleave') return (
                         <PendingLeaveCard
-                            key={idx}
                             {...part.value}
                             isCancelled={cancelledIds.has(part.value.id)}
                             onCancel={(id) => handleSend(undefined, `Cancel my leave with ID ${id}`)}
                         />
                     );
-                }
-                return null;
+                    if (part.type === 'payroll') return <PayrollCard {...part.value} />;
+                    if (part.type === 'error') {
+                        const { title, message } = part.value;
+                        return (
+                            <div className="bg-destructive/5 border border-destructive/20 rounded-3xl p-5 space-y-2 animate-in zoom-in-95 duration-500 w-full">
+                                <div className="flex items-center gap-2 text-destructive">
+                                    <X className="w-4 h-4" />
+                                    <h4 className="font-black text-xs uppercase tracking-widest">{title || "Error Occurred"}</h4>
+                                </div>
+                                <p className="text-sm text-destructive/80 font-medium">{message}</p>
+                            </div>
+                        );
+                    }
+                    return null;
+                })();
+
+                return (
+                    <div key={idx} className="relative w-full">
+                        {cardContent}
+                        {isLast && isStreaming && isFinalPart && (
+                            <div className="mt-2 ml-4">
+                                <span className="inline-block w-2 h-4 bg-primary/40 animate-pulse align-middle rounded-sm" />
+                            </div>
+                        )}
+                    </div>
+                );
             })}
         </div>
     );

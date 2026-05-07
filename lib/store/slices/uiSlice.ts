@@ -25,6 +25,8 @@ export interface UISlice {
     setAssistantOpen: (state: boolean) => void;
     assistantQuery: string;
     setAssistantQuery: (query: string) => void;
+    assistantPayload: any;
+    setAssistantPayload: (payload: any) => void;
 }
 
 export const createUISlice: StateCreator<UISlice> = (set) => ({
@@ -35,6 +37,7 @@ export const createUISlice: StateCreator<UISlice> = (set) => ({
     sidebarMobileOpen: false,
     assistantOpen: false,
     assistantQuery: '',
+    assistantPayload: null,
     setNavbarTabs: (navbarTabs) => set({ navbarTabs }),
     setActiveNavbarTab: (activeNavbarTab) => set({ activeNavbarTab }),
     setHasHydrated: (hasHydrated) => set({ hasHydrated }),
@@ -43,4 +46,5 @@ export const createUISlice: StateCreator<UISlice> = (set) => ({
     setSidebarMobileOpen: (sidebarMobileOpen) => set({ sidebarMobileOpen }),
     setAssistantOpen: (assistantOpen) => set({ assistantOpen }),
     setAssistantQuery: (assistantQuery) => set({ assistantQuery }),
+    setAssistantPayload: (assistantPayload) => set({ assistantPayload }),
 });

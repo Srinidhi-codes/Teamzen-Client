@@ -19,7 +19,7 @@ interface PendingLeaveCardProps {
 export const PendingLeaveCard = ({ id, type, from, to, duration, reason, isCancelled, onCancel }: PendingLeaveCardProps) => {
     return (
         <div className={cn(
-            "group relative bg-card border border-border/50 rounded-4xl p-6 shadow-xl transition-all hover:shadow-2xl overflow-hidden w-full animate-in zoom-in-95 duration-700",
+            "group relative bg-card border border-border/50 rounded-4xl p-6 transition-all overflow-hidden w-full animate-in zoom-in-95 duration-700",
             isCancelled ? "opacity-60 grayscale-[0.3]" : ""
         )}>
             {/* Status Indicator */}
@@ -32,7 +32,7 @@ export const PendingLeaveCard = ({ id, type, from, to, duration, reason, isCance
 
             <div className="flex items-start gap-4 mb-6">
                 <div className={cn(
-                    "w-12 h-12 rounded-2xl flex items-center justify-center border shadow-inner transition-transform duration-500 group-hover:scale-110",
+                    "w-12 h-12 rounded-2xl flex items-center justify-center border transition-transform duration-500 group-hover:scale-110",
                     isCancelled ? "bg-destructive/10 border-destructive/20 text-destructive" : "bg-primary/10 border-primary/20 text-primary"
                 )}>
                     <Calendar className="w-6 h-6" />
@@ -68,7 +68,7 @@ export const PendingLeaveCard = ({ id, type, from, to, duration, reason, isCance
             {!isCancelled ? (
                 <button
                     onClick={() => onCancel(id)}
-                    className="mt-6 w-full py-4 rounded-2xl bg-destructive/5 text-destructive hover:bg-destructive hover:text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-3 shadow-xs active:scale-95 group/btn"
+                    className="mt-6 w-full py-4 rounded-2xl bg-destructive/5 text-destructive hover:bg-destructive hover:text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-3 active:scale-95 group/btn"
                 >
                     <Trash2 className="w-4 h-4 group-hover/btn:rotate-12 transition-transform" />
                     Void Application

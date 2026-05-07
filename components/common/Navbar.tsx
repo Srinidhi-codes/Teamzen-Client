@@ -141,7 +141,7 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
             >
               <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform overflow-hidden">
                 {user?.organization?.logo?.url ? (
-                  <Image src={user.organization.logo.url as string} alt="Logo" width={48} height={48} className="w-full h-full object-cover" />
+                  <Image src={user.organization.logo.url as string} alt="Logo" width={48} height={48} className="w-full h-full object-cover" unoptimized />
                 ) : (
                   <span className="text-primary-foreground font-black text-xl">
                     {user?.organization?.name?.charAt(0) || 'P'}
@@ -210,6 +210,7 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                           width={40}
                           height={40}
                           className="w-full h-full object-cover"
+                          unoptimized
                         />
                       ) : (
                         <>

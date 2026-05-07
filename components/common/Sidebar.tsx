@@ -135,7 +135,15 @@ export function Sidebar({
         <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto custom-scrollbar">
           {navItems.map((item, index) => {
             const isActive =
-              pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+              pathname === item.href ||
+              (item.href !== "/dashboard" &&
+                pathname.startsWith(item.href + "/") &&
+                !navItems.some(
+                  (other) =>
+                    other.href !== item.href &&
+                    pathname.startsWith(other.href) &&
+                    other.href.length > item.href.length
+                ));
             const Icon = item.icon;
 
             return (
