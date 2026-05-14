@@ -6,14 +6,12 @@ const DJANGO_API_URL = RAW_API_URL.endsWith('/') ? RAW_API_URL : `${RAW_API_URL}
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const clientIp = request.headers.get('x-forwarded-for') || (request as any).ip || '';
 
         const djangoResponse = await fetch(`${DJANGO_API_URL}auth/login/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'X-Forwarded-For': clientIp,
             },
             body: JSON.stringify(body),
         });

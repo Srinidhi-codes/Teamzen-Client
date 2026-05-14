@@ -119,3 +119,15 @@ export const GET_TEAM_HIERARCHY = gql`
     }
   }
 `;
+
+export const GET_MY_LOGIN_HISTORY = gql`
+  query GetMyLoginHistory($page: Int, $pageSize: Int) {
+    mySecurityLogs(page: $page, pageSize: $pageSize) {
+      results {
+        id
+        latitude
+        longitude
+      }
+    }
+  }
+`;

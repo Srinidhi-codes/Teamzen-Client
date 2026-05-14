@@ -67,3 +67,16 @@ export interface GraphQLUser {
   totalLeaveEntitlement?: number;
   tenureDisplay?: string;
 }
+
+export interface SecurityLog {
+  id: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export interface SecurityLogResponse {
+  mySecurityLogs: {
+    results: SecurityLog[];
+  };
+}
+
