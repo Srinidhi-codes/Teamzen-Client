@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
+import { useQuery } from "@apollo/client/react";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
 import { useState, useEffect, useRef } from "react";
+import { GET_MY_LOGIN_HISTORY } from "@/lib/graphql/users/queries";
+import { SecurityLogResponse } from "@/lib/graphql/users/types";
 import { useStore } from "@/lib/store/useStore";
 import { ThemeSelector } from "./ThemeSelector";
 import client from "@/lib/api/client";
@@ -11,7 +14,7 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
 
 import { NotificationBell } from "./NotificationBell";
-import { Calendar, CircleDollarSign, Clock, LayoutDashboard, LogOut, Menu, Plane, Settings, User, Compass } from "lucide-react";
+import { Calendar, CircleDollarSign, Clock, LayoutDashboard, LogOut, Menu, Plane, Settings, User, Compass, Globe } from "lucide-react";
 import { useOnboardingTour } from "./OnboardingTour";
 import {
   DropdownMenu,
@@ -37,6 +40,10 @@ const IMPORTANT_ROUTES = [
 
 export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps) {
   const { logoutUser, user } = useStore();
+  const { data } = useQuery<SecurityLogResponse>(GET_MY_LOGIN_HISTORY, {
+    variables: { page: 1, pageSize: 1 },
+    fetchPolicy: "cache-first"
+  });
   const { startTour } = useOnboardingTour();
   const router = useRouter();
   const pathname = usePathname();
@@ -223,9 +230,26 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64 p-2 rounded-3xl shadow-2xl border-border bg-card/80 backdrop-blur-xl">
                   <DropdownMenuLabel className="px-4 py-3 bg-muted/20 rounded-2xl mb-1">
-                    <div className="flex-col items-start">
-                      <div className="text-md font-black text-primary uppercase tracking-widest">
-                        {user.firstName} {user.lastName}
+                    <div className="flex flex-col items-start w-full">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="text-md font-black text-primary uppercase tracking-widest">
+                          {user.firstName} {user.lastName}
+                        </div>
+                        {/* Geo-Status Badge */}
+                        {(() => {
+                          const isVerified = data?.mySecurityLogs?.results?.[0]?.latitude;
+                          return (
+                            <div className={cn(
+                              "flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[7px] font-black uppercase tracking-tighter",
+                              isVerified 
+                                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
+                                : "bg-amber-500/10 text-amber-500 border-amber-500/20 animate-pulse"
+                            )}>
+                              <Globe className="w-2 h-2" />
+                              {isVerified ? "Verified" : "Unverified"}
+                            </div>
+                          );
+                        })()}
                       </div>
                       <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mt-1">
                         {user.role}
