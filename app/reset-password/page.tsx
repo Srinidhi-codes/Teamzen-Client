@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import { Lock, Loader2, CheckCircle2, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Lock, Loader2, CheckCircle2, ArrowRight, Eye, EyeOff, ShieldAlert } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -63,7 +63,7 @@ function ResetPasswordForm() {
                 </div>
                 <h2 className="text-2xl font-bold text-white">Invalid Link</h2>
                 <p className="text-white/50">This password reset link is invalid or has expired.</p>
-                <Link href="/forgot-password" size="sm" className="inline-block mt-2">
+                <Link href="/forgot-password" className="inline-block mt-2">
                     <Button variant="link" className="text-purple-400 font-bold hover:text-purple-300">Request a new link</Button>
                 </Link>
             </div>
