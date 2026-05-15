@@ -30,14 +30,15 @@ export default function Home() {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
 
-  useEffect(() => {
-    if (hasHydrated && isAuthenticated) {
-      router.push("/dashboard");
-    }
-  }, [hasHydrated, isAuthenticated, router]);
+  // No automatic redirect here to allow users to see the landing page even when logged in
+  // useEffect(() => {
+  //   if (hasHydrated && isAuthenticated) {
+  //     router.push("/dashboard");
+  //   }
+  // }, [hasHydrated, isAuthenticated, router]);
 
-  // Don't render anything until hydration is complete OR if authenticated
-  if (!hasHydrated || isAuthenticated) return null;
+  // Don't render anything until hydration is complete to prevent mismatch
+  if (!hasHydrated) return null;
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -68,17 +69,28 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6 animate-slide-up [animation-delay:600ms]">
-            <Link href="/register">
-              <Button className="h-16 px-10 rounded-2xl text-[12px] font-black uppercase tracking-widest bg-primary text-primary-foreground shadow-2xl shadow-primary/30 hover:scale-105 transition-transform group">
-                Create Free Account
-                <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
-            <Link href="/login">
-              <Button variant="outline" className="h-16 px-10 rounded-2xl text-[12px] font-black uppercase tracking-widest border-border/50 bg-background/50 backdrop-blur-sm hover:bg-muted transition-colors">
-                Sign In Now
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link href="/dashboard">
+                <Button className="h-16 px-16 rounded-2xl text-[12px] font-black uppercase tracking-widest bg-primary text-primary-foreground shadow-2xl shadow-primary/30 hover:scale-105 transition-transform group">
+                  Go to Dashboard
+                  <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/register">
+                  <Button className="h-16 px-10 rounded-2xl text-[12px] font-black uppercase tracking-widest bg-primary text-primary-foreground shadow-2xl shadow-primary/30 hover:scale-105 transition-transform group">
+                    Create Free Account
+                    <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+                <Link href="/login">
+                  <Button variant="outline" className="h-16 px-10 rounded-2xl text-[12px] font-black uppercase tracking-widest border-border/50 bg-background/50 backdrop-blur-sm hover:bg-muted transition-colors">
+                    Sign In Now
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Dashboard Preview Image Placeholder */}
