@@ -20,6 +20,108 @@ interface MessageRendererProps {
     isStreaming?: boolean;
 }
 
+const renderInlineFormatting = (text: string) => {
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, idx) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+            const cleanBoldText = part.slice(2, -2);
+            return (
+                <span key={idx} className="font-extrabold text-foreground">
+                    {cleanBoldText}
+                </span>
+            );
+        }
+        return part;
+    });
+};
+
+const renderTextWithFormatting = (text: string, trailingCursor?: React.ReactNode) => {
+    let lines = text.split('\n');
+    const processedLines: string[] = [];
+    for (const line of lines) {
+        if (line.includes(' - **') || line.includes(' - *')) {
+            const parts = line.split(/(?=\s-\s)/);
+            for (const part of parts) {
+                processedLines.push(part.replace(/^\s*-\s*/, '').trim());
+            }
+        } else {
+            processedLines.push(line);
+        }
+    }
+    lines = processedLines;
+
+    return (
+        <div className="space-y-2 w-full">
+            {lines.map((line, lineIdx) => {
+                const isLastLine = lineIdx === lines.length - 1;
+                let currentLine = line.trim();
+                
+                if (currentLine === '') {
+                    return <div key={lineIdx} className="h-1" />;
+                }
+
+                // A list item starts with a dash, asterisk, or bullet followed by space
+                const isOriginalListItem = /^[-*•]\s+/.test(line.trim());
+
+                // Safe bullet strip: only strip if followed by whitespace
+                currentLine = currentLine.replace(/^[-*•]\s+/, '');
+
+                // Check if it's a heading
+                const isHeading = line.trim().startsWith('###') || line.trim().startsWith('##') || line.trim().startsWith('#');
+                if (isHeading) {
+                    const cleanText = line.trim().replace(/^#+\s*/, '');
+                    return (
+                        <h4 
+                            key={lineIdx} 
+                            className="font-black text-sm uppercase tracking-widest text-primary border-b border-border pb-1.5 mb-2 mt-4 inline-block underline underline-offset-4 decoration-primary/40"
+                        >
+                            {renderInlineFormatting(cleanText)}
+                            {isLastLine && trailingCursor}
+                        </h4>
+                    );
+                }
+
+                // Check if it's a subheader (ends with a colon but isn't a list item)
+                const isSubHeaderOnly = currentLine.endsWith(':') && !isOriginalListItem;
+                if (isSubHeaderOnly) {
+                    return (
+                        <div 
+                            key={lineIdx} 
+                            className="font-extrabold text-sm text-foreground mt-3 mb-1 underline underline-offset-4 decoration-primary/30"
+                        >
+                            {renderInlineFormatting(currentLine)}
+                            {isLastLine && trailingCursor}
+                        </div>
+                    );
+                }
+                
+                // Render list item with bullet dot
+                if (isOriginalListItem) {
+                    return (
+                        <div 
+                            key={lineIdx} 
+                            className="flex items-start gap-2 text-sm leading-relaxed my-1 pl-2"
+                        >
+                            <span className="text-primary mt-1.5 shrink-0 block w-1.5 h-1.5 rounded-full bg-primary/60" />
+                            <span className="flex-1">
+                                {renderInlineFormatting(currentLine)}
+                                {isLastLine && trailingCursor}
+                            </span>
+                        </div>
+                    );
+                }
+                
+                return (
+                    <p key={lineIdx} className="text-sm leading-relaxed">
+                        {renderInlineFormatting(currentLine)}
+                        {isLastLine && trailingCursor}
+                    </p>
+                );
+            })}
+        </div>
+    );
+};
+
 export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLast, isStreaming }: MessageRendererProps) => {
     const parts = useMessageParser(content);
     const richCardTypes = ['balance', 'attendance', 'insight', 'leavetype', 'pendingleave', 'payroll'];
@@ -52,17 +154,18 @@ export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLas
                 
                 if (part.type === 'text') {
                     const text = part.value.trim();
+                    const cursor = isLast && isStreaming && isFinalPart ? (
+                        <span className="inline-block w-2 h-4 bg-primary/40 ml-1 animate-pulse align-middle rounded-sm" />
+                    ) : undefined;
+                    
                     return (
                         <div key={idx} className={cn(
                             "max-w-[85%] p-4 rounded-3xl text-sm leading-relaxed relative",
                             role === 'user'
                                 ? "bg-primary text-primary-foreground rounded-tr-none ml-auto"
-                                : "bg-muted/50 border border-border rounded-tl-none font-medium text-foreground/90"
+                                : "bg-muted/50 border border-border rounded-tl-none font-medium text-foreground/90 w-full"
                         )}>
-                            {text}
-                            {isLast && isStreaming && isFinalPart && (
-                                <span className="inline-block w-2 h-4 bg-primary/40 ml-1 animate-pulse align-middle rounded-sm" />
-                            )}
+                            {renderTextWithFormatting(text, cursor)}
                         </div>
                     );
                 }

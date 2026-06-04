@@ -4,6 +4,18 @@ export const API_ENDPOINTS = {
   LOGIN: "/auth/login/",
   LOGOUT: "/users/logout/",
   REFRESH: "/auth/refresh/",
+  
+  // New Auth Endpoints
+  OTP_SEND: "/users/auth/otp/send/",
+  OTP_VERIFY: "/users/auth/otp/verify/",
+  TOTP_SETUP: "/users/auth/totp/setup/",
+  TOTP_ENABLE: "/users/auth/totp/enable/",
+  TOTP_DISABLE: "/users/auth/totp/disable/",
+  TOTP_VERIFY: "/users/auth/totp/verify/",
+  GOOGLE_LOGIN: "/users/auth/google/",
+  SESSIONS: "/users/auth/sessions/",
+  LOGOUT_DEVICE: "/users/auth/sessions/logout-device/",
+  LOGOUT_ALL_OTHERS: "/users/auth/sessions/logout-all-others/",
 
   // Users
   USERS: "/users/",

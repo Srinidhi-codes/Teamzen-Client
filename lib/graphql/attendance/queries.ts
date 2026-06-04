@@ -9,6 +9,10 @@ export const GET_ATTENDANCE = gql`
     logoutTime
     loginDistance
     logoutDistance
+    loginLatitude
+    loginLongitude
+    logoutLatitude
+    logoutLongitude
     actualLoginTime
     actualLogoutTime
     isVerified

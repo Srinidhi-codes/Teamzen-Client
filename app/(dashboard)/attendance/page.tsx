@@ -24,7 +24,18 @@ import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store/useStore";
 import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
 import Link from "next/link";
+
+const AttendanceMap = dynamic(() => import("@/components/attendance/AttendanceMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[300px] w-full bg-muted/40 animate-pulse rounded-3xl flex flex-col items-center justify-center text-xs font-black uppercase tracking-widest text-muted-foreground gap-3 border border-border">
+      <div className="w-[18px] h-[18px] border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      Synchronizing Geofence Vectors...
+    </div>
+  )
+});
 
 export default function AttendancePage() {
   const [currentTime, setCurrentTime] = useState(moment().format("hh:mm:ss A"));
@@ -33,10 +44,58 @@ export default function AttendancePage() {
   const router = useRouter();
   const { user } = useStore();
 
+  const [currentCoords, setCurrentCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const [mapTab, setMapTab] = useState<"live" | "checkin" | "checkout">("live");
+
+  const getDistanceKM = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const requestCurrentLocation = () => {
+    setIsLocating(true);
+    setLocationError(null);
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser.");
+      setIsLocating(false);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCurrentCoords({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude
+        });
+        setIsLocating(false);
+      },
+      (err) => {
+        let msg = "Failed to fetch coordinates.";
+        if (err.code === 1) msg = "Location permission denied. Please allow location access.";
+        else if (err.code === 2) msg = "Position unavailable. Ensure your GPS/network location is enabled.";
+        else if (err.code === 3) msg = "Timeout getting location.";
+        setLocationError(msg);
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(moment().format("hh:mm:ss A"));
     }, 1000);
+    
+    requestCurrentLocation();
+
     return () => clearInterval(timer);
   }, []);
 
@@ -65,14 +124,15 @@ export default function AttendancePage() {
     try {
       const { latitude, longitude } = await getLocationAsync();
       if (type === 'in') {
-        await checkIn({ latitude, longitude, officeLocationId: "2", loginTime: moment().format("HH:mm:ss") });
+        await checkIn({ latitude, longitude, officeLocationId: user?.officeLocation?.id || "2", loginTime: moment().format("HH:mm:ss") });
         toast.success("Identity verified. Access granted.");
       } else {
         await checkOut({ latitude, longitude, logoutTime: moment().format("HH:mm:ss") });
         toast.success("Protocol complete. Session terminated.");
       }
+      requestCurrentLocation();
     } catch (error) {
-      toast.error(error instanceof String ? error : "Location verification failed");
+      toast.error(typeof error === "string" ? error : (error as any)?.message || "Location verification failed");
     }
   };
 
@@ -88,24 +148,28 @@ export default function AttendancePage() {
   const statusConfig = todayAttendance?.status ? STATUS_CONFIG[todayAttendance.status] : null;
 
   return (
-    <div className="space-y-10 animate-fade-in pb-20">
+    <div className="space-y-10 animate-fade-in pb-20 p-4 sm:p-8">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div className="space-y-1">
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Attendance Management</h1>
-          <p className="text-muted-foreground font-medium text-sm sm:text-base flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Station: <span className="text-foreground font-bold">{user?.officeLocation?.name}</span>
-          </p>
+      <div className="animate-fade-in">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pl-5">
+          <div className="relative">
+            <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
+            <h1 className="text-3xl sm:text-3xl font-black text-foreground tracking-tight">Attendance Management</h1>
+            <p className="text-premium-label mt-2 opacity-60 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Location: <span className="text-foreground font-bold">{user?.officeLocation?.name}</span>
+            </p>
+          </div>
+          <div className="mt-4 lg:mt-0 w-full sm:w-auto">
+            <Button
+              onClick={() => router.push("/attendance/attendance-correction")}
+              className="btn-primary w-full sm:w-auto h-11 sm:h-12 px-6 rounded-2xl shadow-lg shadow-primary/20 text-xs uppercase tracking-widest font-black"
+            >
+              <Edit className="w-4 h-4 mr-2 shrink-0" />
+              Data Correction Request
+            </Button>
+          </div>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => router.push("/attendance/attendance-correction")}
-          className={cn("w-full sm:w-auto btn-primary text-primary")}
-        >
-          <Edit className="w-4 h-4 mr-2" />
-          Data Correction Request
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -168,6 +232,186 @@ export default function AttendancePage() {
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Geofence Map Card */}
+          <div className="premium-card p-6 sm:p-8 space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h3 className="text-lg sm:text-xl font-black tracking-tight flex items-center gap-2">
+                  Geofence Verification Map
+                </h3>
+                <p className="text-xs text-muted-foreground font-medium mt-1">
+                  Validate your alignment with the office perimeter
+                </p>
+              </div>
+
+              {/* Tab Selector */}
+              <div className="flex bg-muted/60 p-1 rounded-xl border border-border shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setMapTab("live")}
+                  className={cn(
+                    "px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all cursor-pointer",
+                    mapTab === "live" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground"
+                  )}
+                >
+                  Live Position
+                </button>
+                {todayAttendance?.loginTime && todayAttendance?.loginLatitude && (
+                  <button
+                    type="button"
+                    onClick={() => setMapTab("checkin")}
+                    className={cn(
+                      "px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all cursor-pointer",
+                      mapTab === "checkin" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground"
+                    )}
+                  >
+                    Check-In
+                  </button>
+                )}
+                {todayAttendance?.logoutTime && todayAttendance?.logoutLatitude && (
+                  <button
+                    type="button"
+                    onClick={() => setMapTab("checkout")}
+                    className={cn(
+                      "px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all cursor-pointer",
+                      mapTab === "checkout" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground"
+                    )}
+                  >
+                    Check-Out
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Map & Telemetry Render */}
+            {(() => {
+              const office = user?.officeLocation;
+              if (!office) {
+                return (
+                  <div className="p-6 rounded-2xl bg-muted/10 text-center text-xs font-semibold text-muted-foreground">
+                    No office location is assigned to your profile.
+                  </div>
+                );
+              }
+
+              const officeLat = Number(office.latitude);
+              const officeLng = Number(office.longitude);
+              const radiusMeters = office.geoRadiusMeters || 200;
+
+              let activeLat: number | null = null;
+              let activeLng: number | null = null;
+              let activeDistanceMeters: number | null = null;
+              let isWithin = false;
+
+              if (mapTab === "live") {
+                if (currentCoords) {
+                  activeLat = currentCoords.latitude;
+                  activeLng = currentCoords.longitude;
+                  const distanceKm = getDistanceKM(activeLat, activeLng, officeLat, officeLng);
+                  activeDistanceMeters = distanceKm * 1000;
+                  isWithin = activeDistanceMeters <= radiusMeters;
+                }
+              } else if (mapTab === "checkin") {
+                activeLat = todayAttendance?.loginLatitude || null;
+                activeLng = todayAttendance?.loginLongitude || null;
+                activeDistanceMeters = todayAttendance?.loginDistance || null;
+                isWithin = activeDistanceMeters !== null ? activeDistanceMeters <= radiusMeters : false;
+              } else if (mapTab === "checkout") {
+                activeLat = todayAttendance?.logoutLatitude || null;
+                activeLng = todayAttendance?.logoutLongitude || null;
+                activeDistanceMeters = todayAttendance?.logoutDistance || null;
+                isWithin = activeDistanceMeters !== null ? activeDistanceMeters <= radiusMeters : false;
+              }
+
+              const activeDistanceKm = activeDistanceMeters !== null ? activeDistanceMeters / 1000 : null;
+
+              return (
+                <div className="space-y-6">
+                  {/* Warning / Success Banner */}
+                  {mapTab === "live" && !currentCoords && (
+                    <div className={cn(
+                      "p-4 rounded-2xl text-xs font-semibold flex items-center gap-3 border transition-all",
+                      locationError 
+                        ? "bg-rose-500/10 text-rose-500 border-rose-500/20" 
+                        : "bg-muted/10 text-muted-foreground border-border/50"
+                    )}>
+                      {isLocating ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin shrink-0" />
+                          <span>Determining geolocation coordinates from browser...</span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle className="w-4 h-4 shrink-0 animate-pulse text-rose-500" />
+                          <span className="grow">
+                            {locationError || "Location services are required to verify geofence. Please enable permissions."}
+                          </span>
+                          {!locationError && (
+                            <Button size="sm" variant="outline" className="ml-auto" onClick={requestCurrentLocation}>
+                              Grant Access
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {activeDistanceKm !== null && (
+                    <div className={cn(
+                      "p-4 rounded-2xl text-xs font-black tracking-tight border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all",
+                      isWithin
+                        ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                        : "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                    )}>
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs",
+                          isWithin ? "bg-emerald-500/20 text-emerald-600" : "bg-rose-500/20 text-rose-500"
+                        )}>
+                          {isWithin ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                        </div>
+                        <div>
+                          <p className="font-black text-sm capitalize">{mapTab} Status: {isWithin ? "Within Geofence" : "Out of Geofence"}</p>
+                          <p className="text-[10px] text-muted-foreground/60 font-medium">
+                            Distance: <span className="font-bold text-foreground">{activeDistanceKm.toFixed(2)} km</span> / Allowed: <span className="font-bold text-foreground">{(radiusMeters / 1000).toFixed(2)} km</span>
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {mapTab === "live" && (
+                        <button 
+                          onClick={requestCurrentLocation}
+                          disabled={isLocating}
+                          className="px-3 py-1.5 bg-background hover:bg-muted border border-border rounded-xl text-[9px] uppercase tracking-widest font-black transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isLocating ? "Syncing..." : "Refresh GPS"}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Map Component */}
+                  {(activeLat && activeLng) ? (
+                    <AttendanceMap
+                      employeeLat={activeLat}
+                      employeeLng={activeLng}
+                      officeLat={officeLat}
+                      officeLng={officeLng}
+                      radiusMeters={radiusMeters}
+                      employeeName={user?.firstName || "You"}
+                      officeName={office.name || "Office"}
+                    />
+                  ) : (
+                    <div className="h-[300px] w-full bg-muted/20 border border-border/50 rounded-3xl flex flex-col items-center justify-center text-xs text-muted-foreground font-black uppercase tracking-widest gap-2">
+                      <Navigation className="w-8 h-8 opacity-20 animate-pulse text-primary" />
+                      Pending GPS Coordinates
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
 

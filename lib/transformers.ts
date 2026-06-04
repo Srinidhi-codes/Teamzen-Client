@@ -33,5 +33,6 @@ export const mapBackendUserToFrontendUser = (backendUser: any): GraphQLUser => {
     uanNumber: backendUser.uan_number,
     hasSeenOnboarding: backendUser.has_seen_onboarding || backendUser.hasSeenOnboarding || false,
     hasSeenAiOnboarding: backendUser.has_seen_ai_onboarding || backendUser.hasSeenAiOnboarding || false,
+    isTotpEnabled: backendUser.is_totp_enabled || backendUser.isTotpEnabled || false,
   };
 };

@@ -159,7 +159,7 @@ export default function LeavesPage() {
       key: "fromDate",
       label: "Duration",
       render: (_: any, row: any) => (
-        <div className="flex items-center justify-center gap-2 bg-foreground/5 p-1 w-34 rounded-xl border border-border">
+        <div className="flex items-center justify-center gap-2 p-1 w-34">
           <span className="font-bold tabular-nums">{moment(row.fromDate).format("MMM DD")}</span>
           <ArrowRight className="w-3 h-3" />
           <span className="font-bold tabular-nums">{moment(row.toDate).format("MMM DD")}</span>
@@ -215,34 +215,37 @@ export default function LeavesPage() {
   return (
     <div className="p-4 sm:p-6 space-y-8 sm:space-y-10 animate-fade-in relative min-h-screen">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6">
-        <div className="space-y-1">
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Leave Management</h1>
-          <p className="text-muted-foreground font-medium text-sm sm:text-base flex items-center gap-2">
-            Validate and monitor your operational downtime.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              refetchBalance();
-              refetchRequests();
-              refetchTeam();
-            }}
-            className="rounded-xl h-10 w-10 hover:bg-primary/10 hover:text-primary transition-all active:rotate-180 duration-500 border border-border"
-            title="Refresh Ecosystem"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </Button>
-          <Button
-            onClick={() => setShowForm(!showForm)}
-            className={cn("flex-1 sm:w-auto", showForm ? "btn-secondary" : "btn-primary")}
-          >
-            {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-            {showForm ? "Cancel Request" : "Request Leave"}
-          </Button>
+      <div className="animate-fade-in">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pl-5">
+          <div className="relative">
+            <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
+            <h1 className="text-3xl sm:text-3xl font-black text-foreground tracking-tight">Leave Management</h1>
+            <p className="text-premium-label mt-2 opacity-60 flex items-center gap-2">
+              Validate and monitor your operational downtime.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 w-full lg:w-auto mt-4 lg:mt-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                refetchBalance();
+                refetchRequests();
+                refetchTeam();
+              }}
+              className="rounded-xl h-10 w-10 hover:bg-primary/10 hover:text-primary transition-all active:rotate-180 duration-500 border border-border"
+              title="Refresh Ecosystem"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </Button>
+            <Button
+              onClick={() => setShowForm(!showForm)}
+              className={cn("flex-1 lg:w-auto", showForm ? "btn-secondary" : "btn-primary")}
+            >
+              {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+              {showForm ? "Cancel Request" : "Request Leave"}
+            </Button>
+          </div>
         </div>
       </div>
       {/* Tab Bar */}
@@ -364,7 +367,7 @@ export default function LeavesPage() {
             </div>
 
             {/* Right Column: Insights */}
-            <div className="lg:col-span-4 space-y-6 sm:space-y-8 p-6 sm:p-8 bg-card border border-border shadow-xl rounded-3xl sm:rounded-4xl min-h-1/2">
+            <div className="lg:col-span-4 space-y-6 sm:space-y-8 p-6 sm:p-8 bg-card border border-border shadow-xl rounded-3xl sm:rounded-4xl h-fit">
               <Card title="System Insights">
                 <div className="space-y-8">
                   <div className="space-y-4">

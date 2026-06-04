@@ -99,21 +99,24 @@ export default function AnalyticsPage() {
   ];
 
   return (
-    <div className="space-y-10 animate-fade-in pb-20">
+    <div className="space-y-10 animate-fade-in pb-20 p-4 sm:p-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div className="space-y-1">
-          <h1 className="text-premium-h1">Command Matrix</h1>
-          <p className="text-muted-foreground font-medium flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            Predictive analytics and operational telemetry.
-          </p>
-        </div>
-        <div className="flex gap-4">
-          <Button variant="outline" className="h-12 px-6 rounded-2xl border-dashed border-2 hover:border-primary transition-all">
-            <Calendar className="w-4 h-4 mr-2" />
-            Time Interval: Q2-2024
-          </Button>
+      <div className="animate-fade-in">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pl-5">
+          <div className="relative">
+            <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
+            <h1 className="text-3xl font-black text-foreground tracking-tight">Command Matrix</h1>
+            <p className="text-premium-label mt-2 opacity-60 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              Predictive analytics and operational telemetry.
+            </p>
+          </div>
+          <div className="flex gap-4 mt-4 lg:mt-0">
+            <Button variant="outline" className="h-12 px-6 rounded-2xl border-dashed border-2 hover:border-primary transition-all">
+              <Calendar className="w-4 h-4 mr-2" />
+              Time Interval: Q2-2024
+            </Button>
+          </div>
         </div>
       </div>
 

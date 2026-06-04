@@ -45,14 +45,13 @@ export function PayslipDetailsModal({ isOpen, onClose, payslip }: PayslipDetails
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-2xl p-0 overflow-hidden bg-card border-none sm:rounded-[2.5rem] rounded-none h-full sm:h-auto shadow-3xl">
+            <DialogContent className="max-w-2xl overflow-hidden bg-card border-none sm:rounded-[2.5rem] rounded-none h-full sm:h-auto shadow-3xl py-3">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-3xl rounded-full -mr-32 -mt-32 pointer-events-none" />
                 
                 <DialogHeader className="p-6 sm:p-8 pb-0">
                     <div className="flex flex-col sm:flex-row justify-between items-center sm:items-start text-center sm:text-left gap-4">
                         <div className="flex flex-col items-center sm:items-start">
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 mb-3 animate-in fade-in slide-in-from-left-4 duration-500">
-                                <Sparkles className="w-3 h-3" />
                                 <span className="text-[10px] font-black uppercase tracking-widest">Financial Insight</span>
                             </div>
                             <DialogTitle className="text-2xl sm:text-3xl font-black italic tracking-tight leading-none">
@@ -82,11 +81,11 @@ export function PayslipDetailsModal({ isOpen, onClose, payslip }: PayslipDetails
                         </div>
                         <div className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl bg-muted/30 border border-border/40">
                             <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1">Worked</p>
-                            <p className="text-xs sm:text-sm font-black italic">{payslip.workedDays} Days</p>
+                            <p className="text-xs sm:text-sm font-black italic text-nowrap">{payslip.workedDays} Days</p>
                         </div>
                         <div className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl bg-muted/30 border border-border/40">
                             <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1">LOP</p>
-                            <p className="text-xs sm:text-sm font-black italic text-amber-600">{payslip.lopDays} Days</p>
+                            <p className="text-xs sm:text-sm font-black italic text-amber-600 text-nowrap">{payslip.lopDays} Days</p>
                         </div>
                     </div>
 
@@ -142,11 +141,10 @@ export function PayslipDetailsModal({ isOpen, onClose, payslip }: PayslipDetails
                     <Card className="p-5 sm:p-6 bg-primary/5 border border-primary/20 rounded-3xl sm:rounded-4xl relative overflow-hidden group">
                         <div className="flex flex-col items-center justify-between gap-4 sm:gap-6 relative z-10">
                             <div className="space-y-1.5 text-center">
-                                <h4 className="text-base sm:text-lg font-black italic flex items-center gap-2 justify-center">
-                                    <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-primary animate-pulse" />
-                                    AI Salary Explainer
+                                <h4 className="text-base sm:text-lg font-black flex items-center gap-2 justify-center">
+                                    AI Salary Summary
                                 </h4>
-                                <p className="text-[11px] sm:text-sm text-muted-foreground font-medium max-w-sm">
+                                <p className="text-md sm:text-sm text-muted-foreground font-medium max-w-sm">
                                     Confused about the deductions or LOP? Let our AI assistant break down exactly how your salary was calculated.
                                 </p>
                             </div>

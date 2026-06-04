@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import {
     Send, X, Bot, User, MessageSquare, Trash2,
-    Sparkles, Loader2, Minimize2, Mic, MicOff, Cpu
+    Sparkles, Loader2, Minimize2, Mic, MicOff, Cpu,
+    MessageCircle
 } from 'lucide-react';
 import { useVoiceWhisper } from "@/lib/hooks/useVoiceWhisper";
 import { VoiceWave } from "./VoiceWave";
@@ -344,7 +345,7 @@ export function AssistantWidget() {
                     <X className="w-7 h-7" />
                 ) : (
                     <div className="relative">
-                        <MessageSquare className="w-7 h-7" />
+                        <MessageCircle className="w-7 h-7" />
                         <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-primary animate-pulse" />
                     </div>
                 )}

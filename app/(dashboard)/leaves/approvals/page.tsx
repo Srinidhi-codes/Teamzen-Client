@@ -24,8 +24,19 @@ export default function ApprovalsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Leave Approvals</h1>
+    <div className="space-y-10 pb-20 animate-fade-in">
+      {/* Header Section */}
+      <div className="animate-fade-in">
+        <div className="flex flex-col lg:flex-row justify-between items-center gap-10 pl-5">
+          <div className="relative">
+            <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
+            <h1 className="text-3xl font-black text-foreground tracking-tight">Leave Approvals</h1>
+            <p className="text-premium-label mt-2 opacity-60">
+              Audit and process requested operational downtime.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

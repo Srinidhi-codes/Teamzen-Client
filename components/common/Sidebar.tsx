@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -13,7 +14,9 @@ import {
   UserCircle,
   BookCheck,
   Bell,
-  LogOut
+  LogOut,
+  TrendingUp,
+  Briefcase
 } from "lucide-react";
 import Image from "next/image";
 import { useStore } from "@/lib/store/useStore";
@@ -31,6 +34,8 @@ const navItems: NavItem[] = [
   { name: "Leaves", href: "/leaves", icon: Calendar },
   { name: "Attendance", href: "/attendance", icon: Clock },
   { name: "Payroll", href: "/payroll", icon: DollarSign },
+  { name: "Employees", href: "/employees", icon: Briefcase },
+  { name: "Analytics", href: "/analytics", icon: TrendingUp },
   { name: "Profile", href: "/profile", icon: UserCircle },
   { name: "Policies", href: "/policies", icon: BookCheck },
   { name: "Notifications", href: "/notifications", icon: Bell },
@@ -51,6 +56,9 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const { logoutUser } = useStore();
+  const [isHovered, setIsHovered] = useState(false);
+
+  const isExpanded = !isCollapsed || isHovered || isMobileOpen;
 
   const handleLogout = async () => {
     try {
@@ -71,7 +79,7 @@ export function Sidebar({
     transition-all duration-500 ease-in-out
     ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
     md:translate-x-0
-    ${isCollapsed ? "md:w-24" : "md:w-72"}
+    ${isExpanded ? "md:w-72" : "md:w-24"}
     w-72
     border-r border-sidebar-border
     shadow-2xl
@@ -81,17 +89,21 @@ export function Sidebar({
   return (
     <>
       {/* Overlay Backdrop */}
-      {(isMobileOpen || !isCollapsed) && (
+      {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-90 transition-opacity duration-500"
-          onClick={isMobileOpen ? closeMobile : toggleCollapse}
+          className="fixed inset-0 bg-black/50 z-90 transition-opacity duration-500 md:hidden"
+          onClick={closeMobile}
         />
       )}
 
-      <aside className={sidebarClasses}>
+      <aside
+        className={sidebarClasses}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
         {/* Header */}
         <div className="h-20 flex items-center justify-between px-6 border-b border-sidebar-border/50">
-          {(!isCollapsed || isMobileOpen) && (
+          {isExpanded && (
             <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-4 duration-500">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
                 <Image
@@ -109,17 +121,19 @@ export function Sidebar({
           )}
 
           {/* Desktop Collapse Toggle */}
-          <button
-            onClick={toggleCollapse}
-            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="hidden md:flex p-2 hover:bg-primary/10 hover:text-primary rounded-xl transition-all active:scale-90"
-          >
-            {isCollapsed ? (
-              <ChevronRight className="w-5 h-5" />
-            ) : (
-              <ChevronLeft className="w-5 h-5" />
-            )}
-          </button>
+          {!isExpanded && (
+            <div className="hidden md:flex w-full justify-center animate-in fade-in duration-500">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                <Image
+                  src={"/images/teamzen_zoomed.png"}
+                  alt="Logo"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 object-contain"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Mobile Close Button */}
           <button
@@ -152,22 +166,22 @@ export function Sidebar({
                 href={item.href}
                 id={`nav-${item.name.toLowerCase()}`}
                 onClick={() => isMobileOpen && closeMobile()}
-                className={`flex items-center space-x-4 px-4 py-3.5 rounded-2xl ${isCollapsed && !isMobileOpen ? "justify-center" : "justify-start"} transition-all duration-300 relative group ${isActive
+                className={`flex items-center space-x-4 px-4 py-3.5 rounded-2xl ${!isExpanded ? "justify-center" : "justify-start"} transition-all duration-300 relative group ${isActive
                   ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02]"
                   : "text-sidebar-foreground/60 hover:bg-primary/5 hover:text-primary"
                   }`}
                 style={{
                   animationDelay: `${index * 50}ms`,
                 }}
-                title={isCollapsed && !isMobileOpen ? item.name : ""}
+                title={!isExpanded ? item.name : ""}
               >
                 <Icon className={`w-5 h-5 shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'scale-110' : ''}`} />
-                {(!isCollapsed || isMobileOpen) && (
+                {isExpanded && (
                   <span className={`font-black text-[11px] uppercase tracking-wider truncate transition-all ${isActive ? 'translate-x-1' : 'group-hover:translate-x-1'}`}>
                     {item.name}
                   </span>
                 )}
-                {isActive && !isCollapsed && (
+                {isActive && isExpanded && (
                   <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-primary-foreground animate-pulse" />
                 )}
               </Link>
@@ -176,17 +190,17 @@ export function Sidebar({
         </nav>
 
         {/* Footer */}
-        <div className={`p-4 sm:p-6 border-t border-sidebar-border/50 transition-all duration-300 space-y-3 ${isCollapsed ? 'px-3' : ''}`}>
+        <div className={`p-4 sm:p-6 border-t border-sidebar-border/50 transition-all duration-300 space-y-3 ${!isExpanded ? 'px-3' : ''}`}>
 
           {/* Logout Button */}
           <button
             onClick={handleLogout}
             title="Logout"
-            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-300 group text-destructive/70 hover:bg-destructive/10 hover:text-destructive active:scale-95 ${isCollapsed && !isMobileOpen ? 'justify-center' : 'justify-start'
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-300 group text-destructive/70 hover:bg-destructive/10 hover:text-destructive active:scale-95 ${!isExpanded ? 'justify-center' : 'justify-start'
               }`}
           >
             <LogOut className="w-5 h-5 shrink-0 transition-transform group-hover:scale-110 group-hover:-translate-x-0.5" />
-            {(!isCollapsed || isMobileOpen) && (
+            {isExpanded && (
               <span className="font-black text-[11px] uppercase tracking-wider">Logout</span>
             )}
           </button>

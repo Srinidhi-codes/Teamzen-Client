@@ -41,7 +41,7 @@ import {
   Tooltip,
   ResponsiveContainer
 } from "recharts";
-import { ModernStat } from "@/components/common/Stats";
+import { ModernStat, StatsCard } from "@/components/common/Stats";
 import { FAB } from "@/components/common/FAB";
 import { Badge } from "@/components/common/Badge";
 import { AIInsightCard } from "@/components/ai/AIInsightCard";
@@ -114,17 +114,17 @@ export default function DashboardPage() {
     <div className="p-4 sm:p-6 space-y-8 animate-fade-in relative min-h-screen bg-background/50">
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-        <div className="space-y-1">
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
-            Welcome back, <span className="text-primary italic">{user?.firstName || 'User'}!</span> 👋
-          </h1>
-          <p className="text-muted-foreground font-medium mt-2">
-            {moment().format('dddd, MMMM DD, YYYY')}
-          </p>
-        </div>
-        <div className="flex items-center">
-          <Badge variant="success">System Online</Badge>
+      <div className="animate-fade-in">
+        <div className="flex flex-col lg:flex-row justify-between items-center gap-10 pl-5">
+          <div className="relative">
+            <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
+            <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
+              Welcome back, <span className="text-primary">{user?.firstName || 'User'}!</span>
+            </h1>
+            <p className="text-premium-label mt-2 opacity-60">
+              {moment().format('dddd, MMMM DD, YYYY')}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -147,61 +147,43 @@ export default function DashboardPage() {
       {/* Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         <Link href="/attendance/attendance-correction">
-          <ModernStat
-            icon={TrendingUp}
-            label="Attendance Rate"
+          <StatsCard
+            title="Attendance Rate"
             value={`${stats.attendanceRate || 0}%`}
-            color="text-emerald-500"
-            bg="bg-emerald-500/10"
+            icon={TrendingUp}
+            color="green"
           />
         </Link>
         <Link href="/leaves">
-          <ModernStat
-            icon={Calendar}
-            label="Leave Balance"
+          <StatsCard
+            title="Leave Balance"
             value={stats.leaveBalances?.[0]?.balance || 0}
-            color="text-blue-500"
-            bg="bg-blue-500/10"
+            icon={Calendar}
+            color="blue"
           />
         </Link>
-        <Link href="/leaves">
-          <ModernStat
-            icon={Clock}
-            label="Pending Requests"
+        <Link href="/leaves" className="hidden md:block">
+          <StatsCard
+            title="Pending Requests"
             value={stats.pendingRequestsCount || 0}
-            color="text-orange-500"
-            bg="bg-orange-500/10"
-            className="hidden md:block"
+            icon={Clock}
+            color="yellow"
           />
         </Link>
-        <Link href="/attendance/attendance-correction">
-          <ModernStat
-            icon={Users}
-            label="Days Present"
+        <Link href="/attendance/attendance-correction" className="hidden md:block">
+          <StatsCard
+            title="Days Present"
             value={stats.daysPresent || 0}
-            color="text-purple-500"
-            bg="bg-purple-500/10"
-            className="hidden md:block"
+            icon={Users}
+            color="purple"
           />
         </Link>
-        {/* <Link href="/payroll">
-          <ModernStat
-            icon={DollarSign}
-            label="Monthly Salary"
-            value={`$${(user as any)?.salary || '8,500'}`} // Mock/User salary
-            color="text-emerald-500"
-            bg="bg-emerald-500/10"
-          />
-        </Link> */}
       </div>
 
       {/* AI Insights Section */}
       {aiInsights.length > 0 && (
         <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-700">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-              <Sparkles className="w-4 h-4 animate-pulse" />
-            </div>
             <h3 className="font-black text-[10px] uppercase tracking-[0.3em] text-muted-foreground/60 leading-none">Proactive Intelligence</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
@@ -226,7 +208,6 @@ export default function DashboardPage() {
           {/* Recent Activity Section */}
           <Card
             title="Recent Activity"
-            icon={Zap}
             gradient
             hover
             action={<Link href="/notifications" className="text-primary text-xs font-bold uppercase tracking-widest hover:underline">View All</Link>}
@@ -261,7 +242,6 @@ export default function DashboardPage() {
           {/* Attendance Trend Chart */}
           <Card
             title="Attendance Trend"
-            icon={TrendingUp}
             gradient
             hover
           >
@@ -290,7 +270,6 @@ export default function DashboardPage() {
           {/* Upcoming Events */}
           <Card
             title="Upcoming Events"
-            icon={Calendar}
             gradient
             hover
           >
@@ -354,7 +333,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-1 space-y-8">
 
           {/* Last 7 Days Widget */}
-          <Card title="Last 7 Days" icon={Calendar} gradient hover>
+          <Card title="Last 7 Days" gradient hover>
             <div className="flex justify-between items-center px-1 overflow-x-auto pb-2 scrollbar-hide md:pb-0 md:overflow-hidden">
               {stats.last7Days?.map((d: any, i: number) => (
                 <div key={i} className="w-full flex flex-col items-center gap-2 px-1 xl:px-0">
@@ -402,7 +381,6 @@ export default function DashboardPage() {
           {/* Leave Summary */}
           <Card
             title="Leave Summary"
-            icon={Calendar}
             gradient
             hover
             className="group"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_MY_NOTIFICATIONS, GET_UNREAD_COUNT } from "@/lib/graphql/notifications/queries";
 import {
@@ -36,11 +36,20 @@ import { cn } from "@/lib/utils";
 import { useNotifications } from "@/lib/hooks/useNotifications";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import moment from "moment";
+import { Pagination } from "@/components/common/Pagination";
 
 export default function NotificationsPage() {
     const [filter, setFilter] = useState("all");
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 10;
+
     const { data, loading, refetch } = useQuery(GET_MY_NOTIFICATIONS, {
-        variables: { level: "personal" }
+        variables: { 
+            level: "personal",
+            isRead: filter === "unread" ? false : undefined,
+            page: currentPage,
+            pageSize: pageSize
+        }
     }) as any;
     const { data: activityData, loading: activityLoading, refetch: refetchActivity } = useQuery(GET_USER_ACTIVITIES) as any;
     const { data: countData, refetch: refetchCount } = useQuery(GET_UNREAD_COUNT, {
@@ -59,14 +68,30 @@ export default function NotificationsPage() {
         refetchActivity();
     }, { silent: true });
 
-    const notifications = data?.myNotifications || [];
+    const handleFilterChange = (val: string) => {
+        setFilter(val);
+        setCurrentPage(1);
+    };
+
+    const notifications = data?.myNotifications?.results || [];
+    const totalNotificationsCount = data?.myNotifications?.total || 0;
     const unreadCount = countData?.unreadNotificationCount || 0;
 
-    const filteredNotifications = filter === "unread"
-        ? notifications.filter((n: any) => !n.isRead)
-        : notifications;
-
     const activities = activityData?.userActivities || [];
+
+    const paginatedNotifications = notifications;
+    const totalNotificationPages = Math.ceil(totalNotificationsCount / pageSize);
+
+    const paginatedActivities = activities.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    const totalActivityPages = Math.ceil(activities.length / pageSize);
+
+    // Correct current page if it is out of bounds (e.g. after filter change or database deletion)
+    useEffect(() => {
+        const totalPages = filter === "activity" ? totalActivityPages : totalNotificationPages;
+        if (totalPages > 0 && currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [totalNotificationPages, totalActivityPages, currentPage, filter]);
 
     const handleMarkRead = async (id: string) => {
         await markRead({ variables: { id } });
@@ -173,40 +198,43 @@ export default function NotificationsPage() {
     );
 
     return (
-        <div className="p-4 sm:p-8 space-y-6 sm:space-y-8 animate-fade-in max-w-5xl mx-auto">
+        <div className="p-4 sm:p-8 space-y-6 sm:space-y-8 animate-fade-in mx-auto">
             {/* Header Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="space-y-1">
-                    <h1 className="text-3xl sm:text-4xl font-black tracking-tighter text-foreground leading-none">
-                        Notifications Center
-                    </h1>
-                    <p className="text-sm sm:text-base text-muted-foreground font-medium flex items-center gap-2">
-                        Manage your system updates and activity alerts.
-                    </p>
-                </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                    {unreadCount > 0 && (
+            <div className="animate-fade-in">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pl-5">
+                    <div className="relative">
+                        <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
+                        <h1 className="text-3xl sm:text-3xl font-black tracking-tighter text-foreground leading-none">
+                            Notifications Center
+                        </h1>
+                        <p className="text-premium-label mt-2 opacity-60 flex items-center gap-2">
+                            Manage your system updates and activity alerts.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2 w-full lg:w-auto mt-4 lg:mt-0">
+                        {unreadCount > 0 && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleMarkAllRead}
+                                className="flex-1 lg:flex-none rounded-2xl font-bold uppercase tracking-widest text-[9px] h-10 border-primary/20 hover:bg-primary/5"
+                            >
+                                <CheckCheck className="w-3.5 h-3.5 mr-2" />
+                                Mark All Read
+                            </Button>
+                        )}
                         <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleMarkAllRead}
-                            className="flex-1 sm:flex-none rounded-2xl font-bold uppercase tracking-widest text-[9px] h-10 border-primary/20 hover:bg-primary/5"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                                refetch();
+                                refetchActivity();
+                            }}
+                            className="rounded-xl h-10 w-10 hover:bg-primary/10 hover:text-primary transition-all active:rotate-180 duration-500"
                         >
-                            <CheckCheck className="w-3.5 h-3.5 mr-2" />
-                            Mark All Read
+                            <RotateCcw className="w-4 h-4" />
                         </Button>
-                    )}
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                            refetch();
-                            refetchActivity();
-                        }}
-                        className="rounded-xl h-10 w-10 hover:bg-primary/10 hover:text-primary transition-all active:rotate-180 duration-500"
-                    >
-                        <RotateCcw className="w-4 h-4" />
-                    </Button>
+                    </div>
                 </div>
             </div>
 
@@ -220,7 +248,7 @@ export default function NotificationsPage() {
                         </div>
                         <div>
                             <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-0.5">Total</p>
-                            <p className="text-xl sm:text-2xl font-black">{notifications.length}</p>
+                            <p className="text-xl sm:text-2xl font-black">{totalNotificationsCount}</p>
                         </div>
                     </div>
                 </Card>
@@ -254,7 +282,7 @@ export default function NotificationsPage() {
 
             {/* Main Content */}
             <Card className="rounded-3xl sm:rounded-4xl border-border/40 bg-card/30 backdrop-blur-xl overflow-hidden min-h-[500px]">
-                <Tabs defaultValue="all" onValueChange={setFilter} className="w-full">
+                <Tabs defaultValue="all" onValueChange={handleFilterChange} className="w-full">
                     <div className="px-4 sm:px-6 pt-6 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b border-border/40 pb-6">
                         <TabsList className="bg-muted/50 p-1 rounded-2xl w-full sm:w-auto overflow-x-auto no-scrollbar flex shrink-0">
                             <TabsTrigger value="all" className="flex-1 sm:flex-none rounded-xl px-4 sm:px-6 py-2 font-bold data-[state=active]:bg-primary/50 data-[state=active]:shadow-lg dark:data-[state=active]:bg-zinc-900">
@@ -279,7 +307,7 @@ export default function NotificationsPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={handleDeleteAllRead}
-                                disabled={!notifications.some((n: any) => n.isRead)}
+                                disabled={totalNotificationsCount === unreadCount}
                                 className="text-muted-foreground hover:text-destructive rounded-full text-[10px] font-black uppercase tracking-widest h-10 px-4"
                             >
                                 <Trash2 className="w-4 h-4 mr-2" />
@@ -288,51 +316,62 @@ export default function NotificationsPage() {
                         </div>
                     </div>
 
-                    <TabsContent value="activity" className="m-0 border-none outline-none">
+                    <TabsContent value="activity" className="m-0 border-none outline-none pb-6">
                         {activityLoading ? (
                             <div className="flex flex-col items-center justify-center py-24 space-y-4">
                                 <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
                                 <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Fetching Activity Logs...</p>
                             </div>
                         ) : activities.length > 0 ? (
-                            <div className="divide-y divide-border/30 max-h-[600px] overflow-y-auto custom-scrollbar">
-                                {activities.map((item: any) => {
-                                    const isLeave = item.id.includes('leave');
-                                    const isNotif = item.id.includes('notif');
-                                    const isJoin = item.action.toLowerCase().includes('joined');
-                                    const isAnniv = item.action.toLowerCase().includes('celebrates');
-                                    const Icon = isLeave ? Calendar : isNotif ? Zap : isJoin ? UserPlus : isAnniv ? Award : Clock;
-                                    const color = isAnniv ? 'text-amber-500' : isJoin ? 'text-blue-500' : isLeave ? 'text-blue-600' : 'text-primary';
-                                    const bg = isAnniv ? 'bg-amber-500/10' : isJoin ? 'bg-blue-500/10' : isLeave ? 'bg-blue-500/10' : 'bg-primary/10';
+                            <>
+                                <div className="divide-y divide-border/30 max-h-[600px] overflow-y-auto custom-scrollbar">
+                                    {paginatedActivities.map((item: any) => {
+                                        const isLeave = item.id.includes('leave');
+                                        const isNotif = item.id.includes('notif');
+                                        const isJoin = item.action.toLowerCase().includes('joined');
+                                        const isAnniv = item.action.toLowerCase().includes('celebrates');
+                                        const Icon = isLeave ? Calendar : isNotif ? Zap : isJoin ? UserPlus : isAnniv ? Award : Clock;
+                                        const color = isAnniv ? 'text-amber-500' : isJoin ? 'text-blue-500' : isLeave ? 'text-blue-600' : 'text-primary';
+                                        const bg = isAnniv ? 'bg-amber-500/10' : isJoin ? 'bg-blue-500/10' : isLeave ? 'bg-blue-500/10' : 'bg-primary/10';
 
-                                    return (
-                                        <div key={item.id} className="group relative p-4 sm:p-6 transition-all duration-300 hover:bg-muted/30">
-                                            <div className="flex gap-3 sm:gap-4">
-                                                <div className={cn("w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105", bg, color)}>
-                                                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                                                </div>
-                                                <div className="flex-1 min-w-0 space-y-1">
-                                                    <div className="flex justify-between items-start gap-2">
-                                                        <h4 className="text-xs sm:text-sm font-bold leading-relaxed text-foreground capitalize truncate">
-                                                            {item.action}
-                                                        </h4>
+                                        return (
+                                            <div key={item.id} className="group relative p-4 sm:p-6 transition-all duration-300 hover:bg-muted/30">
+                                                <div className="flex gap-3 sm:gap-4">
+                                                    <div className={cn("w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105", bg, color)}>
+                                                        <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                                                     </div>
-                                                    <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-4 gap-y-1 text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                                                            {moment(item.time).format("MMM DD, HH:mm")}
+                                                    <div className="flex-1 min-w-0 space-y-1">
+                                                        <div className="flex justify-between items-start gap-2">
+                                                            <h4 className="text-xs sm:text-sm font-bold leading-relaxed text-foreground capitalize truncate">
+                                                                {item.action}
+                                                            </h4>
                                                         </div>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <div className="w-1 h-1 rounded-full bg-border" />
-                                                            By: {item.user}
+                                                        <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-4 gap-y-1 text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                                                {moment(item.time).format("MMM DD, HH:mm")}
+                                                            </div>
+                                                            <div className="flex items-center gap-1.5">
+                                                                <div className="w-1 h-1 rounded-full bg-border" />
+                                                                By: {item.user}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                                        );
+                                    })}
+                                </div>
+                                {totalActivityPages > 1 && (
+                                    <div className="border-t border-border/30 pt-4 px-6">
+                                        <Pagination
+                                            currentPage={currentPage}
+                                            totalPages={totalActivityPages}
+                                            onPageChange={setCurrentPage}
+                                        />
+                                    </div>
+                                )}
+                            </>
                         ) : (
                             <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
                                 <div className="w-20 h-20 bg-muted/50 rounded-3xl flex items-center justify-center mb-6 opacity-50 grayscale group">
@@ -346,14 +385,25 @@ export default function NotificationsPage() {
                         )}
                     </TabsContent>
 
-                    <TabsContent value="all" className="p-0 m-0">
+                    <TabsContent value="all" className="p-0 m-0 pb-6">
                         {loading ? (
                             <div className="flex flex-col items-center justify-center py-24 space-y-4">
                                 <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
                                 <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Fetching Notifications...</p>
                             </div>
-                        ) : filteredNotifications.length > 0 ? (
-                            renderNotifications(filteredNotifications)
+                        ) : notifications.length > 0 ? (
+                            <>
+                                {renderNotifications(paginatedNotifications)}
+                                {totalNotificationPages > 1 && (
+                                    <div className="border-t border-border/30 pt-4 px-6">
+                                        <Pagination
+                                            currentPage={currentPage}
+                                            totalPages={totalNotificationPages}
+                                            onPageChange={setCurrentPage}
+                                        />
+                                    </div>
+                                )}
+                            </>
                         ) : (
                             <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
                                 <div className="w-20 h-20 bg-muted/50 rounded-3xl flex items-center justify-center mb-6 opacity-50 grayscale group">
@@ -367,14 +417,25 @@ export default function NotificationsPage() {
                         )}
                     </TabsContent>
 
-                    <TabsContent value="unread" className="p-0 m-0">
+                    <TabsContent value="unread" className="p-0 m-0 pb-6">
                         {loading ? (
                             <div className="flex flex-col items-center justify-center py-24 space-y-4">
                                 <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
                                 <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Fetching Notifications...</p>
                             </div>
-                        ) : filteredNotifications.length > 0 ? (
-                            renderNotifications(filteredNotifications)
+                        ) : notifications.length > 0 ? (
+                            <>
+                                {renderNotifications(paginatedNotifications)}
+                                {totalNotificationPages > 1 && (
+                                    <div className="border-t border-border/30 pt-4 px-6">
+                                        <Pagination
+                                            currentPage={currentPage}
+                                            totalPages={totalNotificationPages}
+                                            onPageChange={setCurrentPage}
+                                        />
+                                    </div>
+                                )}
+                            </>
                         ) : (
                             <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
                                 <div className="w-20 h-20 bg-muted/50 rounded-3xl flex items-center justify-center mb-6 opacity-50 grayscale group">

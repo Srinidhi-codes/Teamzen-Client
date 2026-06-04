@@ -1,40 +1,13 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useStore } from "@/lib/store/useStore";
-import { ColorAccent } from "@/lib/store/slices/themeSlice";
-import {
-    Check,
-    Palette,
-    Moon,
-    Sun,
-    Layout,
-    Clock
-} from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
-const accents: { name: ColorAccent; color: string; label: string; splitColor?: string }[] = [
-    { name: "indigo", color: "bg-indigo-600", label: "Indigo" },
-    { name: "blue", color: "bg-blue-600", label: "Blue" },
-    { name: "green", color: "bg-green-600", label: "Green" },
-    { name: "red", color: "bg-red-600", label: "Red" },
-    { name: "orange", color: "bg-orange-600", label: "Orange" },
-    { name: "purple", color: "bg-purple-600", label: "Purple" },
-    { name: "slate", color: "bg-slate-600", label: "Slate" },
-    { name: "neutral", color: "bg-neutral-split", label: "Neutral", splitColor: "split" },
-];
 
 export function ThemeSelector() {
     const [mounted, setMounted] = useState(false);
-    const { theme, setTheme } = useTheme();
-    const { accent, setAccent } = useStore();
-    const [isOpen, setIsOpen] = useState(false);
+    const { setTheme, resolvedTheme } = useTheme();
 
     // Avoid hydration mismatch
     useEffect(() => {
@@ -43,118 +16,72 @@ export function ThemeSelector() {
 
     if (!mounted) return null;
 
+    const isDark = resolvedTheme === "dark";
+
+    const toggleTheme = () => {
+        setTheme(isDark ? "light" : "dark");
+    };
+
     return (
-        <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
-            <DropdownMenuTrigger asChild>
-                <button
-                    className="p-2 rounded-full hover:bg-accent transition-colors flex items-center gap-2 group outline-none"
-                    title="Theme Settings"
-                >
-                    <Palette className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                    <div className={cn("w-3 h-3 rounded-full", accents.find(a => a.name === accent)?.color)} />
-                </button>
-            </DropdownMenuTrigger>
+        <button
+            onClick={toggleTheme}
+            className={cn(
+                "relative w-18 h-10 rounded-full border flex items-center p-1 cursor-pointer outline-none select-none shrink-0 group shadow-inner",
+                isDark 
+                    ? "bg-indigo-950/30 border-indigo-500/20 hover:border-indigo-500/40 hover:bg-indigo-950/40" 
+                    : "bg-amber-500/5 border-amber-500/10 hover:border-amber-500/20 hover:bg-amber-500/10"
+            )}
+            style={{ transition: 'background-color 500ms ease, border-color 500ms ease, box-shadow 500ms ease' }}
+            aria-label="Toggle theme"
+        >
+            {/* Background Icons */}
+            <div className="absolute inset-0 flex justify-between px-2.5 items-center pointer-events-none">
+                <Sun className={cn(
+                    "w-4 h-4", 
+                    isDark 
+                        ? "text-muted-foreground/20 scale-90" 
+                        : "text-amber-500/40 scale-100"
+                )} 
+                style={{ transition: 'all 500ms ease' }}
+                />
+                <Moon className={cn(
+                    "w-4 h-4", 
+                    isDark 
+                        ? "text-indigo-400/40 scale-100" 
+                        : "text-muted-foreground/20 scale-90"
+                )} 
+                style={{ transition: 'all 500ms ease' }}
+                />
+            </div>
 
-            <DropdownMenuContent align="end" className="w-72 glass-dark shadow-2xl rounded-2xl border border-border p-4 z-[301] animate-fade-in origin-top-right">
-                <div className="space-y-6">
-                    {/* Appearance Section */}
-                    <div>
-                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-                            <Layout className="w-3 h-3" /> Appearance
-                        </h4>
-                        <div className="grid grid-cols-3 gap-2">
-                            <button
-                                onClick={() => {
-                                    setTheme("light");
-                                    setIsOpen(false);
-                                }}
-                                className={cn(
-                                    "flex flex-col items-center gap-2 p-2 rounded-xl transition-all border-2 cursor-pointer",
-                                    theme === "light" ? "border-primary bg-primary/10" : "border-transparent bg-secondary hover:bg-accent"
-                                )}
-                            >
-                                <Sun className="w-5 h-5" />
-                                <span className="text-[10px] font-medium">Light</span>
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setTheme("dark");
-                                    setIsOpen(false);
-                                }}
-                                className={cn(
-                                    "flex flex-col items-center gap-2 p-2 rounded-xl transition-all border-2 cursor-pointer",
-                                    theme === "dark" ? "border-primary bg-primary/10" : "border-transparent bg-secondary hover:bg-accent"
-                                )}
-                            >
-                                <Moon className="w-5 h-5" />
-                                <span className="text-[10px] font-medium">Dark</span>
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setTheme("system");
-                                    setIsOpen(false);
-                                }}
-                                className={cn(
-                                    "flex flex-col items-center gap-2 p-2 rounded-xl transition-all border-2 cursor-pointer",
-                                    theme === "system" ? "border-primary bg-primary/10" : "border-transparent bg-secondary hover:bg-accent"
-                                )}
-                            >
-                                <Clock className="w-5 h-5" />
-                                <span className="text-[10px] font-medium">Auto</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Accent Color Section */}
-                    <div>
-                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-                            Accent Color
-                        </h4>
-                        <div className="grid grid-cols-4 gap-3">
-                            {accents.map((item) => (
-                                <button
-                                    key={item.name}
-                                    onClick={() => {
-                                        setAccent(item.name);
-                                        setIsOpen(false);
-                                    }}
-                                    className="flex flex-col items-center gap-1.5 group cursor-pointer"
-                                >
-                                    {item.splitColor === "split" ? (
-                                        <div
-                                            className={cn(
-                                                "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ring-offset-2 ring-offset-background border border-border",
-                                                accent === item.name ? "ring-2 ring-foreground scale-110 shadow-lg shadow-black/20" : "hover:scale-105"
-                                            )}
-                                            style={{ background: "linear-gradient(135deg, #000 50%, #fff 50%)" }}
-                                        >
-                                            {accent === item.name && <Check className="w-5 h-5 text-gray-400" />}
-                                        </div>
-                                    ) : (
-                                        <div className={cn(
-                                            "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ring-offset-2 ring-offset-background",
-                                            item.color,
-                                            accent === item.name ? "ring-2 ring-primary scale-110 shadow-lg shadow-black/20" : "hover:scale-105"
-                                        )}>
-                                            {accent === item.name && <Check className="w-5 h-5 text-white" />}
-                                        </div>
-                                    )}
-                                    <span className={cn(
-                                        "text-[10px] transition-colors",
-                                        accent === item.name ? "text-primary font-bold" : "text-muted-foreground"
-                                    )}>
-                                        {item.label}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-border/50 text-center">
-                    <p className="text-[10px] text-muted-foreground italic">Customizations are saved automatically</p>
-                </div>
-            </DropdownMenuContent>
-        </DropdownMenu>
+            {/* Sliding Knob */}
+            <div
+                className={cn(
+                    "w-8 h-8 rounded-full bg-background border shadow-md flex items-center justify-center transform relative overflow-hidden",
+                    isDark 
+                        ? "translate-x-8 border-indigo-500/30 shadow-indigo-500/10" 
+                        : "translate-x-0 border-amber-500/20 shadow-amber-500/10"
+                )}
+                style={{ transition: 'transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1), translate 500ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 500ms ease, border-color 500ms ease, box-shadow 500ms ease' }}
+            >
+                {/* Sun Icon for Light Mode */}
+                <Sun 
+                    className={cn(
+                        "w-5 h-5 text-amber-500 absolute",
+                        isDark ? "opacity-0 rotate-90 scale-50" : "opacity-100 rotate-0 scale-100"
+                    )} 
+                    style={{ transition: 'opacity 500ms ease, transform 500ms ease' }}
+                />
+                {/* Moon Icon for Dark Mode */}
+                <Moon 
+                    className={cn(
+                        "w-5 h-5 text-indigo-400 absolute",
+                        isDark ? "opacity-100 rotate-0 scale-100" : "opacity-0 -rotate-90 scale-50"
+                    )} 
+                    style={{ transition: 'opacity 500ms ease, transform 500ms ease' }}
+                />
+            </div>
+        </button>
     );
 }
+

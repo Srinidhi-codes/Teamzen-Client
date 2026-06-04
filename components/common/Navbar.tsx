@@ -77,6 +77,26 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
   const lastScrollY = useRef(0);
   const stopTimeout = useRef<NodeJS.Timeout | null>(null);
 
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleUserMenuMouseEnter = () => {
+    if (userMenuTimeoutRef.current) clearTimeout(userMenuTimeoutRef.current);
+    setIsUserMenuOpen(true);
+  };
+
+  const handleUserMenuMouseLeave = () => {
+    userMenuTimeoutRef.current = setTimeout(() => {
+      setIsUserMenuOpen(false);
+    }, 150);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (userMenuTimeoutRef.current) clearTimeout(userMenuTimeoutRef.current);
+    };
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -196,20 +216,21 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
 
           {/* Right Section: User Menu & Tools */}
           <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
-            <div className="flex items-center bg-muted/30 p-1 rounded-xl sm:rounded-2xl border border-border/50 space-x-1">
               <NotificationBell />
               <ThemeSelector />
-            </div>
 
             {user && (
-              <DropdownMenu modal={false}>
+              <DropdownMenu open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen} modal={false}>
                 <DropdownMenuTrigger asChild>
                   <button
                     id="user-menu-trigger"
                     aria-label="Open user profile menu"
+                    onMouseEnter={handleUserMenuMouseEnter}
+                    onMouseLeave={handleUserMenuMouseLeave}
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                     className="flex items-center space-x-3 px-1 sm:px-2 py-2 rounded-2xl transition-all hover:bg-muted/50 text-foreground group focus:outline-none"
                   >
-                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-border/50 shadow-sm ${!user.profilePictureUrl ? 'bg-linear-to-br from-primary to-primary/60 text-primary-foreground text-[10px] sm:text-xs font-black' : ''}`}>
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-border/50 shadow-sm transition-all duration-300 group-hover:scale-105 group-hover:shadow-md ${!user.profilePictureUrl ? 'bg-linear-to-br from-primary to-primary/60 text-primary-foreground text-[10px] sm:text-xs font-black' : ''}`}>
                       {user.profilePictureUrl ? (
                         <Image
                           src={user.profilePictureUrl as string}
@@ -228,7 +249,12 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                     </div>
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 p-2 rounded-3xl shadow-2xl border-border bg-card/80 backdrop-blur-xl">
+                <DropdownMenuContent 
+                  align="end" 
+                  onMouseEnter={handleUserMenuMouseEnter}
+                  onMouseLeave={handleUserMenuMouseLeave}
+                  className="w-64 p-2 rounded-3xl shadow-2xl border-border bg-card/80 backdrop-blur-xl"
+                >
                   <DropdownMenuLabel className="px-4 py-3 bg-muted/20 rounded-2xl mb-1">
                     <div className="flex flex-col items-start w-full">
                       <div className="flex items-center justify-between w-full">
