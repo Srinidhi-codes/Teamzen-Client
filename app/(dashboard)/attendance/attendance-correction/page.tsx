@@ -76,15 +76,18 @@ export default function AttendanceCorrectionPage() {
     return (
         <div className="space-y-10 animate-fade-in pb-20">
             {/* Header Section */}
-            <div className="flex flex-col justify-start items-start gap-6">
-                <div className="hover:scale-110 transition-transform hover:-translate-x-1 cursor-pointer">
-                    <ArrowLeftIcon onClick={router.back} />
-                </div>
-                <div className="space-y-1">
-                    <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Attendance Correction</h1>
-                    <p className="text-muted-foreground font-medium flex items-center gap-2">
-                        Attendance correction and verification.
-                    </p>
+            <div className="animate-fade-in">
+                <div className="flex flex-col justify-start items-start gap-6 pl-5 relative">
+                    <div className="hover:scale-110 transition-transform hover:-translate-x-1 cursor-pointer mb-2">
+                        <ArrowLeftIcon onClick={router.back} />
+                    </div>
+                    <div className="relative">
+                        <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
+                        <h1 className="text-3xl sm:text-3xl font-black text-foreground tracking-tight">Attendance Correction</h1>
+                        <p className="text-premium-label mt-2 opacity-60 flex items-center gap-2">
+                            Attendance correction and verification.
+                        </p>
+                    </div>
                 </div>
             </div>
 

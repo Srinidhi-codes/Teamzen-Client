@@ -30,12 +30,12 @@ export default function Home() {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
 
-  // No automatic redirect here to allow users to see the landing page even when logged in
-  // useEffect(() => {
-  //   if (hasHydrated && isAuthenticated) {
-  //     router.push("/dashboard");
-  //   }
-  // }, [hasHydrated, isAuthenticated, router]);
+  // Redirect logged-in users to the dashboard
+  useEffect(() => {
+    if (hasHydrated && isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [hasHydrated, isAuthenticated, router]);
 
   // Don't render anything until hydration is complete to prevent mismatch
   if (!hasHydrated) return null;

@@ -18,26 +18,26 @@ export default function PoliciesPage() {
 
     return (
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 animate-fade-in">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6">
-                <div className="space-y-1">
-                    <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground capitalize">
-                        Policy Management
-                    </h1>
-                    <p className="text-muted-foreground font-medium text-sm sm:text-base flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                        Access organization protocols and documentations.
-                    </p>
-                </div>
-
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="p-3 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-xl transition-all active:rotate-180 duration-500"
-                        title="Synchronize Data"
-                    >
-                        <RotateCcw className="w-4 h-4" />
-                    </button>
-                    {/* Upload policy removed for standard users */}
+            <div className="animate-fade-in">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pl-5">
+                    <div className="relative">
+                        <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
+                        <h1 className="text-3xl sm:text-3xl font-black text-foreground tracking-tight capitalize">
+                            Policy Management
+                        </h1>
+                        <p className="text-premium-label mt-2 opacity-60 flex items-center gap-2">
+                            Access organization protocols and documentations.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2 w-full lg:w-auto mt-4 lg:mt-0">
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="p-3 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-xl transition-all active:rotate-180 duration-500"
+                            title="Synchronize Data"
+                        >
+                            <RotateCcw className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -93,7 +93,7 @@ export default function PoliciesPage() {
                                         }}
                                         className="text-[11px] font-black uppercase tracking-widest text-primary hover:text-primary/80 flex items-center gap-2 group/btn"
                                     >
-                                        <span className="group-hover/btn:mr-1 transition-all">View Document</span>
+                                        <span className="group-hover/btn:mr-1 transition-all cursor-pointer">View Document</span>
                                     </button>
                                 </div>
                             </div>

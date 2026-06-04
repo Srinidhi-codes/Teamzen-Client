@@ -24,20 +24,25 @@ export default function PayrollPage() {
     const latestPayslip = payslips[0];
 
     return (
-        <div className="p-8 max-w-6xl mx-auto space-y-10 animate-fade-in">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div>
-                    <h1 className="text-premium-h1">My Ledger</h1>
-                    <p className="text-muted-foreground font-medium mt-1">Unified view of your financial disbursements and cycle history.</p>
+        <div className="p-8 mx-auto space-y-10 animate-fade-in">
+            <div className="animate-fade-in">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pl-5">
+                    <div className="relative">
+                        <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
+                        <h1 className="text-3xl font-black text-foreground tracking-tight">My Payroll</h1>
+                        <p className="text-premium-label mt-2 opacity-60">Unified view of your financial disbursements and cycle history.</p>
+                    </div>
+                    <div className="mt-4 lg:mt-0">
+                        <Button
+                            variant="outline"
+                            className="premium-card bg-card/50 backdrop-blur-sm border-border/40 font-black text-[10px] uppercase tracking-widest gap-2"
+                            onClick={() => setShowSalaries(!showSalaries)}
+                        >
+                            {showSalaries ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                            {showSalaries ? "Hide Values" : "Show Values"}
+                        </Button>
+                    </div>
                 </div>
-                <Button
-                    variant="outline"
-                    className="premium-card bg-card/50 backdrop-blur-sm border-border/40 font-black text-[10px] uppercase tracking-widest gap-2"
-                    onClick={() => setShowSalaries(!showSalaries)}
-                >
-                    {showSalaries ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                    {showSalaries ? "Hide Values" : "Show Values"}
-                </Button>
             </div>
 
             {/* Quick Stats / Summary of Latest Payslip */}
@@ -222,7 +227,6 @@ export default function PayrollPage() {
                                             setAssistantOpen(true);
                                         }}
                                     >
-                                        <Sparkles className="w-4 h-4" />
                                         Analyze
                                     </Button>
                                 )

@@ -62,6 +62,7 @@ export interface GraphQLUser {
   uanNumber?: string | null;
   hasSeenOnboarding: boolean;
   hasSeenAiOnboarding: boolean;
+  isTotpEnabled?: boolean;
   attendanceRate?: number;
   leaveBalance?: number;
   totalLeaveEntitlement?: number;

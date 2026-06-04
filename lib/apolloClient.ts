@@ -5,7 +5,7 @@ import { refreshAuthToken } from "./api/client";
 
 // Polyfill fromPromise if not available
 const fromPromise = <T>(promise: Promise<T>): Observable<T> => {
-  return new Observable<T>((observer) => {
+  return new Observable<T>((observer: any) => {
     promise
       .then((value) => {
         observer.next(value);
@@ -57,7 +57,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }: 
       networkError.statusCode === 401);
 
   if (isUnauthorized) {
-    return new Observable((observer) => {
+    return new Observable((observer: any) => {
       refreshAuthToken()
         .then(() => {
           const subscriber = forward(operation).subscribe({

@@ -6,7 +6,6 @@ import { Navbar } from "../common/Navbar";
 import dynamic from "next/dynamic";
 import { useStore } from "@/lib/store/useStore";
 import { useGraphQLUpdateUser } from "@/lib/api/graphqlHooks";
-import { LocationSyncBanner } from "../common/LocationSyncBanner";
 
 const AssistantWidget = dynamic(() => import("../ai"), { ssr: false });
 const OnboardingTour = dynamic(() => import("../common/OnboardingTour").then(mod => mod.OnboardingTour), { ssr: false });
@@ -41,7 +40,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground relative" style={{ scrollbarGutter: 'stable' }}>
-      <LocationSyncBanner />
       {/* Dynamic Background Blobs */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] animate-pulse-slow opacity-50" />
@@ -58,7 +56,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         closeMobile={() => setIsMobileOpen(false)}
       />
 
-      <div className="flex-1 flex flex-col min-h-screen transition-all duration-300 w-full relative z-10 md:ml-24">
+      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 w-full relative z-10 ${isCollapsed ? "md:ml-24" : "md:ml-72"}`}>
         <main className="flex-1 p-4 sm:p-8 pt-24 sm:pt-24 bg-transparent">
           {children}
         </main>

@@ -1,5 +1,5 @@
 "use client"
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "./client";
 import { API_ENDPOINTS } from "./endpoints";
 import { useEffect } from 'react';
@@ -33,7 +33,62 @@ export const useAuth = () => {
     },
   });
 
-  return { login, register };
+  const requestOtp = useMutation({
+    mutationFn: async (email: string) => {
+      const response = await client.post(API_ENDPOINTS.OTP_SEND, { email });
+      return response.data;
+    }
+  });
+
+  const verifyOtp = useMutation({
+    mutationFn: async (data: { email: string; otp: string; latitude?: number; longitude?: number }) => {
+      const response = await fetch('/api/auth/otp-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.detail || err?.error || 'OTP verification failed');
+      }
+      return response.json();
+    }
+  });
+
+  const verifyTotp = useMutation({
+    mutationFn: async (data: { temp_token: string; code: string; latitude?: number; longitude?: number }) => {
+      const response = await fetch('/api/auth/totp-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.detail || err?.error || '2FA verification failed');
+      }
+      return response.json();
+    }
+  });
+
+  const googleLogin = useMutation({
+    mutationFn: async (data: { id_token: string; latitude?: number; longitude?: number }) => {
+      const response = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.detail || err?.error || 'Google login failed');
+      }
+      return response.json();
+    }
+  });
+
+  return { login, register, requestOtp, verifyOtp, verifyTotp, googleLogin };
 };
 
 // hooks/useTokenRefresh.ts
@@ -248,6 +303,47 @@ export const usePolicies = () => {
     error: list.error,
     upload: upload,
     remove: remove,
+  };
+};
+
+export const useDeviceSessions = () => {
+  const queryClient = useQueryClient();
+
+  const list = useQuery({
+    queryKey: ['device-sessions'],
+    queryFn: async () => {
+      const response = await client.get(API_ENDPOINTS.SESSIONS);
+      return response.data;
+    },
+  });
+
+  const logoutDevice = useMutation({
+    mutationFn: async (jti: string) => {
+      const response = await client.post(API_ENDPOINTS.LOGOUT_DEVICE, { jti });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['device-sessions'] });
+    },
+  });
+
+  const logoutAllOthers = useMutation({
+    mutationFn: async () => {
+      const response = await client.post(API_ENDPOINTS.LOGOUT_ALL_OTHERS);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['device-sessions'] });
+    },
+  });
+
+  return {
+    sessions: list.data || [],
+    isLoading: list.isLoading,
+    error: list.error,
+    refetch: list.refetch,
+    logoutDevice,
+    logoutAllOthers,
   };
 };
 

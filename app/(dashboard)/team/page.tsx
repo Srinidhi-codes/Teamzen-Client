@@ -55,60 +55,57 @@ export default function TeamPage() {
     const { manager, user, peers, subordinates } = (data as any).teamHierarchy;
 
     return (
-        <div className="p-4 sm:p-8 space-y-12 animate-fade-in max-w-7xl mx-auto pb-24">
+        <div className="p-4 sm:p-8 space-y-12 animate-fade-in mx-auto pb-24">
             {/* Header Section */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 mb-12 sm:mb-16 relative">
-                <div className="space-y-4 w-full lg:w-auto">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-xl">
-                            <RefreshCcw className={cn("w-4 h-4 text-primary", loading ? "animate-spin" : "")} />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">Global Talent Map</span>
-                    </div>
-                    <h1 className="text-premium-h1">
-                        {(focusedUserId && (data as any)?.teamHierarchy?.user) ? (
-                            <>
-                                <span className="text-primary truncate block max-w-full sm:max-w-2xl">
-                                    {(data as any).teamHierarchy.user.firstName}'s
-                                </span>
-                                Environment
-                            </>
-                        ) : "Our Network"}
-                    </h1>
-                    <p className="text-muted-foreground font-medium flex items-center gap-2">
-                        Explore the intricate connections and reporting lines across our organizational ecosystem.
-                    </p>
+            <div className="animate-fade-in">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 mb-12 sm:mb-16 relative pl-5">
+                    <div className="relative">
+                        <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
+                        <h1 className="text-3xl sm:text-3xl font-black text-foreground tracking-tight">
+                            {(focusedUserId && (data as any)?.teamHierarchy?.user) ? (
+                                <>
+                                    <span className="text-primary truncate block max-w-full sm:max-w-2xl">
+                                        {(data as any).teamHierarchy.user.firstName}'s
+                                    </span>
+                                    Environment
+                                </>
+                            ) : "Our Network"}
+                        </h1>
+                        <p className="text-premium-label mt-2 opacity-60 flex items-center gap-2">
+                            Explore the intricate connections and reporting lines.
+                        </p>
 
-                    {focusedUserId && (
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-4">
-                            <button
-                                onClick={() => setFocusedUserId(null)}
-                                className="group flex items-center justify-center gap-2 px-6 py-3 bg-card border border-border rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-primary/30 hover:shadow-lg transition-all"
-                            >
-                                <ChevronLeft className="w-3 h-3 transition-transform group-hover:-translate-x-1" />
-                                Return to My View
-                            </button>
-                            {manager && (
+                        {focusedUserId && (
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-4">
                                 <button
-                                    onClick={() => setFocusedUserId(manager.id)}
-                                    className="px-6 py-3 bg-primary/5 border border-primary/20 rounded-2xl text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 transition-all text-center"
+                                    onClick={() => setFocusedUserId(null)}
+                                    className="group flex items-center justify-center gap-2 px-6 py-3 bg-card border border-border rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-primary/30 hover:shadow-lg transition-all"
                                 >
-                                    Focus on Manager
+                                    <ChevronLeft className="w-3 h-3 transition-transform group-hover:-translate-x-1" />
+                                    Return to My View
                                 </button>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                <div className="flex items-center gap-4 sm:gap-6 bg-card/50 backdrop-blur-xl px-6 sm:px-8 py-4 sm:py-6 rounded-3xl sm:rounded-[2.5rem] border border-border/50 shadow-2xl w-full sm:w-auto justify-center">
-                    <div className="text-center">
-                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">Direct Nodes</p>
-                        <p className="text-3xl sm:text-4xl font-black">{subordinates.length}</p>
+                                {manager && (
+                                    <button
+                                        onClick={() => setFocusedUserId(manager.id)}
+                                        className="px-6 py-3 bg-primary/5 border border-primary/20 rounded-2xl text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 transition-all text-center"
+                                    >
+                                        Focus on Manager
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </div>
-                    <div className="w-px h-10 sm:h-12 bg-border/50" />
-                    <div className="text-center">
-                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">Peer Nodes</p>
-                        <p className="text-3xl sm:text-4xl font-black">{peers.length}</p>
+
+                    <div className="flex items-center gap-4 sm:gap-6 bg-card/50 backdrop-blur-xl px-6 sm:px-8 py-4 sm:py-6 rounded-3xl sm:rounded-[2.5rem] border border-border/50 shadow-2xl w-full lg:w-auto justify-center mt-4 lg:mt-0">
+                        <div className="text-center">
+                            <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">Direct Nodes</p>
+                            <p className="text-3xl sm:text-4xl font-black">{subordinates.length}</p>
+                        </div>
+                        <div className="w-px h-10 sm:h-12 bg-border/50" />
+                        <div className="text-center">
+                            <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">Peer Nodes</p>
+                            <p className="text-3xl sm:text-4xl font-black">{peers.length}</p>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -145,23 +145,27 @@ export default function EmployeesPage() {
   ];
 
   return (
-    <div className="space-y-10 animate-fade-in pb-20">
+    <div className="space-y-10 animate-fade-in pb-20 p-4 sm:p-8">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div className="space-y-1">
-          <h1 className="text-premium-h1">Colleague Directory</h1>
-          <p className="text-muted-foreground font-medium flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            Audit and navigate through operational personnel.
-          </p>
+      <div className="animate-fade-in">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pl-5">
+          <div className="relative">
+            <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
+            <h1 className="text-3xl font-black text-foreground tracking-tight">Colleague Directory</h1>
+            <p className="text-premium-label mt-2 opacity-60 flex items-center gap-2">
+              Audit and navigate through operational personnel.
+            </p>
+          </div>
+          <div className="mt-4 lg:mt-0">
+            <Button
+              onClick={() => setShowForm(!showForm)}
+              className={showForm ? "btn-secondary" : "btn-primary"}
+            >
+              {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+              {showForm ? "Cancel Entry" : "Register Node"}
+            </Button>
+          </div>
         </div>
-        <Button
-          onClick={() => setShowForm(!showForm)}
-          className={showForm ? "btn-secondary" : "btn-primary"}
-        >
-          {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-          {showForm ? "Cancel Entry" : "Register Node"}
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">

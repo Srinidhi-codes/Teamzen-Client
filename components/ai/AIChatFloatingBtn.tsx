@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MessageSquare, Bot, Sparkles } from "lucide-react";
+import { X, Sparkles } from "lucide-react";
 
 interface AIChatFloatingBtnProps {
     onClick: () => void;
@@ -27,7 +27,7 @@ export default function AIChatFloatingBtn({ onClick, isOpen }: AIChatFloatingBtn
 
             <div className="relative z-10 overflow-hidden">
                 {isOpen ? (
-                    <Bot size={28} className="animate-in fade-in zoom-in spin-in-90 duration-500" />
+                    <X size={28} className="animate-in fade-in zoom-in spin-in-90 duration-500" />
                 ) : (
                     <div className="relative">
                         <Sparkles size={28} className="animate-in fade-in zoom-in duration-500 group-hover:rotate-12 transition-transform" />
@@ -35,10 +35,10 @@ export default function AIChatFloatingBtn({ onClick, isOpen }: AIChatFloatingBtn
                 )}
             </div>
 
-            {/* Notification Badge */}
+            {/* Status Dot */}
             {!isOpen && (
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-[10px] font-black text-white rounded-full flex items-center justify-center shadow-lg border-2 border-background animate-in slide-in-from-bottom-2 duration-700">
-                    1
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-[10px] font-black text-white rounded-full flex items-center justify-center shadow-lg border-2 border-background animate-in slide-in-from-bottom-2 duration-700">
+                    <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
                 </div>
             )}
         </button>

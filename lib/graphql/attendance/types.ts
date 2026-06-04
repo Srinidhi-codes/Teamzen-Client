@@ -6,6 +6,10 @@ export interface AttendanceRecord {
   logoutTime?: string | null;
   loginDistance?: number;
   logoutDistance?: number;
+  loginLatitude?: number | null;
+  loginLongitude?: number | null;
+  logoutLatitude?: number | null;
+  logoutLongitude?: number | null;
 
   status: "present" | "absent" | "half_day" | "leave" | "holiday";
   workedHours?: number | null;

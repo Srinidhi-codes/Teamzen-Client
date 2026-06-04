@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_MY_NOTIFICATIONS, GET_UNREAD_COUNT } from "@/lib/graphql/notifications/queries";
 import { MARK_NOTIFICATION_READ, MARK_ALL_READ, DELETE_NOTIFICATION } from "@/lib/graphql/notifications/mutations";
@@ -30,6 +31,27 @@ import moment from "moment";
 
 export function NotificationBell() {
     const router = useRouter();
+    const [isOpen, setIsOpen] = useState(false);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const handleMouseEnter = () => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        setIsOpen(true);
+    };
+
+    const handleMouseLeave = () => {
+        timeoutRef.current = setTimeout(() => {
+            setIsOpen(false);
+        }, 150);
+    };
+
+    // Clean up timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        };
+    }, []);
+
     const { data: notificationsData, refetch: refetchNotifications } = useQuery(GET_MY_NOTIFICATIONS, {
         variables: { level: 'personal' }
     }) as any;
@@ -47,7 +69,7 @@ export function NotificationBell() {
     const [markAllRead] = useMutation(MARK_ALL_READ);
     const [deleteNotification] = useMutation(DELETE_NOTIFICATION);
 
-    const notifications = notificationsData?.myNotifications || [];
+    const notifications = notificationsData?.myNotifications?.results || [];
     const unreadCount = countData?.unreadNotificationCount || 0;
 
     const handleMarkRead = async (id: string) => {
@@ -99,18 +121,24 @@ export function NotificationBell() {
     }
 
     return (
-        <DropdownMenu modal={false}>
+        <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
             <DropdownMenuTrigger asChild>
                 <button
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                    onClick={() => setIsOpen(!isOpen)}
                     className="p-2.5 rounded-2xl transition-all relative hover:bg-primary/10 text-muted-foreground hover:text-primary active:scale-95 group"
                 >
                     {unreadCount > 0 ? (
-                        <BellRing className="w-6 h-6 animate-pulse" />
+                        <BellRing className={cn(
+                            "w-6 h-6 text-primary transition-all origin-top group-hover:animate-bell-ring",
+                            !isOpen && "animate-pulse"
+                        )} />
                     ) : (
-                        <Bell className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+                        <Bell className="w-6 h-6 transition-all origin-top group-hover:text-primary group-hover:animate-bell-ring" />
                     )}
                     {unreadCount > 0 && (
-                        <span className="absolute top-2 right-2 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-lg">
+                        <span className="absolute top-2 right-2 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-lg transition-transform duration-300 group-hover:scale-110">
                             {unreadCount > 9 ? "9+" : unreadCount}
                         </span>
                     )}
@@ -119,6 +147,8 @@ export function NotificationBell() {
 
             <DropdownMenuContent
                 align="end"
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
                 className="w-[calc(100vw-20px)] sm:w-96 p-0 overflow-hidden border-border/50 bg-card/80 backdrop-blur-2xl rounded-3xl shadow-2xl animate-in zoom-in-95 duration-200"
             >
                 <DropdownMenuLabel className="p-0">
