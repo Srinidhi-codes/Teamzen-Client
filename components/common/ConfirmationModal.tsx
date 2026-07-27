@@ -38,21 +38,21 @@ const ConfirmationModal = ({
             iconClass: "bg-primary/10 text-primary",
             btnClass: "btn-primary",
             shadeClass: "from-primary/20",
-            label: "Verification Protocol"
+            label: "Confirm"
         },
         destructive: {
             icon: XCircle,
             iconClass: "bg-destructive/10 text-destructive",
             btnClass: "btn-destructive",
             shadeClass: "from-destructive/20",
-            label: "Critical Action"
+            label: "Delete"
         },
         warning: {
             icon: AlertTriangle,
             iconClass: "bg-amber-500/10 text-amber-500",
             btnClass: "bg-amber-500 text-white hover:bg-amber-600 shadow-amber-500/20",
             shadeClass: "from-amber-500/20",
-            label: "Security Warning"
+            label: "Warning"
         },
         success: {
             icon: CheckCircle2,
@@ -68,21 +68,17 @@ const ConfirmationModal = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md rounded-4xl p-0 overflow-hidden border-none shadow-3xl bg-background">
-                <div className={`bg-linear-to-br border-b ${config.shadeClass} via-background to-background p-10 relative`}>
-                    <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
-                        <Icon className="w-32 h-32 rotate-12" />
-                    </div>
-
-                    <div className="flex items-center gap-4 mb-8 relative z-10">
-                        <div className={`w-14 h-14 rounded-2xl ${config.iconClass} flex items-center justify-center shadow-inner`}>
-                            <Icon className="w-7 h-7" />
+            <DialogContent className="sm:max-w-md rounded-xl p-0 overflow-hidden border border-border shadow-lg bg-background">
+                <div className={`border-b border-border p-6 relative`}>
+                    <div className="flex items-center gap-3 mb-4 relative z-10">
+                        <div className={`w-10 h-10 rounded-lg ${config.iconClass} flex items-center justify-center`}>
+                            <Icon className="w-5 h-5" />
                         </div>
-                        <div className="text-premium-label">{config.label}</div>
+                        <div className="text-sm font-medium text-muted-foreground">{config.label}</div>
                     </div>
 
                     <DialogHeader className="relative z-10 text-left">
-                        <DialogTitle className="text-premium-h2 mb-3">
+                        <DialogTitle className="text-lg font-semibold mb-2">
                             {title}
                         </DialogTitle>
                         <DialogDescription className="text-sm font-medium text-muted-foreground leading-relaxed max-w-[90%]">
@@ -91,7 +87,7 @@ const ConfirmationModal = ({
                     </DialogHeader>
                 </div>
 
-                <div className="p-8 bg-muted/5 flex items-center justify-end gap-3">
+                <div className="p-4 bg-muted/5 flex items-center justify-end gap-3">
                     <button
                         onClick={onClose}
                         className="btn-ghost"

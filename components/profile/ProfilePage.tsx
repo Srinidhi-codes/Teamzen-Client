@@ -190,8 +190,9 @@ export default function ProfilePage() {
 
   if (!user && isUserLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="spinner w-12 h-12"></div>
+      <div className="flex flex-col items-center justify-center h-96 space-y-3">
+        <div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+        <p className="text-sm text-muted-foreground">Loading…</p>
       </div>
     );
   }
@@ -200,7 +201,7 @@ export default function ProfilePage() {
   if (!user && userError) {
     return (
       <div className="flex flex-col items-center justify-center h-96 text-center">
-        <div className="text-red-500 text-xl font-bold mb-2">Error Loading Profile</div>
+        <div className="text-red-600 text-lg font-semibold mb-2">Could not load profile</div>
         <p className="text-gray-600 mb-4">{userError.message}</p>
         <button onClick={() => window.location.reload()} className="btn-primary">Retry</button>
       </div>
@@ -281,7 +282,7 @@ export default function ProfilePage() {
       </div>
 
       {isEditing && activeTab !== "security" && (
-        <div className="glass-dark p-4 sm:p-6 rounded-2xl border border-white/30 shadow-2xl flex flex-col sm:flex-row justify-end items-center gap-3 sm:gap-4 animate-slide-up sticky bottom-4 z-20 mx-2 sm:mx-0">
+        <div className="p-4 sm:p-5 rounded-xl border border-border bg-card flex flex-col sm:flex-row justify-end items-center gap-3 sticky bottom-4 z-20 mx-2 sm:mx-0">
           <Button
             onClick={handleCancel}
             variant={"outline"}

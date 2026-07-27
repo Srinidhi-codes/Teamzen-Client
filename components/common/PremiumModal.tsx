@@ -38,24 +38,23 @@ export function PremiumModal({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="p-0 border-none bg-transparent shadow-none w-full min-w-fit max-w-[90vw] lg:max-w-3xl">
                 <div className={cn(
-                    "bg-card rounded-4xl sm:rounded-[3rem] w-full shadow-[0_32px_128px_-16px_rgba(0,0,0,0.3)] border border-border text-start overflow-hidden flex flex-col animate-in zoom-in-95 duration-500 max-h-[min(90dvh,800px)]",
+                    "bg-card rounded-xl w-full shadow-lg border border-border text-start overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 max-h-[min(90dvh,800px)]",
                     containerClassName
                 )}>
-                    {/* Premium Header */}
                     <div className={cn(
-                        "relative p-6 sm:p-10 pb-6 sm:pb-8 bg-linear-to-br from-primary/20 via-primary/5 to-background text-primary",
+                        "relative p-6 sm:p-8 pb-4 sm:pb-6 border-b border-border bg-muted/30",
                         headerClassName
                     )}>
-                        <div className="absolute top-0 right-0 p-6 sm:p-10 opacity-10 pointer-events-none">
-                            <Icon className="w-24 h-24 sm:w-32 sm:h-32 rotate-12" />
-                        </div>
-                        <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start gap-4">
+                        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                             <DialogHeader className="space-y-1 flex-1 min-w-0">
-                                <DialogTitle className="text-2xl sm:text-4xl font-black text-primary tracking-tighter leading-tight mb-2 sm:mb-3 truncate">
-                                    {title || "Modal"}
-                                </DialogTitle>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <Icon className="w-5 h-5 text-primary shrink-0" />
+                                    <DialogTitle className="text-lg sm:text-xl font-semibold text-foreground leading-tight truncate">
+                                        {title || "Modal"}
+                                    </DialogTitle>
+                                </div>
                                 {subtitle && (
-                                    <DialogDescription className="text-foreground/60 text-[10px] text-start font-black uppercase tracking-widest leading-relaxed">
+                                    <DialogDescription className="text-sm text-muted-foreground text-start leading-relaxed">
                                         {subtitle}
                                     </DialogDescription>
                                 )}
@@ -63,7 +62,7 @@ export function PremiumModal({
 
                             <div className="flex items-center gap-3 self-end sm:self-start">
                                 {badge && (
-                                    <div className="px-3 py-1 bg-primary/10 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-sm border border-primary/10 whitespace-nowrap">
+                                    <div className="px-2 py-0.5 bg-primary/10 rounded-md text-[11px] font-medium capitalize border border-primary/10 whitespace-nowrap">
                                         {badge}
                                     </div>
                                 )}

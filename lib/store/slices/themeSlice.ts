@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand';
 
-export type ColorAccent = 'indigo' | 'green' | 'blue' | 'red' | 'orange' | 'purple' | 'slate' | 'neutral';
+export type ColorAccent = 'teal' | 'slate' | 'blue' | 'green' | 'indigo' | 'orange' | 'red' | 'purple';
 
 export interface ThemeSlice {
     accent: ColorAccent;
@@ -8,6 +8,6 @@ export interface ThemeSlice {
 }
 
 export const createThemeSlice: StateCreator<ThemeSlice> = (set) => ({
-    accent: 'indigo',
+    accent: 'teal',
     setAccent: (accent) => set({ accent }),
 });

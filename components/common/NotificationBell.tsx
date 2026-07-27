@@ -138,7 +138,7 @@ export function NotificationBell() {
                         <Bell className="w-6 h-6 transition-all origin-top group-hover:text-primary group-hover:animate-bell-ring" />
                     )}
                     {unreadCount > 0 && (
-                        <span className="absolute top-2 right-2 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-lg transition-transform duration-300 group-hover:scale-110">
+                        <span className="absolute top-2 right-2 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-medium rounded-full flex items-center justify-center border-2 border-background">
                             {unreadCount > 9 ? "9+" : unreadCount}
                         </span>
                     )}
@@ -149,20 +149,22 @@ export function NotificationBell() {
                 align="end"
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
-                className="w-[calc(100vw-20px)] sm:w-96 p-0 overflow-hidden border-border/50 bg-card/80 backdrop-blur-2xl rounded-3xl shadow-2xl animate-in zoom-in-95 duration-200"
+                className="w-[calc(100vw-20px)] sm:w-96 p-0 overflow-hidden border-border bg-card rounded-xl shadow-lg animate-in zoom-in-95 duration-200"
             >
                 <DropdownMenuLabel className="p-0">
-                    <div className="px-4 sm:px-5 py-4 flex justify-between items-center bg-linear-to-b from-primary/10 to-transparent">
+                    <div className="px-4 sm:px-5 py-4 flex justify-between items-center border-b border-border">
                         <div>
-                            <p className="text-[8px] sm:text-[10px] font-black text-primary uppercase tracking-widest mb-0.5">Notifications</p>
-                            <p className="text-base sm:text-lg font-black text-foreground">Stay Updated</p>
+                            <p className="text-sm font-semibold text-foreground">Notifications</p>
+                            {unreadCount > 0 && (
+                                <p className="text-xs text-muted-foreground mt-0.5">{unreadCount} unread</p>
+                            )}
                         </div>
                         {unreadCount > 0 && (
                             <button
                                 onClick={handleMarkAllRead}
-                                className="text-[9px] sm:text-[10px] font-black text-muted-foreground hover:text-primary uppercase tracking-widest transition-colors py-1.5 px-3 hover:bg-primary/5 rounded-xl border border-border sm:border-transparent"
+                                className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors py-1.5 px-3 hover:bg-muted rounded-md"
                             >
-                                Mark All Read
+                                Mark all read
                             </button>
                         )}
                     </div>
@@ -197,7 +199,7 @@ export function NotificationBell() {
                                     )}>
                                         {notif.message}
                                     </p>
-                                    <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
+                                    <p className="text-xs text-muted-foreground">
                                         {moment(notif.createdAt).format("MMM DD, YYYY HH:mm A")}
                                     </p>
                                 </div>
@@ -218,8 +220,8 @@ export function NotificationBell() {
                             <div className="w-20 h-20 bg-linear-to-b from-muted/20 to-transparent rounded-3xl flex items-center justify-center mx-auto mb-4 border border-border/50">
                                 <Bell className="w-10 h-10 text-muted-foreground/30" />
                             </div>
-                            <p className="text-sm font-black text-muted-foreground uppercase tracking-widest">No notifications yet</p>
-                            <p className="text-xs text-muted-foreground/60 mt-1">We'll alert you when something happens</p>
+                            <p className="text-sm text-muted-foreground">No notifications yet</p>
+                            <p className="text-xs text-muted-foreground/60 mt-1">We'll notify you when something happens</p>
                         </div>
                     )}
                 </div>
@@ -231,8 +233,8 @@ export function NotificationBell() {
                         href="/notifications"
                         className="group flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-linear-to-b from-transparent to-primary/5 hover:to-primary/10 transition-all border border-transparent hover:border-primary/10"
                     >
-                        <span className="text-[10px] font-black text-muted-foreground group-hover:text-primary uppercase tracking-widest transition-colors">
-                            View All Activity
+                        <span className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">
+                            View all notifications
                         </span>
                         <ArrowRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                     </Link>

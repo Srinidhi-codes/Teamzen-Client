@@ -1,87 +1,121 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { Moon, Sun } from "lucide-react";
+import { useStore } from "@/lib/store/useStore";
+import { ColorAccent } from "@/lib/store/slices/themeSlice";
+import { Check, Palette, Moon, Sun, Monitor } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+
+const accents: { name: ColorAccent; color: string; label: string }[] = [
+  { name: "teal", color: "#0F766E", label: "Teal" },
+  { name: "slate", color: "#475569", label: "Slate" },
+  { name: "blue", color: "#2563EB", label: "Blue" },
+  { name: "green", color: "#16A34A", label: "Green" },
+  { name: "indigo", color: "#4F46E5", label: "Indigo" },
+  { name: "orange", color: "#EA580C", label: "Orange" },
+  { name: "red", color: "#DC2626", label: "Red" },
+  { name: "purple", color: "#7C3AED", label: "Purple" },
+];
 
 export function ThemeSelector() {
-    const [mounted, setMounted] = useState(false);
-    const { setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const { accent, setAccent } = useStore();
+  const [highContrast, setHighContrast] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
 
-    // Avoid hydration mismatch
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-    if (!mounted) return null;
+  if (!mounted) return null;
 
-    const isDark = resolvedTheme === "dark";
-
-    const toggleTheme = () => {
-        setTheme(isDark ? "light" : "dark");
-    };
-
-    return (
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
         <button
-            onClick={toggleTheme}
-            className={cn(
-                "relative w-18 h-10 rounded-full border flex items-center p-1 cursor-pointer outline-none select-none shrink-0 group shadow-inner",
-                isDark 
-                    ? "bg-indigo-950/30 border-indigo-500/20 hover:border-indigo-500/40 hover:bg-indigo-950/40" 
-                    : "bg-amber-500/5 border-amber-500/10 hover:border-amber-500/20 hover:bg-amber-500/10"
-            )}
-            style={{ transition: 'background-color 500ms ease, border-color 500ms ease, box-shadow 500ms ease' }}
-            aria-label="Toggle theme"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+          title="Appearance"
+          aria-label="Appearance settings"
         >
-            {/* Background Icons */}
-            <div className="absolute inset-0 flex justify-between px-2.5 items-center pointer-events-none">
-                <Sun className={cn(
-                    "w-4 h-4", 
-                    isDark 
-                        ? "text-muted-foreground/20 scale-90" 
-                        : "text-amber-500/40 scale-100"
-                )} 
-                style={{ transition: 'all 500ms ease' }}
-                />
-                <Moon className={cn(
-                    "w-4 h-4", 
-                    isDark 
-                        ? "text-indigo-400/40 scale-100" 
-                        : "text-muted-foreground/20 scale-90"
-                )} 
-                style={{ transition: 'all 500ms ease' }}
-                />
-            </div>
-
-            {/* Sliding Knob */}
-            <div
-                className={cn(
-                    "w-8 h-8 rounded-full bg-background border shadow-md flex items-center justify-center transform relative overflow-hidden",
-                    isDark 
-                        ? "translate-x-8 border-indigo-500/30 shadow-indigo-500/10" 
-                        : "translate-x-0 border-amber-500/20 shadow-amber-500/10"
-                )}
-                style={{ transition: 'transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1), translate 500ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 500ms ease, border-color 500ms ease, box-shadow 500ms ease' }}
-            >
-                {/* Sun Icon for Light Mode */}
-                <Sun 
-                    className={cn(
-                        "w-5 h-5 text-amber-500 absolute",
-                        isDark ? "opacity-0 rotate-90 scale-50" : "opacity-100 rotate-0 scale-100"
-                    )} 
-                    style={{ transition: 'opacity 500ms ease, transform 500ms ease' }}
-                />
-                {/* Moon Icon for Dark Mode */}
-                <Moon 
-                    className={cn(
-                        "w-5 h-5 text-indigo-400 absolute",
-                        isDark ? "opacity-100 rotate-0 scale-100" : "opacity-0 -rotate-90 scale-50"
-                    )} 
-                    style={{ transition: 'opacity 500ms ease, transform 500ms ease' }}
-                />
-            </div>
+          <Palette className="h-4 w-4" />
         </button>
-    );
-}
+      </DropdownMenuTrigger>
 
+      <DropdownMenuContent align="end" className="w-72 p-3">
+        <div className="space-y-5">
+          <div>
+            <p className="mb-2 text-xs font-medium text-muted-foreground">Theme</p>
+            <div className="grid grid-cols-3 gap-1.5">
+              {[
+                { id: "light", icon: Sun, label: "Light" },
+                { id: "dark", icon: Moon, label: "Dark" },
+                { id: "system", icon: Monitor, label: "System" },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTheme(t.id)}
+                  className={cn(
+                    "flex flex-col items-center gap-1.5 rounded-md border px-2 py-2.5 text-xs transition-colors",
+                    theme === t.id
+                      ? "border-primary bg-primary/5 text-foreground"
+                      : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  <t.icon className="h-4 w-4" />
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-medium text-muted-foreground">Accent</p>
+            <div className="flex flex-wrap gap-2">
+              {accents.map((item) => (
+                <button
+                  key={item.name}
+                  onClick={() => setAccent(item.name)}
+                  title={item.label}
+                  className={cn(
+                    "flex h-7 w-7 items-center justify-center rounded-full transition-shadow",
+                    accent === item.name && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                  )}
+                  style={{ backgroundColor: item.color }}
+                  aria-label={item.label}
+                >
+                  {accent === item.name && <Check className="h-3.5 w-3.5 text-white" />}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3 border-t border-border pt-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <Label className="text-sm font-medium">High contrast</Label>
+                <p className="text-xs text-muted-foreground">Stronger borders and text</p>
+              </div>
+              <Switch checked={highContrast} onCheckedChange={setHighContrast} />
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <Label className="text-sm font-medium">Reduced motion</Label>
+                <p className="text-xs text-muted-foreground">Limit animations</p>
+              </div>
+              <Switch checked={reducedMotion} onCheckedChange={setReducedMotion} />
+            </div>
+          </div>
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}

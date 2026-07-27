@@ -33,7 +33,7 @@ function Calendar({
     <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn(
-        "bg-background p-6 rounded-4xl shadow-2xl border border-border/50 [--cell-size:--spacing(10)]",
+        "bg-background p-4 rounded-xl border border-border shadow-sm [--cell-size:--spacing(10)]",
         String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
         String.raw`rtl:**:[.rdp-button\_previous>svg]:rotate-180`,
         className
@@ -75,12 +75,12 @@ function Calendar({
           defaultClassNames.dropdowns
         ),
         dropdown_root: cn(
-          "relative has-focus:border-primary/50 border border-border/50 bg-muted/30 shadow-inner rounded-xl transition-all",
+          "relative z-20 has-focus:border-primary/50 border border-border/50 bg-muted/30 shadow-inner rounded-xl transition-all",
           defaultClassNames.dropdown_root
         ),
 
         dropdown: cn(
-          "absolute bg-popover inset-0 opacity-0",
+          "absolute inset-0 z-20 w-full cursor-pointer opacity-0",
           defaultClassNames.dropdown
         ),
         caption_label: cn(
@@ -116,7 +116,7 @@ function Calendar({
         range_middle: cn("rounded-none", defaultClassNames.range_middle),
         range_end: cn("rounded-r-md bg-accent", defaultClassNames.range_end),
         today: cn(
-          "bg-primary/10 text-primary font-black rounded-xl",
+          "bg-primary/10 text-primary font-semibold rounded-md",
           defaultClassNames.today
         ),
         outside: cn(

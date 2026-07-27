@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 export const VoiceWave = ({ isProcessing }: { isProcessing?: boolean }) => {
     return (
-        <div className="flex items-center justify-center gap-1 h-8 px-4 bg-primary/10 rounded-2xl border border-primary/20 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="flex items-center justify-center gap-1 h-8 px-3 bg-primary/10 rounded-md border border-primary/20 animate-in fade-in duration-300">
             <div className="flex items-center gap-1 h-4">
                 {[...Array(5)].map((_, i) => (
                     <div
@@ -21,7 +21,7 @@ export const VoiceWave = ({ isProcessing }: { isProcessing?: boolean }) => {
                     />
                 ))}
             </div>
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary ml-3 whitespace-nowrap">
+            <span className="text-[10px] font-medium text-primary ml-2 whitespace-nowrap">
                 {isProcessing ? "Processing" : "Listening"}
             </span>
 

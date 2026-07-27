@@ -48,7 +48,7 @@ export function DatePickerSimple({ label, value, onChange, error, required, clas
     return (
         <div className={cn("flex flex-col space-y-2", className)}>
             {label && (
-                <label className="text-premium-label px-1">
+                <label className="text-sm font-medium text-muted-foreground px-0.5">
                     {label}
                     {required && <span className="text-destructive ml-1">*</span>}
                 </label>
@@ -75,7 +75,7 @@ export function DatePickerSimple({ label, value, onChange, error, required, clas
 
             {/* Custom Premium Date Picker for Desktop */}
             <div className="hidden sm:block">
-                <Popover open={open} onOpenChange={setOpen}>
+                <Popover open={open} onOpenChange={setOpen} modal={false}>
                     <PopoverTrigger asChild>
                         <Button
                             variant="outline"
@@ -93,7 +93,36 @@ export function DatePickerSimple({ label, value, onChange, error, required, clas
                             <CalendarIcon className={cn("ml-auto h-5 w-5 opacity-40 transition-colors", open && "text-primary opacity-100")} />
                         </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 rounded-3xl border-border animate-in zoom-in-95 duration-300" align="start">
+                    <PopoverContent
+                        className="w-auto p-0 rounded-3xl border-border animate-in zoom-in-95 duration-300"
+                        align="start"
+                        onOpenAutoFocus={(e) => e.preventDefault()}
+                        onCloseAutoFocus={(e) => e.preventDefault()}
+                        onFocusOutside={(e) => {
+                            // Native month/year <select> steals focus; don't close the popover
+                            e.preventDefault()
+                        }}
+                        onPointerDownOutside={(e) => {
+                            const target = e.target as HTMLElement | null
+                            if (
+                                target?.closest?.("[data-slot=calendar]") ||
+                                target?.tagName === "SELECT" ||
+                                target?.tagName === "OPTION"
+                            ) {
+                                e.preventDefault()
+                            }
+                        }}
+                        onInteractOutside={(e) => {
+                            const target = e.target as HTMLElement | null
+                            if (
+                                target?.closest?.("[data-slot=calendar]") ||
+                                target?.tagName === "SELECT" ||
+                                target?.tagName === "OPTION"
+                            ) {
+                                e.preventDefault()
+                            }
+                        }}
+                    >
                         <Calendar
                             mode="single"
                             selected={displayDate}
@@ -116,7 +145,6 @@ export function DatePickerSimple({ label, value, onChange, error, required, clas
                                 }
                                 return date < new Date("1900-01-01");
                             }}
-                            initialFocus
                             captionLayout="dropdown"
                             fromYear={1960}
                             toYear={new Date().getFullYear() + 10}
@@ -124,7 +152,7 @@ export function DatePickerSimple({ label, value, onChange, error, required, clas
                     </PopoverContent>
                 </Popover>
             </div>
-            {error && <p className="text-[10px] font-black text-destructive uppercase tracking-widest pl-1 animate-in fade-in slide-in-from-top-1">{error}</p>}
+            {error && <p className="text-xs text-destructive pl-0.5">{error}</p>}
         </div>
     )
 }

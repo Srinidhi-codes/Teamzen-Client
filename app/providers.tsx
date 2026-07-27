@@ -17,7 +17,7 @@ function ThemeInitializer({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Only apply if we are in the browser
     if (typeof window !== "undefined") {
-      document.documentElement.setAttribute("data-accent", accent || 'indigo');
+      document.documentElement.setAttribute("data-accent", accent || 'teal');
     }
   }, [accent]);
 

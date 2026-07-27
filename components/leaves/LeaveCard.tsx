@@ -26,41 +26,41 @@ export function LeaveCard({
   onReview,
 }: LeaveCardProps) {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-md transition">
+    <div className="rounded-xl border border-border bg-card p-4 hover:bg-muted/20 transition-colors">
       <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="font-bold text-gray-900">{userName}</h3>
-          <p className="text-sm text-gray-600">{leaveType}</p>
+          <h3 className="font-medium text-foreground">{userName}</h3>
+          <p className="text-sm text-muted-foreground">{leaveType}</p>
         </div>
         <Badge variant={status as any}>{status}</Badge>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-3 py-3 border-y border-gray-100">
+      <div className="grid grid-cols-2 gap-4 mb-3 py-3 border-y border-border">
         <div>
-          <p className="text-xs text-gray-600">From</p>
-          <p className="font-medium text-gray-900">{fromDate}</p>
+          <p className="text-xs text-muted-foreground">From</p>
+          <p className="text-sm font-medium text-foreground">{fromDate}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-600">To</p>
-          <p className="font-medium text-gray-900">{toDate}</p>
+          <p className="text-xs text-muted-foreground">To</p>
+          <p className="text-sm font-medium text-foreground">{toDate}</p>
         </div>
       </div>
 
       <div className="mb-3">
-        <p className="text-xs text-gray-600 mb-1">Duration</p>
-        <p className="font-medium text-gray-900">{days} days</p>
+        <p className="text-xs text-muted-foreground mb-1">Duration</p>
+        <p className="text-sm font-medium text-foreground">{days} days</p>
       </div>
 
       {reason && (
-        <div className="mb-4 p-3 bg-gray-50 rounded text-sm text-gray-700">
-          <p className="font-medium mb-1">Reason:</p>
+        <div className="mb-4 p-3 bg-muted/30 rounded-lg text-sm text-foreground">
+          <p className="font-medium mb-1 text-muted-foreground">Reason</p>
           <p>{reason}</p>
         </div>
       )}
 
       {onReview && status === "pending" && (
-        <button onClick={onReview} className="w-full btn-primary text-sm">
-          Review Request
+        <button onClick={onReview} className="w-full h-9 rounded-md btn-primary text-sm font-medium">
+          Review request
         </button>
       )}
     </div>

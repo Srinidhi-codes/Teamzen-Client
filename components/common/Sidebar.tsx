@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -14,12 +13,12 @@ import {
   UserCircle,
   BookCheck,
   Bell,
-  LogOut,
   TrendingUp,
-  Briefcase
+  Briefcase,
+  X,
 } from "lucide-react";
 import Image from "next/image";
-import { useStore } from "@/lib/store/useStore";
+import { cn } from "@/lib/utils";
 
 interface NavItem {
   name: string;
@@ -55,103 +54,71 @@ export function Sidebar({
   closeMobile,
 }: SidebarProps) {
   const pathname = usePathname();
-  const { logoutUser } = useStore();
-  const [isHovered, setIsHovered] = useState(false);
-
-  const isExpanded = !isCollapsed || isHovered || isMobileOpen;
-
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-    } catch (error) {
-      console.error("Logout failed:", error);
-    } finally {
-      logoutUser();
-      localStorage.clear();
-      window.location.href = "/login";
-    }
-  };
-
-  const sidebarClasses = `
-    fixed inset-y-0 left-0 z-100
-    flex flex-col
-    bg-background
-    transition-all duration-500 ease-in-out
-    ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
-    md:translate-x-0
-    ${isExpanded ? "md:w-72" : "md:w-24"}
-    w-72
-    border-r border-sidebar-border
-    shadow-2xl
-    overflow-x-hidden
-  `;
 
   return (
     <>
-      {/* Overlay Backdrop */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-90 transition-opacity duration-500 md:hidden"
+          className="fixed inset-0 z-90 bg-foreground/20 md:hidden"
           onClick={closeMobile}
+          aria-hidden
         />
       )}
 
       <aside
-        className={sidebarClasses}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        className={cn(
+          "fixed inset-y-0 left-0 z-100 flex flex-col overflow-x-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width,transform] duration-200 ease-out",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full",
+          "md:translate-x-0",
+          isCollapsed ? "md:w-16" : "md:w-60",
+          "w-60"
+        )}
       >
-        {/* Header */}
-        <div className="h-20 flex items-center justify-between px-6 border-b border-sidebar-border/50">
-          {isExpanded && (
-            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-4 duration-500">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+        <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border px-3">
+          {(!isCollapsed || isMobileOpen) && (
+            <Link
+              href="/dashboard"
+              className="flex min-w-0 items-center gap-2.5 px-1"
+              onClick={() => isMobileOpen && closeMobile()}
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white ring-1 ring-border">
                 <Image
-                  src={"/images/teamzen_zoomed.png"}
-                  alt="Logo"
-                  width={32}
-                  height={32}
-                  className="w-8 h-8 object-contain"
+                  src="/images/teamzen_zoomed.png"
+                  alt="Teamzen"
+                  width={28}
+                  height={28}
+                  className="h-7 w-7 object-contain"
                 />
               </div>
-              <h1 className="text-sm font-black text-foreground uppercase text-nowrap tracking-tight">
-                Teamzen <span className="text-primary">CORE</span>
-              </h1>
-            </div>
-          )}
-
-          {/* Desktop Collapse Toggle */}
-          {!isExpanded && (
-            <div className="hidden md:flex w-full justify-center animate-in fade-in duration-500">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
-                <Image
-                  src={"/images/teamzen_zoomed.png"}
-                  alt="Logo"
-                  width={32}
-                  height={32}
-                  className="w-8 h-8 object-contain"
-                />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-foreground">Teamzen</p>
+                <p className="truncate text-xs text-muted-foreground">Employee</p>
               </div>
-            </div>
+            </Link>
           )}
 
-          {/* Mobile Close Button */}
+          <button
+            onClick={toggleCollapse}
+            className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground md:flex"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </button>
+
           <button
             onClick={closeMobile}
-            aria-label="Close mobile sidebar"
-            className="md:hidden p-2 hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground md:hidden"
+            aria-label="Close menu"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Navigation Items */}
-        <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto custom-scrollbar">
-          {navItems.map((item, index) => {
+        <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3">
+          {navItems.map((item) => {
             const isActive =
               pathname === item.href ||
-              (item.href !== "/dashboard" &&
-                pathname.startsWith(item.href + "/") &&
+              (pathname.startsWith(item.href + "/") &&
                 !navItems.some(
                   (other) =>
                     other.href !== item.href &&
@@ -159,6 +126,7 @@ export function Sidebar({
                     other.href.length > item.href.length
                 ));
             const Icon = item.icon;
+            const showLabel = !isCollapsed || isMobileOpen;
 
             return (
               <Link
@@ -166,44 +134,32 @@ export function Sidebar({
                 href={item.href}
                 id={`nav-${item.name.toLowerCase()}`}
                 onClick={() => isMobileOpen && closeMobile()}
-                className={`flex items-center space-x-4 px-4 py-3.5 rounded-2xl ${!isExpanded ? "justify-center" : "justify-start"} transition-all duration-300 relative group ${isActive
-                  ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02]"
-                  : "text-sidebar-foreground/60 hover:bg-primary/5 hover:text-primary"
-                  }`}
-                style={{
-                  animationDelay: `${index * 50}ms`,
-                }}
-                title={!isExpanded ? item.name : ""}
+                title={!showLabel ? item.name : undefined}
+                className={cn(
+                  "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors",
+                  showLabel ? "" : "justify-center px-0",
+                  isActive
+                    ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground hover:bg-muted hover:text-foreground"
+                )}
               >
-                <Icon className={`w-5 h-5 shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'scale-110' : ''}`} />
-                {isExpanded && (
-                  <span className={`font-black text-[11px] uppercase tracking-wider truncate transition-all ${isActive ? 'translate-x-1' : 'group-hover:translate-x-1'}`}>
-                    {item.name}
-                  </span>
-                )}
-                {isActive && isExpanded && (
-                  <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-primary-foreground animate-pulse" />
-                )}
+                <Icon className="h-4 w-4 shrink-0" />
+                {showLabel && <span className="truncate">{item.name}</span>}
               </Link>
             );
           })}
         </nav>
 
-        {/* Footer */}
-        <div className={`p-4 sm:p-6 border-t border-sidebar-border/50 transition-all duration-300 space-y-3 ${!isExpanded ? 'px-3' : ''}`}>
-
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
-            title="Logout"
-            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-300 group text-destructive/70 hover:bg-destructive/10 hover:text-destructive active:scale-95 ${!isExpanded ? 'justify-center' : 'justify-start'
-              }`}
-          >
-            <LogOut className="w-5 h-5 shrink-0 transition-transform group-hover:scale-110 group-hover:-translate-x-0.5" />
-            {isExpanded && (
-              <span className="font-black text-[11px] uppercase tracking-wider">Logout</span>
-            )}
-          </button>
+        <div className="border-t border-sidebar-border px-3 py-3">
+          {(!isCollapsed || isMobileOpen) ? (
+            <p className="px-1 text-xs text-muted-foreground">
+              © {new Date().getFullYear()} Teamzen
+            </p>
+          ) : (
+            <div className="flex justify-center">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+            </div>
+          )}
         </div>
       </aside>
     </>

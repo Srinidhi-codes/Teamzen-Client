@@ -247,7 +247,7 @@ export function SecurityTab() {
 
                             {/* Manual Setup Key */}
                             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200/60">
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Secret Setup Key</p>
+                                <p className="text-xs font-medium text-muted-foreground mb-1.5">Setup key</p>
                                 <div className="flex items-center justify-between gap-2">
                                     <code className="text-xs font-mono text-gray-800 break-all select-all">{secret}</code>
                                     <button 
@@ -262,7 +262,7 @@ export function SecurityTab() {
 
                             {/* Verification Code */}
                             <div className="space-y-1.5">
-                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">Verification Code</label>
+                                <label className="block text-sm font-medium text-gray-700">Verification code</label>
                                 <Input
                                     type="text"
                                     required
@@ -313,7 +313,7 @@ export function SecurityTab() {
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">Verification Code</label>
+                                <label className="block text-sm font-medium text-gray-700">Verification code</label>
                                 <Input
                                     type="text"
                                     required

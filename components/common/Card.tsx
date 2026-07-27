@@ -1,5 +1,6 @@
 "use client";
-import React from "react";
+
+import { cn } from "@/lib/utils";
 
 interface CardProps {
   title?: string;
@@ -11,33 +12,36 @@ interface CardProps {
   action?: React.ReactNode;
 }
 
-export function Card({ title, icon: Icon, children, className = "", hover = false, gradient = false, action }: CardProps) {
+export function Card({
+  title,
+  icon: Icon,
+  children,
+  className = "",
+  hover = false,
+  action,
+}: CardProps) {
   return (
     <div
-      className={`
-        ${gradient && 'premium-card'} 
-        ${hover ? 'card-hover' : ''} 
-        ${className}
-      `}
+      className={cn(
+        "rounded-xl border border-border bg-card p-5 sm:p-6",
+        hover && "transition-colors hover:bg-muted/30",
+        className
+      )}
     >
       {title && (
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-premium-h2 flex items-center gap-3">
-            {Icon ? (
-              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                <Icon className="w-5 h-5" />
-              </div>
-            ) : (
-              <span className="w-1.5 h-6 bg-primary rounded-full shadow-sm shadow-primary/20"></span>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2.5 text-base font-semibold tracking-tight text-foreground">
+            {Icon && (
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Icon className="h-4 w-4" />
+              </span>
             )}
             {title}
           </h2>
           {action && <div>{action}</div>}
         </div>
       )}
-      <div className="font-medium text-foreground/80 leading-relaxed">
-        {children}
-      </div>
+      <div className="text-sm leading-relaxed text-foreground/80">{children}</div>
     </div>
   );
 }

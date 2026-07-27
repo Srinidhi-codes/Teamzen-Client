@@ -5,24 +5,19 @@ import { useAuth } from "@/lib/api/hooks";
 import { useStore } from "@/lib/store/useStore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import {
   Mail,
   Lock,
   Eye,
   EyeOff,
   Loader2,
-  ArrowRight,
-  Sparkles,
-  Globe,
+  MapPin,
   KeyRound,
   ShieldCheck,
-  Chrome
 } from "lucide-react";
 import { Input } from "../ui/input";
-import { Button } from "../ui/button";
-
-import { PublicNavbar } from "../common/PublicNavbar";
+import { AuthShell } from "./AuthShell";
+import { cn } from "@/lib/utils";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -32,7 +27,6 @@ export default function LoginForm() {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationError, setLocationError] = useState("");
 
-  // New states for extended auth
   const [authType, setAuthType] = useState<"password" | "otp">("password");
   const [step, setStep] = useState<"login" | "otp_code" | "totp">("login");
   const [otpCode, setOtpCode] = useState("");
@@ -44,7 +38,6 @@ export default function LoginForm() {
   const { loginUser, isAuthenticated, hasHydrated } = useStore();
   const router = useRouter();
 
-  // Load Google Identity Services script dynamically
   useEffect(() => {
     if (step !== "login") return;
 
@@ -58,47 +51,49 @@ export default function LoginForm() {
       const google = (window as any).google;
       if (google) {
         google.accounts.id.initialize({
-          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "1016839352936-google-placeholder.apps.googleusercontent.com",
+          client_id:
+            process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+            "1016839352936-google-placeholder.apps.googleusercontent.com",
           callback: handleGoogleCredentialResponse,
         });
-        google.accounts.id.renderButton(
-          document.getElementById("google-signin-btn"),
-          { 
-            theme: "outline", 
-            size: "large", 
-            width: 360,
-            text: "signin_with",
-            shape: "pill"
-          }
-        );
+        google.accounts.id.renderButton(document.getElementById("google-signin-btn"), {
+          theme: "outline",
+          size: "large",
+          width: 360,
+          text: "signin_with",
+          shape: "rectangular",
+        });
       }
     };
 
     return () => {
       try {
         document.body.removeChild(script);
-      } catch (e) {}
+      } catch {
+        /* ignore */
+      }
     };
   }, [step, authType]);
 
-  // Countdown timer for OTP resend
   useEffect(() => {
     if (countdown <= 0) return;
     const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  // 🛡️ Guard: If already authenticated, redirect to dashboard
   useEffect(() => {
     if (hasHydrated && isAuthenticated) {
       router.push("/dashboard");
     }
   }, [hasHydrated, isAuthenticated, router]);
 
-  const requestLocation = async (): Promise<{latitude: number, longitude: number} | null> => {
+  const requestLocation = async (): Promise<{
+    latitude: number;
+    longitude: number;
+  } | null> => {
     setIsLocating(true);
     setLocationError("");
-    
+
     return new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -106,15 +101,17 @@ export default function LoginForm() {
           setShowLocationModal(false);
           resolve({
             latitude: position.coords.latitude,
-            longitude: position.coords.longitude
+            longitude: position.coords.longitude,
           });
         },
         (err) => {
           setIsLocating(false);
           if (err.code === 1) {
-            setLocationError("Location is blocked. Please allow Location access in your browser settings to log check-ins accurately.");
+            setLocationError(
+              "Location is blocked. Allow location access in your browser settings, then try again."
+            );
           } else {
-            setLocationError("We couldn't pinpoint your location. Please try again.");
+            setLocationError("We couldn't get your location. Please try again.");
           }
           setShowLocationModal(true);
           resolve(null);
@@ -131,9 +128,9 @@ export default function LoginForm() {
       const loginResult = await googleLogin.mutateAsync({
         id_token: idToken,
         latitude: coords?.latitude,
-        longitude: coords?.longitude
+        longitude: coords?.longitude,
       });
-      
+
       if (loginResult.totp_required) {
         setTempToken(loginResult.temp_token);
         setStep("totp");
@@ -142,16 +139,15 @@ export default function LoginForm() {
         window.location.href = "/dashboard";
       }
     } catch (err: any) {
-      alert(err.message || "Google Sign-In failed");
+      alert(err.message || "Google sign-in failed");
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (authType === "otp") {
       if (step === "login") {
-        // Send OTP code
         try {
           await requestOtp.mutateAsync(email);
           setStep("otp_code");
@@ -160,14 +156,13 @@ export default function LoginForm() {
           alert(error.message || "Failed to send verification code");
         }
       } else if (step === "otp_code") {
-        // Verify OTP code
         const coords = await requestLocation();
         try {
           const result = await verifyOtp.mutateAsync({
             email,
             otp: otpCode,
             latitude: coords?.latitude,
-            longitude: coords?.longitude
+            longitude: coords?.longitude,
           });
 
           if (result.totp_required) {
@@ -182,7 +177,6 @@ export default function LoginForm() {
         }
       }
     } else {
-      // Standard Password Login
       const coords = await requestLocation();
       if (coords) {
         performLogin(coords.latitude, coords.longitude);
@@ -209,7 +203,7 @@ export default function LoginForm() {
         temp_token: tempToken,
         code: totpCode,
         latitude: coords?.latitude,
-        longitude: coords?.longitude
+        longitude: coords?.longitude,
       });
       if (result.user) {
         loginUser(result.user);
@@ -222,11 +216,11 @@ export default function LoginForm() {
 
   const performLogin = async (lat?: number, lon?: number) => {
     try {
-      const response = await login.mutateAsync({ 
-        email, 
+      const response = await login.mutateAsync({
+        email,
         password,
         latitude: lat ? parseFloat(lat.toFixed(10)) : undefined,
-        longitude: lon ? parseFloat(lon.toFixed(10)) : undefined
+        longitude: lon ? parseFloat(lon.toFixed(10)) : undefined,
       });
 
       if (response && response.totp_required) {
@@ -244,336 +238,278 @@ export default function LoginForm() {
     }
   };
 
+  const submitLabel = () => {
+    if (isLocating) return "Getting location…";
+    if (login.isPending || verifyOtp.isPending || requestOtp.isPending) return "Please wait…";
+    if (authType === "otp") return step === "login" ? "Send code" : "Verify and sign in";
+    return "Sign in";
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center login-bg py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      <PublicNavbar />
-      
-      {/* Background Decorative Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/20 rounded-full blur-[120px] animate-pulse-slow"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/20 rounded-full blur-[120px] animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
-      </div>
-
-      <div className="max-w-[440px] w-full space-y-8 relative z-10">
-        <div className="glass-login p-10 rounded-[32px] animate-slide-up">
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/5 border border-white/10 shadow-xl mb-4 overflow-hidden p-2.5">
-              <Image
-                src="/images/teamzen_zoomed.png"
-                alt="Teamzen"
-                width={48}
-                height={48}
-                className="w-full h-full object-contain brightness-110"
-                loading="lazy"
-              />
-            </div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">Teamzen Portal</h2>
-            <p className="mt-1 text-[10px] text-white/50 uppercase tracking-widest font-semibold">Verified Enterprise Session</p>
-          </div>
-
-          {/* Form Content Router */}
-          {step === "totp" ? (
-            /* ================== TOTP screen ================== */
-            <form onSubmit={handleVerifyTotp} className="space-y-6">
-              <div className="text-center space-y-2 mb-6">
-                <div className="mx-auto w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center">
-                  <ShieldCheck className="w-6 h-6 text-purple-400" />
-                </div>
-                <h3 className="text-lg font-bold text-white">2-Factor Verification</h3>
-                <p className="text-xs text-white/50">
-                  Enter the 6-digit verification code generated by your Authenticator app.
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest px-1">Security Code</label>
-                <Input
-                  id="totp-code"
-                  name="code"
-                  type="text"
-                  required
-                  maxLength={6}
-                  icon={<KeyRound className="h-4 w-4" />}
-                  placeholder="000000"
-                  value={totpCode}
-                  onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
-                  className="bg-white/5 border-white/10 text-center tracking-widest text-lg font-mono focus:border-purple-500/50 focus:ring-purple-500/20 text-white placeholder:text-white/20 h-[52px] rounded-2xl"
-                />
-              </div>
-
-              <Button
-                type="submit"
-                disabled={verifyTotp.isPending}
-                className="w-full h-[52px] bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center space-x-2"
-              >
-                {verifyTotp.isPending ? (
-                  <Loader2 className="animate-spin h-5 w-5 text-white" />
-                ) : (
-                  <>
-                    <span>VERIFY & SIGN IN</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </Button>
-
-              <button
-                type="button"
-                onClick={() => { setStep("login"); setTotpCode(""); }}
-                className="w-full text-center text-xs text-white/40 hover:text-white/70 transition-colors"
-              >
-                Cancel and return to login
-              </button>
-            </form>
-          ) : (
-            /* ================== Standard Login / OTP Input ================== */
-            <>
-              {/* Type Selector (Password vs OTP) */}
-              {step === "login" && (
-                <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 mb-6">
-                  <button
-                    type="button"
-                    onClick={() => setAuthType("password")}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                      authType === "password"
-                        ? "bg-white/10 text-white shadow-sm"
-                        : "text-white/40 hover:text-white/60"
-                    }`}
-                  >
-                    Password
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAuthType("otp")}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                      authType === "otp"
-                        ? "bg-white/10 text-white shadow-sm"
-                        : "text-white/40 hover:text-white/60"
-                    }`}
-                  >
-                    Email OTP
-                  </button>
-                </div>
-              )}
-
-              <form className="space-y-6" onSubmit={handleSubmit}>
-                {step === "login" ? (
-                  /* Screen 1: Inputs Email / Password */
-                  <div className="space-y-5">
-                    {/* Email */}
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest px-1">Email Address</label>
-                      <Input
-                        id="email-address"
-                        name="email"
-                        type="email"
-                        required
-                        icon={<Mail className="h-4 w-4" />}
-                        placeholder="you@organization.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="bg-white/5 border-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 text-white placeholder:text-white/20 h-[52px] rounded-2xl"
-                      />
-                    </div>
-
-                    {/* Password (Only for password flow) */}
-                    {authType === "password" && (
-                      <div className="space-y-1.5">
-                        <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest px-1">Password</label>
-                        <div className="relative">
-                          <Input
-                            name="password"
-                            type={showPassword ? "text" : "password"}
-                            required
-                            icon={<Lock className="h-4 w-4" />}
-                            placeholder="••••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="bg-white/5 border-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 text-white placeholder:text-white/20 h-[52px] rounded-2xl"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute inset-y-0 right-0 pr-4 flex items-center text-white/30 hover:text-white/60 transition-colors"
-                          >
-                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  /* Screen 2: OTP Verification input */
-                  <div className="space-y-5">
-                    <div className="text-center space-y-1.5 mb-4">
-                      <div className="mx-auto w-10 h-10 bg-purple-500/10 rounded-full flex items-center justify-center">
-                        <Mail className="w-5 h-5 text-purple-400" />
-                      </div>
-                      <h3 className="text-md font-bold text-white">Enter OTP Code</h3>
-                      <p className="text-xs text-white/50">
-                        We sent a 6-digit login code to <strong>{email}</strong>
-                      </p>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest px-1">Verification Code</label>
-                      <Input
-                        id="otp-code"
-                        name="otp"
-                        type="text"
-                        required
-                        maxLength={6}
-                        icon={<KeyRound className="h-4 w-4" />}
-                        placeholder="000000"
-                        value={otpCode}
-                        onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                        className="bg-white/5 border-white/10 text-center tracking-widest text-lg font-mono focus:border-purple-500/50 focus:ring-purple-500/20 text-white placeholder:text-white/20 h-[52px] rounded-2xl"
-                      />
-                    </div>
-
-                    <div className="text-center">
-                      {countdown > 0 ? (
-                        <span className="text-xs text-white/40">Resend code in {countdown}s</span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={handleResendOtp}
-                          className="text-xs text-purple-400 hover:text-purple-300 font-semibold underline underline-offset-4"
-                        >
-                          Resend Code
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Submits buttons */}
-                {authType === "password" ? (
-                  /* Standard login button */
-                  <Button
-                    type="submit"
-                    disabled={login.isPending || isLocating}
-                    className="w-full h-[52px] bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-2xl shadow-lg transform active:scale-[0.98] transition-all disabled:opacity-75 flex items-center justify-center space-x-2 group"
-                  >
-                    {isLocating ? (
-                      <>
-                        <Sparkles className="animate-pulse w-5 h-5 text-white" />
-                        <span>Syncing Location...</span>
-                      </>
-                    ) : login.isPending ? (
-                      <>
-                        <Loader2 className="animate-spin h-5 w-5 text-white" />
-                        <span>Verifying...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>SIGN IN</span>
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                      </>
-                    )}
-                  </Button>
-                ) : (
-                  /* OTP flow button */
-                  <div className="space-y-3">
-                    <Button
-                      type="submit"
-                      disabled={requestOtp.isPending || verifyOtp.isPending || isLocating}
-                      className="w-full h-[52px] bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center space-x-2"
-                    >
-                      {requestOtp.isPending || verifyOtp.isPending ? (
-                        <Loader2 className="animate-spin h-5 w-5 text-white" />
-                      ) : step === "login" ? (
-                        <span>SEND CODE</span>
-                      ) : (
-                        <span>VERIFY & SIGN IN</span>
-                      )}
-                    </Button>
-
-                    {step === "otp_code" && (
-                      <button
-                        type="button"
-                        onClick={() => { setStep("login"); setOtpCode(""); }}
-                        className="w-full text-center text-xs text-white/40 hover:text-white/60 transition-colors"
-                      >
-                        Change Email Address
-                      </button>
-                    )}
-                  </div>
-                )}
-              </form>
-
-              {/* Password Recovery link */}
-              {step === "login" && authType === "password" && (
-                <div className="flex justify-end mt-4 px-1">
-                  <Link href="/forgot-password" className="text-xs font-semibold text-purple-400 hover:text-purple-300 transition-colors">
-                    Forgot Password?
-                  </Link>
-                </div>
-              )}
-
-              {/* Google Sign-in section */}
-              {step === "login" && (
-                <div className="mt-8 space-y-4">
-                  <div className="flex items-center justify-between text-[10px] text-white/30 uppercase tracking-widest font-bold">
-                    <span className="h-[1px] bg-white/10 flex-1"></span>
-                    <span className="px-3">Or sign in with</span>
-                    <span className="h-[1px] bg-white/10 flex-1"></span>
-                  </div>
-                  
-                  {/* Google Identity Services Button Container */}
-                  <div className="flex justify-center">
-                    <div 
-                      id="google-signin-btn" 
-                      className="backdrop-blur-sm rounded-xl overflow-hidden shadow-lg border border-white/5 transform hover:scale-[1.01] transition-transform duration-200"
-                    ></div>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          <div className="mt-8 pt-6 border-t border-white/5 text-center">
-            <p className="text-xs text-white/40 font-medium">
-              New to the platform?{" "}
-              <Link href="/register" className="font-bold text-purple-400 hover:text-purple-300 transition-colors">
-                Create Account
-              </Link>
+    <AuthShell
+      title={step === "totp" ? "Two-factor authentication" : "Sign in"}
+      description={
+        step === "totp"
+          ? "Enter the 6-digit code from your authenticator app."
+          : "Use your work email to continue."
+      }
+    >
+      {step === "totp" ? (
+        <form onSubmit={handleVerifyTotp} className="space-y-5">
+          <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/40 p-3">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <p className="text-sm text-muted-foreground">
+              Open your authenticator app and enter the current code for Teamzen.
             </p>
           </div>
-        </div>
 
-        <p className="text-center text-xs text-white/30 tracking-wider">
-          &copy; 2025 Teamzen Pvt. Ltd. All rights reserved.
-        </p>
-      </div>
-      
-      {/* Location Modal */}
-      {showLocationModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-          <div className="w-full max-w-sm glass-login p-8 rounded-[32px] border border-white/10">
-            <div className="text-center space-y-6">
-              <div className="mx-auto w-16 h-16 bg-purple-500/10 rounded-full flex items-center justify-center animate-pulse">
-                <Globe className="w-8 h-8 text-purple-400" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold text-white">Location Sync Required</h3>
-                <p className="text-xs text-white/50 leading-relaxed">
-                  To ensure workplace check-in compliance and secure session logging, we need location coordinates.
-                  Please allow access in your browser settings.
-                </p>
-              </div>
-              {locationError && (
-                <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/20 text-center">
-                  <p className="text-[11px] text-red-400 font-medium">{locationError}</p>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground" htmlFor="totp-code">
+              Security code
+            </label>
+            <Input
+              id="totp-code"
+              name="code"
+              type="text"
+              required
+              maxLength={6}
+              icon={<KeyRound className="h-4 w-4" />}
+              placeholder="000000"
+              value={totpCode}
+              onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
+              className="text-center font-mono tracking-widest"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={verifyTotp.isPending || isLocating}
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+          >
+            {(verifyTotp.isPending || isLocating) && <Loader2 className="h-4 w-4 animate-spin" />}
+            Verify and sign in
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setStep("login");
+              setTotpCode("");
+            }}
+            className="w-full text-center text-sm text-muted-foreground hover:text-foreground"
+          >
+            Back to sign in
+          </button>
+        </form>
+      ) : (
+        <>
+          {step === "login" && (
+            <div className="mb-5 grid grid-cols-2 gap-1 rounded-md border border-border bg-muted/40 p-1">
+              <button
+                type="button"
+                onClick={() => setAuthType("password")}
+                className={cn(
+                  "rounded-md px-3 py-2 text-sm transition-colors",
+                  authType === "password"
+                    ? "bg-background font-medium text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Password
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuthType("otp")}
+                className={cn(
+                  "rounded-md px-3 py-2 text-sm transition-colors",
+                  authType === "otp"
+                    ? "bg-background font-medium text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Email OTP
+              </button>
+            </div>
+          )}
+
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            {step === "login" ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground" htmlFor="email-address">
+                    Email
+                  </label>
+                  <Input
+                    id="email-address"
+                    name="email"
+                    type="email"
+                    required
+                    icon={<Mail className="h-4 w-4" />}
+                    placeholder="you@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
+
+                {authType === "password" && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <label className="text-sm font-medium text-foreground" htmlFor="password">
+                        Password
+                      </label>
+                      <Link
+                        href="/forgot-password"
+                        prefetch={false}
+                        className="text-sm font-medium text-primary hover:underline"
+                      >
+                        Forgot password?
+                      </Link>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        required
+                        icon={<Lock className="h-4 w-4" />}
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  We sent a 6-digit code to <span className="font-medium text-foreground">{email}</span>
+                </p>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground" htmlFor="otp-code">
+                    Verification code
+                  </label>
+                  <Input
+                    id="otp-code"
+                    name="otp"
+                    type="text"
+                    required
+                    maxLength={6}
+                    icon={<KeyRound className="h-4 w-4" />}
+                    placeholder="000000"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                    className="text-center font-mono tracking-widest"
+                  />
+                </div>
+                <div className="text-center text-sm">
+                  {countdown > 0 ? (
+                    <span className="text-muted-foreground">Resend code in {countdown}s</span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      Resend code
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={
+                login.isPending ||
+                requestOtp.isPending ||
+                verifyOtp.isPending ||
+                isLocating
+              }
+              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+            >
+              {(login.isPending ||
+                requestOtp.isPending ||
+                verifyOtp.isPending ||
+                isLocating) && <Loader2 className="h-4 w-4 animate-spin" />}
+              {submitLabel()}
+            </button>
+
+            {step === "otp_code" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStep("login");
+                  setOtpCode("");
+                }}
+                className="w-full text-center text-sm text-muted-foreground hover:text-foreground"
+              >
+                Change email
+              </button>
+            )}
+          </form>
+
+          {step === "login" && (
+            <div className="mt-6 space-y-4">
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="h-px flex-1 bg-border" />
+                Or continue with
+                <span className="h-px flex-1 bg-border" />
+              </div>
+              <div className="flex justify-center">
+                <div id="google-signin-btn" />
+              </div>
+            </div>
+          )}
+
+          <p className="mt-8 text-center text-sm text-muted-foreground">
+            New here?{" "}
+            <Link href="/register" className="font-medium text-primary hover:underline">
+              Create an account
+            </Link>
+          </p>
+        </>
+      )}
+
+      {showLocationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
+          <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-lg">
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <MapPin className="h-4 w-4" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-base font-semibold text-foreground">Allow location</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Location helps verify check-ins and secure session logging. You can skip if needed.
+                  </p>
+                </div>
+              </div>
+
+              {locationError && (
+                <p className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                  {locationError}
+                </p>
               )}
-              <div className="space-y-2.5">
-                <Button
+
+              <div className="flex flex-col gap-2">
+                <button
                   onClick={() => requestLocation()}
                   disabled={isLocating}
-                  className="w-full h-11 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-all"
+                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
                 >
-                  {isLocating ? <Loader2 className="animate-spin w-5 h-5 text-white" /> : "TRY AGAIN"}
-                </Button>
+                  {isLocating && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Allow location
+                </button>
                 <button
                   onClick={() => {
                     setShowLocationModal(false);
@@ -581,15 +517,15 @@ export default function LoginForm() {
                       performLogin();
                     }
                   }}
-                  className="w-full py-1.5 text-xs text-white/40 hover:text-white transition-colors"
+                  className="inline-flex h-9 items-center justify-center rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
-                  Skip & Authenticate
+                  Skip and sign in
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </AuthShell>
   );
 }

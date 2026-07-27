@@ -13,7 +13,7 @@ export function FAB({ icon: Icon, color, label, onClick }: FABProps) {
     return (
         <div className="flex items-center justify-end gap-3 group translate-x-4 hover:translate-x-0 transition-transform duration-300">
             {label && (
-                <span className="bg-foreground text-background text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg mr-2">
+                <span className="bg-foreground text-background text-sm font-medium px-3 py-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap mr-2">
                     {label}
                 </span>
             )}

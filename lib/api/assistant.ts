@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import client from "./client";
 import { API_ENDPOINTS } from "./endpoints";
 
@@ -7,6 +7,7 @@ export type ChatMessage = {
     role: 'user' | 'assistant';
     content: string;
     timestamp?: string;
+    toolsUsed?: string[];   // Permanently stored tools used to generate this message
 };
 
 export type AssistantResponse = {
@@ -21,9 +22,9 @@ export const useAssistant = () => {
     const { data, isLoading: isHistoryLoading } = useQuery({
         queryKey: ['assistant-history'],
         queryFn: async () => {
-            const response = await client.get<{ 
+            const response = await client.get<{
                 history: ChatMessage[],
-                config: { model_name: string } 
+                config: { model_name: string }
             }>(`${API_ENDPOINTS.CHAT}?context=user`);
             return response.data;
         },
@@ -38,18 +39,22 @@ export const useAssistant = () => {
     }, [data]);
 
     const [isStreaming, setIsStreaming] = useState(false);
+    const [activeTool, setActiveTool] = useState<{ name: string; status: 'running' | 'completed' } | null>(null);
+    const activeToolTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const sendMessage = async ({ query, latitude, longitude, payload }: { query: string, latitude?: number, longitude?: number, payload?: any }) => {
         setIsStreaming(true);
+        setActiveTool(null);
+
+        // Collect all tools used during this response
+        const toolsUsedThisResponse: string[] = [];
 
         try {
-            // 1. Optimistic Update (Handled by UI to avoid delay)
-            
-            // 2. Prepare streaming message
-            const assistantMsg: ChatMessage = { role: 'assistant', content: '', timestamp: new Date().toISOString() };
+            // Prepare streaming message placeholder
+            const assistantMsg: ChatMessage = { role: 'assistant', content: '', timestamp: new Date().toISOString(), toolsUsed: [] };
             setHistory(prev => [...prev, assistantMsg]);
 
-            // 3. Start Stream
+            // Start Stream
             const response = await fetch(`/api${API_ENDPOINTS.CHAT}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -80,7 +85,6 @@ export const useAssistant = () => {
                             const data = JSON.parse(dataStr);
                             if (data.token) {
                                 fullContent += data.token;
-                                // Update the last message in history with the accumulated content
                                 setHistory(prev => {
                                     const newHistory = [...prev];
                                     const last = newHistory[newHistory.length - 1];
@@ -89,8 +93,32 @@ export const useAssistant = () => {
                                     }
                                     return newHistory;
                                 });
+                            } else if (data.tool_start) {
+                                const toolName: string = data.tool_start;
+                                // Show live spinning indicator
+                                if (activeToolTimeoutRef.current) clearTimeout(activeToolTimeoutRef.current);
+                                setActiveTool({ name: toolName, status: 'running' });
+                                // Track for permanent record (avoid duplicates)
+                                if (!toolsUsedThisResponse.includes(toolName)) {
+                                    toolsUsedThisResponse.push(toolName);
+                                }
+                                // Embed into message immediately so it persists even before response
+                                setHistory(prev => {
+                                    const newHistory = [...prev];
+                                    const last = newHistory[newHistory.length - 1];
+                                    if (last && last.role === 'assistant') {
+                                        last.toolsUsed = [...toolsUsedThisResponse];
+                                    }
+                                    return newHistory;
+                                });
+                            } else if (data.tool_end) {
+                                const toolName: string = data.tool_end;
+                                // Show completed badge briefly, then it stays as a pill on the message
+                                setActiveTool({ name: toolName, status: 'completed' });
+                                activeToolTimeoutRef.current = setTimeout(() => {
+                                    setActiveTool(null);
+                                }, 2000);
                             } else if (data.error) {
-                                // Handle backend errors gracefully
                                 const errorMsg = `[ERROR_CARD] title: Assistant Error | message: ${data.error} [/ERROR_CARD]`;
                                 setHistory(prev => {
                                     const newHistory = [...prev];
@@ -100,10 +128,20 @@ export const useAssistant = () => {
                                     }
                                     return newHistory;
                                 });
-                                break; // Stop streaming on error
+                                break;
                             } else if (data.history) {
-                                // Final sync
-                                setHistory(data.history);
+                                // Final sync from backend — preserve toolsUsed since backend doesn't know about it
+                                setHistory(prev => {
+                                    const serverHistory: ChatMessage[] = data.history;
+                                    // Re-attach toolsUsed to the last assistant message
+                                    if (toolsUsedThisResponse.length > 0 && serverHistory.length > 0) {
+                                        const lastMsg = serverHistory[serverHistory.length - 1];
+                                        if (lastMsg.role === 'assistant') {
+                                            lastMsg.toolsUsed = toolsUsedThisResponse;
+                                        }
+                                    }
+                                    return serverHistory;
+                                });
                             }
                         } catch (e) {
                             console.warn("Error parsing stream chunk", e);
@@ -113,9 +151,23 @@ export const useAssistant = () => {
             }
         } catch (error) {
             console.error("Streaming error", error);
-            // Revert optimistic update or show error
         } finally {
             setIsStreaming(false);
+            // Ensure final message has all tools permanently attached
+            if (toolsUsedThisResponse.length > 0) {
+                setHistory(prev => {
+                    const newHistory = [...prev];
+                    const last = newHistory[newHistory.length - 1];
+                    if (last && last.role === 'assistant') {
+                        last.toolsUsed = [...toolsUsedThisResponse];
+                    }
+                    return newHistory;
+                });
+            }
+            // Clear the live spinning indicator (the permanent pills remain on the message)
+            activeToolTimeoutRef.current = setTimeout(() => {
+                setActiveTool(null);
+            }, 2000);
             queryClient.invalidateQueries({ queryKey: ['assistant-history'] });
         }
     };
@@ -137,6 +189,7 @@ export const useAssistant = () => {
         isLoading: isStreaming || isHistoryLoading,
         isHistoryLoading,
         isStreaming,
+        activeTool,
         clearHistory,
         config: data?.config
     };

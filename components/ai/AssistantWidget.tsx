@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import {
-    Send, X, Bot, User, MessageSquare, Trash2,
-    Sparkles, Loader2, Minimize2, Mic, MicOff, Cpu,
+    Send, X, Bot, User, Trash2,
+    Loader2, Minimize2, Mic, MicOff, Cpu,
     MessageCircle
 } from 'lucide-react';
 import { useVoiceWhisper } from "@/lib/hooks/useVoiceWhisper";
@@ -27,6 +27,7 @@ export function AssistantWidget() {
         sendMessage, 
         isLoading, 
         isStreaming,
+        activeTool,
         clearHistory,
         config
     } = useAssistant();
@@ -147,33 +148,32 @@ export function AssistantWidget() {
         <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-100 flex flex-col items-end transition-all duration-300">
             {/* Chat Window */}
             {isOpen && (
-                <div className="mb-4 w-[calc(100vw-2rem)] sm:w-[500px] h-[calc(100dvh-8rem)] sm:h-[650px] max-h-[85vh] sm:max-h-[700px] bg-card/95 backdrop-blur-xl border border-border/50 rounded-4xl sm:rounded-[2.5rem] flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
+                <div className="mb-4 w-[calc(100vw-2rem)] sm:w-[500px] h-[calc(100dvh-8rem)] sm:h-[650px] max-h-[85vh] sm:max-h-[700px] bg-card border border-border rounded-xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
                     {/* Header */}
-                    <div className="p-4 sm:p-6 border-b border-border bg-muted/20 backdrop-blur-sm flex justify-between items-center group">
+                    <div className="p-4 sm:p-5 border-b border-border bg-muted/20 flex justify-between items-center group">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center relative overflow-hidden">
-                                <Bot className="w-6 h-6 text-primary-foreground relative z-10" />
-                                <div className="absolute inset-0 bg-linear-to-tr from-white/20 to-transparent opacity-50" />
+                            <div className="w-9 h-9 rounded-md bg-primary flex items-center justify-center">
+                                <Bot className="w-5 h-5 text-primary-foreground" />
                             </div>
                             <div>
-                                <h3 className="font-black tracking-tight text-sm leading-none mb-1">Smart Assistant</h3>
+                                <h3 className="font-semibold text-sm leading-none mb-1">Assistant</h3>
                                 <div className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Online</span>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                    <span className="text-[10px] font-medium text-muted-foreground">Online</span>
                                 </div>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={clearHistory}
-                                className="p-2 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
+                                className="p-2 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
                                 title="Clear Chat"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>
                             <button
                                 onClick={() => setIsOpen(false)}
-                                className="p-2 rounded-xl hover:bg-muted text-muted-foreground transition-all"
+                                className="p-2 rounded-md hover:bg-muted text-muted-foreground transition-all"
                             >
                                 <Minimize2 className="w-4 h-4" />
                             </button>
@@ -183,25 +183,25 @@ export function AssistantWidget() {
                     {/* Messages */}
                     <div
                         ref={scrollRef}
-                        className="grow overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+                        className="grow overflow-y-auto p-4 sm:p-5 space-y-4 sm:space-y-5 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
                     >
                         {messages.length === 0 && (
-                            <div className="space-y-6 animate-in fade-in duration-700 delay-300">
+                            <div className="space-y-5 animate-in fade-in duration-500">
                                 <div className="flex gap-3 flex-row">
-                                    <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-sm">
+                                    <div className="w-8 h-8 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
                                         <Bot className="w-4 h-4" />
                                     </div>
                                     <div className="flex-1">
-                                        <div className="bg-muted/50 border border-border rounded-3xl rounded-tl-none p-4 sm:p-6 text-sm leading-relaxed font-medium">
+                                        <div className="bg-muted/50 border border-border rounded-xl rounded-tl-md p-4 text-sm leading-relaxed font-medium">
                                             Welcome {user?.firstName}! I can help you understand your leaves, attendance, and company policies. What would you like to know?
                                         </div>
-                                        <div className="text-[10px] text-muted-foreground/60 mt-2 pl-2 font-bold uppercase tracking-widest">
+                                        <div className="text-[10px] text-muted-foreground/60 mt-2 pl-2 font-medium">
                                             {moment().format("hh:mm A")}
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <div className="grid grid-cols-1 gap-2 w-full pt-4">
+                                <div className="grid grid-cols-1 gap-2 w-full pt-2">
                                     {[
                                         "What's my leave balance?",
                                         "How many days of casual leave do I have?",
@@ -210,7 +210,7 @@ export function AssistantWidget() {
                                         <button
                                             key={q}
                                             onClick={() => handleSend(undefined, q)}
-                                            className="text-[10px] font-black uppercase tracking-widest p-4 rounded-2xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-all text-left flex items-center gap-3 group/btn"
+                                            className="text-xs font-medium p-3 rounded-md border border-border hover:border-primary/30 hover:bg-primary/5 transition-all text-left flex items-center gap-3 group/btn"
                                         >
                                             <div className="w-1.5 h-1.5 rounded-full bg-primary/20 group-hover/btn:bg-primary transition-colors" />
                                             {q}
@@ -229,7 +229,7 @@ export function AssistantWidget() {
                                 )}
                             >
                                 <div className={cn(
-                                    "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
+                                    "w-8 h-8 rounded-md flex items-center justify-center shrink-0",
                                     msg.role === 'user' ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"
                                 )}>
                                     {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
@@ -242,6 +242,8 @@ export function AssistantWidget() {
                                         handleSend={handleSend}
                                         isLast={i === messages.length - 1}
                                         isStreaming={isStreaming}
+                                        activeTool={i === messages.length - 1 ? activeTool : null}
+                                        toolsUsed={msg.toolsUsed}
                                     />
                                     <div className={cn(
                                         "w-full text-xs text-muted-foreground/60 mt-1",
@@ -255,10 +257,10 @@ export function AssistantWidget() {
 
                         {isLoading && !isStreaming && (
                             <div className="flex gap-3 animate-in fade-in duration-300">
-                                <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                <div className="w-8 h-8 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
                                     <Bot className="w-4 h-4" />
                                 </div>
-                                <div className="bg-muted/50 border border-border rounded-3xl rounded-tl-none p-4 flex items-center gap-2">
+                                <div className="bg-muted/50 border border-border rounded-xl rounded-tl-md p-4 flex items-center gap-2">
                                     <div className="flex gap-1">
                                         <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
                                         <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
@@ -270,7 +272,7 @@ export function AssistantWidget() {
                     </div>
 
                     {/* Input Area */}
-                    <div className="p-4 sm:p-6 border-t border-border bg-card">
+                    <div className="p-4 sm:p-5 border-t border-border bg-card">
                         <form
                             onSubmit={handleSend}
                             className="relative group"
@@ -280,20 +282,20 @@ export function AssistantWidget() {
                                 onChange={(e) => setInput(e.target.value)}
                                 placeholder={isRecording ? "Listening..." : "Message assistant..."}
                                 className={cn(
-                                    "h-14 rounded-2xl bg-muted/30 border-border focus-visible:ring-primary/20 transition-all font-medium py-4 pl-6 pr-28",
-                                    isRecording && "animate-pulse border-primary/50 bg-primary/5"
+                                    "h-12 rounded-md bg-muted/30 border-border focus-visible:ring-primary/20 transition-all font-medium py-3 pl-4 pr-28",
+                                    isRecording && "border-primary/50 bg-primary/5"
                                 )}
                                 disabled={isLoading || isVoiceProcessing}
                             />
-                            <div className="absolute right-2 top-2 flex items-center gap-1.5 z-20">
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-20">
                                 <button
                                     type="button"
                                     onClick={handleVoiceToggle}
                                     disabled={isLoading || isVoiceProcessing}
                                     className={cn(
-                                        "w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-lg",
+                                        "w-9 h-9 rounded-md flex items-center justify-center transition-all active:scale-95",
                                         isRecording 
-                                            ? "bg-destructive text-destructive-foreground shadow-destructive/20" 
+                                            ? "bg-destructive text-destructive-foreground" 
                                             : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
                                     )}
                                 >
@@ -302,7 +304,7 @@ export function AssistantWidget() {
                                 <button
                                     type="submit"
                                     disabled={isLoading || !input.trim() || isRecording || isVoiceProcessing}
-                                    className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 disabled:opacity-50 transition-all active:scale-95"
+                                    className="w-9 h-9 rounded-md bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 disabled:opacity-50 transition-all active:scale-95"
                                 >
                                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                                 </button>
@@ -318,12 +320,12 @@ export function AssistantWidget() {
                         <div className="mt-3 flex items-center justify-between px-1">
                             <div className="flex items-center gap-1.5 overflow-hidden">
                                 <Cpu className="w-3 h-3 text-muted-foreground/40 shrink-0" />
-                                <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/50 truncate">
-                                    Adaptive Intelligence: {config?.model_name || "GPT-4o Mini"}
+                                <span className="text-[9px] font-medium text-muted-foreground/50 truncate">
+                                    {config?.model_name || "GPT-4o Mini"}
                                 </span>
                             </div>
-                            <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/30 shrink-0">
-                                Teamzen OS
+                            <p className="text-[9px] font-medium text-muted-foreground/30 shrink-0">
+                                Teamzen
                             </p>
                         </div>
                     </div>
@@ -335,23 +337,19 @@ export function AssistantWidget() {
                 id="ai-assistant-trigger"
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
-                    "w-16 h-16 rounded-4xl flex items-center justify-center transition-all duration-500 active:scale-90 group relative overflow-hidden",
+                    "w-14 h-14 rounded-xl flex items-center justify-center transition-all duration-300 active:scale-95 group relative overflow-hidden border",
                     isOpen
-                        ? "bg-card border border-border text-foreground hover:bg-muted"
-                        : "bg-primary text-primary-foreground"
+                        ? "bg-card border-border text-foreground hover:bg-muted"
+                        : "bg-primary border-primary text-primary-foreground"
                 )}
             >
                 {isOpen ? (
-                    <X className="w-7 h-7" />
+                    <X className="w-6 h-6" />
                 ) : (
                     <div className="relative">
-                        <MessageCircle className="w-7 h-7" />
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-primary animate-pulse" />
+                        <MessageCircle className="w-6 h-6" />
+                        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-primary" />
                     </div>
-                )}
-                {/* Glow layer */}
-                {!isOpen && (
-                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                 )}
             </button>
 

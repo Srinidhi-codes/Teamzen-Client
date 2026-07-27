@@ -25,7 +25,7 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
     const forwardedHeaders: Record<string, string> = {};
 
     request.headers.forEach((value, key) => {
-        // Strip accept-encoding to prevent backend from gzipping, 
+        // Strip accept-encoding to prevent backend from gzipping,
         // passing compressed bytes verbatim can cause ERR_CONTENT_DECODING_FAILED
         if (!['host', 'connection', 'transfer-encoding', 'cookie', 'accept-encoding'].includes(key.toLowerCase())) {
             forwardedHeaders[key] = value;
@@ -47,12 +47,15 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
             method,
             headers: forwardedHeaders,
             body,
+            // Required for streaming: don't buffer the response body
+            // @ts-ignore - duplex is required for streaming but not in all TS type defs
+            duplex: 'half',
         });
 
         const responseHeaders = new Headers();
         djangoResponse.headers.forEach((value, key) => {
             // Next.js fetch automatically decompresses the response body.
-            // If we forward the 'content-encoding' header (e.g. gzip) but serve 
+            // If we forward the 'content-encoding' header (e.g. gzip) but serve
             // the decompressed bytes, the browser will fail to decode it.
             // We also strip content-length because the uncompressed size differs.
             const stripHeaders = [
@@ -67,8 +70,19 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
             }
         });
 
-        const responseBody = await djangoResponse.arrayBuffer();
+        // For SSE/streaming responses, pipe the body directly without buffering.
+        // This ensures tool_start/tool_end events reach the browser in real-time.
+        const contentType = djangoResponse.headers.get('content-type') || '';
+        if (contentType.includes('text/event-stream') || contentType.includes('application/octet-stream')) {
+            // Stream directly — do NOT await djangoResponse.text() or .blob()
+            return new NextResponse(djangoResponse.body, {
+                status: djangoResponse.status,
+                headers: responseHeaders,
+            });
+        }
 
+        // For non-streaming responses, buffer normally (safe for JSON, etc.)
+        const responseBody = await djangoResponse.blob();
         return new NextResponse(responseBody, {
             status: djangoResponse.status,
             headers: responseHeaders,

@@ -32,12 +32,12 @@ export function Modal({
 
 
       {/* Modal */}
-      <div className="relative bg-card rounded-4xl shadow-3xl max-w-md w-full mx-4 overflow-hidden border border-border animate-in zoom-in-95 duration-300">
+      <div className="relative bg-card rounded-xl shadow-lg max-w-md w-full mx-4 overflow-hidden border border-border animate-in zoom-in-95 duration-300">
         {/* Header */}
-        <div className="flex justify-between items-center p-8 border-b border-border/50">
+        <div className="flex justify-between items-center p-6 border-b border-border/50">
           <div>
-            <h2 className="text-xl font-black text-foreground tracking-tight">{title}</h2>
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-0.5">Authentication Required</p>
+            <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">Authentication required</p>
           </div>
           <button
             onClick={onClose}
@@ -52,10 +52,10 @@ export function Modal({
         <div className="p-8 text-foreground/80 font-medium leading-relaxed">{children}</div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 p-8 border-t border-border/50 bg-muted/20">
+        <div className="flex justify-end gap-3 p-6 border-t border-border/50 bg-muted/20">
           <button
             onClick={onClose}
-            className="px-6 py-3 text-muted-foreground hover:text-foreground text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
+            className="h-9 px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             disabled={isLoading}
           >
             {cancelText}
@@ -63,11 +63,14 @@ export function Modal({
           {onConfirm && (
             <button
               onClick={onConfirm}
-              className="px-8 py-3 bg-primary text-primary-foreground rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
+              className="h-9 px-4 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90 transition-colors disabled:opacity-50"
               disabled={isLoading}
             >
               {isLoading ? (
-                <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                  <span>Loading…</span>
+                </div>
               ) : confirmText}
             </button>
           )}

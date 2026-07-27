@@ -2,7 +2,7 @@ import { DataTable, Column } from "@/components/common/DataTable";
 import moment from "moment";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, TrendingUp, AlertCircle, CheckCircle2, XCircle, RotateCcw } from "lucide-react";
+import { Calendar, Clock, TrendingUp, RotateCcw } from "lucide-react";
 
 export type AttendanceRow = {
     id: string;
@@ -18,11 +18,11 @@ export type AttendanceRow = {
 };
 
 const STATUS_CONFIG: Record<string, { label: string; variant: "success" | "warning" | "danger" | "info" }> = {
-    late_login: { label: "Late Login", variant: "warning" },
-    early_logout: { label: "Early Logout", variant: "warning" },
-    half_day: { label: "Half Day", variant: "warning" },
+    late_login: { label: "Late login", variant: "warning" },
+    early_logout: { label: "Early logout", variant: "warning" },
+    half_day: { label: "Half day", variant: "warning" },
     absent: { label: "Absent", variant: "danger" },
-    present: { label: "Active", variant: "success" },
+    present: { label: "Present", variant: "success" },
     approved: { label: "Approved", variant: "success" },
     rejected: { label: "Rejected", variant: "danger" },
     pending: { label: "Pending", variant: "warning" },
@@ -55,10 +55,10 @@ export function AttendanceTable({
             label: "Date",
             render: (value: string) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-md bg-primary/10 text-primary flex items-center justify-center">
                         <Calendar className="w-4 h-4" />
                     </div>
-                    <span className="font-bold tabular-nums">
+                    <span className="font-medium tabular-nums text-sm">
                         {moment(value).format("ddd, DD MMM")}
                     </span>
                 </div>
@@ -66,31 +66,27 @@ export function AttendanceTable({
         },
         {
             key: "loginTime",
-            label: "Login Time",
+            label: "Check in",
             render: (value: string) => (
-                <div className="flex flex-col gap-0.5">
-                    <div className="flex items-center gap-2 text-foreground font-black tabular-nums text-sm">
-                        <Clock className="w-3 h-3 text-muted-foreground" />
-                        {value ? moment(value, "HH:mm:ss").format("hh:mm:ss A") : "--:--:--"}
-                    </div>
+                <div className="flex items-center gap-2 text-foreground font-medium tabular-nums text-sm">
+                    <Clock className="w-3 h-3 text-muted-foreground" />
+                    {value ? moment(value, "HH:mm:ss").format("hh:mm:ss A") : "—"}
                 </div>
             ),
         },
         {
             key: "logoutTime",
-            label: "Logout Time",
+            label: "Check out",
             render: (value: string) => (
-                <div className="flex flex-col gap-0.5">
-                    <div className="flex items-center gap-2 text-foreground font-black tabular-nums text-sm">
-                        <Clock className="w-3 h-3 text-muted-foreground" />
-                        {value ? moment(value, "HH:mm:ss").format("hh:mm:ss A") : "--:--:--"}
-                    </div>
+                <div className="flex items-center gap-2 text-foreground font-medium tabular-nums text-sm">
+                    <Clock className="w-3 h-3 text-muted-foreground" />
+                    {value ? moment(value, "HH:mm:ss").format("hh:mm:ss A") : "—"}
                 </div>
             ),
         },
         {
             key: "workedHours",
-            label: "Productivity",
+            label: "Hours",
             render: (value: string | number, row: AttendanceRow) => {
                 const isToday = moment().isSame(moment(row.attendanceDate), 'day');
                 const isLive = isToday && row.loginTime && !row.logoutTime;
@@ -107,8 +103,8 @@ export function AttendanceTable({
 
                     return (
                         <div className="flex items-center gap-2">
-                            <TrendingUp className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
-                            <span className="font-black tabular-nums text-background-inverse">
+                            <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+                            <span className="font-medium tabular-nums text-sm">
                                 {h}h {m}m {s}s
                             </span>
                         </div>
@@ -118,7 +114,7 @@ export function AttendanceTable({
                 return (
                     <div className="flex items-center gap-2">
                         <TrendingUp className={`w-3.5 h-3.5 ${Number(value) >= 8 ? "text-emerald-500" : "text-amber-500"}`} />
-                        <span className="font-black tabular-nums text-foreground">
+                        <span className="font-medium tabular-nums text-sm text-foreground">
                             {value ? `${Number(value).toFixed(1)}h` : "0.0h"}
                         </span>
                     </div>
@@ -129,30 +125,33 @@ export function AttendanceTable({
             key: "status",
             label: "Status",
             render: (value: string) => {
-                const config = STATUS_CONFIG[value] || { label: value, variant: "info" };
+                const config = STATUS_CONFIG[value] || { label: value, variant: "info" as const };
                 return (
-                    <Badge variant={config.variant}>
-                        {value}
-                    </Badge>
+                    <span className="inline-flex rounded-md px-1.5 py-0.5 text-[11px] font-medium capitalize bg-muted text-foreground">
+                        {config.label}
+                    </span>
                 );
             },
         },
         {
             key: "correctionStatus",
-            label: "Approval Status",
+            label: "Correction",
             render: (value: string, row: AttendanceRow) => {
-                if (!value && !row.correctionReason) return <span className="text-muted-foreground/30 font-black italic">--</span>;
-                const config = STATUS_CONFIG[value] || { label: value || "Pending Request", variant: "info" };
+                if (!value && !row.correctionReason) return <span className="text-muted-foreground/40 text-sm">—</span>;
+                const config = STATUS_CONFIG[value] || { label: value || "Pending", variant: "info" as const };
                 return (
                     <div className="flex flex-col gap-1.5">
-                        <div className="w-fit">
-                            <Badge variant={config.variant}>
-                                {config.label}
-                            </Badge>
-                        </div>
+                        <span className={`inline-flex w-fit rounded-md px-1.5 py-0.5 text-[11px] font-medium capitalize ${
+                            config.variant === "success" ? "bg-emerald-500/10 text-emerald-700" :
+                            config.variant === "danger" ? "bg-destructive/10 text-destructive" :
+                            config.variant === "warning" ? "bg-amber-500/10 text-amber-700" :
+                            "bg-muted text-muted-foreground"
+                        }`}>
+                            {config.label}
+                        </span>
                         {row.correctionReason && (
-                            <p className="text-[9px] text-muted-foreground italic truncate max-w-[120px]" title={row.correctionReason}>
-                                "{row.correctionReason}"
+                            <p className="text-xs text-muted-foreground truncate max-w-[120px]" title={row.correctionReason}>
+                                {row.correctionReason}
                             </p>
                         )}
                     </div>
@@ -161,7 +160,7 @@ export function AttendanceTable({
         },
         ...(data?.some(row => row.correctionStatus !== "approved") ? [{
             key: "correctionActions",
-            label: "Terminal Actions",
+            label: "Actions",
             render: (_: unknown, row: AttendanceRow) => {
                 const status = row.correctionStatus;
                 if (status === "approved") {
@@ -173,7 +172,7 @@ export function AttendanceTable({
                             <Button
                                 size="sm"
                                 variant="destructive"
-                                className="h-8 px-4 text-[9px] font-black tracking-widest"
+                                className="h-9 rounded-md px-3 text-xs font-medium"
                                 onClick={() => onCancelCorrection(row.correctionId!)}
                             >
                                 <RotateCcw className="w-3 h-3 mr-1.5" />
@@ -184,10 +183,10 @@ export function AttendanceTable({
                             <Button
                                 size="sm"
                                 variant="outline"
-                                className="h-8 px-4 text-[9px] font-black tracking-widest bg-primary/5 border-primary/20 text-primary hover:bg-primary hover:text-white transition-all"
+                                className="h-9 rounded-md px-3 text-xs font-medium"
                                 onClick={() => onRequestCorrection(row)}
                             >
-                                {status ? "RE-INITIATE" : "CORRECT"}
+                                {status ? "Request again" : "Request correction"}
                             </Button>
                         )}
 
@@ -198,7 +197,7 @@ export function AttendanceTable({
     ];
 
     return (
-        <div className="bg-card rounded-3xl sm:rounded-4xl border border-border shadow-2xl overflow-hidden p-1 sm:p-2">
+        <div className="bg-card rounded-xl border border-border overflow-hidden p-1 sm:p-2">
             <div className="overflow-x-auto custom-scrollbar">
                 <DataTable
                     columns={columns}

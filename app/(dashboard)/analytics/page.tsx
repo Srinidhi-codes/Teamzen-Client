@@ -1,270 +1,196 @@
 "use client";
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+
+import dynamic from "next/dynamic";
 import { Card } from "@/components/common/Card";
+import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable, Column } from "@/components/common/DataTable";
 import {
   TrendingUp,
   Users,
   DollarSign,
-  Zap,
   FileText,
   Download,
   Printer,
   Activity,
   Calendar,
   Layers,
-  BarChart3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { departmentData } from "@/components/analytics/analyticsData";
 
-// Sample data
-const payrollData = [
-  { month: "Jan", salary: 500000 },
-  { month: "Feb", salary: 520000 },
-  { month: "Mar", salary: 510000 },
-  { month: "Apr", salary: 530000 },
-  { month: "May", salary: 550000 },
-  { month: "Jun", salary: 560000 },
-];
+const AnalyticsTrendCharts = dynamic(
+  () =>
+    import("@/components/analytics/AnalyticsCharts").then((m) => m.AnalyticsTrendCharts),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="grid h-[400px] grid-cols-1 gap-8 lg:grid-cols-2">
+        <div className="animate-pulse rounded-xl border border-border bg-muted/40" />
+        <div className="animate-pulse rounded-xl border border-border bg-muted/40" />
+      </div>
+    ),
+  }
+);
 
-const leaveData = [
-  { leave_type: "Casual Leave", used: 8, remaining: 2 },
-  { leave_type: "Earned Leave", used: 12, remaining: 8 },
-  { leave_type: "Loss of Pay", used: 0, remaining: 10 },
-];
-
-const departmentData = [
-  { name: "Engineering", employees: 45, cost: 2500000 },
-  { name: "Sales", employees: 30, cost: 1800000 },
-  { name: "Marketing", employees: 15, cost: 900000 },
-  { name: "HR", employees: 8, cost: 480000 },
-];
-
-const attendanceData = [
-  { date: "Mon", present: 95, absent: 5 },
-  { date: "Tue", present: 98, absent: 2 },
-  { date: "Wed", present: 92, absent: 8 },
-  { date: "Thu", present: 96, absent: 4 },
-  { date: "Fri", present: 99, absent: 1 },
-];
-
-const COLORS = ["#7c3aed", "#ec4899", "#f59e0b", "#10b981", "#3b82f6"];
+const LeaveUsageChart = dynamic(
+  () => import("@/components/analytics/AnalyticsCharts").then((m) => m.LeaveUsageChart),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[340px] animate-pulse rounded-xl border border-border bg-muted/40" />
+    ),
+  }
+);
 
 export default function AnalyticsPage() {
-
   const deptColumns: Column<any>[] = [
     {
       key: "name",
-      label: "Operational Unit",
+      label: "Department",
       render: (val: string) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-            <Layers className="w-4 h-4" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <Layers className="h-4 w-4" />
           </div>
-          <span className="font-bold italic">{val}</span>
+          <span className="text-sm font-medium">{val}</span>
         </div>
-      )
+      ),
     },
     {
       key: "employees",
-      label: "Node Count",
-      render: (val: number) => <span className="font-black tabular-nums">{val} Entities</span>
+      label: "Employees",
+      render: (val: number) => (
+        <span className="text-sm font-medium tabular-nums">{val}</span>
+      ),
     },
     {
       key: "cost",
-      label: "Total Value",
-      render: (val: number) => <span className="font-black tabular-nums text-primary">₹{val.toLocaleString()}</span>
+      label: "Total cost",
+      render: (val: number) => (
+        <span className="text-sm font-semibold tabular-nums text-primary">
+          ₹{val.toLocaleString()}
+        </span>
+      ),
     },
     {
       key: "avgSalary",
-      label: "Avg Resource Cost",
+      label: "Avg. salary",
       render: (_: any, row: any) => (
-        <span className="font-bold tabular-nums opacity-60">₹{Math.round(row.cost / row.employees).toLocaleString()}</span>
-      )
-    }
+        <span className="text-sm font-medium tabular-nums text-muted-foreground">
+          ₹{Math.round(row.cost / row.employees).toLocaleString()}
+        </span>
+      ),
+    },
   ];
 
   return (
-    <div className="space-y-10 animate-fade-in pb-20 p-4 sm:p-8">
-      {/* Header */}
-      <div className="animate-fade-in">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pl-5">
-          <div className="relative">
-            <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
-            <h1 className="text-3xl font-black text-foreground tracking-tight">Command Matrix</h1>
-            <p className="text-premium-label mt-2 opacity-60 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              Predictive analytics and operational telemetry.
-            </p>
-          </div>
-          <div className="flex gap-4 mt-4 lg:mt-0">
-            <Button variant="outline" className="h-12 px-6 rounded-2xl border-dashed border-2 hover:border-primary transition-all">
-              <Calendar className="w-4 h-4 mr-2" />
-              Time Interval: Q2-2024
-            </Button>
-          </div>
-        </div>
-      </div>
+    <div className="animate-fade-in space-y-8 p-4 pb-20 sm:p-8">
+      <PageHeader
+        title="Analytics"
+        description="Payroll trends, leave usage, and department summaries."
+        actions={
+          <Button variant="outline" className="h-9 rounded-md px-4">
+            <Calendar className="mr-2 h-4 w-4" />
+            Q2 2024
+          </Button>
+        }
+      />
 
-      {/* Summary Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "Aggregate Cost", val: "₹65,80,000", icon: DollarSign, color: "text-primary", bg: "bg-primary/10" },
-          { label: "Active Connections", val: "108 Nodes", icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
-          { label: "System Velocity", val: "94.2%", icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-          { label: "Data Integrity", val: "99.9%", icon: Zap, color: "text-amber-500", bg: "bg-amber-500/10" },
+          {
+            label: "Total payroll",
+            val: "₹65,80,000",
+            icon: DollarSign,
+            color: "text-primary",
+            bg: "bg-primary/10",
+          },
+          {
+            label: "Employees",
+            val: "108",
+            icon: Users,
+            color: "text-blue-500",
+            bg: "bg-blue-500/10",
+          },
+          {
+            label: "Attendance rate",
+            val: "94.2%",
+            icon: TrendingUp,
+            color: "text-emerald-500",
+            bg: "bg-emerald-500/10",
+          },
+          {
+            label: "Data completeness",
+            val: "99.9%",
+            icon: Activity,
+            color: "text-amber-500",
+            bg: "bg-amber-500/10",
+          },
         ].map((stat, i) => (
-          <div key={i} className="bg-card rounded-4xl border border-border shadow-xl p-8 space-y-4 hover:border-primary/30 transition-all group">
-            <div className={`w-12 h-12 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-              <stat.icon className="w-6 h-6" />
+          <div key={i} className="space-y-3 rounded-xl border border-border bg-card p-6">
+            <div
+              className={`flex h-10 w-10 items-center justify-center rounded-md ${stat.bg} ${stat.color}`}
+            >
+              <stat.icon className="h-5 w-5" />
             </div>
             <div className="space-y-1">
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{stat.label}</p>
-              <p className="text-3xl font-black italic tracking-tighter">{stat.val}</p>
+              <p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
+              <p className="text-2xl font-semibold">{stat.val}</p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        <Card title="Financial Trajectory" icon={BarChart3}>
-          <div className="h-[350px] mt-6">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={payrollData}>
-                <defs>
-                  <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.1} />
-                    <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} />
-                <Tooltip
-                  contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
-                  formatter={(value: any) => [`₹${value.toLocaleString()}`, "Yield"]}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="salary"
-                  stroke="#7c3aed"
-                  strokeWidth={4}
-                  dot={{ fill: "#7c3aed", r: 6, strokeWidth: 2, stroke: "#fff" }}
-                  activeDot={{ r: 8, strokeWidth: 0 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
+      <AnalyticsTrendCharts />
 
-        <Card title="Unit Value Distribution" icon={Layers}>
-          <div className="h-[350px] mt-6">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={departmentData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} />
-                <Tooltip
-                  contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
-                  formatter={(value: any) => `₹${value.toLocaleString()}`}
-                />
-                <Bar dataKey="cost" fill="#7c3aed" radius={[10, 10, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
-      </div>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+        <div className="space-y-6 lg:col-span-4">
+          <LeaveUsageChart />
 
-      {/* Row 2: Summary and Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        <div className="lg:col-span-4 space-y-10">
-          <Card title="Temporal Utilization">
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={leaveData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={10}
-                    dataKey="used"
-                  >
-                    {leaveData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend verticalAlign="bottom" height={36} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-
-          <div className="bg-linear-to-br from-primary to-primary-foreground text-primary-foreground rounded-[2.5rem] p-10 space-y-6 shadow-2xl">
-            <Activity className="w-10 h-10 text-white animate-pulse" />
+          <div className="space-y-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-6">
+            <Activity className="h-8 w-8 text-amber-600" />
             <div className="space-y-2">
-              <h3 className="text-xl font-black italic tracking-tighter">Operational Alert</h3>
-              <p className="text-xs font-medium opacity-70 leading-relaxed">
-                Engineering cost has exceeded the threshold by 4.2% this interval. Recommended audit sequence initiated.
+              <h3 className="text-base font-semibold">Budget notice</h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Engineering payroll is 4.2% above budget this quarter. Review department costs if
+                needed.
               </p>
             </div>
-            <Button variant="secondary" className="w-full h-12 rounded-2xl font-black text-[10px] tracking-widest uppercase">
-              Launch Diagnostics
+            <Button variant="outline" className="h-9 w-full rounded-md text-sm font-medium">
+              View details
             </Button>
           </div>
         </div>
 
-        <div className="lg:col-span-8 space-y-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-premium-label flex items-center gap-3">
-              <Activity className="w-4 h-4 text-primary" />
-              Unit Summary Matrix
-            </h2>
+        <div className="space-y-6 lg:col-span-8">
+          <h2 className="flex items-center gap-2 text-sm font-semibold">
+            <Activity className="h-4 w-4 text-primary" />
+            Department summary
+          </h2>
+
+          <div className="overflow-hidden rounded-xl border border-border bg-card p-1">
+            <DataTable columns={deptColumns} data={departmentData} isLoading={false} />
           </div>
 
-          <div className="bg-card rounded-4xl border border-border shadow-2xl overflow-hidden p-2">
-            <DataTable
-              columns={deptColumns}
-              data={departmentData}
-              isLoading={false}
-            />
-          </div>
-
-          {/* Export Deck */}
-          <div className="bg-muted/30 border border-border/50 rounded-4xl p-10 flex flex-wrap gap-6 items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border/50 bg-muted/30 p-6">
             <div className="space-y-1">
-              <p className="text-xs font-black italic">Archive Portal</p>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Protocol Compliant Data Export</p>
+              <p className="text-sm font-semibold">Export reports</p>
+              <p className="text-sm text-muted-foreground">
+                Download summaries for sharing or records
+              </p>
             </div>
-            <div className="flex gap-4">
-              <Button variant="outline" className="h-14 px-8 rounded-2xl bg-white/50 backdrop-blur-sm border-2">
-                <FileText className="w-4 h-4 mr-2 text-primary" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Digital PDF</span>
+            <div className="flex flex-wrap gap-3">
+              <Button variant="outline" className="h-9 rounded-md px-4 text-sm font-medium">
+                <FileText className="mr-2 h-4 w-4 text-primary" />
+                PDF
               </Button>
-              <Button variant="outline" className="h-14 px-8 rounded-2xl bg-white/50 backdrop-blur-sm border-2">
-                <Download className="w-4 h-4 mr-2 text-emerald-500" />
-                <span className="text-[10px] font-black uppercase tracking-widest">XML Binary</span>
+              <Button variant="outline" className="h-9 rounded-md px-4 text-sm font-medium">
+                <Download className="mr-2 h-4 w-4 text-emerald-500" />
+                Excel
               </Button>
-              <Button variant="outline" className="h-14 px-8 rounded-2xl bg-white/50 backdrop-blur-sm border-2">
-                <Printer className="w-4 h-4 mr-2 text-amber-500" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Physical Array</span>
+              <Button variant="outline" className="h-9 rounded-md px-4 text-sm font-medium">
+                <Printer className="mr-2 h-4 w-4 text-amber-500" />
+                Print
               </Button>
             </div>
           </div>

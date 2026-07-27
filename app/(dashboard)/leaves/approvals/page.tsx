@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { Badge } from "@/components/common/Badge";
 import { useGraphQLLeaveRequests, useGraphQLLeaveRequestProcess } from "@/lib/graphql/leaves/leavesHook";
+import { PageHeader } from "@/components/common/PageHeader";
+import { StatsCard } from "@/components/common/Stats";
+import { Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/common/Card";
 
 export default function ApprovalsPage() {
   const { leaveRequestData: requests, isLoading } = useGraphQLLeaveRequests(true);
@@ -24,70 +29,54 @@ export default function ApprovalsPage() {
   };
 
   return (
-    <div className="space-y-10 pb-20 animate-fade-in">
-      {/* Header Section */}
-      <div className="animate-fade-in">
-        <div className="flex flex-col lg:flex-row justify-between items-center gap-10 pl-5">
-          <div className="relative">
-            <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
-            <h1 className="text-3xl font-black text-foreground tracking-tight">Leave Approvals</h1>
-            <p className="text-premium-label mt-2 opacity-60">
-              Audit and process requested operational downtime.
-            </p>
-          </div>
-        </div>
+    <div className="p-4 sm:p-6 space-y-8 pb-20 animate-fade-in">
+      <PageHeader
+        title="Leave approvals"
+        description="Review and approve pending leave requests from your team."
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <StatsCard
+          title="Pending approvals"
+          value={pendingRequests?.length || 0}
+          icon={Clock}
+          color="yellow"
+        />
+        <StatsCard
+          title="Approved this month"
+          value={requests?.filter((r: any) => r.status === "approved").length || 0}
+          icon={CheckCircle2}
+          color="green"
+        />
+        <StatsCard
+          title="Rejected this month"
+          value={requests?.filter((r: any) => r.status === "rejected").length || 0}
+          icon={XCircle}
+          color="red"
+        />
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-gray-600 text-sm font-medium">
-            Pending Approvals
-          </div>
-          <div className="mt-2 text-3xl font-bold text-yellow-600">
-            {pendingRequests?.length || 0}
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-gray-600 text-sm font-medium">
-            Approved This Month
-          </div>
-          <div className="mt-2 text-3xl font-bold text-green-600">
-            {requests?.filter((r: any) => r.status === "approved").length || 0}
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-gray-600 text-sm font-medium">
-            Rejected This Month
-          </div>
-          <div className="mt-2 text-3xl font-bold text-red-600">
-            {requests?.filter((r: any) => r.status === "rejected").length || 0}
-          </div>
-        </div>
-      </div>
-
-      {/* Pending Requests */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">
-          Pending Requests
-        </h2>
+      <Card title="Pending requests">
         {isLoading ? (
-          <p>Loading...</p>
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          </div>
         ) : pendingRequests?.length === 0 ? (
-          <p className="text-gray-600">No pending approvals</p>
+          <p className="text-sm text-muted-foreground py-4">No pending approvals</p>
         ) : (
           <div className="space-y-4">
             {pendingRequests?.map((request: any) => (
               <div
                 key={request.id}
-                className="border rounded-lg p-4 hover:bg-gray-50"
+                className="border border-border rounded-xl p-4 hover:bg-muted/30 transition-colors"
               >
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <h3 className="font-bold text-gray-900">
+                    <h3 className="font-medium text-foreground">
                       {request.user_name}
                     </h3>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       {request.leave_type_name}
                     </p>
                   </div>
@@ -95,15 +84,15 @@ export default function ApprovalsPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4 mb-3">
                   <div>
-                    <span className="text-sm text-gray-600">From: </span>
-                    <span className="font-medium">{request.from_date}</span>
+                    <span className="text-sm text-muted-foreground">From: </span>
+                    <span className="text-sm font-medium">{request.from_date}</span>
                   </div>
                   <div>
-                    <span className="text-sm text-gray-600">To: </span>
-                    <span className="font-medium">{request.to_date}</span>
+                    <span className="text-sm text-muted-foreground">To: </span>
+                    <span className="text-sm font-medium">{request.to_date}</span>
                   </div>
                 </div>
-                <p className="text-sm text-gray-700 mb-3">{request.reason}</p>
+                <p className="text-sm text-foreground mb-3">{request.reason}</p>
 
                 {selectedId === request.id ? (
                   <div className="space-y-3">
@@ -111,38 +100,39 @@ export default function ApprovalsPage() {
                       placeholder="Add approval comments..."
                       value={comments}
                       onChange={(e) => setComments(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500"
+                      className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
                       rows={3}
                     />
                     <div className="flex gap-2">
-                      <button
+                      <Button
                         onClick={() => handleApprove(request.id)}
                         disabled={processLeaveRequestLoading}
-                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                        className="h-9 rounded-md bg-emerald-600 hover:bg-emerald-700"
                       >
                         Approve
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="outline"
                         onClick={() => setSelectedId(null)}
-                        className="px-4 py-2 bg-gray-300 text-gray-900 rounded hover:bg-gray-400"
+                        className="h-9 rounded-md"
                       >
                         Cancel
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ) : (
-                  <button
+                  <Button
                     onClick={() => setSelectedId(request.id)}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                    className="h-9 rounded-md"
                   >
                     Review
-                  </button>
+                  </Button>
                 )}
               </div>
             ))}
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

@@ -1,21 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useQuery } from "@apollo/client/react";
-import { useGraphQLUser } from "@/lib/api/graphqlHooks";
-import { useState, useEffect, useRef } from "react";
 import { GET_MY_LOGIN_HISTORY } from "@/lib/graphql/users/queries";
 import { SecurityLogResponse } from "@/lib/graphql/users/types";
 import { useStore } from "@/lib/store/useStore";
 import { ThemeSelector } from "./ThemeSelector";
-import client from "@/lib/api/client";
-import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
-
 import { NotificationBell } from "./NotificationBell";
-import { Calendar, CircleDollarSign, Clock, LayoutDashboard, LogOut, Menu, Plane, Settings, User, Compass, Globe } from "lucide-react";
 import { useOnboardingTour } from "./OnboardingTour";
+import {
+  Calendar,
+  CircleDollarSign,
+  Clock,
+  Compass,
+  ExternalLink,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  User,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,305 +43,194 @@ const IMPORTANT_ROUTES = [
   { name: "Payroll", href: "/payroll", icon: CircleDollarSign },
 ];
 
-export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps) {
+function roleLabel(role?: string) {
+  if (!role) return "";
+  if (role === "admin") return "Admin";
+  if (role === "manager") return "Manager";
+  if (role === "hr") return "HR";
+  return role.charAt(0).toUpperCase() + role.slice(1);
+}
+
+export function Navbar({ onMenuClick }: NavbarProps) {
   const { logoutUser, user } = useStore();
   const { data } = useQuery<SecurityLogResponse>(GET_MY_LOGIN_HISTORY, {
     variables: { page: 1, pageSize: 1 },
-    fetchPolicy: "cache-first"
+    fetchPolicy: "cache-first",
   });
   const { startTour } = useOnboardingTour();
-  const router = useRouter();
   const pathname = usePathname();
+  const locationVerified = Boolean(data?.mySecurityLogs?.results?.[0]?.latitude);
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch("/api/auth/logout", { method: "POST" });
     } catch (error) {
       console.error("Logout failed:", error);
     } finally {
-      // Clear store significantly
       logoutUser();
       localStorage.clear();
-      // Use window.location.href to force a full page refresh and clear in-memory state
       window.location.href = "/login";
     }
   };
 
-  // Scroll to top if clicking the currently active route
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    const isActive = href === '/dashboard' ? pathname === href : pathname.startsWith(href);
+    const isActive = href === "/dashboard" ? pathname === href : pathname.startsWith(href);
     if (isActive) {
       e.preventDefault();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
-  // Visibility state for smart hiding
-  const [isVisible, setIsVisible] = useState(true);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const lastScrollY = useRef(0);
-  const stopTimeout = useRef<NodeJS.Timeout | null>(null);
-
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const userMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const handleUserMenuMouseEnter = () => {
-    if (userMenuTimeoutRef.current) clearTimeout(userMenuTimeoutRef.current);
-    setIsUserMenuOpen(true);
-  };
-
-  const handleUserMenuMouseLeave = () => {
-    userMenuTimeoutRef.current = setTimeout(() => {
-      setIsUserMenuOpen(false);
-    }, 150);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (userMenuTimeoutRef.current) clearTimeout(userMenuTimeoutRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      // Determine theme/styling (Floating vs Full width)
-      setIsScrolled(window.innerWidth >= 768);
-
-      // --- SMART VISIBILITY LOGIC ---
-      // 1. Clear previous timeout
-      if (stopTimeout.current) clearTimeout(stopTimeout.current);
-
-      // 2. Always show at the top
-      if (currentScrollY < 20) {
-        setIsVisible(true);
-      }
-      // 3. Hide if scrolling down, show if scrolling up
-      else {
-        setIsVisible(currentScrollY < lastScrollY.current);
-      }
-
-      // 4. Show when scrolling stops (pattern detection)
-      stopTimeout.current = setTimeout(() => {
-        setIsVisible(true);
-      }, 150);
-
-      lastScrollY.current = currentScrollY;
-    };
-
-    handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleScroll);
-      if (stopTimeout.current) clearTimeout(stopTimeout.current);
-    };
-  }, []);
-
   return (
-    <nav className={cn(
-      "fixed top-0 left-0 right-0 z-70 pointer-events-none transition-all duration-500 ease-in-out transform",
-      isScrolled ? "px-4 sm:px-6 py-4" : "px-0 py-0",
-      isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
-    )}>
-      <div className={cn(
-        "flex justify-between items-center pointer-events-auto transition-all duration-500 ease-in-out",
-        isScrolled
-          ? "gap-4 bg-background px-4 sm:px-6 py-3 rounded-2xl sm:rounded-3xl shadow-2xl shadow-primary/10 border-border/40 max-w-[80%] mx-auto w-full"
-          : "gap-4 bg-background border-b border-border/30 px-4 sm:px-8 py-4 shadow-xs"
-      )}>
-        <div className="flex justify-between items-center w-full gap-4">
-          <div className="flex items-center space-x-3 sm:space-x-4 shrink-0">
-            {/* Mobile Menu Toggle */}
-            {onMenuClick && (
-              <button
-                onClick={onMenuClick}
-                aria-label="Open mobile menu"
-                className="p-2 hover:bg-muted/50 rounded-xl transition-all active:scale-95 text-foreground md:hidden"
-              >
-                <Menu className="w-6 h-6" />
-              </button>
-            )}
-
-            {/* Logo */}
-            <Link
-              href="/dashboard"
-              onClick={(e) => handleNavClick(e, "/dashboard")}
-              className="flex items-center space-x-3 group shrink-0"
+    <header className="sticky top-0 z-70 border-b border-border bg-background/95 backdrop-blur-sm">
+      <div className="flex h-14 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+        <div className="flex min-w-0 items-center gap-3">
+          {onMenuClick && (
+            <button
+              onClick={onMenuClick}
+              className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground md:hidden"
+              aria-label="Open menu"
             >
-              <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform overflow-hidden">
-                {user?.organization?.logo?.url ? (
-                  <Image src={user.organization.logo.url as string} alt="Logo" width={48} height={48} className="w-full h-full object-cover" unoptimized />
-                ) : (
-                  <span className="text-primary-foreground font-black text-xl">
-                    {user?.organization?.name?.charAt(0) || 'P'}
-                  </span>
-                )}
-              </div>
-              <div className="flex-col hidden sm:flex">
-                <span className="font-black text-sm text-foreground tracking-tighter leading-none group-hover:text-primary transition-colors">
-                  {user?.organization?.name || 'Teamzen'}
-                </span>
-                <span className="text-[8px] font-black text-foreground/70 uppercase tracking-[0.2em] leading-none mt-1">
-                  {user?.role === 'admin' ? 'Strategic Intelligence' : 'Workforce Cluster'}
-                </span>
-              </div>
-            </Link>
-          </div>
+              <Menu className="h-5 w-5" />
+            </button>
+          )}
 
-          {/* Center Navigation - Always show Important routes */}
-          <div className="flex-1 hidden lg:flex justify-center px-4 overflow-hidden">
-            <div className="flex items-center bg-muted/40 p-1 rounded-2xl border border-border/50 backdrop-blur-md max-w-full overflow-x-auto scrollbar-hide animate-slide-up duration-300">
-              {IMPORTANT_ROUTES.map((route) => {
-                const isActive = route.href === '/dashboard' ? pathname === route.href : pathname.startsWith(route.href);
-                return (
-                  <Link
-                    key={route.href}
-                    href={route.href}
-                    id={`navbar-nav-${route.name.toLowerCase()}`}
-                    onClick={(e) => handleNavClick(e, route.href)}
-                    className={cn(
-                      "flex items-center space-x-2.5 px-4 sm:px-6 py-2 rounded-xl transition-all duration-300 group whitespace-nowrap",
-                      isActive
-                        ? "text-primary bg-primary/10"
-                        : "text-muted-foreground hover:text-primary hover:bg-primary/10"
-                    )}
-                  >
-                    <route.icon className={cn("w-5 h-5 transition-transform group-hover:scale-125", isActive && "scale-110")} />
-                    <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">
-                      {route.name}
-                    </span>
-                  </Link>
-                );
-              })}
+          <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-primary text-primary-foreground">
+              {user?.organization?.logo?.url ? (
+                <Image
+                  src={user.organization.logo.url as string}
+                  alt="Organization"
+                  width={32}
+                  height={32}
+                  className="h-full w-full object-cover"
+                  unoptimized
+                />
+              ) : (
+                <span className="text-xs font-semibold">
+                  {user?.organization?.name?.charAt(0) || "T"}
+                </span>
+              )}
             </div>
-          </div>
-
-          {/* Right Section: User Menu & Tools */}
-          <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
-              <NotificationBell />
-              <ThemeSelector />
-
-            {user && (
-              <DropdownMenu open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen} modal={false}>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    id="user-menu-trigger"
-                    aria-label="Open user profile menu"
-                    onMouseEnter={handleUserMenuMouseEnter}
-                    onMouseLeave={handleUserMenuMouseLeave}
-                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="flex items-center space-x-3 px-1 sm:px-2 py-2 rounded-2xl transition-all hover:bg-muted/50 text-foreground group focus:outline-none"
-                  >
-                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-border/50 shadow-sm transition-all duration-300 group-hover:scale-105 group-hover:shadow-md ${!user.profilePictureUrl ? 'bg-linear-to-br from-primary to-primary/60 text-primary-foreground text-[10px] sm:text-xs font-black' : ''}`}>
-                      {user.profilePictureUrl ? (
-                        <Image
-                          src={user.profilePictureUrl as string}
-                          alt="Profile"
-                          width={40}
-                          height={40}
-                          className="w-full h-full object-cover"
-                          unoptimized
-                        />
-                      ) : (
-                        <>
-                          {user.firstName?.charAt(0)}
-                          {user.lastName?.charAt(0)}
-                        </>
-                      )}
-                    </div>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  align="end" 
-                  onMouseEnter={handleUserMenuMouseEnter}
-                  onMouseLeave={handleUserMenuMouseLeave}
-                  className="w-64 p-2 rounded-3xl shadow-2xl border-border bg-card/80 backdrop-blur-xl"
-                >
-                  <DropdownMenuLabel className="px-4 py-3 bg-muted/20 rounded-2xl mb-1">
-                    <div className="flex flex-col items-start w-full">
-                      <div className="flex items-center justify-between w-full">
-                        <div className="text-md font-black text-primary uppercase tracking-widest">
-                          {user.firstName} {user.lastName}
-                        </div>
-                        {/* Geo-Status Badge */}
-                        {(() => {
-                          const isVerified = data?.mySecurityLogs?.results?.[0]?.latitude;
-                          return (
-                            <div className={cn(
-                              "flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[7px] font-black uppercase tracking-tighter",
-                              isVerified 
-                                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
-                                : "bg-amber-500/10 text-amber-500 border-amber-500/20 animate-pulse"
-                            )}>
-                              <Globe className="w-2 h-2" />
-                              {isVerified ? "Verified" : "Unverified"}
-                            </div>
-                          );
-                        })()}
-                      </div>
-                      <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mt-1">
-                        {user.role}
-                      </div>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-border/50 my-1" />
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/profile"
-                      className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-primary/5 cursor-pointer group"
-                    >
-                      <span className="text-lg group-hover:scale-110 transition-transform"><User className="w-5 h-5" /></span>
-                      <span className="text-sm font-bold">Profile</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  {(user.role === 'admin' || user.role === 'manager') && (
-                    <DropdownMenuItem asChild>
-                      <a
-                        href={process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001/dashboard"}
-                        className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-orange-500/10 text-orange-600 dark:text-orange-400 cursor-pointer group"
-                      >
-                        <span className="text-lg group-hover:scale-110 transition-transform"><Plane className="w-5 h-5" /></span>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold">Admin Panel</span>
-                          <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Manager View</span>
-                        </div>
-                      </a>
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/settings"
-                      className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-primary/5 cursor-pointer group"
-                    >
-                      <span className="text-lg group-hover:scale-110 transition-transform"><Settings className="w-5 h-5" /></span>
-                      <span className="text-sm font-bold">System Configuration</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={startTour}
-                    className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-primary/5 cursor-pointer group"
-                  >
-                    <span className="text-lg group-hover:scale-110 transition-transform"><Compass className="w-5 h-5" /></span>
-                    <span className="text-sm font-bold">Take a Tour</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-border/50 my-1" />
-                  <DropdownMenuItem
-                    onClick={handleLogout}
-                    className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-destructive/10 text-destructive cursor-pointer group focus:bg-destructive/10 focus:text-destructive"
-                  >
-                    <span className="text-lg group-hover:scale-110 transition-transform"><LogOut className="w-5 h-5" /></span>
-                    <span className="text-sm font-bold">Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
+            <div className="hidden min-w-0 sm:block">
+              <p className="truncate text-sm font-semibold text-foreground">
+                {user?.organization?.name || "Teamzen"}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">{roleLabel(user?.role)}</p>
+            </div>
+          </Link>
         </div>
-      </div >
-    </nav >
+
+        <nav className="hidden items-center gap-1 lg:flex">
+          {IMPORTANT_ROUTES.map((route) => {
+            const isActive =
+              route.href === "/dashboard" ? pathname === route.href : pathname.startsWith(route.href);
+            return (
+              <Link
+                key={route.href}
+                href={route.href}
+                id={`navbar-nav-${route.name.toLowerCase()}`}
+                onClick={(e) => handleNavClick(e, route.href)}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors",
+                  isActive
+                    ? "bg-muted font-medium text-foreground"
+                    : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                )}
+              >
+                <route.icon className="h-4 w-4" />
+                <span className="hidden xl:inline">{route.name}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="flex shrink-0 items-center gap-1">
+          <NotificationBell />
+          <ThemeSelector />
+
+          {user && (
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  id="user-menu-trigger"
+                  className="ml-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-md border border-border bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                  aria-label="Account menu"
+                >
+                  {user.profilePictureUrl ? (
+                    <Image
+                      src={user.profilePictureUrl as string}
+                      alt=""
+                      width={32}
+                      height={32}
+                      className="h-full w-full object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <span className="text-xs font-medium text-foreground">
+                      {user.firstName?.charAt(0)}
+                      {user.lastName?.charAt(0)}
+                    </span>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 p-1">
+                <DropdownMenuLabel className="px-2 py-2 font-normal">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-medium text-foreground">
+                      {user.firstName} {user.lastName}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{roleLabel(user.role)}</span>
+                    <span
+                      className={cn(
+                        "mt-1 w-fit rounded px-1.5 py-0.5 text-[10px] font-medium",
+                        locationVerified
+                          ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                          : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                      )}
+                    >
+                      {locationVerified ? "Location verified" : "Location unverified"}
+                    </span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="flex cursor-pointer items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+                {(user.role === "admin" || user.role === "manager" || user.role === "hr") && (
+                  <DropdownMenuItem asChild>
+                    <a
+                      href={process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001/dashboard"}
+                      className="flex cursor-pointer items-center gap-2"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Admin panel
+                    </a>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem
+                  onClick={startTour}
+                  className="flex cursor-pointer items-center gap-2"
+                >
+                  <Compass className="h-4 w-4" />
+                  Take a tour
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="cursor-pointer text-destructive focus:text-destructive"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </div>
+    </header>
   );
 }
-

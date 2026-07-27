@@ -43,7 +43,7 @@ export function FormSelect({
   return (
     <div className="space-y-2 w-full">
       {label && (
-        <label className="text-premium-label px-1">
+        <label className="text-sm font-medium text-muted-foreground">
           {label}
           {required && <span className="text-destructive ml-1">*</span>}
         </label>
@@ -78,7 +78,7 @@ export function FormSelect({
           </SelectContent>
         </Select>
       </div>
-      {error && <p className="mt-2 text-[10px] font-black text-destructive uppercase tracking-widest pl-1 animate-in fade-in slide-in-from-top-1">{error}</p>}
+      {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
     </div>
   );
 }

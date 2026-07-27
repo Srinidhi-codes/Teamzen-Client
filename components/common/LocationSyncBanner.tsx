@@ -5,7 +5,7 @@ import { useMutation, useQuery } from "@apollo/client/react";
 import { UPDATE_LOGIN_LOCATION } from "@/lib/graphql/users/mutations";
 import { GET_MY_LOGIN_HISTORY } from "@/lib/graphql/users/queries";
 import { SecurityLogResponse } from "@/lib/graphql/users/types";
-import { Globe, ShieldAlert, Sparkles, Loader2, X } from "lucide-react";
+import { Globe, ShieldAlert, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function LocationSyncBanner() {
@@ -14,14 +14,12 @@ export function LocationSyncBanner() {
     const [isBlocked, setIsBlocked] = useState(false);
     const [updateLocation] = useMutation(UPDATE_LOGIN_LOCATION);
 
-    // Check if the latest login has coordinates
     const { data, refetch } = useQuery<SecurityLogResponse>(GET_MY_LOGIN_HISTORY, {
         variables: { page: 1, pageSize: 1 },
         fetchPolicy: "network-only"
     });
 
     useEffect(() => {
-        // Check if permission is already denied
         if (navigator.permissions && navigator.permissions.query) {
             navigator.permissions.query({ name: 'geolocation' }).then(result => {
                 if (result.state === 'denied') {
@@ -31,14 +29,13 @@ export function LocationSyncBanner() {
                     if (result.state === 'denied') setIsBlocked(true);
                     else if (result.state === 'granted') {
                         setIsBlocked(false);
-                        handleSync(); // Auto-sync if they grant it via lock icon
+                        handleSync();
                     }
                 };
             });
         }
 
         const latestLog = data?.mySecurityLogs?.results?.[0];
-        // If there's a log but no latitude, show the banner
         if (latestLog && !latestLog.latitude) {
             setIsVisible(true);
         } else {
@@ -77,54 +74,52 @@ export function LocationSyncBanner() {
     if (!isVisible) return null;
 
     return (
-        <div className="fixed top-0 left-0 right-0 z-[100] animate-in slide-in-from-top duration-500">
-            <div className="bg-linear-to-r from-rose-600 via-rose-500 to-orange-500 text-white shadow-2xl border-b border-white/10">
-                <div className="max-w-7xl mx-auto px-4 py-2 sm:py-3 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="hidden sm:flex w-8 h-8 bg-white/20 rounded-lg items-center justify-center backdrop-blur-md">
+        <div className="fixed top-0 left-0 right-0 z-[100] animate-in slide-in-from-top duration-300">
+            <div className="bg-rose-600 text-white border-b border-rose-700/30 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 py-2.5 sm:py-3 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="hidden sm:flex w-8 h-8 bg-white/15 rounded-md items-center justify-center shrink-0">
                             <ShieldAlert className="w-4 h-4 text-white" />
                         </div>
-                        <div>
-                            <p className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-white/90">
-                                {isBlocked ? "Location Blocked" : "Security Action Required"}
+                        <div className="min-w-0">
+                            <p className="text-sm font-semibold text-white">
+                                {isBlocked ? "Location blocked" : "Location required"}
                             </p>
-                            <p className="text-[9px] sm:text-[11px] font-medium text-white/80 leading-none">
-                                {isBlocked 
-                                    ? "Please click the Lock icon (🔒) in your address bar and Allow Location to sync."
-                                    : "Your login entry point is not yet verified. Sync location to secure your session."
+                            <p className="text-xs text-white/85 leading-snug">
+                                {isBlocked
+                                    ? "Allow location access in your browser settings, then try again."
+                                    : "Share your location to complete login verification."
                                 }
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                         <button
                             onClick={handleSync}
                             disabled={isSyncing}
                             className={cn(
-                                "flex items-center gap-2 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all active:scale-95",
-                                "bg-white text-rose-600 hover:bg-rose-50 shadow-lg shadow-black/10 disabled:opacity-50"
+                                "inline-flex items-center gap-2 h-9 px-3 rounded-md text-sm font-medium transition-colors",
+                                "bg-white text-rose-700 hover:bg-rose-50 disabled:opacity-50"
                             )}
                         >
                             {isSyncing ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
                             ) : (
-                                <Globe className="w-3 h-3" />
+                                <Globe className="w-3.5 h-3.5" />
                             )}
-                            {isSyncing ? "Syncing..." : isBlocked ? "Retry Sync" : "Sync Location"}
+                            {isSyncing ? "Updating…" : isBlocked ? "Try again" : "Share location"}
                         </button>
                         <button
                             onClick={() => setIsVisible(false)}
-                            className="p-1 hover:bg-white/10 rounded-md transition-colors"
+                            className="p-1.5 hover:bg-white/10 rounded-md transition-colors"
+                            aria-label="Dismiss"
                         >
-                            <X className="w-4 h-4 text-white/60" />
+                            <X className="w-4 h-4 text-white/70" />
                         </button>
                     </div>
                 </div>
             </div>
-
-            {/* Ambient Glow */}
-            <div className="h-[2px] bg-white/30 w-full animate-pulse" />
         </div>
     );
 }

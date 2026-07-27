@@ -6,6 +6,7 @@ import { DataTable, Column } from "@/components/common/DataTable";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/common/Card";
+import { PageHeader } from "@/components/common/PageHeader";
 import {
   Users,
   Search,
@@ -16,11 +17,8 @@ import {
   Activity,
   History,
   X,
-  ChevronRight,
   Info,
-  Zap
 } from "lucide-react";
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { toast } from "sonner";
 
 export default function EmployeesPage() {
@@ -77,27 +75,24 @@ export default function EmployeesPage() {
         designation_id: "",
       });
       refetch();
-      toast.success("Operational Node Deployed Successfully");
+      toast.success("Employee added successfully.");
     } catch (error) {
-      toast.error("Deployment Failure: Check parameters.");
+      toast.error("Could not add employee. Check the details and try again.");
     }
   };
 
   const columns: Column<any>[] = [
     {
       key: "fullName",
-      label: "Node Identity",
+      label: "Name",
       render: (_: any, row: any) => (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black italic shadow-inner">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm">
             {row.first_name[0]}{row.last_name[0]}
           </div>
           <div className="flex flex-col">
-            <span className="font-black italic text-foreground leading-tight">
+            <span className="font-semibold text-foreground leading-tight text-sm">
               {row.first_name} {row.last_name}
-            </span>
-            <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-tighter">
-              Level 1 Access
             </span>
           </div>
         </div>
@@ -105,79 +100,72 @@ export default function EmployeesPage() {
     },
     {
       key: "email",
-      label: "Comms Link",
+      label: "Email",
       render: (val: string) => (
         <div className="flex items-center gap-2 text-muted-foreground">
           <Mail className="w-3.5 h-3.5 opacity-40" />
-          <span className="text-sm font-bold lowercase tracking-tight">{val}</span>
+          <span className="text-sm font-medium lowercase">{val}</span>
         </div>
       )
     },
     {
       key: "phone_number",
-      label: "Direct Signal",
+      label: "Phone",
       render: (val: string) => (
         <div className="flex items-center gap-2 text-muted-foreground">
           <Phone className="w-3.5 h-3.5 opacity-40" />
-          <span className="text-[12px] font-black tabular-nums">{val || "REDACTED"}</span>
+          <span className="text-sm font-medium tabular-nums">{val || "—"}</span>
         </div>
       )
     },
     {
       key: "role",
-      label: "Functional Role",
+      label: "Role",
       render: (val: string) => (
         <div className="flex items-center gap-2">
           <Briefcase className="w-3.5 h-3.5 text-primary opacity-40" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-primary italic">{val}</span>
+          <span className="text-sm font-medium text-primary capitalize">{val}</span>
         </div>
       )
     },
     {
       key: "is_active",
-      label: "System Status",
+      label: "Status",
       render: (val: boolean) => (
-        <Badge variant={val ? "success" : "danger"} >
-          {val ? "Active State" : "Deactivated"}
-        </Badge>
+        <span className={`inline-flex rounded-md px-1.5 py-0.5 text-[11px] font-medium capitalize ${
+          val ? "bg-emerald-500/10 text-emerald-700" : "bg-destructive/10 text-destructive"
+        }`}>
+          {val ? "Active" : "Inactive"}
+        </span>
       )
     }
   ];
 
   return (
-    <div className="space-y-10 animate-fade-in pb-20 p-4 sm:p-8">
-      {/* Header Section */}
-      <div className="animate-fade-in">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pl-5">
-          <div className="relative">
-            <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
-            <h1 className="text-3xl font-black text-foreground tracking-tight">Colleague Directory</h1>
-            <p className="text-premium-label mt-2 opacity-60 flex items-center gap-2">
-              Audit and navigate through operational personnel.
-            </p>
-          </div>
-          <div className="mt-4 lg:mt-0">
-            <Button
-              onClick={() => setShowForm(!showForm)}
-              className={showForm ? "btn-secondary" : "btn-primary"}
-            >
-              {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-              {showForm ? "Cancel Entry" : "Register Node"}
-            </Button>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-8 animate-fade-in pb-20 p-4 sm:p-8">
+      <PageHeader
+        title="Employees"
+        description="Browse and manage people in your organization."
+        actions={
+          <Button
+            onClick={() => setShowForm(!showForm)}
+            className={`h-9 rounded-md ${showForm ? "btn-secondary" : "btn-primary"}`}
+          >
+            {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+            {showForm ? "Cancel" : "Add employee"}
+          </Button>
+        }
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        <div className="lg:col-span-8 space-y-8">
-          {/* Create Employee Form */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-8 space-y-6">
           {showForm && (
             <div className="animate-in slide-in-from-top-4 duration-500">
-              <Card title="Personnel Registration">
-                <div className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <Card title="Add employee">
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-premium-label ml-1">Universal Identifier (Email)</label>
+                      <label className="text-sm font-medium ml-1">Email</label>
                       <input
                         type="email"
                         placeholder="email@organization.com"
@@ -188,7 +176,7 @@ export default function EmployeesPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-premium-label ml-1">Given Name</label>
+                        <label className="text-sm font-medium ml-1">First name</label>
                         <input
                           type="text"
                           value={formData.first_name}
@@ -197,7 +185,7 @@ export default function EmployeesPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-premium-label ml-1">Surname</label>
+                        <label className="text-sm font-medium ml-1">Last name</label>
                         <input
                           type="text"
                           value={formData.last_name}
@@ -209,8 +197,8 @@ export default function EmployeesPage() {
                   </div>
 
                   <div className="flex justify-end pt-4 border-t border-border/50">
-                    <Button onClick={handleCreateEmployee} className="btn-primary px-12 h-14 rounded-2xl">
-                      Authorize Deployment
+                    <Button onClick={handleCreateEmployee} className="btn-primary h-9 rounded-md px-6">
+                      Save employee
                     </Button>
                   </div>
                 </div>
@@ -218,42 +206,32 @@ export default function EmployeesPage() {
             </div>
           )}
 
-          {/* Search & Filter */}
-          <div className="bg-card rounded-4xl border border-border shadow-xl p-6 flex flex-col md:flex-row items-center gap-6">
+          <div className="bg-card rounded-xl border border-border p-4 flex flex-col md:flex-row items-center gap-4">
             <div className="relative flex-1 w-full">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40" />
               <input
                 type="text"
-                placeholder="Query personnel by name, email, or role..."
+                placeholder="Search by name, email, or role…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-muted/30 border-none h-14 pl-14 pr-6 rounded-2xl text-sm font-bold focus:ring-2 ring-primary/20 transition-all placeholder:text-muted-foreground/30 tabular-nums"
+                className="w-full bg-muted/30 border-none h-9 pl-10 pr-4 rounded-md text-sm font-medium focus:ring-2 ring-primary/20 transition-all placeholder:text-muted-foreground/40"
               />
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center text-muted-foreground opacity-40">
-                <Activity className="w-6 h-6" />
-              </div>
-              <div className="hidden md:block">
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-30">Network Status</p>
-                <p className="text-xs font-black italic">NOMINAL</p>
-              </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Activity className="w-4 h-4" />
+              <span>{filteredEmployees?.length || 0} employees</span>
             </div>
           </div>
 
-          {/* Employees Table */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-premium-label flex items-center gap-3">
+              <h2 className="text-sm font-semibold flex items-center gap-2">
                 <Users className="w-4 h-4 text-primary" />
-                Personnel Ledger
+                Directory
               </h2>
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-primary/5 px-3 py-1 rounded-full border border-primary/10">
-                {filteredEmployees?.length || 0} Entities
-              </span>
             </div>
 
-            <div className="bg-card rounded-4xl border border-border shadow-2xl overflow-hidden p-2">
+            <div className="bg-card rounded-xl border border-border overflow-hidden p-1">
               <DataTable
                 columns={columns}
                 data={paginatedEmployees || []}
@@ -262,62 +240,58 @@ export default function EmployeesPage() {
                 currentPage={currentPage}
                 pageSize={pageSize}
                 onPageChange={setCurrentPage}
-                paginationLabel="Entities"
+                paginationLabel="employees"
               />
             </div>
           </div>
         </div>
 
-        {/* Sidebar Insights */}
-        <div className="lg:col-span-4 space-y-10">
-          <Card title="Network Insights">
-            <div className="space-y-8">
-              <div className="p-6 rounded-3xl bg-linear-to-br from-primary/10 to-transparent border border-primary/20 space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">
-                  <Activity className="w-6 h-6" />
+        <div className="lg:col-span-4 space-y-6">
+          <Card title="Overview">
+            <div className="space-y-6">
+              <div className="p-5 rounded-xl bg-primary/5 border border-primary/20 space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center">
+                  <Activity className="w-5 h-5" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-primary">Core Capacity</p>
-                  <p className="text-3xl font-black italic tracking-tighter">84.2%</p>
+                  <p className="text-xs font-medium text-primary">Headcount utilization</p>
+                  <p className="text-2xl font-semibold">84.2%</p>
                 </div>
-                <p className="text-[11px] font-medium text-muted-foreground leading-relaxed italic">
-                  Node synchronization is currently within the standard deviation of expected efficiency.
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Current staffing levels are within the expected range for this period.
                 </p>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {[
-                  { label: "Active Connections", val: "2,481", icon: Users },
-                  { label: "Temporal Latency", val: "14ms", icon: History },
-                  { label: "System Uptime", val: "99.98%", icon: Zap },
+                  { label: "Active employees", val: "2,481", icon: Users },
+                  { label: "Average response time", val: "14ms", icon: History },
+                  { label: "System uptime", val: "99.98%", icon: Activity },
                 ].map((item, i) => (
-                  <div key={i} className="flex items-center justify-between group cursor-default">
+                  <div key={i} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-muted/50 group-hover:bg-primary/10 transition-colors flex items-center justify-center">
-                        <item.icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <div className="w-8 h-8 rounded-md bg-muted/50 flex items-center justify-center">
+                        <item.icon className="w-4 h-4 text-muted-foreground" />
                       </div>
-                      <span className="text-xs font-bold text-muted-foreground group-hover:text-foreground transition-colors">{item.label}</span>
+                      <span className="text-sm font-medium text-muted-foreground">{item.label}</span>
                     </div>
-                    <span className="text-[11px] font-black tabular-nums">{item.val}</span>
+                    <span className="text-sm font-semibold tabular-nums">{item.val}</span>
                   </div>
                 ))}
               </div>
             </div>
           </Card>
 
-          <div className="p-10 rounded-[3rem] bg-muted/30 border border-border/50 border-dashed flex flex-col items-center justify-center text-center gap-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
-              <Info className="w-12 h-12 text-primary/40 relative z-10" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-xs font-black uppercase tracking-widest underline decoration-primary/30 underline-offset-4 decoration-2">Audit Notice</h3>
-              <p className="text-[11px] font-medium text-muted-foreground/60 leading-relaxed max-w-[200px] mx-auto">
-                All node registrations are logged for temporal auditing by HQ.
+          <div className="p-6 rounded-xl bg-muted/30 border border-border border-dashed flex flex-col items-center justify-center text-center gap-4">
+            <Info className="w-8 h-8 text-primary/40" />
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold">Compliance note</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-[220px] mx-auto">
+                New employee records are logged for audit purposes.
               </p>
             </div>
-            <Button variant="outline" className="text-[10px] font-black uppercase tracking-widest px-8 border-primary/20 hover:border-primary/50 text-primary/60">
-              View Compliance
+            <Button variant="outline" className="h-9 rounded-md text-sm font-medium px-4 border-primary/20 text-primary/80">
+              View compliance
             </Button>
           </div>
         </div>

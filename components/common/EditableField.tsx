@@ -38,12 +38,12 @@ export function EditableField({
             : value || "Not provided";
 
     return (
-        <div className="p-4 rounded-4xl border border-border/20 hover:bg-muted/30 shadow-md transition-colors group bg-linear-to-r from-primary/10 via-primary/10">
+        <div className="p-4 rounded-xl border border-border hover:bg-muted/30 transition-colors group">
             <div className="flex items-start justify-between truncate">
                 <div className="flex items-start space-x-4 flex-1">
-                    <span className="text-2xl pt-1 opacity-80 group-hover:opacity-100 transition-opacity">{icon}</span>
+                    <span className="text-muted-foreground pt-1">{icon}</span>
                     <div className="flex-1 space-y-1">
-                        <p className="text-xs font-bold text-premium-label uppercase tracking-widest opacity-70">
+                        <p className="text-sm font-medium text-muted-foreground">
                             {label} {required && <span className="text-destructive ml-0.5">*</span>}
                         </p>
                         {editable ? (

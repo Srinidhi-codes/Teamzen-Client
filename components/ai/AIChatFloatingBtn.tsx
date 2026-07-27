@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { X, Sparkles } from "lucide-react";
+import { X, MessageCircle } from "lucide-react";
 
 interface AIChatFloatingBtnProps {
     onClick: () => void;
@@ -12,33 +12,23 @@ export default function AIChatFloatingBtn({ onClick, isOpen }: AIChatFloatingBtn
     return (
         <button
             onClick={onClick}
-            className={`fixed bottom-6 right-6 w-16 h-16 rounded-4xl flex items-center justify-center transition-all duration-500 shadow-2xl z-50 group hover:-translate-y-2 active:scale-90 ${isOpen
-                ? "bg-card border border-border text-foreground"
-                : "bg-linear-to-tr from-primary via-primary to-violet-600 text-primary-foreground"
+            className={`fixed bottom-6 right-6 w-14 h-14 rounded-xl flex items-center justify-center transition-all duration-300 z-50 group active:scale-95 border ${isOpen
+                ? "bg-card border-border text-foreground"
+                : "bg-primary border-primary text-primary-foreground"
                 }`}
         >
-            {/* Ambient Aura */}
-            {!isOpen && (
-                <>
-                    <div className="absolute inset-0 rounded-4xl bg-primary/40 animate-ping opacity-20 scale-125" />
-                    <div className="absolute inset-0 rounded-4xl bg-linear-to-tr from-primary to-violet-600 blur-xl opacity-40 group-hover:opacity-80 transition-opacity animate-pulse-slow" />
-                </>
-            )}
-
-            <div className="relative z-10 overflow-hidden">
+            <div className="relative z-10">
                 {isOpen ? (
-                    <X size={28} className="animate-in fade-in zoom-in spin-in-90 duration-500" />
+                    <X size={24} />
                 ) : (
-                    <div className="relative">
-                        <Sparkles size={28} className="animate-in fade-in zoom-in duration-500 group-hover:rotate-12 transition-transform" />
-                    </div>
+                    <MessageCircle size={24} />
                 )}
             </div>
 
             {/* Status Dot */}
             {!isOpen && (
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-[10px] font-black text-white rounded-full flex items-center justify-center shadow-lg border-2 border-background animate-in slide-in-from-bottom-2 duration-700">
-                    <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-background">
+                    <div className="w-1.5 h-1.5 bg-white rounded-full" />
                 </div>
             )}
         </button>

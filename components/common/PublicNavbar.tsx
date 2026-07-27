@@ -2,49 +2,43 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 export function PublicNavbar() {
   const pathname = usePathname();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
 
   return (
-    <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-5xl pointer-events-none">
-      <div className="glass px-6 py-4 rounded-3xl flex justify-between items-center shadow-2xl shadow-primary/5 border-border/40 pointer-events-auto">
-        <Link href="/" className="flex items-center space-x-3 group text-foreground">
-          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shadow-lg shadow-primary/5 group-hover:rotate-12 transition-transform overflow-hidden p-1.5 border border-primary/20">
+    <nav className="sticky top-0 z-50 w-full border-b border-border bg-background">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
+        <Link href="/" className="flex items-center gap-2.5 text-foreground">
+          <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-md bg-card ring-1 ring-border">
             <Image
               src="/images/teamzen_zoomed.png"
               alt="Teamzen"
-              width={32}
-              height={32}
-              className="w-full h-full object-contain"
-              loading="lazy"
+              width={28}
+              height={28}
+              className="h-7 w-7 object-contain"
+              priority
             />
           </div>
-          <span className="font-black text-lg tracking-tighter hidden sm:block uppercase">Teamzen</span>
+          <span className="text-base font-semibold tracking-tight">Teamzen</span>
         </Link>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           {pathname !== "/login" && (
-            <Link href="/login" className="px-6 py-2.5 text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors">
+            <Link
+              href="/login"
+              className="inline-flex h-9 items-center px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
               Login
             </Link>
           )}
           {pathname !== "/register" && (
-            <Link href="/register">
-              <Button className="btn-primary px-8 rounded-2xl h-11">
-                Get Started
-              </Button>
+            <Link
+              href="/register"
+              className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Get started
             </Link>
           )}
         </div>
