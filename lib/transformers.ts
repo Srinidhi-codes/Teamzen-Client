@@ -17,10 +17,20 @@ export const mapBackendUserToFrontendUser = (backendUser: any): GraphQLUser => {
     profilePictureUrl: backendUser.profile_picture || backendUser.profilePictureUrl || null,
     employeeId: backendUser.employee_id,
     employmentType: backendUser.employment_type,
-    organization: backendUser.organization ? {
-      id: backendUser.organization,
-      name: backendUser.organization_name || "Unknown Organization"
-    } : null,
+    organization: backendUser.organization ? (
+      typeof backendUser.organization === 'object'
+        ? {
+            id: backendUser.organization.id || backendUser.organization,
+            name: backendUser.organization.name || backendUser.organization_name || "Unknown Organization",
+            accent: backendUser.organization.accent || backendUser.organization_accent || "teal",
+            logo: backendUser.organization.logo || null,
+          }
+        : {
+            id: backendUser.organization,
+            name: backendUser.organization_name || "Unknown Organization",
+            accent: backendUser.organization_accent || "teal",
+          }
+    ) : null,
     // Relationships might be objects or IDs depending on serializer depth
     manager: backendUser.manager,
     department: backendUser.department ? (typeof backendUser.department === 'object' ? backendUser.department : { id: backendUser.department, name: backendUser.department_name }) : null,

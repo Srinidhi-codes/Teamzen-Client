@@ -164,18 +164,21 @@ export default function PayrollPage() {
                                 key: "actions",
                                 label: "Actions",
                                 render: (_val: any, row: any) => (
-                                    <div className="flex gap-1">
+                                    <div className="flex items-center gap-1">
                                         <Button
                                             variant="ghost"
-                                            className="h-9 rounded-md text-sm font-medium hover:bg-primary/5"
+                                            size="icon"
+                                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
                                             onClick={() => setSelectedPayslip(row)}
+                                            title="View details"
+                                            aria-label="View details"
                                         >
-                                            <Eye className="w-4 h-4 mr-1.5" />
-                                            View
+                                            <Eye className="h-4 w-4" />
                                         </Button>
                                         <Button
                                             variant="ghost"
-                                            className="h-9 rounded-md text-sm font-medium hover:bg-primary/5"
+                                            size="icon"
+                                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
                                             onClick={() => {
                                                 if (row.payslipPdf?.url) {
                                                     window.open(row.payslipPdf.url, '_blank');
@@ -183,9 +186,10 @@ export default function PayrollPage() {
                                                     toast.error("PDF not yet generated");
                                                 }
                                             }}
+                                            title="Download PDF"
+                                            aria-label="Download PDF"
                                         >
-                                            <Download className="w-4 h-4 mr-1.5" />
-                                            PDF
+                                            <Download className="h-4 w-4" />
                                         </Button>
                                     </div>
                                 )

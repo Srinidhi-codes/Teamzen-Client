@@ -1,7 +1,13 @@
-import { ApolloClient, InMemoryCache, createHttpLink, Observable } from "@apollo/client";
+import {
+  ApolloClient,
+  InMemoryCache,
+  createHttpLink,
+  Observable,
+} from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
 import { refreshAuthToken } from "./api/client";
+import { apolloCacheConfig, apolloDefaultOptions } from "./apolloCache";
 
 // Polyfill fromPromise if not available
 const fromPromise = <T>(promise: Promise<T>): Observable<T> => {
@@ -78,7 +84,16 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }: 
           });
 
           if (typeof window !== "undefined") {
-            window.location.href = "/login";
+            const path = window.location.pathname;
+            const isPublic =
+              path === "/" ||
+              path.startsWith("/login") ||
+              path.startsWith("/register") ||
+              path.startsWith("/forgot-password") ||
+              path.startsWith("/reset-password");
+            if (!isPublic) {
+              window.location.href = "/login";
+            }
           }
 
           observer.error(error);
@@ -87,7 +102,18 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }: 
   }
 });
 
+/** Refetch only queries that are currently active (mounted). */
+export async function refetchActiveQueries(
+  apolloClient: ApolloClient,
+  operationNames: string[]
+) {
+  await apolloClient.refetchQueries({
+    include: operationNames,
+  });
+}
+
 export const client = new ApolloClient({
   link: errorLink.concat(authLink).concat(httpLink),
-  cache: new InMemoryCache(),
+  cache: new InMemoryCache(apolloCacheConfig),
+  defaultOptions: apolloDefaultOptions,
 });

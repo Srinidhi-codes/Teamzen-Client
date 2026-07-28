@@ -35,7 +35,7 @@ export default function LoginForm() {
   const [countdown, setCountdown] = useState(0);
 
   const { login, requestOtp, verifyOtp, verifyTotp, googleLogin } = useAuth();
-  const { loginUser, isAuthenticated, hasHydrated } = useStore();
+  const { loginUser, logoutUser, isAuthenticated, hasHydrated } = useStore();
   const router = useRouter();
 
   useEffect(() => {
@@ -81,11 +81,47 @@ export default function LoginForm() {
     return () => clearTimeout(timer);
   }, [countdown]);
 
+  // Only send logged-in users to the app if cookies are still valid.
+  // Stale localStorage alone used to bounce: /login → /dashboard → /login.
   useEffect(() => {
-    if (hasHydrated && isAuthenticated) {
-      router.push("/dashboard");
-    }
-  }, [hasHydrated, isAuthenticated, router]);
+    if (!hasHydrated || !isAuthenticated) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const sessionRes = await fetch("/api/auth/session", {
+          credentials: "include",
+        });
+        const session = await sessionRes.json().catch(() => ({}));
+        if (cancelled) return;
+
+        if (!session?.authenticated) {
+          logoutUser();
+          return;
+        }
+
+        if (!session.hasAccess && session.hasRefresh) {
+          const refreshRes = await fetch("/api/auth/refresh", {
+            method: "POST",
+            credentials: "include",
+          });
+          if (cancelled) return;
+          if (!refreshRes.ok) {
+            logoutUser();
+            return;
+          }
+        }
+
+        router.replace("/dashboard");
+      } catch {
+        if (!cancelled) logoutUser();
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasHydrated, isAuthenticated, router, logoutUser]);
 
   const requestLocation = async (): Promise<{
     latitude: number;

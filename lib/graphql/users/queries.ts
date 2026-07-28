@@ -47,6 +47,7 @@ export const GET_ME = gql`
         logo{
           url
         }
+        accent
       }
       bankAccountNumber
       bankIfscCode

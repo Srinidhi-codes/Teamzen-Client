@@ -297,10 +297,12 @@ export const usePolicies = () => {
 
   return {
     policies: list.data,
-    isLoading: list.isLoading,
+    isLoading: list.isLoading && !list.data,
+    isRefetching: list.isFetching && !!list.data,
     isUploading: upload.isPending,
     isDeleting: remove.isPending,
     error: list.error,
+    refetch: list.refetch,
     upload: upload,
     remove: remove,
   };

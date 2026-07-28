@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Sora } from "next/font/google";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -13,9 +13,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const landingDisplay = Sora({
+  variable: "--font-landing-display",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+});
+
 export const metadata: Metadata = {
-  title: "Teamzen",
-  description: "Payroll and workforce portal for Teamzen",
+  title: "Teamzen — HRMS for modern teams",
+  description:
+    "Attendance, leave, and payroll in one calm workforce workspace.",
 };
 
 export const viewport = {
@@ -56,7 +63,9 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${landingDisplay.variable} font-sans antialiased`}
+      >
         <Providers>{children}</Providers>
       </body>
     </html>

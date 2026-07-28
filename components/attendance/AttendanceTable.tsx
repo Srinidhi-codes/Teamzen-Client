@@ -2,7 +2,7 @@ import { DataTable, Column } from "@/components/common/DataTable";
 import moment from "moment";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, TrendingUp, RotateCcw } from "lucide-react";
+import { Calendar, Clock, TrendingUp, RotateCcw, PenLine } from "lucide-react";
 
 export type AttendanceRow = {
     id: string;
@@ -167,29 +167,31 @@ export function AttendanceTable({
                     return null;
                 }
                 return (
-                    <div className="flex items-center justify-start gap-2">
+                    <div className="flex items-center gap-1">
                         {status === "pending" && row.correctionId && (
                             <Button
-                                size="sm"
-                                variant="destructive"
-                                className="h-9 rounded-md px-3 text-xs font-medium"
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                                 onClick={() => onCancelCorrection(row.correctionId!)}
+                                title="Cancel correction"
+                                aria-label="Cancel correction"
                             >
-                                <RotateCcw className="w-3 h-3 mr-1.5" />
-                                Cancel
+                                <RotateCcw className="h-4 w-4" />
                             </Button>
                         )}
                         {(!status || status === "rejected" || status === "cancelled") && (
                             <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-9 rounded-md px-3 text-xs font-medium"
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
                                 onClick={() => onRequestCorrection(row)}
+                                title={status ? "Request again" : "Request correction"}
+                                aria-label={status ? "Request again" : "Request correction"}
                             >
-                                {status ? "Request again" : "Request correction"}
+                                <PenLine className="h-4 w-4" />
                             </Button>
                         )}
-
                     </div>
                 );
             },

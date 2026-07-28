@@ -109,24 +109,26 @@ const dayTone: Record<
 };
 
 export function EmployeeDashboard() {
-  const { user, isLoading: isUserLoading, error: userError } = useGraphQLUser();
+  const { user, isLoading: isUserLoading, error: userError, refetch: refetchUser } = useGraphQLUser();
   const { setAssistantOpen, setAssistantQuery } = useStore();
   const {
     data: dashboardData,
     loading: isDashboardLoading,
     error: dashboardError,
+    refetch: refetchDashboard,
   } = useQuery(GET_USER_DASHBOARD_STATS);
 
-  const isLoading = isUserLoading || isDashboardLoading;
+  const isInitialLoading =
+    (isUserLoading && !user) || (isDashboardLoading && !dashboardData);
   const now = useMemo(() => moment(), []);
 
   useEffect(() => {
-    if (!isLoading && !user && userError) {
+    if (!isInitialLoading && !user && userError) {
       window.location.href = "/login";
     }
-  }, [isLoading, user, userError]);
+  }, [isInitialLoading, user, userError]);
 
-  if (isLoading) {
+  if (isInitialLoading) {
     return (
       <div className="flex min-h-[70vh] w-full flex-col justify-center gap-6">
         <div className="h-48 animate-pulse rounded-2xl bg-muted/60" />
@@ -138,13 +140,19 @@ export function EmployeeDashboard() {
     );
   }
 
-  if (dashboardError && !user) {
+  if (dashboardError && !dashboardData) {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center gap-4">
         <AlertCircle className="h-10 w-10 text-destructive" />
         <h2 className="text-lg font-semibold">Unable to load dashboard</h2>
         <p className="text-sm text-muted-foreground">Please try again.</p>
-        <Button className="h-9 rounded-md" onClick={() => window.location.reload()}>
+        <Button
+          className="h-9 rounded-md"
+          onClick={() => {
+            refetchDashboard();
+            refetchUser();
+          }}
+        >
           Try again
         </Button>
       </div>

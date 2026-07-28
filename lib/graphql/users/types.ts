@@ -23,6 +23,7 @@ export interface GraphQLUser {
   organization?: {
     id: string;
     name: string;
+    accent?: string | null;
     logo?: {
       url: string;
     } | null;

@@ -80,7 +80,16 @@ client.interceptors.response.use(
             useStore.getState().logoutUser();
           });
 
-          if (!window.location.pathname.includes("/login")) {
+          // Never kick users off public marketing/auth pages
+          const path = window.location.pathname;
+          const isPublic =
+            path === "/" ||
+            path.startsWith("/login") ||
+            path.startsWith("/register") ||
+            path.startsWith("/forgot-password") ||
+            path.startsWith("/reset-password");
+
+          if (!isPublic) {
             window.location.href = "/login";
           }
         }

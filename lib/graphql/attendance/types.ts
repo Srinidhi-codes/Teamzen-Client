@@ -47,3 +47,22 @@ export type GetAttendanceResponse = {
 export type GetAttendanceVars = {
   input?: AttendanceInput;
 };
+
+export type TeamAttendanceTodayItem = {
+  status: "present" | "absent" | "leave" | string;
+  loginTime?: string | null;
+  logoutTime?: string | null;
+  recordStatus?: string | null;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    profilePictureUrl?: string | null;
+    designation?: { name: string } | null;
+    department?: { name: string } | null;
+  };
+};
+
+export type GetTeamAttendanceTodayResponse = {
+  teamAttendanceToday: TeamAttendanceTodayItem[];
+};

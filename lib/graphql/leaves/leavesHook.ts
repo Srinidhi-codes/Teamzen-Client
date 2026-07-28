@@ -2,29 +2,37 @@ import { useQuery, useMutation } from "@apollo/client/react"
 import { GetLeaveBalanceResponse, GetLeaveRequestResponse, GetLeavesResponse, GetTeamLeavesResponse, LeaveType } from "./types";
 import { GET_LEAVE_BALANCE, GET_LEAVE_REQUESTS, GET_LEAVES, GET_TEAM_LEAVES, GET_COMPANY_HOLIDAYS } from "./queries";
 import { CANCEL_LEAVE_REQUEST, CREATE_LEAVE_REQUEST, LEAVE_REQUEST_PROCESS } from "./mutations";
+import { GET_USER_DASHBOARD_STATS } from "../dashboard/queries";
+
+export const LEAVE_MUTATION_REFETCH = [
+   { query: GET_LEAVE_BALANCE },
+   { query: GET_LEAVE_REQUESTS, variables: { approvalsOnly: false } },
+   { query: GET_LEAVE_REQUESTS, variables: { approvalsOnly: true } },
+   { query: GET_TEAM_LEAVES },
+   { query: GET_USER_DASHBOARD_STATS },
+];
 
 export function useGraphQlLeaves(organizationId: string) {
    const { data, loading, error, refetch } = useQuery<GetLeavesResponse>(GET_LEAVES, {
       variables: { organizationId },
-      fetchPolicy: 'network-only',
    })
 
    return {
       leavesData: data?.leaveTypes ?? [],
-      isLoading: loading,
+      isLoading: loading && !data,
+      isRefetching: loading && !!data,
       error,
       refetch
    }
 }
 
 export function useGraphQlLeaveBalance() {
-   const { data, loading, error, refetch } = useQuery<GetLeaveBalanceResponse>(GET_LEAVE_BALANCE, {
-      fetchPolicy: 'network-only',
-   })
+   const { data, loading, error, refetch } = useQuery<GetLeaveBalanceResponse>(GET_LEAVE_BALANCE)
 
    return {
       leaveBalanceData: data?.leaveBalance ?? [],
-      isLoading: loading,
+      isLoading: loading && !data,
+      isRefetching: loading && !!data,
       error,
       refetch
    }
@@ -33,25 +41,24 @@ export function useGraphQlLeaveBalance() {
 export function useGraphQLLeaveRequests(approvalsOnly: boolean = false) {
    const { data, loading, error, refetch } = useQuery<GetLeaveRequestResponse>(GET_LEAVE_REQUESTS, {
       variables: { approvalsOnly },
-      fetchPolicy: 'network-only',
    })
 
    return {
       leaveRequestData: data?.getLeaveRequests ?? [],
-      isLoading: loading,
+      isLoading: loading && !data,
+      isRefetching: loading && !!data,
       error,
       refetch
    }
 }
 
 export function useGraphQLTeamLeaves() {
-   const { data, loading, error, refetch } = useQuery<GetTeamLeavesResponse>(GET_TEAM_LEAVES, {
-      fetchPolicy: 'network-only',
-   })
+   const { data, loading, error, refetch } = useQuery<GetTeamLeavesResponse>(GET_TEAM_LEAVES)
 
    return {
       teamLeavesData: data?.teamLeaves ?? [],
-      isLoading: loading,
+      isLoading: loading && !data,
+      isRefetching: loading && !!data,
       error,
       refetch
    }
@@ -61,7 +68,8 @@ export function useGraphQLTeamLeaves() {
 
 export function useGraphQLCreateLeaveRequest() {
    const [createLeaveRequestMutation, createLeaveRequestState] = useMutation(CREATE_LEAVE_REQUEST, {
-      refetchQueries: [{ query: GET_LEAVE_BALANCE }, { query: GET_LEAVE_REQUESTS }]
+      refetchQueries: LEAVE_MUTATION_REFETCH,
+      awaitRefetchQueries: true,
    })
 
    const createLeaveRequest = async (input: {
@@ -95,7 +103,8 @@ export function useGraphQLCreateLeaveRequest() {
 
 export function useGraphQLCancelLeaveRequest() {
    const [cancelLeaveRequestMutation, cancelLeaveRequestState] = useMutation(CANCEL_LEAVE_REQUEST, {
-      refetchQueries: [{ query: GET_LEAVE_BALANCE }, { query: GET_LEAVE_REQUESTS }]
+      refetchQueries: LEAVE_MUTATION_REFETCH,
+      awaitRefetchQueries: true,
    })
 
    const cancelLeaveRequest = async (requestId: string) => {
@@ -114,7 +123,8 @@ export function useGraphQLCancelLeaveRequest() {
 
 export function useGraphQLLeaveRequestProcess() {
    const [processLeaveRequestMutation, processLeaveRequestState] = useMutation(LEAVE_REQUEST_PROCESS, {
-      refetchQueries: [{ query: GET_LEAVE_BALANCE }, { query: GET_LEAVE_REQUESTS }]
+      refetchQueries: LEAVE_MUTATION_REFETCH,
+      awaitRefetchQueries: true,
    })
 
    const processLeaveRequest = async (input: {
@@ -151,15 +161,13 @@ export function useGraphQLCompanyHolidays() {
          description: string;
       }>;
    }
-   const { data, loading, error, refetch } = useQuery<CompanyHolidaysResponse>(GET_COMPANY_HOLIDAYS, {
-      fetchPolicy: 'network-only',
-   });
+   const { data, loading, error, refetch } = useQuery<CompanyHolidaysResponse>(GET_COMPANY_HOLIDAYS);
 
    return {
       companyHolidaysData: data?.companyHolidays ?? [],
-      isLoading: loading,
+      isLoading: loading && !data,
+      isRefetching: loading && !!data,
       error,
       refetch,
    };
 }
-

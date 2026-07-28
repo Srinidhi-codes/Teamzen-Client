@@ -6,6 +6,8 @@ import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { useState } from "react";
+import { PhotoOverlay } from "@/components/common/PhotoOverlay";
 
 interface ProfileHeaderProps {
     user: any;
@@ -22,12 +24,23 @@ export function ProfileHeader({
     onCancel,
     onUploadPhoto,
 }: ProfileHeaderProps) {
+    const [isPhotoOpen, setIsPhotoOpen] = useState(false);
+    const fullName = `${user.first_name || ""} ${user.last_name || ""}`.trim() || "User";
 
     return (
+        <>
         <div className="premium-card rounded-xl overflow-hidden">
             <div className="flex flex-col lg:flex-row items-center lg:items-end gap-6 sm:gap-8 p-6">
                 <div className="relative shrink-0">
-                    <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-xl p-1 bg-primary/10">
+                    <button
+                        type="button"
+                        onClick={() => user.profile_picture && setIsPhotoOpen(true)}
+                        className={cn(
+                            "w-32 h-32 sm:w-40 sm:h-40 rounded-xl p-1 bg-primary/10",
+                            user.profile_picture ? "cursor-zoom-in" : "cursor-default"
+                        )}
+                        title={user.profile_picture ? "View profile photo" : "No photo available"}
+                    >
                         <div className="w-full h-full bg-background rounded-lg overflow-hidden flex items-center justify-center border border-border">
                             {user.profile_picture ? (
                                 <Image
@@ -45,7 +58,7 @@ export function ProfileHeader({
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </button>
 
                     <label
                         htmlFor="profile-picture-upload"
@@ -116,5 +129,12 @@ export function ProfileHeader({
                 </div>
             </div>
         </div>
+        <PhotoOverlay
+            open={isPhotoOpen}
+            onOpenChange={setIsPhotoOpen}
+            src={user.profile_picture || null}
+            name={fullName}
+        />
+        </>
     );
 }

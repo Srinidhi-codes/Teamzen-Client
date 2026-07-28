@@ -16,7 +16,7 @@ import { Button } from "../ui/button";
 import { Briefcase, DollarSign, IndianRupee, Loader2, Lock, User } from "lucide-react";
 
 export default function ProfilePage() {
-  const { user, isLoading: isUserLoading, error: userError } = useGraphQLUser();
+  const { user, isLoading: isUserLoading, error: userError, refetch: refetchUser } = useGraphQLUser();
   const { updateUserAsync: updateGraphQLUser, isLoading: isUpdatingGraphQL } =
     useGraphQLUpdateUser();
   const { updateUserAsync: updateRestUser } = useRestUpdateUser(); // REST hook for file upload
@@ -170,8 +170,7 @@ export default function ProfilePage() {
       // Use REST hook for file upload
       await updateRestUser(formData);
       success("Profile picture updated successfully!");
-      // Invalidating GraphQL queries would be ideal here to refresh the image
-      window.location.reload();
+      await refetchUser();
     } catch (err: any) {
       console.error("Error uploading profile picture:", err);
       let errorMsg = "Failed to upload profile picture.";
@@ -203,7 +202,7 @@ export default function ProfilePage() {
       <div className="flex flex-col items-center justify-center h-96 text-center">
         <div className="text-red-600 text-lg font-semibold mb-2">Could not load profile</div>
         <p className="text-gray-600 mb-4">{userError.message}</p>
-        <button onClick={() => window.location.reload()} className="btn-primary">Retry</button>
+        <button onClick={() => refetchUser()} className="btn-primary">Retry</button>
       </div>
     );
   }

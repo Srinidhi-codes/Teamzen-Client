@@ -30,7 +30,8 @@ import {
   XCircle,
   Users,
   RotateCcw,
-  LayoutList
+  LayoutList,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataTable, Column } from "@/components/common/DataTable";
@@ -39,6 +40,7 @@ import { LeaveReviewModal } from "@/components/leaves/LeaveReviewModal";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { PageHeader } from "@/components/common/PageHeader";
+import { toast } from "sonner";
 
 export default function LeavesPage() {
   const [showForm, setShowForm] = useState(false);
@@ -77,6 +79,16 @@ export default function LeavesPage() {
   const total = leaveRequestData?.length || 0;
   const paginatedData = leaveRequestData?.slice((currentPage - 1) * pageSize, currentPage * pageSize) || [];
   const pendingCount = leaveRequestData?.filter((r: any) => r.status === "pending").length || 0;
+
+  const handleCancelLeave = async (requestId: string) => {
+    try {
+      await cancelLeaveRequest(requestId);
+      toast.success("Leave request cancelled");
+      refetchTeam();
+    } catch {
+      toast.error("Failed to cancel leave request");
+    }
+  };
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -185,27 +197,31 @@ export default function LeavesPage() {
       key: "actions",
       label: "Action",
       render: (_: any, row: any) => (
-        <div className="flex items-center justify-start gap-2">
+        <div className="flex items-center gap-1">
           <Button
-            variant="outline"
-            size="sm"
-            className="h-9 rounded-md px-3 text-sm font-medium"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
             onClick={() => setViewDetails(row)}
+            title="View details"
+            aria-label="View details"
           >
-            View
+            <Eye className="h-4 w-4" />
           </Button>
           {row.status === "pending" && (
             <Button
-              variant="destructive"
-              size="sm"
-              className="h-9 rounded-md px-3 text-sm font-medium"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
               onClick={(e) => {
                 e.stopPropagation();
-                cancelLeaveRequest(row.id);
+                handleCancelLeave(row.id);
               }}
               disabled={cancelLeaveRequestLoading}
+              title="Cancel request"
+              aria-label="Cancel request"
             >
-              Cancel
+              <XCircle className="h-4 w-4" />
             </Button>
           )}
         </div>

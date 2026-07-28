@@ -9,17 +9,22 @@ import { useEffect } from "react";
 
 export function useGraphQLUser() {
   const { data, loading, error, refetch } = useQuery(GET_ME) as any;
-  const { setAuthenticatedUser } = useStore();
+  const { setAuthenticatedUser, setAccent } = useStore();
 
   useEffect(() => {
     if (data?.me) {
       setAuthenticatedUser(data.me as GraphQLUser);
+      const orgAccent = data.me.organization?.accent;
+      if (orgAccent) {
+        setAccent(orgAccent);
+      }
     }
-  }, [data, setAuthenticatedUser]);
+  }, [data, setAuthenticatedUser, setAccent]);
 
   return {
     user: (data?.me as GraphQLUser) || null,
-    isLoading: loading,
+    isLoading: loading && !data,
+    isRefetching: loading && !!data,
     error,
     refetch
   };

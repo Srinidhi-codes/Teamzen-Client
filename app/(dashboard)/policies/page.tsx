@@ -8,7 +8,7 @@ import { Loader2, FileText, Maximize2, RotateCcw } from "lucide-react";
 import moment from "moment";
 
 export default function PoliciesPage() {
-    const { policies, isLoading } = usePolicies();
+    const { policies, isLoading, refetch } = usePolicies();
 
     const [isViewOpen, setIsViewOpen] = useState(false);
     const [selectedPdf, setSelectedPdf] = useState<{ url: string; title: string } | null>(null);
@@ -21,7 +21,7 @@ export default function PoliciesPage() {
                 description="Company policies and reference documents."
                 actions={
                     <button
-                        onClick={() => window.location.reload()}
+                        onClick={() => refetch()}
                         className="inline-flex items-center gap-2 h-9 px-3 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-md text-sm font-medium transition-colors"
                         title="Refresh"
                     >
@@ -31,7 +31,7 @@ export default function PoliciesPage() {
                 }
             />
 
-            {isLoading ? (
+            {isLoading && !policies ? (
                 <div className="flex flex-col items-center justify-center p-12 space-y-3">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">Loading…</p>

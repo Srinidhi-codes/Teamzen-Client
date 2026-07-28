@@ -6,13 +6,16 @@ import moment from "moment";
 import { useQuery } from "@apollo/client/react";
 import { GET_TEAM_HIERARCHY } from "@/lib/graphql/users/queries";
 import { useGraphQLTeamLeaves, useGraphQLLeaveRequests } from "@/lib/graphql/leaves/leavesHook";
+import { useGraphQLTeamAttendanceToday } from "@/lib/graphql/attendance/attendanceHooks";
 import { PageHeader } from "@/components/common/PageHeader";
+import { PhotoOverlay } from "@/components/common/PhotoOverlay";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import {
   Briefcase,
   Building2,
   Calendar,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
@@ -22,6 +25,7 @@ import {
   Search,
   Users,
   UserRound,
+  UserX,
 } from "lucide-react";
 
 type Member = {
@@ -62,17 +66,26 @@ function MemberRow({
   label,
   highlight,
   onClick,
+  onViewPhoto,
 }: {
   member: Member;
   label?: string;
   highlight?: boolean;
   onClick?: () => void;
+  onViewPhoto?: (member: Member) => void;
 }) {
   const interactive = Boolean(onClick);
 
   const content = (
     <>
-      <Avatar className="h-10 w-10 rounded-lg">
+      <Avatar
+        className={cn("h-10 w-10 rounded-lg", member.profilePictureUrl && "cursor-zoom-in")}
+        onClick={(e) => {
+          if (!member.profilePictureUrl || !onViewPhoto) return;
+          e.stopPropagation();
+          onViewPhoto(member);
+        }}
+      >
         <AvatarImage src={member.profilePictureUrl || undefined} className="object-cover" />
         <AvatarFallback className="rounded-lg bg-primary/10 text-sm font-semibold text-primary">
           {initials(member)}
@@ -149,12 +162,14 @@ function TreeNode({
   highlight,
   expanded,
   onClick,
+  onViewPhoto,
 }: {
   member: Member;
   label?: string;
   highlight?: boolean;
   expanded?: boolean;
   onClick?: () => void;
+  onViewPhoto?: (member: Member) => void;
 }) {
   const className = cn(
     "flex shrink-0 flex-col items-center rounded-xl border bg-card text-center transition-all duration-500 ease-out",
@@ -170,8 +185,14 @@ function TreeNode({
       <Avatar
         className={cn(
           "rounded-xl transition-all duration-500",
-          expanded ? "h-14 w-14 sm:h-16 sm:w-16" : "h-12 w-12"
+          expanded ? "h-14 w-14 sm:h-16 sm:w-16" : "h-12 w-12",
+          member.profilePictureUrl && "cursor-zoom-in"
         )}
+        onClick={(e) => {
+          if (!member.profilePictureUrl || !onViewPhoto) return;
+          e.stopPropagation();
+          onViewPhoto(member);
+        }}
       >
         <AvatarImage src={member.profilePictureUrl || undefined} className="object-cover" />
         <AvatarFallback className="rounded-xl bg-primary/10 text-sm font-semibold text-primary">
@@ -217,6 +238,7 @@ function HierarchyTree({
   query,
   expanded,
   onFocus,
+  onViewPhoto,
 }: {
   manager: Member | null;
   user: Member | null;
@@ -226,6 +248,7 @@ function HierarchyTree({
   query: string;
   expanded?: boolean;
   onFocus: (id: string) => void;
+  onViewPhoto?: (member: Member) => void;
 }) {
   const managerVisible = manager && matchesQuery(manager, query);
   const userVisible = user && matchesQuery(user, query);
@@ -271,6 +294,7 @@ function HierarchyTree({
               label="Manager"
               expanded={expanded}
               onClick={() => onFocus(manager.id)}
+              onViewPhoto={onViewPhoto}
             />
             {(midRow.length > 0 || visibleSubs.length > 0) && (
               <div
@@ -299,6 +323,7 @@ function HierarchyTree({
                 highlight={highlight}
                 expanded={expanded}
                 onClick={highlight ? undefined : () => onFocus(member.id)}
+                onViewPhoto={onViewPhoto}
               />
             ))}
           </div>
@@ -344,6 +369,7 @@ function HierarchyTree({
                     label="Report"
                     expanded={expanded}
                     onClick={() => onFocus(sub.id)}
+                    onViewPhoto={onViewPhoto}
                   />
                 </div>
               ))}
@@ -365,6 +391,7 @@ export default function TeamPage() {
   const [focusedUserId, setFocusedUserId] = useState<string | null>(null);
   const [view, setView] = useState<ViewMode>("directory");
   const [query, setQuery] = useState("");
+  const [selectedPhoto, setSelectedPhoto] = useState<{ src: string; name: string } | null>(null);
 
   const { data, loading, error } = useQuery(GET_TEAM_HIERARCHY, {
     variables: { userId: focusedUserId },
@@ -373,12 +400,29 @@ export default function TeamPage() {
 
   const { teamLeavesData, isLoading: leavesLoading } = useGraphQLTeamLeaves();
   const { leaveRequestData: pendingApprovals } = useGraphQLLeaveRequests(true);
+  const {
+    teamAttendanceToday,
+    isLoading: attendanceLoading,
+  } = useGraphQLTeamAttendanceToday();
 
   const hierarchy = (data as any)?.teamHierarchy;
   const manager: Member | null = hierarchy?.manager || null;
   const user: Member | null = hierarchy?.user || null;
   const peers: Member[] = hierarchy?.peers || [];
   const subordinates: Member[] = hierarchy?.subordinates || [];
+
+  const presentToday = useMemo(
+    () => teamAttendanceToday.filter((item) => item.status === "present"),
+    [teamAttendanceToday]
+  );
+  const absentToday = useMemo(
+    () => teamAttendanceToday.filter((item) => item.status === "absent"),
+    [teamAttendanceToday]
+  );
+  const leaveToday = useMemo(
+    () => teamAttendanceToday.filter((item) => item.status === "leave"),
+    [teamAttendanceToday]
+  );
 
   const circleIds = useMemo(() => {
     const ids = new Set<string>();
@@ -460,23 +504,34 @@ export default function TeamPage() {
   const pendingCount = pendingApprovals?.filter(
     (r: any) => (r.status || "").toLowerCase() === "pending"
   ).length;
+  const handleViewMemberPhoto = (member: Member) => {
+    if (!member.profilePictureUrl) return;
+    setSelectedPhoto({
+      src: member.profilePictureUrl,
+      name: memberName(member),
+    });
+  };
 
   return (
     <div className="w-full space-y-6 pb-10">
       <PageHeader
         eyebrow="People"
         title={pageTitle}
-        description="Your reporting circle, who’s away, and quick actions."
+        description="Your reporting circle, who’s in today, and who’s away."
         actions={
           <div className="flex items-center gap-4 rounded-xl border border-border bg-background/70 px-4 py-3">
             <div className="text-center">
-              <p className="text-[11px] font-medium text-muted-foreground">Reports</p>
-              <p className="text-xl font-semibold tabular-nums">{subordinates.length}</p>
+              <p className="text-[11px] font-medium text-muted-foreground">Present</p>
+              <p className="text-xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                {presentToday.length}
+              </p>
             </div>
             <div className="h-8 w-px bg-border" />
             <div className="text-center">
-              <p className="text-[11px] font-medium text-muted-foreground">Peers</p>
-              <p className="text-xl font-semibold tabular-nums">{peers.length}</p>
+              <p className="text-[11px] font-medium text-muted-foreground">Absent</p>
+              <p className="text-xl font-semibold tabular-nums text-red-600 dark:text-red-400">
+                {absentToday.length}
+              </p>
             </div>
             <div className="h-8 w-px bg-border" />
             <div className="text-center">
@@ -543,6 +598,70 @@ export default function TeamPage() {
           </Link>
         </section>
       )}
+
+      {/* Today present / absent */}
+      <section className="overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2.5">
+              <span className="h-5 w-1 rounded-full bg-primary" aria-hidden />
+              <h2 className="text-base font-semibold tracking-tight sm:text-lg">
+                Today’s attendance
+              </h2>
+            </div>
+            <p className="pl-3.5 text-xs text-muted-foreground">
+              Your circle · {moment().format("dddd, MMM D")}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/10 px-2 py-1 text-emerald-700 dark:text-emerald-400">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              {presentToday.length} present
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-red-500/10 px-2 py-1 text-red-700 dark:text-red-400">
+              <UserX className="h-3.5 w-3.5" />
+              {absentToday.length} absent
+            </span>
+            {leaveToday.length > 0 && (
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2 py-1 text-amber-700 dark:text-amber-400">
+                <Calendar className="h-3.5 w-3.5" />
+                {leaveToday.length} on leave
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 divide-y divide-border md:grid-cols-2 md:divide-x md:divide-y-0">
+          <AttendanceTodayColumn
+            title="Present"
+            empty="No one has checked in yet"
+            loading={attendanceLoading}
+            tone="present"
+            items={presentToday}
+            onViewPhoto={(item) =>
+              item.user.profilePictureUrl &&
+              setSelectedPhoto({
+                src: item.user.profilePictureUrl,
+                name: `${item.user.firstName} ${item.user.lastName}`.trim(),
+              })
+            }
+          />
+          <AttendanceTodayColumn
+            title="Absent"
+            empty="Everyone in your circle is accounted for"
+            loading={attendanceLoading}
+            tone="absent"
+            items={[...absentToday, ...leaveToday]}
+            onViewPhoto={(item) =>
+              item.user.profilePictureUrl &&
+              setSelectedPhoto({
+                src: item.user.profilePictureUrl,
+                name: `${item.user.firstName} ${item.user.lastName}`.trim(),
+              })
+            }
+          />
+        </div>
+      </section>
 
       {/* Toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -647,6 +766,7 @@ export default function TeamPage() {
                       member={member}
                       label={label}
                       highlight={highlight}
+                      onViewPhoto={handleViewMemberPhoto}
                       onClick={
                         label === "You" || (focusedUserId && member.id === user?.id)
                           ? undefined
@@ -668,6 +788,7 @@ export default function TeamPage() {
                 query={query}
                 expanded
                 onFocus={setFocusedUserId}
+                onViewPhoto={handleViewMemberPhoto}
               />
             ) : (
               <div className="space-y-5">
@@ -677,6 +798,7 @@ export default function TeamPage() {
                     <MemberRow
                       member={manager}
                       label="Manager"
+                      onViewPhoto={handleViewMemberPhoto}
                       onClick={() => setFocusedUserId(manager.id)}
                     />
                   </div>
@@ -691,6 +813,7 @@ export default function TeamPage() {
                           member={user}
                           label={focusedUserId ? "Selected" : "You"}
                           highlight
+                          onViewPhoto={handleViewMemberPhoto}
                         />
                       )}
                       {filteredPeers.map((peer) => (
@@ -698,6 +821,7 @@ export default function TeamPage() {
                           key={peer.id}
                           member={peer}
                           label="Peer"
+                          onViewPhoto={handleViewMemberPhoto}
                           onClick={() => setFocusedUserId(peer.id)}
                         />
                       ))}
@@ -714,6 +838,7 @@ export default function TeamPage() {
                           key={sub.id}
                           member={sub}
                           label="Report"
+                          onViewPhoto={handleViewMemberPhoto}
                           onClick={() => setFocusedUserId(sub.id)}
                         />
                       ))}
@@ -786,7 +911,16 @@ export default function TeamPage() {
                       key={leave.id}
                       className="flex items-center gap-3 rounded-xl border border-border px-3 py-3"
                     >
-                      <Avatar className="h-10 w-10 rounded-lg">
+                      <Avatar
+                        className={cn("h-10 w-10 rounded-lg", pic && "cursor-zoom-in")}
+                        onClick={() => {
+                          if (!pic) return;
+                          setSelectedPhoto({
+                            src: pic,
+                            name: `${leave.user?.firstName || ""} ${leave.user?.lastName || ""}`.trim(),
+                          });
+                        }}
+                      >
                         <AvatarImage src={pic} className="object-cover" />
                         <AvatarFallback className="rounded-lg bg-muted text-xs font-semibold">
                           {leave.user?.firstName?.[0]}
@@ -862,6 +996,12 @@ export default function TeamPage() {
           </div>
         </section>
       </div>
+      <PhotoOverlay
+        open={Boolean(selectedPhoto)}
+        onOpenChange={(open) => !open && setSelectedPhoto(null)}
+        src={selectedPhoto?.src}
+        name={selectedPhoto?.name}
+      />
     </div>
   );
 }
@@ -879,3 +1019,122 @@ function EmptyPeople({ query }: { query: string }) {
     </div>
   );
 }
+
+function AttendanceTodayColumn({
+  title,
+  empty,
+  loading,
+  tone,
+  items,
+  onViewPhoto,
+}: {
+  title: string;
+  empty: string;
+  loading: boolean;
+  tone: "present" | "absent";
+  items: {
+    status: string;
+    loginTime?: string | null;
+    logoutTime?: string | null;
+    user: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      profilePictureUrl?: string | null;
+      designation?: { name: string } | null;
+    };
+  }[];
+  onViewPhoto?: (item: {
+    status: string;
+    loginTime?: string | null;
+    logoutTime?: string | null;
+    user: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      profilePictureUrl?: string | null;
+      designation?: { name: string } | null;
+    };
+  }) => void;
+}) {
+  return (
+    <div className="flex flex-col p-4 sm:p-5">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+        <span className="text-xs tabular-nums text-muted-foreground">{items.length}</span>
+      </div>
+
+      {loading && items.length === 0 ? (
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-14 animate-pulse rounded-xl bg-muted/50" />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border px-3 py-10 text-center">
+          {tone === "present" ? (
+            <CheckCircle2 className="h-5 w-5 text-muted-foreground/40" />
+          ) : (
+            <UserX className="h-5 w-5 text-muted-foreground/40" />
+          )}
+          <p className="text-xs text-muted-foreground">{empty}</p>
+        </div>
+      ) : (
+        <ul className="max-h-72 space-y-2 overflow-y-auto pr-1">
+          {items.map((item) => {
+            const isLeave = item.status === "leave";
+            return (
+              <li
+                key={`${item.status}-${item.user.id}`}
+                className="flex items-center gap-3 rounded-xl border border-border px-3 py-2.5"
+              >
+                <Avatar
+                  className={cn("h-9 w-9 rounded-lg", item.user.profilePictureUrl && "cursor-zoom-in")}
+                  onClick={() => onViewPhoto?.(item)}
+                >
+                  <AvatarImage
+                    src={item.user.profilePictureUrl || undefined}
+                    className="object-cover"
+                  />
+                  <AvatarFallback className="rounded-lg bg-muted text-xs font-semibold">
+                    {item.user.firstName?.[0]}
+                    {item.user.lastName?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {item.user.firstName} {item.user.lastName}
+                    </p>
+                    <span
+                      className={cn(
+                        "rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                        isLeave
+                          ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                          : tone === "present"
+                            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                            : "bg-red-500/10 text-red-700 dark:text-red-400"
+                      )}
+                    >
+                      {isLeave ? "Leave" : tone === "present" ? "Present" : "Absent"}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                    {item.user.designation?.name || "Team member"}
+                    {tone === "present" && item.loginTime
+                      ? ` · In ${String(item.loginTime).slice(0, 5)}`
+                      : ""}
+                    {tone === "present" && item.logoutTime
+                      ? ` · Out ${String(item.logoutTime).slice(0, 5)}`
+                      : ""}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+

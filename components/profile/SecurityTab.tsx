@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/common/Card";
 import { useToast } from "@/components/common/ToastProvider";
-import { useGraphQLChangePassword } from "@/lib/api/graphqlHooks";
+import { useGraphQLChangePassword, useGraphQLUser } from "@/lib/api/graphqlHooks";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { useUser } from "@/lib/api/hooks";
@@ -15,6 +15,7 @@ import { DevicesManager } from "./DevicesManager";
 export function SecurityTab() {
     const { success, error } = useToast();
     const { changePasswordAsync, isLoading } = useGraphQLChangePassword();
+    const { refetch: refetchUser } = useGraphQLUser();
     const { user } = useUser();
 
     // 2FA States
@@ -70,8 +71,7 @@ export function SecurityTab() {
             setIs2FAEnabled(true);
             setShowSetupModal(false);
             success("Two-factor authentication enabled successfully!");
-            // Refresh user page/state
-            window.location.reload();
+            await refetchUser();
         } catch (err: any) {
             error(err.response?.data?.error || "Invalid verification code");
         } finally {
@@ -88,7 +88,7 @@ export function SecurityTab() {
             setIs2FAEnabled(false);
             setShowDisableModal(false);
             success("Two-factor authentication disabled successfully.");
-            window.location.reload();
+            await refetchUser();
         } catch (err: any) {
             error(err.response?.data?.error || "Invalid verification code");
         } finally {

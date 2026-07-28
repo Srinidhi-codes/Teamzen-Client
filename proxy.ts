@@ -4,6 +4,12 @@ import type { NextRequest } from 'next/server'
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl
 
+    // Public marketing pages — never force auth
+    const publicExact = ['/', '/forgot-password', '/reset-password']
+    if (publicExact.includes(pathname)) {
+        return NextResponse.next()
+    }
+
     const protectedPaths = [
         '/dashboard',
         '/attendance',
@@ -12,6 +18,9 @@ export async function proxy(request: NextRequest) {
         '/payroll',
         '/profile',
         '/analytics',
+        '/notifications',
+        '/team',
+        '/policies',
     ]
 
     const authPaths = ['/login', '/register']
