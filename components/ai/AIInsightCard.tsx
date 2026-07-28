@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, ArrowRight, TrendingUp, AlertCircle } from "lucide-react";
+import { ArrowRight, TrendingUp, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store/useStore";
 
@@ -62,7 +62,7 @@ export const AIInsightCard = ({ title, message, type, query, isLoading }: AIInsi
                         ) : isStats ? (
                             <TrendingUp className="w-4 h-4" />
                         ) : (
-                            <Sparkles className="w-4 h-4" />
+                            <ArrowRight className="w-4 h-4 rotate-[-45deg]" />
                         )}
                     </div>
                     <h4

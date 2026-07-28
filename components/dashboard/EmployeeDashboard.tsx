@@ -19,7 +19,6 @@ import {
   UserPlus,
   PartyPopper,
   ArrowUpRight,
-  Sparkles,
   MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -704,7 +703,6 @@ export function EmployeeDashboard() {
           <div className="mb-5 flex items-center gap-2.5">
             <span className="h-5 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
             <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
               <h2 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
                 Worth a look
               </h2>
