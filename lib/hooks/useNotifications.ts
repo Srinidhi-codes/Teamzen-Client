@@ -1,6 +1,5 @@
 "use client";
 
-import client from "@/lib/api/client";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
@@ -10,6 +9,7 @@ export function useNotifications(
     options: { silent?: boolean } = { silent: false }
 ) {
     const [socketUrl, setSocketUrl] = useState<string | null>(null);
+    const [shouldConnect, setShouldConnect] = useState(false);
     const callbackRef = useRef(onMessageReceived);
 
     useEffect(() => {
@@ -17,7 +17,9 @@ export function useNotifications(
     }, [onMessageReceived]);
 
     useEffect(() => {
-        const connect = () => {
+        let cancelled = false;
+
+        const connect = async () => {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/";
             let protocol = "ws:";
             let host = "localhost:8000";
@@ -30,15 +32,51 @@ export function useNotifications(
                 console.error("Invalid NEXT_PUBLIC_API_URL for WebSocket:", e);
             }
 
-            const url = `${protocol}//${host}/ws/notifications/`;
-            setSocketUrl(url);
+            try {
+                const tokenResponse = await fetch("/api/auth/ws-token", {
+                    credentials: "include",
+                });
+
+                if (!tokenResponse.ok) {
+                    if (!cancelled) {
+                        setSocketUrl(null);
+                        setShouldConnect(false);
+                    }
+                    return;
+                }
+
+                const { token } = (await tokenResponse.json()) as { token?: string };
+                if (!token) {
+                    if (!cancelled) {
+                        setSocketUrl(null);
+                        setShouldConnect(false);
+                    }
+                    return;
+                }
+
+                const url = `${protocol}//${host}/ws/notifications/?token=${encodeURIComponent(token)}`;
+                if (!cancelled) {
+                    setSocketUrl(url);
+                    setShouldConnect(true);
+                }
+            } catch (error) {
+                console.error("Failed to initialize notifications socket:", error);
+                if (!cancelled) {
+                    setSocketUrl(null);
+                    setShouldConnect(false);
+                }
+            }
         };
 
         connect();
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     const { readyState } = useWebSocket(socketUrl, {
-        shouldReconnect: () => true,
+        shouldReconnect: () => shouldConnect,
         reconnectInterval: 5000,
         share: true,
         onOpen: () => { },
@@ -77,7 +115,7 @@ export function useNotifications(
                 }
             }
         }
-    }, socketUrl !== null);
+    }, shouldConnect && socketUrl !== null);
 
     return { readyState, isConnected: readyState === ReadyState.OPEN };
 }
