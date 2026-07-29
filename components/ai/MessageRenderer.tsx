@@ -10,6 +10,7 @@ import { LeaveTypeCard } from "./cards/LeaveTypeCard";
 import { PendingLeaveCard } from "./cards/PendingLeaveCard";
 import { PayrollCard } from "./cards/PayrollCard";
 import { CitationChips } from "./CitationChips";
+import { CorrectionCard } from "./cards/CorrectionCard";
 import type { PolicySource } from "@/lib/api/assistant";
 
 interface MessageRendererProps {
@@ -165,7 +166,7 @@ const ToolBadge = ({ activeTool }: { activeTool: { name: string; status: 'runnin
 
 export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLast, isStreaming, activeTool, toolsUsed, sources }: MessageRendererProps) => {
     const parts = useMessageParser(content);
-    const richCardTypes = ['balance', 'attendance', 'insight', 'leavetype', 'pendingleave', 'payroll'];
+    const richCardTypes = ['balance', 'attendance', 'insight', 'leavetype', 'pendingleave', 'payroll', 'correction'];
 
     const renderableParts = parts.filter(part => {
         if (part.type === 'text') {
@@ -238,6 +239,25 @@ export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLas
                             {...part.value}
                             isCancelled={cancelledIds.has(part.value.id)}
                             onCancel={(id) => handleSend(undefined, `Cancel my leave with ID ${id}`)}
+                        />
+                    );
+                    if (part.type === 'correction') return (
+                        <CorrectionCard
+                            id={String(part.value.id)}
+                            date={part.value.date}
+                            login={part.value.login}
+                            suggested_logout={part.value.suggested_logout}
+                            reason={part.value.reason}
+                            isConfirmed={cancelledIds.has(`corr-${part.value.id}`)}
+                            onConfirm={(id, suggested) => {
+                                const timePart = suggested && suggested !== '—'
+                                    ? ` with logout time ${suggested}`
+                                    : '';
+                                handleSend(
+                                    undefined,
+                                    `Confirm my attendance correction ID ${id}${timePart}`
+                                );
+                            }}
                         />
                     );
                     if (part.type === 'payroll') return <PayrollCard {...part.value} />;
