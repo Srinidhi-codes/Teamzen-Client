@@ -244,6 +244,7 @@ export function AssistantWidget() {
                                         isStreaming={isStreaming}
                                         activeTool={i === messages.length - 1 ? activeTool : null}
                                         toolsUsed={msg.toolsUsed}
+                                        sources={msg.sources}
                                     />
                                     <div className={cn(
                                         "w-full text-xs text-muted-foreground/60 mt-1",

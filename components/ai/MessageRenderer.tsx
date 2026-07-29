@@ -9,6 +9,8 @@ import { InsightCard } from "./cards/InsightCard";
 import { LeaveTypeCard } from "./cards/LeaveTypeCard";
 import { PendingLeaveCard } from "./cards/PendingLeaveCard";
 import { PayrollCard } from "./cards/PayrollCard";
+import { CitationChips } from "./CitationChips";
+import type { PolicySource } from "@/lib/api/assistant";
 
 interface MessageRendererProps {
     content: string;
@@ -19,6 +21,7 @@ interface MessageRendererProps {
     isStreaming?: boolean;
     activeTool?: { name: string; status: 'running' | 'completed' } | null;
     toolsUsed?: string[];
+    sources?: PolicySource[];
 }
 
 const renderInlineFormatting = (text: string) => {
@@ -160,7 +163,7 @@ const ToolBadge = ({ activeTool }: { activeTool: { name: string; status: 'runnin
     );
 };
 
-export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLast, isStreaming, activeTool, toolsUsed }: MessageRendererProps) => {
+export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLast, isStreaming, activeTool, toolsUsed, sources }: MessageRendererProps) => {
     const parts = useMessageParser(content);
     const richCardTypes = ['balance', 'attendance', 'insight', 'leavetype', 'pendingleave', 'payroll'];
 
@@ -270,6 +273,10 @@ export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLas
                 <div className="pl-1">
                     <ToolBadge activeTool={activeTool} />
                 </div>
+            )}
+
+            {role === 'assistant' && sources && sources.length > 0 && (
+                <CitationChips sources={sources} />
             )}
         </div>
     );

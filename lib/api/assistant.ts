@@ -3,11 +3,22 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import client from "./client";
 import { API_ENDPOINTS } from "./endpoints";
 
+export type PolicySource = {
+    title: string;
+    page_number?: number | null;
+    file_id?: number | null;
+    file_url?: string | null;
+    chunk_id?: number;
+    score?: number;
+    match_type?: string;
+};
+
 export type ChatMessage = {
     role: 'user' | 'assistant';
     content: string;
     timestamp?: string;
     toolsUsed?: string[];   // Permanently stored tools used to generate this message
+    sources?: PolicySource[];
 };
 
 export type AssistantResponse = {
@@ -48,10 +59,11 @@ export const useAssistant = () => {
 
         // Collect all tools used during this response
         const toolsUsedThisResponse: string[] = [];
+        const sourcesThisResponse: PolicySource[] = [];
 
         try {
             // Prepare streaming message placeholder
-            const assistantMsg: ChatMessage = { role: 'assistant', content: '', timestamp: new Date().toISOString(), toolsUsed: [] };
+            const assistantMsg: ChatMessage = { role: 'assistant', content: '', timestamp: new Date().toISOString(), toolsUsed: [], sources: [] };
             setHistory(prev => [...prev, assistantMsg]);
 
             // Start Stream
@@ -118,6 +130,22 @@ export const useAssistant = () => {
                                 activeToolTimeoutRef.current = setTimeout(() => {
                                     setActiveTool(null);
                                 }, 2000);
+                            } else if (data.sources && Array.isArray(data.sources)) {
+                                for (const src of data.sources as PolicySource[]) {
+                                    const key = `${src.file_id}-${src.page_number}-${src.chunk_id}`;
+                                    const exists = sourcesThisResponse.some(
+                                        s => `${s.file_id}-${s.page_number}-${s.chunk_id}` === key
+                                    );
+                                    if (!exists) sourcesThisResponse.push(src);
+                                }
+                                setHistory(prev => {
+                                    const newHistory = [...prev];
+                                    const last = newHistory[newHistory.length - 1];
+                                    if (last && last.role === 'assistant') {
+                                        last.sources = [...sourcesThisResponse];
+                                    }
+                                    return newHistory;
+                                });
                             } else if (data.error) {
                                 const errorMsg = `[ERROR_CARD] title: Assistant Error | message: ${data.error} [/ERROR_CARD]`;
                                 setHistory(prev => {
@@ -130,14 +158,18 @@ export const useAssistant = () => {
                                 });
                                 break;
                             } else if (data.history) {
-                                // Final sync from backend — preserve toolsUsed since backend doesn't know about it
+                                // Final sync from backend — preserve toolsUsed/sources since backend doesn't know about them
                                 setHistory(prev => {
                                     const serverHistory: ChatMessage[] = data.history;
-                                    // Re-attach toolsUsed to the last assistant message
-                                    if (toolsUsedThisResponse.length > 0 && serverHistory.length > 0) {
+                                    if (serverHistory.length > 0) {
                                         const lastMsg = serverHistory[serverHistory.length - 1];
                                         if (lastMsg.role === 'assistant') {
-                                            lastMsg.toolsUsed = toolsUsedThisResponse;
+                                            if (toolsUsedThisResponse.length > 0) {
+                                                lastMsg.toolsUsed = toolsUsedThisResponse;
+                                            }
+                                            if (sourcesThisResponse.length > 0) {
+                                                lastMsg.sources = sourcesThisResponse;
+                                            }
                                         }
                                     }
                                     return serverHistory;
@@ -154,12 +186,17 @@ export const useAssistant = () => {
         } finally {
             setIsStreaming(false);
             // Ensure final message has all tools permanently attached
-            if (toolsUsedThisResponse.length > 0) {
+            if (toolsUsedThisResponse.length > 0 || sourcesThisResponse.length > 0) {
                 setHistory(prev => {
                     const newHistory = [...prev];
                     const last = newHistory[newHistory.length - 1];
                     if (last && last.role === 'assistant') {
-                        last.toolsUsed = [...toolsUsedThisResponse];
+                        if (toolsUsedThisResponse.length > 0) {
+                            last.toolsUsed = [...toolsUsedThisResponse];
+                        }
+                        if (sourcesThisResponse.length > 0) {
+                            last.sources = [...sourcesThisResponse];
+                        }
                     }
                     return newHistory;
                 });
