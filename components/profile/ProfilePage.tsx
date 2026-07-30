@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useGraphQLUser, useGraphQLUpdateUser } from "@/lib/api/graphqlHooks";
 import { useUpdateUser as useRestUpdateUser } from "@/lib/api/hooks"; // Keep REST for image upload if needed
 import { useToast } from "@/components/common/ToastProvider";
@@ -9,13 +10,15 @@ import { PersonalTab } from "./PersonalTab";
 import { EmploymentTab } from "./EmploymentTab";
 import { FinancialTab } from "./FinancialTab";
 import { SecurityTab } from "./SecurityTab";
+import { IntegrationsTab } from "./IntegrationsTab";
 import { UserFormData } from "./types";
 import { userProfileSchema } from "@/lib/schemas";
 import { z } from "zod";
 import { Button } from "../ui/button";
-import { Briefcase, DollarSign, IndianRupee, Loader2, Lock, User } from "lucide-react";
+import { Briefcase, Calendar, IndianRupee, Loader2, Lock, User } from "lucide-react";
 
 export default function ProfilePage() {
+  const searchParams = useSearchParams();
   const { user, isLoading: isUserLoading, error: userError, refetch: refetchUser } = useGraphQLUser();
   const { updateUserAsync: updateGraphQLUser, isLoading: isUpdatingGraphQL } =
     useGraphQLUpdateUser();
@@ -27,6 +30,13 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<Partial<UserFormData>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const tab = searchParams?.get("tab");
+    if (tab && ["personal", "employment", "financial", "security", "integrations"].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   // Initialize form data when user data loads
   useEffect(() => {
@@ -62,6 +72,7 @@ export default function ProfilePage() {
     { id: "employment", label: "Employment", icon: <Briefcase /> },
     { id: "financial", label: "Financial", icon: <IndianRupee /> },
     { id: "security", label: "Security", icon: <Lock /> },
+    { id: "integrations", label: "Integrations", icon: <Calendar /> },
   ];
 
   const handleInputChange = (field: keyof UserFormData, value: string) => {
@@ -278,9 +289,10 @@ export default function ProfilePage() {
         )}
 
         {activeTab === "security" && <SecurityTab />}
+        {activeTab === "integrations" && <IntegrationsTab />}
       </div>
 
-      {isEditing && activeTab !== "security" && (
+      {isEditing && activeTab !== "security" && activeTab !== "integrations" && (
         <div className="p-4 sm:p-5 rounded-xl border border-border bg-card flex flex-col sm:flex-row justify-end items-center gap-3 sticky bottom-4 z-20 mx-2 sm:mx-0">
           <Button
             onClick={handleCancel}
