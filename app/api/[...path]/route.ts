@@ -47,10 +47,24 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
             method,
             headers: forwardedHeaders,
             body,
+            // Do not follow redirects — OAuth (e.g. Google Calendar connect) must
+            // return 302 Location to the browser, not Google's HTML via this proxy.
+            redirect: 'manual',
             // Required for streaming: don't buffer the response body
             // @ts-ignore - duplex is required for streaming but not in all TS type defs
             duplex: 'half',
         });
+
+        // Pass OAuth / API redirects through to the browser
+        if ([301, 302, 303, 307, 308].includes(djangoResponse.status)) {
+            const location = djangoResponse.headers.get('location');
+            if (location) {
+                return NextResponse.redirect(
+                    location,
+                    djangoResponse.status as 301 | 302 | 303 | 307 | 308
+                );
+            }
+        }
 
         const responseHeaders = new Headers();
         djangoResponse.headers.forEach((value, key) => {

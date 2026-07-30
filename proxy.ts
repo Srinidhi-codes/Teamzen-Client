@@ -5,7 +5,7 @@ export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl
 
     // Public marketing pages — never force auth
-    const publicExact = ['/', '/forgot-password', '/reset-password']
+    const publicExact = ['/', '/forgot-password', '/reset-password', '/privacy']
     if (publicExact.includes(pathname)) {
         return NextResponse.next()
     }

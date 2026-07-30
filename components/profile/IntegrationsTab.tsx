@@ -16,16 +16,28 @@ type Status = {
 export function IntegrationsTab() {
   const { success, error } = useToast();
   const [status, setStatus] = useState<Status | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const { data } = await client.get("/integrations/google/calendar/status/");
       setStatus(data);
-    } catch {
+    } catch (err: any) {
       setStatus(null);
+      const code = err?.response?.status;
+      if (code === 401) {
+        setLoadError("Please sign in again to manage calendar sync.");
+      } else if (code === 404) {
+        setLoadError(
+          "Calendar API not found on this server. Redeploy backend with Sequence 6, or point the app at local Django."
+        );
+      } else {
+        setLoadError("Could not reach the calendar status API. Check that the backend is running.");
+      }
     } finally {
       setLoading(false);
     }
@@ -49,7 +61,6 @@ export function IntegrationsTab() {
   }, []);
 
   const handleConnect = () => {
-    // Full navigation so OAuth cookies/redirect work
     window.location.href = "/api/integrations/google/calendar/connect/";
   };
 
@@ -90,10 +101,21 @@ export function IntegrationsTab() {
         </div>
       </div>
 
-      {!status?.configured ? (
+      {loadError ? (
+        <div className="space-y-2">
+          <p className="text-sm text-destructive">{loadError}</p>
+          <Button variant="outline" size="sm" onClick={load}>
+            Retry
+          </Button>
+        </div>
+      ) : !status?.configured ? (
         <p className="text-sm text-muted-foreground">
-          Calendar sync is not configured on this server. Ask an admin to set{" "}
-          <code className="text-xs">GOOGLE_CALENDAR_*</code> env vars.
+          Calendar sync is not configured on this API server. Add{" "}
+          <code className="text-xs">GOOGLE_CALENDAR_CLIENT_ID</code>,{" "}
+          <code className="text-xs">GOOGLE_CALENDAR_CLIENT_SECRET</code>, and{" "}
+          <code className="text-xs">GOOGLE_CALENDAR_REDIRECT_URI</code> to the{" "}
+          <strong>backend</strong> environment (local <code className="text-xs">.env</code> or
+          Render), then restart.
         </p>
       ) : status.connected ? (
         <div className="flex flex-wrap items-center gap-3">
@@ -115,10 +137,19 @@ export function IntegrationsTab() {
           </Button>
         </div>
       ) : (
-        <Button size="sm" onClick={handleConnect}>
-          <Link2 className="h-4 w-4" />
-          Connect Google Calendar
-        </Button>
+        <div className="space-y-2">
+          <Button size="sm" onClick={handleConnect}>
+            <Link2 className="h-4 w-4" />
+            Connect Google Calendar
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            By connecting, you agree to our{" "}
+            <a href="/privacy" className="underline underline-offset-2 hover:text-foreground">
+              Privacy Policy
+            </a>
+            .
+          </p>
+        </div>
       )}
     </div>
   );

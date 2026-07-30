@@ -443,13 +443,10 @@ export function LandingPage() {
             </span>
           </div>
           <div className="flex gap-6 text-sm text-muted-foreground">
-            <a href="#" className="hover:text-foreground">
+            <Link href="/privacy" className="hover:text-foreground">
               Privacy
-            </a>
-            <a href="#" className="hover:text-foreground">
-              Terms
-            </a>
-            <a href="#" className="hover:text-foreground">
+            </Link>
+            <a href={`mailto:connectifyappmails@gmail.com`} className="hover:text-foreground">
               Contact
             </a>
           </div>
