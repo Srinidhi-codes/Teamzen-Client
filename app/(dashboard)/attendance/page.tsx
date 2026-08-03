@@ -71,7 +71,8 @@ export default function AttendancePage() {
   const [pendingCoords, setPendingCoords] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const faceEnabled = !!user?.organization?.faceAttendanceEnabled;
-  const faceEnrolled = !!user?.faceEnrolled;
+  const faceEnrolled =
+    !!user?.faceEnrolled && Array.isArray(user?.faceDescriptor) && user.faceDescriptor.length === 128;
   const enrolledDescriptor = (user as any)?.faceDescriptor as number[] | undefined;
 
   const getDistanceKM = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -224,7 +225,7 @@ export default function AttendancePage() {
 
   const completePunchWithFace = async (
     type: "in" | "out",
-    result: { matchScore: number; verified: boolean; imageBase64: string }
+    result: { matchScore: number; verified: boolean; imageBase64: string; descriptor: number[] }
   ) => {
     const coords = pendingCoords || currentCoords || (await getLocationAsync());
     try {
@@ -236,6 +237,7 @@ export default function AttendancePage() {
           loginTime: format(new Date(), "HH:mm:ss"),
           faceVerified: result.verified,
           faceMatchScore: result.matchScore,
+          faceDescriptor: result.descriptor,
         });
         const id = data?.checkIn?.id;
         if (id) await uploadSelfie(String(id), "check_in", result.imageBase64);
@@ -247,6 +249,7 @@ export default function AttendancePage() {
           logoutTime: format(new Date(), "HH:mm:ss"),
           faceVerified: result.verified,
           faceMatchScore: result.matchScore,
+          faceDescriptor: result.descriptor,
         });
         const id = data?.checkOut?.id;
         if (id) await uploadSelfie(String(id), "check_out", result.imageBase64);

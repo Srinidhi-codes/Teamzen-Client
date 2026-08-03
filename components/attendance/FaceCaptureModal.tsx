@@ -5,14 +5,14 @@ import { Camera, Loader2, ScanFace, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  captureFrameImageData,
-  canvasToJpegDataUrl,
-  cosineSimilarity,
-  extractDescriptorFromImageData,
+  captureJpegFromVideo,
+  distanceToSimilarity,
+  euclideanDistance,
+  extractFaceDescriptor,
   isFaceMatch,
-  looksLikeFaceFrame,
+  loadFaceModels,
+  FACE_DISTANCE_THRESHOLD,
 } from "@/lib/face/descriptor";
-import { FACE_MATCH_THRESHOLD } from "@/lib/face/constants";
 
 type Mode = "enroll" | "verify";
 
@@ -43,6 +43,7 @@ export function FaceCaptureModal({
   const streamRef = useRef<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [modelsLoading, setModelsLoading] = useState(false);
   const [hint, setHint] = useState("Center your face in the circle");
 
   const stopCamera = useCallback(() => {
@@ -57,8 +58,11 @@ export function FaceCaptureModal({
     }
     let cancelled = false;
     setError(null);
+    setModelsLoading(true);
     (async () => {
       try {
+        await loadFaceModels();
+        if (cancelled) return;
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
           audio: false,
@@ -72,8 +76,14 @@ export function FaceCaptureModal({
           videoRef.current.srcObject = stream;
           await videoRef.current.play();
         }
-      } catch {
-        setError("Camera permission denied or unavailable. Allow camera access and retry.");
+      } catch (e: any) {
+        setError(
+          e?.message?.includes("face") || e?.message?.includes("model")
+            ? "Could not load face models. Check your connection and retry."
+            : "Camera permission denied or unavailable. Allow camera access and retry."
+        );
+      } finally {
+        if (!cancelled) setModelsLoading(false);
       }
     })();
     return () => {
@@ -92,24 +102,19 @@ export function FaceCaptureModal({
     setBusy(true);
     setError(null);
     try {
-      const imageData = captureFrameImageData(video, canvas, { cropCenter: true });
-      if (!looksLikeFaceFrame(imageData)) {
-        setHint("Move closer and ensure your face is well lit");
-        setError("No clear face detected. Adjust lighting and try again.");
-        return;
-      }
-      const descriptor = extractDescriptorFromImageData(imageData);
-      const imageBase64 = canvasToJpegDataUrl(canvas);
+      const { descriptor } = await extractFaceDescriptor(video);
+      const imageBase64 = captureJpegFromVideo(video, canvas);
 
       if (mode === "verify") {
         if (!enrolledDescriptor?.length) {
           setError("No enrolled face found. Please enroll first.");
           return;
         }
-        const matchScore = cosineSimilarity(descriptor, enrolledDescriptor);
-        if (!isFaceMatch(matchScore)) {
+        const distance = euclideanDistance(descriptor, enrolledDescriptor);
+        const matchScore = distanceToSimilarity(distance);
+        if (!isFaceMatch(distance)) {
           setError(
-            `Face did not match (score ${matchScore.toFixed(2)}, need ≥ ${FACE_MATCH_THRESHOLD}). Try again.`
+            `Face did not match (distance ${distance.toFixed(2)}, need ≤ ${FACE_DISTANCE_THRESHOLD}). Try again.`
           );
           return;
         }
@@ -124,6 +129,7 @@ export function FaceCaptureModal({
       }
       stopCamera();
     } catch (e: any) {
+      setHint("Hold still, face the camera, and ensure good lighting");
       setError(e?.message || "Capture failed");
     } finally {
       setBusy(false);
@@ -162,6 +168,11 @@ export function FaceCaptureModal({
               className={cn("h-full w-full scale-x-[-1] object-cover")}
             />
             <div className="pointer-events-none absolute inset-4 rounded-full border border-white/40" />
+            {modelsLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                <Loader2 className="h-6 w-6 animate-spin text-white" />
+              </div>
+            )}
           </div>
           <canvas ref={canvasRef} className="hidden" />
           <p className="text-center text-xs text-muted-foreground">{hint}</p>
@@ -185,7 +196,12 @@ export function FaceCaptureModal({
           >
             Cancel
           </Button>
-          <Button type="button" className="w-full gap-2 sm:w-auto" onClick={capture} disabled={busy}>
+          <Button
+            type="button"
+            className="w-full gap-2 sm:w-auto"
+            onClick={capture}
+            disabled={busy || modelsLoading}
+          >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
             {mode === "enroll" ? "Capture & enroll" : "Verify & continue"}
           </Button>

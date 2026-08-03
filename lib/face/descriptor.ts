@@ -1,123 +1,120 @@
-import { BLOCK, DESCRIPTOR_SIZE, FACE_MATCH_THRESHOLD } from "./constants";
+import * as faceapi from "@vladmandic/face-api";
+import {
+  FACE_DESCRIPTOR_DIM,
+  FACE_DISTANCE_THRESHOLD,
+  FACE_MATCH_THRESHOLD,
+  FACE_MODELS_URL,
+} from "./constants";
+
+let modelsReady: Promise<void> | null = null;
+
+/** Load tiny face detector + landmarks + FaceNet recognition (once). */
+export function loadFaceModels(): Promise<void> {
+  if (!modelsReady) {
+    modelsReady = (async () => {
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(FACE_MODELS_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(FACE_MODELS_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(FACE_MODELS_URL),
+      ]);
+    })().catch((err) => {
+      modelsReady = null;
+      throw err;
+    });
+  }
+  return modelsReady;
+}
+
+export function euclideanDistance(a: number[], b: number[]): number {
+  if (!a?.length || !b?.length || a.length !== b.length) return Number.POSITIVE_INFINITY;
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) {
+    const d = a[i] - b[i];
+    sum += d * d;
+  }
+  return Math.sqrt(sum);
+}
+
+export function distanceToSimilarity(distance: number): number {
+  return Math.max(0, 1 - distance);
+}
+
+export function isFaceMatch(distance: number): boolean {
+  return distance <= FACE_DISTANCE_THRESHOLD;
+}
+
+export { FACE_DESCRIPTOR_DIM, FACE_DISTANCE_THRESHOLD, FACE_MATCH_THRESHOLD };
 
 /**
- * Shared client face descriptor (web + mobile).
- * Grayscale 64×64 → 8×8 block means + 32-bin histogram, L2-normalized.
- * Not a deep face embedding — good enough for v1 selfie match without cloud APIs.
+ * Detect a single frontal face and return FaceNet 128-d descriptor.
+ * Rejects no-face / multi-face frames.
  */
-export function extractDescriptorFromImageData(imageData: ImageData): number[] {
-  const { data, width, height } = imageData;
-  const gray = new Float32Array(width * height);
-  for (let i = 0, p = 0; i < data.length; i += 4, p++) {
-    gray[p] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+export async function extractFaceDescriptor(
+  input: HTMLVideoElement | HTMLCanvasElement | HTMLImageElement
+): Promise<{ descriptor: number[]; detectionScore: number }> {
+  await loadFaceModels();
+
+  const options = new faceapi.TinyFaceDetectorOptions({
+    inputSize: 320,
+    scoreThreshold: 0.5,
+  });
+
+  const detections = await faceapi
+    .detectAllFaces(input, options)
+    .withFaceLandmarks()
+    .withFaceDescriptors();
+
+  if (!detections.length) {
+    throw new Error("No face detected. Center your face and improve lighting.");
+  }
+  if (detections.length > 1) {
+    throw new Error("Multiple faces detected. Only one person should be in frame.");
   }
 
-  // Resize to DESCRIPTOR_SIZE² via nearest neighbor into square
-  const size = DESCRIPTOR_SIZE;
-  const resized = new Float32Array(size * size);
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const sx = Math.min(width - 1, Math.floor((x / size) * width));
-      const sy = Math.min(height - 1, Math.floor((y / size) * height));
-      resized[y * size + x] = gray[sy * width + sx];
-    }
+  const best = detections[0];
+  const box = best.detection.box;
+  const minSide = Math.min(
+    input instanceof HTMLVideoElement
+      ? input.videoWidth
+      : input instanceof HTMLImageElement
+        ? input.naturalWidth
+        : input.width,
+    input instanceof HTMLVideoElement
+      ? input.videoHeight
+      : input instanceof HTMLImageElement
+        ? input.naturalHeight
+        : input.height
+  );
+  // Require face to occupy a reasonable portion of the frame (anti spoof-lite / distance)
+  if (box.width < minSide * 0.18 || box.height < minSide * 0.18) {
+    throw new Error("Move closer so your face fills more of the circle.");
   }
 
-  const blockMeans: number[] = [];
-  const cell = size / BLOCK;
-  for (let by = 0; by < BLOCK; by++) {
-    for (let bx = 0; bx < BLOCK; bx++) {
-      let sum = 0;
-      let count = 0;
-      const y0 = Math.floor(by * cell);
-      const x0 = Math.floor(bx * cell);
-      const y1 = Math.floor((by + 1) * cell);
-      const x1 = Math.floor((bx + 1) * cell);
-      for (let y = y0; y < y1; y++) {
-        for (let x = x0; x < x1; x++) {
-          sum += resized[y * size + x];
-          count++;
-        }
-      }
-      blockMeans.push(count ? sum / count / 255 : 0);
-    }
+  const descriptor = Array.from(best.descriptor);
+  if (descriptor.length !== FACE_DESCRIPTOR_DIM) {
+    throw new Error("Face model returned an unexpected descriptor. Please retry.");
   }
 
-  const hist = new Array(32).fill(0);
-  for (let i = 0; i < resized.length; i++) {
-    const bin = Math.min(31, Math.floor(resized[i] / 8));
-    hist[bin] += 1;
-  }
-  const histNorm = hist.map((v) => v / resized.length);
-
-  return l2Normalize([...blockMeans, ...histNorm]);
+  return {
+    descriptor,
+    detectionScore: best.detection.score,
+  };
 }
 
-export function l2Normalize(vec: number[]): number[] {
-  let sumSq = 0;
-  for (const v of vec) sumSq += v * v;
-  const norm = Math.sqrt(sumSq) || 1;
-  return vec.map((v) => v / norm);
-}
-
-export function cosineSimilarity(a: number[], b: number[]): number {
-  if (!a?.length || !b?.length || a.length !== b.length) return 0;
-  let dot = 0;
-  for (let i = 0; i < a.length; i++) dot += a[i] * b[i];
-  return dot;
-}
-
-export function isFaceMatch(score: number): boolean {
-  return score >= FACE_MATCH_THRESHOLD;
-}
-
-/** Draw video/image into canvas, optionally crop center oval region, return ImageData. */
-export function captureFrameImageData(
-  source: HTMLVideoElement | HTMLCanvasElement | HTMLImageElement,
+/** Snapshot video to JPEG data URL for audit upload. */
+export function captureJpegFromVideo(
+  video: HTMLVideoElement,
   canvas: HTMLCanvasElement,
-  opts?: { cropCenter?: boolean }
-): ImageData {
-  const crop = opts?.cropCenter !== false;
-  const sw =
-    source instanceof HTMLVideoElement
-      ? source.videoWidth
-      : source instanceof HTMLImageElement
-        ? source.naturalWidth
-        : source.width;
-  const sh =
-    source instanceof HTMLVideoElement
-      ? source.videoHeight
-      : source instanceof HTMLImageElement
-        ? source.naturalHeight
-        : source.height;
-
-  const side = Math.min(sw, sh);
-  const sx = crop ? (sw - side) / 2 : 0;
-  const sy = crop ? (sh - side) / 2 : 0;
-
-  canvas.width = DESCRIPTOR_SIZE;
-  canvas.height = DESCRIPTOR_SIZE;
-  const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
-  ctx.drawImage(source, sx, sy, side, side, 0, 0, DESCRIPTOR_SIZE, DESCRIPTOR_SIZE);
-  return ctx.getImageData(0, 0, DESCRIPTOR_SIZE, DESCRIPTOR_SIZE);
-}
-
-export function canvasToJpegDataUrl(canvas: HTMLCanvasElement, quality = 0.85): string {
+  quality = 0.85
+): string {
+  const w = video.videoWidth;
+  const h = video.videoHeight;
+  const side = Math.min(w, h);
+  const sx = (w - side) / 2;
+  const sy = (h - side) / 2;
+  canvas.width = 320;
+  canvas.height = 320;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(video, sx, sy, side, side, 0, 0, 320, 320);
   return canvas.toDataURL("image/jpeg", quality);
-}
-
-/** Basic brightness / variance check so blank frames are rejected. */
-export function looksLikeFaceFrame(imageData: ImageData): boolean {
-  const { data } = imageData;
-  let sum = 0;
-  let sumSq = 0;
-  const n = data.length / 4;
-  for (let i = 0; i < data.length; i += 4) {
-    const g = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-    sum += g;
-    sumSq += g * g;
-  }
-  const mean = sum / n;
-  const variance = sumSq / n - mean * mean;
-  return mean > 25 && mean < 240 && variance > 200;
 }

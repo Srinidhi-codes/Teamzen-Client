@@ -76,6 +76,7 @@ export function useAttendanceMutations() {
         loginTime: string;
         faceVerified?: boolean;
         faceMatchScore?: number;
+        faceDescriptor?: number[];
     }) => {
         const response = await checkInMutation({
         variables: { input },
@@ -90,6 +91,7 @@ export function useAttendanceMutations() {
         logoutTime: string;
         faceVerified?: boolean;
         faceMatchScore?: number;
+        faceDescriptor?: number[];
     }) => {
         const response = await checkOutMutation({
         variables: { input },
