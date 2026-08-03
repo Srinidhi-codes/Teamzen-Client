@@ -13,6 +13,12 @@ const nextConfig: NextConfig = {
         ignored: ['**/node_modules/**', '**/.next/**', '**/.git/**'],
       };
     }
+    // face-api / tfjs use dynamic requires; silence noisy critical-dependency warnings
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      { module: /@vladmandic\/face-api/ },
+      { module: /@tensorflow\/tfjs/ },
+    ];
     return config;
   },
   images: {

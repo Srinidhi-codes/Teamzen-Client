@@ -118,10 +118,15 @@ export function FaceCaptureModal({
           );
           return;
         }
-        await onSuccess({ descriptor, matchScore, verified: true, imageBase64 });
+        await onSuccess({
+          descriptor: [...descriptor],
+          matchScore,
+          verified: true,
+          imageBase64,
+        });
       } else {
         await onSuccess({
-          descriptor,
+          descriptor: [...descriptor],
           matchScore: 1,
           verified: true,
           imageBase64,
