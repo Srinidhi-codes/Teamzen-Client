@@ -18,6 +18,9 @@ export const GET_ATTENDANCE = gql`
     isVerified
     workedHours
     status
+    faceVerified
+    faceMatchScore
+    isWithinGeofence
     correctionStatus
     correctionId
     correctionReason

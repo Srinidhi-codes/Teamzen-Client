@@ -26,6 +26,7 @@ export interface GraphQLUser {
     accent?: string | null;
     plan?: string | null;
     planExpiresAt?: string | null;
+    faceAttendanceEnabled?: boolean;
     logo?: {
       url: string;
     } | null;
@@ -57,6 +58,10 @@ export interface GraphQLUser {
     loginTime: string;
     logoutTime: string;
   } | null;
+
+  faceEnrolled?: boolean;
+  faceDescriptor?: number[] | null;
+  faceEnrolledAt?: string | null;
 
   bankAccountNumber?: string | null;
   bankIfscCode?: string | null;
