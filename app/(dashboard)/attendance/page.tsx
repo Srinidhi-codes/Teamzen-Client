@@ -186,21 +186,6 @@ export default function AttendancePage() {
       setCurrentCoords(coords);
 
       if (faceEnabled) {
-        const office = user?.officeLocation;
-        if (office?.latitude && office?.longitude) {
-          const km = getDistanceKM(
-            coords.latitude,
-            coords.longitude,
-            Number(office.latitude),
-            Number(office.longitude)
-          );
-          if (km * 1000 > Number(office.geoRadiusMeters || 100)) {
-            toast.error(
-              `You are outside the office geofence (${Math.round(km * 1000)}m away). Move closer to punch.`
-            );
-            return;
-          }
-        }
         if (!faceEnrolled) {
           toast.message("Enroll your face first to punch attendance.");
           setFaceModal("enroll");
@@ -317,7 +302,7 @@ export default function AttendancePage() {
               </p>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 {faceEnrolled
-                  ? "Check-in/out requires face verification and being inside the office geofence."
+                  ? "Check-in/out requires face verification. Location is still recorded and flagged if outside the geofence."
                   : "Enroll your face once before you can punch attendance."}
               </p>
             </div>
