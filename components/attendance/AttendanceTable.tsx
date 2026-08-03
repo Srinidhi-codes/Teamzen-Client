@@ -9,12 +9,18 @@ export type AttendanceRow = {
     attendanceDate: string;
     loginTime?: string | null;
     logoutTime?: string | null;
+    actualLoginTime?: string | null;
+    actualLogoutTime?: string | null;
     status: string;
     correctionStatus?: string;
     correctionId?: string;
     workedHours?: string | number | null;
     correctionReason?: string;
     approvalComment?: string;
+    faceVerified?: boolean;
+    faceMatchScore?: number | null;
+    checkInSelfieUrl?: string | null;
+    checkOutSelfieUrl?: string | null;
 };
 
 const STATUS_CONFIG: Record<string, { label: string; variant: "success" | "warning" | "danger" | "info" }> = {

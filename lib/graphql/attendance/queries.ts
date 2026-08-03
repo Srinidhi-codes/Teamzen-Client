@@ -21,6 +21,8 @@ export const GET_ATTENDANCE = gql`
     faceVerified
     faceMatchScore
     isWithinGeofence
+    checkInSelfieUrl
+    checkOutSelfieUrl
     correctionStatus
     correctionId
     correctionReason

@@ -22,6 +22,10 @@ export interface AttendanceRecord {
   correctionId?: string;
   correctionReason?: string;
   approvalComment?: string;
+  faceVerified?: boolean;
+  faceMatchScore?: number | null;
+  checkInSelfieUrl?: string | null;
+  checkOutSelfieUrl?: string | null;
 }
 
 export interface AttendanceCorrection {
