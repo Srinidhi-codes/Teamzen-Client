@@ -48,7 +48,11 @@ export const GET_ME = gql`
           url
         }
         accent
+        faceAttendanceEnabled
       }
+      faceEnrolled
+      faceDescriptor
+      faceEnrolledAt
       bankAccountNumber
       bankIfscCode
       panNumber

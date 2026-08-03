@@ -22,10 +22,14 @@ import { Card } from "@/components/common/Card";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store/useStore";
+import { useGraphQLUser } from "@/lib/api/graphqlHooks";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { PageHeader } from "@/components/common/PageHeader";
+import { FaceCaptureModal } from "@/components/attendance/FaceCaptureModal";
+import axios from "axios";
+import { ScanFace } from "lucide-react";
 
 const AttendanceMap = dynamic(() => import("@/components/attendance/AttendanceMap"), {
   ssr: false,
@@ -51,8 +55,10 @@ function formatWorkedDuration(attendanceDate: string, loginTime: string): string
 }
 
 export default function AttendancePage() {
-  const { checkIn, checkOut, checkInLoading, checkOutLoading } = useAttendanceMutations();
+  const { checkIn, checkOut, checkInLoading, checkOutLoading, enrollFace, enrollFaceLoading } =
+    useAttendanceMutations();
   const { attendance: attendanceData, isLoading } = useGraphQlAttendance();
+  const { refetch: refetchMe } = useGraphQLUser();
   const router = useRouter();
   const { user } = useStore();
 
@@ -61,6 +67,12 @@ export default function AttendancePage() {
   const [isLocating, setIsLocating] = useState(false);
   const [mapTab, setMapTab] = useState<"live" | "checkin" | "checkout">("live");
   const [showMap, setShowMap] = useState(false);
+  const [faceModal, setFaceModal] = useState<"enroll" | "verify-in" | "verify-out" | null>(null);
+  const [pendingCoords, setPendingCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  const faceEnabled = !!user?.organization?.faceAttendanceEnabled;
+  const faceEnrolled = !!user?.faceEnrolled;
+  const enrolledDescriptor = (user as any)?.faceDescriptor as number[] | undefined;
 
   const getDistanceKM = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
     const R = 6371; // Radius of the earth in km
@@ -140,24 +152,126 @@ export default function AttendancePage() {
     });
   };
 
-  const handleAction = async (type: 'in' | 'out') => {
+  const isWithinGeofenceNow = (): boolean => {
+    const office = user?.officeLocation;
+    if (!office?.latitude || !office?.longitude || !currentCoords) return false;
+    const km = getDistanceKM(
+      currentCoords.latitude,
+      currentCoords.longitude,
+      Number(office.latitude),
+      Number(office.longitude)
+    );
+    return km * 1000 <= Number(office.geoRadiusMeters || 100);
+  };
+
+  const uploadSelfie = async (recordId: string, kind: "check_in" | "check_out", imageBase64: string) => {
     try {
-      const { latitude, longitude } = await getLocationAsync();
-      if (type === 'in') {
+      const blob = await (await fetch(imageBase64)).blob();
+      const form = new FormData();
+      form.append("attendance_record_id", recordId);
+      form.append("kind", kind);
+      form.append("selfie", blob, `${kind}.jpg`);
+      await axios.post("/api/attendance/selfie/", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+        withCredentials: true,
+      });
+    } catch {
+      // Non-blocking — punch already succeeded
+    }
+  };
+
+  const handleAction = async (type: "in" | "out") => {
+    try {
+      const coords = await getLocationAsync();
+      setCurrentCoords(coords);
+
+      if (faceEnabled) {
+        const office = user?.officeLocation;
+        if (office?.latitude && office?.longitude) {
+          const km = getDistanceKM(
+            coords.latitude,
+            coords.longitude,
+            Number(office.latitude),
+            Number(office.longitude)
+          );
+          if (km * 1000 > Number(office.geoRadiusMeters || 100)) {
+            toast.error(
+              `You are outside the office geofence (${Math.round(km * 1000)}m away). Move closer to punch.`
+            );
+            return;
+          }
+        }
+        if (!faceEnrolled) {
+          toast.message("Enroll your face first to punch attendance.");
+          setFaceModal("enroll");
+          return;
+        }
+        setPendingCoords(coords);
+        setFaceModal(type === "in" ? "verify-in" : "verify-out");
+        return;
+      }
+
+      if (type === "in") {
         await checkIn({
-          latitude,
-          longitude,
-          officeLocationId: user?.officeLocation?.id || "2",
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          officeLocationId: user?.officeLocation?.id || "",
           loginTime: format(new Date(), "HH:mm:ss"),
         });
         toast.success("Checked in successfully.");
       } else {
-        await checkOut({ latitude, longitude, logoutTime: format(new Date(), "HH:mm:ss") });
+        await checkOut({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          logoutTime: format(new Date(), "HH:mm:ss"),
+        });
         toast.success("Checked out successfully.");
       }
       requestCurrentLocation();
     } catch (error) {
-      toast.error(typeof error === "string" ? error : (error as any)?.message || "Location verification failed");
+      toast.error(
+        typeof error === "string"
+          ? error
+          : (error as any)?.message || "Location verification failed"
+      );
+    }
+  };
+
+  const completePunchWithFace = async (
+    type: "in" | "out",
+    result: { matchScore: number; verified: boolean; imageBase64: string }
+  ) => {
+    const coords = pendingCoords || currentCoords || (await getLocationAsync());
+    try {
+      if (type === "in") {
+        const data: any = await checkIn({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          officeLocationId: user?.officeLocation?.id || "",
+          loginTime: format(new Date(), "HH:mm:ss"),
+          faceVerified: result.verified,
+          faceMatchScore: result.matchScore,
+        });
+        const id = data?.checkIn?.id;
+        if (id) await uploadSelfie(String(id), "check_in", result.imageBase64);
+        toast.success("Checked in with face verification.");
+      } else {
+        const data: any = await checkOut({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          logoutTime: format(new Date(), "HH:mm:ss"),
+          faceVerified: result.verified,
+          faceMatchScore: result.matchScore,
+        });
+        const id = data?.checkOut?.id;
+        if (id) await uploadSelfie(String(id), "check_out", result.imageBase64);
+        toast.success("Checked out with face verification.");
+      }
+      setFaceModal(null);
+      setPendingCoords(null);
+      requestCurrentLocation();
+    } catch (error: any) {
+      toast.error(error?.message || "Attendance punch failed");
     }
   };
 
@@ -191,6 +305,63 @@ export default function AttendancePage() {
             Request correction
           </Button>
         }
+      />
+
+      {faceEnabled && (
+        <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <ScanFace className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+            <div>
+              <p className="text-sm font-medium">
+                Face attendance {faceEnrolled ? "enrolled" : "required"}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {faceEnrolled
+                  ? "Check-in/out requires face verification and being inside the office geofence."
+                  : "Enroll your face once before you can punch attendance."}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            className="h-9 w-full sm:w-auto"
+            disabled={enrollFaceLoading}
+            onClick={() => setFaceModal("enroll")}
+          >
+            {faceEnrolled ? "Re-enroll face" : "Enroll face"}
+          </Button>
+        </div>
+      )}
+
+      <FaceCaptureModal
+        open={faceModal !== null}
+        mode={faceModal === "enroll" ? "enroll" : "verify"}
+        enrolledDescriptor={enrolledDescriptor}
+        onClose={() => {
+          setFaceModal(null);
+          setPendingCoords(null);
+        }}
+        onSuccess={async (result) => {
+          if (faceModal === "enroll") {
+            const res = await enrollFace({
+              descriptor: result.descriptor,
+              imageBase64: result.imageBase64,
+            });
+            if (res?.error) {
+              toast.error(res.error);
+              return;
+            }
+            toast.success("Face enrolled successfully.");
+            setFaceModal(null);
+            await refetchMe();
+            return;
+          }
+          if (faceModal === "verify-in") {
+            await completePunchWithFace("in", result);
+          } else if (faceModal === "verify-out") {
+            await completePunchWithFace("out", result);
+          }
+        }}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">

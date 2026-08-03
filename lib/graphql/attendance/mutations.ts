@@ -6,6 +6,9 @@ export const CHECK_IN = gql`
       id
       loginTime
       status
+      faceVerified
+      faceMatchScore
+      isWithinGeofence
     }
   }
 `;
@@ -16,6 +19,24 @@ export const CHECK_OUT = gql`
       id
       logoutTime
       status
+      faceVerified
+      faceMatchScore
+      isWithinGeofence
+    }
+  }
+`;
+
+export const ENROLL_FACE = gql`
+  mutation EnrollFace($input: EnrollFaceInput!) {
+    enrollFace(input: $input) {
+      success
+      error
+      user {
+        id
+        faceEnrolled
+        faceDescriptor
+        faceEnrolledAt
+      }
     }
   }
 `;
