@@ -23,12 +23,17 @@ export const mapBackendUserToFrontendUser = (backendUser: any): GraphQLUser => {
             id: backendUser.organization.id || backendUser.organization,
             name: backendUser.organization.name || backendUser.organization_name || "Unknown Organization",
             accent: backendUser.organization.accent || backendUser.organization_accent || "teal",
-            logo: backendUser.organization.logo || null,
+            plan: backendUser.organization.plan,
+            planExpiresAt: backendUser.organization.planExpiresAt || backendUser.organization.plan_expires_at || null,
+            logo: backendUser.organization.logo?.url
+              ? { url: backendUser.organization.logo.url }
+              : backendUser.organization.logo || null,
           }
         : {
             id: backendUser.organization,
             name: backendUser.organization_name || "Unknown Organization",
             accent: backendUser.organization_accent || "teal",
+            plan: backendUser.organization_plan || backendUser.plan,
           }
     ) : null,
     // Relationships might be objects or IDs depending on serializer depth

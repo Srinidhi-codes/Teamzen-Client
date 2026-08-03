@@ -24,6 +24,8 @@ export interface GraphQLUser {
     id: string;
     name: string;
     accent?: string | null;
+    plan?: string | null;
+    planExpiresAt?: string | null;
     logo?: {
       url: string;
     } | null;

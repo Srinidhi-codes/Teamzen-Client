@@ -34,7 +34,7 @@ const navItems: NavItem[] = [
   { name: "Attendance", href: "/attendance", icon: Clock },
   { name: "Payroll", href: "/payroll", icon: DollarSign },
   { name: "Employees", href: "/employees", icon: Briefcase },
-  { name: "Analytics", href: "/analytics", icon: TrendingUp },
+  { name: "Performance", href: "/performance", icon: TrendingUp },
   { name: "Profile", href: "/profile", icon: UserCircle },
   { name: "Policies", href: "/policies", icon: BookCheck },
   { name: "Notifications", href: "/notifications", icon: Bell },

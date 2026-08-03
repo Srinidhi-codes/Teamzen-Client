@@ -18,6 +18,7 @@ export async function proxy(request: NextRequest) {
         '/payroll',
         '/profile',
         '/analytics',
+        '/performance',
         '/notifications',
         '/team',
         '/policies',
