@@ -98,7 +98,18 @@ export function useAttendanceMutations() {
         return response.data;
     };
 
-    const [enrollFaceMutation, enrollFaceState] = useMutation(ENROLL_FACE);
+    const [enrollFaceMutation, enrollFaceState] = useMutation<{
+        enrollFace: {
+            success: boolean;
+            error?: string | null;
+            user?: {
+                id: string;
+                faceEnrolled: boolean;
+                faceDescriptor?: number[] | null;
+                faceEnrolledAt?: string | null;
+            } | null;
+        };
+    }>(ENROLL_FACE);
 
     const enrollFace = async (input: { descriptor: number[]; imageBase64?: string }) => {
         const response = await enrollFaceMutation({
