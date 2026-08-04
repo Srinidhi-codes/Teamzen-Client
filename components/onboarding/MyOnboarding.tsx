@@ -36,6 +36,7 @@ export default function MyOnboardingPage() {
   const [category, setCategory] = useState("pan");
   const [msg, setMsg] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const signedOfferRef = useRef<HTMLInputElement>(null);
 
   async function uploadDoc(file: File) {
     const form = new FormData();
@@ -47,6 +48,19 @@ export default function MyOnboardingPage() {
       headers: { "Content-Type": "multipart/form-data" },
     });
     setMsg("Document uploaded — awaiting HR verification");
+    refetch();
+  }
+
+  async function uploadSignedOffer(file: File) {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("mark_accepted", "true");
+    if (onboarding?.id) form.append("onboarding_id", onboarding.id);
+    if (acceptedName.trim()) form.append("accepted_name", acceptedName.trim());
+    await client.post("onboarding/offers/signed/upload/", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    setMsg("Signed offer letter uploaded");
     refetch();
   }
 
@@ -121,40 +135,92 @@ export default function MyOnboardingPage() {
       </Card>
       </div>
 
-      {onboarding.offerLetter && onboarding.offerLetter.status !== "accepted" && (
+      {onboarding.offerLetter && (
         <div id="my-onboarding-offer">
         <Card className="space-y-3 p-4">
           <h3 className="font-semibold">Offer letter</h3>
           <p className="text-sm font-medium">{onboarding.offerLetter.subject}</p>
-          <div
-            className="prose prose-sm max-w-none rounded-lg border border-border p-3 text-sm"
-            dangerouslySetInnerHTML={{ __html: onboarding.offerLetter.bodyHtml }}
-          />
-          <div className="flex flex-wrap gap-2">
-            <Input
-              placeholder="Type your full name to accept"
-              value={acceptedName}
-              onChange={(e) => setAcceptedName(e.target.value)}
-              className="max-w-sm"
-            />
-            <Button
-              disabled={loading || acceptedName.trim().length < 2}
-              onClick={async () => {
-                await acceptOffer({
-                  variables: {
-                    input: {
-                      onboardingId: onboarding.id,
-                      acceptedName,
-                    },
-                  },
-                });
-                setMsg("Offer accepted");
-                refetch();
-              }}
+          {onboarding.offerLetter.pdfUrl && (
+            <a
+              href={onboarding.offerLetter.pdfUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex text-sm text-primary underline"
             >
-              Accept offer
-            </Button>
-          </div>
+              Download offer PDF
+            </a>
+          )}
+          {onboarding.offerLetter.signedPdfUrl && (
+            <a
+              href={onboarding.offerLetter.signedPdfUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="ml-3 inline-flex text-sm text-emerald-700 underline"
+            >
+              View signed PDF
+            </a>
+          )}
+          {onboarding.offerLetter.status !== "accepted" && (
+            <>
+              <div
+                className="prose prose-sm max-w-none rounded-lg border border-border p-3 text-sm"
+                dangerouslySetInnerHTML={{ __html: onboarding.offerLetter.bodyHtml }}
+              />
+              <div className="flex flex-wrap gap-2">
+                <Input
+                  placeholder="Type your full name to accept"
+                  value={acceptedName}
+                  onChange={(e) => setAcceptedName(e.target.value)}
+                  className="max-w-sm"
+                />
+                <Button
+                  disabled={loading || acceptedName.trim().length < 2}
+                  onClick={async () => {
+                    await acceptOffer({
+                      variables: {
+                        input: {
+                          onboardingId: onboarding.id,
+                          acceptedName,
+                        },
+                      },
+                    });
+                    setMsg("Offer accepted");
+                    refetch();
+                  }}
+                >
+                  Accept offer
+                </Button>
+              </div>
+            </>
+          )}
+          {onboarding.offerLetter.status === "accepted" && (
+            <p className="text-sm text-emerald-700">Offer accepted.</p>
+          )}
+          {!onboarding.offerLetter.signedPdfUrl && (
+            <div className="rounded-lg border border-dashed border-border p-3">
+              <p className="mb-2 text-sm text-muted-foreground">
+                Upload your signed offer letter (PDF)
+              </p>
+              <input
+                ref={signedOfferRef}
+                type="file"
+                accept="application/pdf,.pdf"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) uploadSignedOffer(f).catch((err) => setMsg(err.message));
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => signedOfferRef.current?.click()}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Upload signed offer
+              </Button>
+            </div>
+          )}
         </Card>
         </div>
       )}

@@ -38,6 +38,8 @@ const PREBOARDING_QUERY = `
         subject
         bodyHtml
         pdfUrl
+        signedPdfUrl
+        signedUploadedAt
         status
         acceptedAt
       }
@@ -74,6 +76,8 @@ type OnboardingSession = {
     subject: string;
     bodyHtml: string;
     pdfUrl?: string;
+    signedPdfUrl?: string;
+    signedUploadedAt?: string;
     status: string;
   } | null;
 };
@@ -90,6 +94,11 @@ async function gqlFetch<T>(query: string, variables: Record<string, unknown>): P
   }
   return json.data;
 }
+
+const fieldClass =
+  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20";
+const cardClass =
+  "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm text-slate-900";
 
 export default function PreboardingPage({
   params,
@@ -112,6 +121,7 @@ export default function PreboardingPage({
     bankIfscCode: "",
   });
   const fileRef = useRef<HTMLInputElement>(null);
+  const signedOfferRef = useRef<HTMLInputElement>(null);
 
   async function load() {
     setLoading(true);
@@ -133,6 +143,20 @@ export default function PreboardingPage({
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    // Public portal should stay light even if the app theme is dark.
+    const root = document.documentElement;
+    const hadDark = root.classList.contains("dark");
+    root.classList.remove("dark");
+    root.style.colorScheme = "light";
+    return () => {
+      if (hadDark) {
+        root.classList.add("dark");
+        root.style.colorScheme = "dark";
+      }
+    };
+  }, []);
 
   useEffect(() => {
     load();
@@ -197,6 +221,22 @@ export default function PreboardingPage({
     load();
   }
 
+  async function uploadSignedOffer(file: File) {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("invite_token", token);
+    form.append("mark_accepted", "true");
+    if (acceptedName.trim()) form.append("accepted_name", acceptedName.trim());
+    const res = await fetch("/api/onboarding/offers/signed/upload/", {
+      method: "POST",
+      body: form,
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || "Signed offer upload failed");
+    setMsg("Signed offer letter uploaded");
+    load();
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen grid place-items-center bg-slate-50 text-slate-600">
@@ -217,7 +257,7 @@ export default function PreboardingPage({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-slate-50">
+    <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-slate-50 text-slate-900">
       <header className="border-b border-emerald-100 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
           <div>
@@ -228,7 +268,7 @@ export default function PreboardingPage({
               Welcome, {session.userName}
             </h1>
           </div>
-          <div className="text-right text-sm text-slate-500">
+          <div className="text-right text-sm text-slate-600">
             <div>{session.progressPct}% complete</div>
             <div>{session.joinDate ? `Join ${session.joinDate}` : ""}</div>
           </div>
@@ -242,11 +282,8 @@ export default function PreboardingPage({
           </div>
         )}
 
-        <section
-          id="preboarding-details"
-          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-        >
-          <h2 className="mb-3 font-semibold text-slate-900">Your details</h2>
+        <section id="preboarding-details" className={cardClass}>
+          <h2 className="mb-3 text-base font-semibold text-slate-900">Your details</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {(
               [
@@ -257,10 +294,10 @@ export default function PreboardingPage({
                 ["bankIfscCode", "IFSC"],
               ] as const
             ).map(([key, label]) => (
-              <label key={key} className="text-sm">
-                <span className="mb-1 block text-slate-500">{label}</span>
+              <label key={key} className="text-sm text-slate-900">
+                <span className="mb-1 block text-slate-600">{label}</span>
                 <input
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                  className={fieldClass}
                   value={profile[key]}
                   onChange={(e) => setProfile({ ...profile, [key]: e.target.value })}
                 />
@@ -270,56 +307,117 @@ export default function PreboardingPage({
           <button
             type="button"
             onClick={() => saveProfile().catch((e) => setError(e.message))}
-            className="mt-4 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white"
+            className="mt-4 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
           >
             Save details
           </button>
         </section>
 
         {session.offerLetter && (
-          <section
-            id="preboarding-offer"
-            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-          >
-            <h2 className="mb-2 font-semibold">Offer letter</h2>
-            <p className="text-sm font-medium text-slate-700">
+          <section id="preboarding-offer" className={cardClass}>
+            <h2 className="mb-2 text-base font-semibold text-slate-900">Offer letter</h2>
+            <p className="text-sm font-medium text-slate-800">
               {session.offerLetter.subject}
             </p>
             <div
-              className="prose prose-sm mt-3 max-w-none rounded-lg border border-slate-100 bg-slate-50 p-3"
+              className="prose prose-sm prose-slate mt-3 max-w-none rounded-lg border border-slate-200 bg-slate-50 p-4 text-slate-800 [&_a]:text-emerald-700 [&_a]:underline [&_p]:text-slate-800 [&_strong]:text-slate-900"
               dangerouslySetInnerHTML={{ __html: session.offerLetter.bodyHtml }}
             />
+            {session.offerLetter.pdfUrl && (
+              <a
+                href={session.offerLetter.pdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-900 hover:bg-emerald-100"
+              >
+                Download offer letter PDF
+              </a>
+            )}
+            {session.offerLetter.signedPdfUrl && (
+              <a
+                href={session.offerLetter.signedPdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 ml-2 inline-flex rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50"
+              >
+                View signed PDF
+              </a>
+            )}
             {session.offerLetter.status !== "accepted" ? (
-              <div className="mt-4 flex flex-wrap gap-2">
-                <input
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                  placeholder="Type full name to accept"
-                  value={acceptedName}
-                  onChange={(e) => setAcceptedName(e.target.value)}
-                />
-                <button
-                  type="button"
-                  disabled={acceptedName.trim().length < 2}
-                  onClick={() => acceptOffer().catch((e) => setMsg(e.message))}
-                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-                >
-                  Accept offer
-                </button>
+              <div className="mt-4 space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  <input
+                    className={`${fieldClass} max-w-xs`}
+                    placeholder="Type full name to accept"
+                    value={acceptedName}
+                    onChange={(e) => setAcceptedName(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    disabled={acceptedName.trim().length < 2}
+                    onClick={() => acceptOffer().catch((e) => setMsg(e.message))}
+                    className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Accept offer
+                  </button>
+                </div>
+                <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3">
+                  <p className="mb-2 text-sm text-slate-700">
+                    Or upload your signed offer letter (PDF)
+                  </p>
+                  <input
+                    ref={signedOfferRef}
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) uploadSignedOffer(f).catch((err) => setMsg(err.message));
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50"
+                    onClick={() => signedOfferRef.current?.click()}
+                  >
+                    Upload signed offer PDF
+                  </button>
+                </div>
               </div>
             ) : (
-              <p className="mt-3 text-sm text-emerald-700">Offer accepted.</p>
+              <div className="mt-3 space-y-2">
+                <p className="text-sm font-medium text-emerald-700">Offer accepted.</p>
+                {!session.offerLetter.signedPdfUrl && (
+                  <div>
+                    <input
+                      ref={signedOfferRef}
+                      type="file"
+                      accept="application/pdf,.pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) uploadSignedOffer(f).catch((err) => setMsg(err.message));
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50"
+                      onClick={() => signedOfferRef.current?.click()}
+                    >
+                      Upload signed offer PDF
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </section>
         )}
 
-        <section
-          id="preboarding-docs"
-          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-        >
-          <h2 className="mb-3 font-semibold">Upload documents</h2>
+        <section id="preboarding-docs" className={cardClass}>
+          <h2 className="mb-3 text-base font-semibold text-slate-900">Upload documents</h2>
           <div className="mb-3 flex flex-wrap gap-2">
             <select
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              className={fieldClass + " w-auto"}
               value={category}
               onChange={(e) => setCategory(e.target.value)}
             >
@@ -342,7 +440,7 @@ export default function PreboardingPage({
             />
             <button
               type="button"
-              className="rounded-lg border border-slate-200 px-4 py-2 text-sm"
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50"
               onClick={() => fileRef.current?.click()}
             >
               Choose file
@@ -352,32 +450,29 @@ export default function PreboardingPage({
             {session.documents.map((d) => (
               <div
                 key={d.id}
-                className="flex justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm"
+                className="flex justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800"
               >
                 <span>
                   {d.category} · {d.fileName}
                 </span>
-                <span className="text-slate-500">{d.verificationStatus}</span>
+                <span className="text-slate-600">{d.verificationStatus}</span>
               </div>
             ))}
           </div>
         </section>
 
-        <section
-          id="preboarding-checklist"
-          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-        >
-          <h2 className="mb-3 font-semibold">Checklist</h2>
+        <section id="preboarding-checklist" className={cardClass}>
+          <h2 className="mb-3 text-base font-semibold text-slate-900">Checklist</h2>
           <div className="space-y-2">
             {session.tasks
               .filter((t) => t.assigneeRole === "hire")
               .map((t) => (
                 <div
                   key={t.id}
-                  className="flex justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm"
+                  className="flex justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800"
                 >
                   <span>{t.title}</span>
-                  <span className="text-slate-500">{t.status}</span>
+                  <span className="text-slate-600">{t.status}</span>
                 </div>
               ))}
           </div>
