@@ -141,6 +141,9 @@ export default function MyOnboardingPage() {
         <Card className="space-y-3 p-4">
           <h3 className="font-semibold">Offer letter</h3>
           <p className="text-sm font-medium">{onboarding.offerLetter.subject}</p>
+          {onboarding.offerLetter.source === "uploaded" && (
+            <p className="text-xs font-medium text-emerald-700">Official PDF uploaded by HR</p>
+          )}
           {onboarding.offerLetter.pdfUrl && (
             <div className="overflow-hidden rounded-xl border border-border">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2">
@@ -166,6 +169,7 @@ export default function MyOnboardingPage() {
                 </div>
               </div>
               <iframe
+                key={onboarding.offerLetter.pdfUrl + (onboarding.offerLetter.updatedAt || "")}
                 title="Offer letter PDF"
                 src={`${onboarding.offerLetter.pdfUrl}#toolbar=1&navpanes=0`}
                 className="h-[min(60vh,520px)] w-full border-0 bg-muted"

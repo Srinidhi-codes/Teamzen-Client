@@ -44,6 +44,8 @@ const PREBOARDING_QUERY = `
         signedUploadedAt
         status
         acceptedAt
+        source
+        updatedAt
       }
     }
   }
@@ -81,6 +83,8 @@ type OnboardingSession = {
     signedPdfUrl?: string;
     signedUploadedAt?: string;
     status: string;
+    source?: string;
+    updatedAt?: string;
   } | null;
 };
 
@@ -133,24 +137,31 @@ export default function PreboardingPage({
   const fileRef = useRef<HTMLInputElement>(null);
   const signedOfferRef = useRef<HTMLInputElement>(null);
 
-  async function load() {
-    setLoading(true);
-    setError("");
+  // Soft refresh — don't flash full-page loading on poll/focus
+  async function load(opts?: { silent?: boolean }) {
+    if (!opts?.silent) {
+      setLoading(true);
+      setError("");
+    }
     try {
       const data = await gqlFetch<{ preboardingSession: OnboardingSession | null }>(
         PREBOARDING_QUERY,
         { inviteToken: token }
       );
       if (!data.preboardingSession) {
-        setError("This invite link is invalid or expired.");
-        setSession(null);
+        if (!opts?.silent) {
+          setError("This invite link is invalid or expired.");
+          setSession(null);
+        }
       } else {
         setSession(data.preboardingSession);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load");
+      if (!opts?.silent) {
+        setError(e instanceof Error ? e.message : "Failed to load");
+      }
     } finally {
-      setLoading(false);
+      if (!opts?.silent) setLoading(false);
     }
   }
 
@@ -170,6 +181,21 @@ export default function PreboardingPage({
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === "visible") load({ silent: true });
+    };
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    const poll = window.setInterval(refresh, 20000);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+      window.clearInterval(poll);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
@@ -329,6 +355,11 @@ export default function PreboardingPage({
             <p className="text-sm font-medium text-slate-800">
               {session.offerLetter.subject}
             </p>
+            {session.offerLetter.source === "uploaded" && (
+              <p className="mt-1 text-xs font-medium text-emerald-700">
+                Official PDF uploaded by HR
+              </p>
+            )}
 
             {session.offerLetter.pdfUrl ? (
               <div className="mt-4 overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50/60">
@@ -341,7 +372,11 @@ export default function PreboardingPage({
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <a
-                      href={session.offerLetter.pdfUrl}
+                      href={
+                        session.offerLetter.updatedAt
+                          ? `${session.offerLetter.pdfUrl}${session.offerLetter.pdfUrl.includes("?") ? "&" : "?"}v=${encodeURIComponent(session.offerLetter.updatedAt)}`
+                          : session.offerLetter.pdfUrl
+                      }
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex h-9 items-center justify-center rounded-md bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-800"
@@ -361,6 +396,7 @@ export default function PreboardingPage({
                 </div>
                 <div className="bg-slate-100">
                   <iframe
+                    key={session.offerLetter.pdfUrl + (session.offerLetter.updatedAt || "")}
                     title="Offer letter PDF"
                     src={`${session.offerLetter.pdfUrl}#toolbar=1&navpanes=0`}
                     className="h-[min(70vh,640px)] w-full border-0"
