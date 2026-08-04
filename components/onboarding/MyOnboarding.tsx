@@ -25,12 +25,6 @@ function formatJoinDate(value?: string | null) {
   return m.isValid() ? m.format("DD MMM YYYY") : value;
 }
 
-function formatDateTime(value?: string | null) {
-  if (!value) return "";
-  const m = moment(value);
-  return m.isValid() ? m.format("DD MMM YYYY, hh:mm A") : value;
-}
-
 const DOC_CATEGORIES = [
   "id_proof",
   "pan",
