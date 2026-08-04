@@ -330,30 +330,74 @@ export default function PreboardingPage({
             <p className="text-sm font-medium text-slate-800">
               {session.offerLetter.subject}
             </p>
-            <div
-              className="prose prose-sm prose-slate mt-3 max-w-none rounded-lg border border-slate-200 bg-slate-50 p-4 text-slate-800 [&_a]:text-emerald-700 [&_a]:underline [&_p]:text-slate-800 [&_strong]:text-slate-900"
-              dangerouslySetInnerHTML={{ __html: session.offerLetter.bodyHtml }}
-            />
-            {session.offerLetter.pdfUrl && (
-              <a
-                href={session.offerLetter.pdfUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-3 inline-flex rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-900 hover:bg-emerald-100"
-              >
-                Download offer letter PDF
-              </a>
+
+            {session.offerLetter.pdfUrl ? (
+              <div className="mt-4 overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50/60">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-200 bg-white/80 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Offer letter PDF</p>
+                    <p className="text-xs text-slate-600">
+                      Review the official PDF, then accept below.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <a
+                      href={session.offerLetter.pdfUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex h-9 items-center justify-center rounded-md bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-800"
+                    >
+                      Open PDF
+                    </a>
+                    <a
+                      href={session.offerLetter.pdfUrl}
+                      download="Offer_Letter.pdf"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex h-9 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 hover:bg-slate-50"
+                    >
+                      Download PDF
+                    </a>
+                  </div>
+                </div>
+                <div className="bg-slate-100">
+                  <iframe
+                    title="Offer letter PDF"
+                    src={`${session.offerLetter.pdfUrl}#toolbar=1&navpanes=0`}
+                    className="h-[min(70vh,640px)] w-full border-0"
+                  />
+                  <p className="border-t border-slate-200 bg-white px-4 py-2 text-xs text-slate-500">
+                    If the preview doesn&apos;t load in your browser, use Open PDF or Download PDF.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                Official PDF is not available yet. You can still review the offer text below.
+              </div>
             )}
+
             {session.offerLetter.signedPdfUrl && (
               <a
                 href={session.offerLetter.signedPdfUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-3 ml-2 inline-flex rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50"
+                className="mt-3 inline-flex rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50"
               >
                 View signed PDF
               </a>
             )}
+
+            <details className="mt-4 rounded-lg border border-slate-200 bg-slate-50 open:pb-0">
+              <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-slate-800 marker:content-none [&::-webkit-details-marker]:hidden">
+                View offer text summary
+              </summary>
+              <div
+                className="prose prose-sm prose-slate max-w-none border-t border-slate-200 px-4 py-3 text-slate-800 [&_a]:text-emerald-700 [&_a]:underline [&_p]:text-slate-800 [&_strong]:text-slate-900"
+                dangerouslySetInnerHTML={{ __html: session.offerLetter.bodyHtml }}
+              />
+            </details>
+
             {session.offerLetter.status !== "accepted" ? (
               <div className="mt-4 space-y-3">
                 <div className="flex flex-wrap items-end gap-2">
