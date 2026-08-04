@@ -41,6 +41,8 @@ export const MY_ONBOARDING = gql`
         signedPdfUrl
         signedUploadedAt
         status
+        source
+        updatedAt
         acceptedName
         acceptedAt
       }

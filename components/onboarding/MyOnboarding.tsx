@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import moment from "moment";
 import { ClipboardList, Upload, CheckCircle2 } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Card } from "@/components/common/Card";
@@ -17,6 +18,12 @@ import {
   useMyOnboardingTour,
 } from "@/components/onboarding/MyOnboardingTour";
 import client from "@/lib/api/client";
+
+function formatJoinDate(value?: string | null) {
+  if (!value) return "";
+  const m = moment(value);
+  return m.isValid() ? m.format("DD MMM YYYY") : value;
+}
 
 const DOC_CATEGORIES = [
   "id_proof",
@@ -66,7 +73,28 @@ export default function MyOnboardingPage() {
   }
 
   if (isLoading) {
-    return <div className="p-6 text-muted-foreground">Loading onboarding…</div>;
+    return (
+      <div className="space-y-6" aria-busy="true" aria-label="Loading onboarding">
+        <div className="space-y-2">
+          <div className="h-8 w-48 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-64 animate-pulse rounded bg-muted" />
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+          <div className="h-2 w-full animate-pulse rounded-full bg-muted" />
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <div className="h-5 w-32 animate-pulse rounded bg-muted" />
+          <div className="h-40 w-full animate-pulse rounded-xl bg-muted" />
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+          <div className="h-5 w-28 animate-pulse rounded bg-muted" />
+          <div className="h-10 w-full animate-pulse rounded-lg bg-muted" />
+          <div className="h-10 w-full animate-pulse rounded-lg bg-muted" />
+          <div className="h-10 w-3/4 animate-pulse rounded-lg bg-muted" />
+        </div>
+      </div>
+    );
   }
 
   if (error) {
@@ -111,7 +139,11 @@ export default function MyOnboardingPage() {
     <div className="space-y-6">
       <PageHeader
         title="My Onboarding"
-        description={`${onboarding.status.replace("_", " ")} · ${onboarding.progressPct}% complete`}
+        description={`${onboarding.status.replace("_", " ")} · ${onboarding.progressPct}% complete${
+          onboarding.joinDate
+            ? ` · Join ${formatJoinDate(onboarding.joinDate)}`
+            : ""
+        }`}
         actions={<MyOnboardingTourButton />}
       />
 
@@ -141,6 +173,9 @@ export default function MyOnboardingPage() {
         <Card className="space-y-3 p-4">
           <h3 className="font-semibold">Offer letter</h3>
           <p className="text-sm font-medium">{onboarding.offerLetter.subject}</p>
+          {onboarding.offerLetter.source === "uploaded" && (
+            <p className="text-xs font-medium text-emerald-700">Official PDF uploaded by HR</p>
+          )}
           {onboarding.offerLetter.pdfUrl && (
             <div className="overflow-hidden rounded-xl border border-border">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2">
@@ -166,6 +201,7 @@ export default function MyOnboardingPage() {
                 </div>
               </div>
               <iframe
+                key={onboarding.offerLetter.pdfUrl + (onboarding.offerLetter.updatedAt || "")}
                 title="Offer letter PDF"
                 src={`${onboarding.offerLetter.pdfUrl}#toolbar=1&navpanes=0`}
                 className="h-[min(60vh,520px)] w-full border-0 bg-muted"
@@ -327,7 +363,7 @@ export default function MyOnboardingPage() {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {task.status}
-                  {task.dueAt ? ` · due ${task.dueAt}` : ""}
+                  {task.dueAt ? ` · due ${formatJoinDate(task.dueAt)}` : ""}
                 </p>
               </div>
               {task.status !== "completed" && task.status !== "skipped" && (
@@ -360,7 +396,7 @@ export default function MyOnboardingPage() {
               >
                 <span>
                   {t.title}
-                  {t.dueAt ? ` · due ${t.dueAt}` : ""}
+                  {t.dueAt ? ` · due ${formatJoinDate(t.dueAt)}` : ""}
                 </span>
                 <Button
                   size="sm"

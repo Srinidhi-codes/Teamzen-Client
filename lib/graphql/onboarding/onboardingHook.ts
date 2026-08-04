@@ -9,7 +9,8 @@ import {
 
 export function useMyOnboarding() {
   const { data, loading, error, refetch } = useQuery<any>(MY_ONBOARDING, {
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "network-only",
+    nextFetchPolicy: "cache-and-network",
   });
   return {
     onboarding: data?.myOnboarding ?? null,

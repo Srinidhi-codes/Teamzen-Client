@@ -1,9 +1,16 @@
 "use client";
 
 import { use, useEffect, useRef, useState } from "react";
+import moment from "moment";
 import { usePreboardingTour } from "@/components/onboarding/PreboardingTour";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+function formatJoinDate(value?: string | null) {
+  if (!value) return "";
+  const m = moment(value);
+  return m.isValid() ? m.format("DD MMM YYYY") : value;
+}
 
 const PREBOARDING_QUERY = `
   query PreboardingSession($inviteToken: String!) {
@@ -44,6 +51,8 @@ const PREBOARDING_QUERY = `
         signedUploadedAt
         status
         acceptedAt
+        source
+        updatedAt
       }
     }
   }
@@ -64,6 +73,7 @@ type OnboardingSession = {
     status: string;
     phase: string;
     assigneeRole: string;
+    dueAt?: string;
     requiresDocumentCategory?: string;
   }>;
   documents: Array<{
@@ -81,6 +91,8 @@ type OnboardingSession = {
     signedPdfUrl?: string;
     signedUploadedAt?: string;
     status: string;
+    source?: string;
+    updatedAt?: string;
   } | null;
 };
 
@@ -133,24 +145,31 @@ export default function PreboardingPage({
   const fileRef = useRef<HTMLInputElement>(null);
   const signedOfferRef = useRef<HTMLInputElement>(null);
 
-  async function load() {
-    setLoading(true);
-    setError("");
+  // Soft refresh — don't flash full-page loading on poll/focus
+  async function load(opts?: { silent?: boolean }) {
+    if (!opts?.silent) {
+      setLoading(true);
+      setError("");
+    }
     try {
       const data = await gqlFetch<{ preboardingSession: OnboardingSession | null }>(
         PREBOARDING_QUERY,
         { inviteToken: token }
       );
       if (!data.preboardingSession) {
-        setError("This invite link is invalid or expired.");
-        setSession(null);
+        if (!opts?.silent) {
+          setError("This invite link is invalid or expired.");
+          setSession(null);
+        }
       } else {
         setSession(data.preboardingSession);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load");
+      if (!opts?.silent) {
+        setError(e instanceof Error ? e.message : "Failed to load");
+      }
     } finally {
-      setLoading(false);
+      if (!opts?.silent) setLoading(false);
     }
   }
 
@@ -170,6 +189,21 @@ export default function PreboardingPage({
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === "visible") load({ silent: true });
+    };
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    const poll = window.setInterval(refresh, 20000);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+      window.clearInterval(poll);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
@@ -249,8 +283,53 @@ export default function PreboardingPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen grid place-items-center bg-slate-50 text-slate-600">
-        Loading your preboarding portal…
+      <div
+        className="min-h-screen bg-linear-to-b from-emerald-50 to-slate-50"
+        aria-busy="true"
+        aria-label="Loading preboarding portal"
+      >
+        <header className="border-b border-emerald-100 bg-white/80">
+          <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
+            <div className="space-y-2">
+              <div className="h-3 w-20 animate-pulse rounded bg-emerald-100" />
+              <div className="h-5 w-48 animate-pulse rounded bg-slate-200" />
+            </div>
+            <div className="space-y-2 text-right">
+              <div className="ml-auto h-3 w-24 animate-pulse rounded bg-slate-200" />
+              <div className="ml-auto h-3 w-28 animate-pulse rounded bg-slate-200" />
+            </div>
+          </div>
+        </header>
+        <main className="mx-auto max-w-3xl space-y-6 px-4 py-8">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-4 h-4 w-28 animate-pulse rounded bg-slate-200" />
+            <div className="grid gap-3 sm:grid-cols-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="h-3 w-16 animate-pulse rounded bg-slate-100" />
+                  <div className="h-9 w-full animate-pulse rounded-md bg-slate-100" />
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 h-9 w-28 animate-pulse rounded-md bg-emerald-100" />
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-3 h-4 w-24 animate-pulse rounded bg-slate-200" />
+            <div className="h-40 w-full animate-pulse rounded-xl bg-slate-100" />
+            <div className="mt-4 h-9 w-36 animate-pulse rounded-md bg-slate-100" />
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-3 h-4 w-32 animate-pulse rounded bg-slate-200" />
+            <div className="space-y-2">
+              <div className="h-10 w-full animate-pulse rounded-lg bg-slate-100" />
+              <div className="h-10 w-full animate-pulse rounded-lg bg-slate-100" />
+              <div className="h-10 w-3/4 animate-pulse rounded-lg bg-slate-100" />
+            </div>
+          </div>
+          <p className="text-center text-sm text-slate-500">
+            Loading your preboarding portal…
+          </p>
+        </main>
       </div>
     );
   }
@@ -280,7 +359,11 @@ export default function PreboardingPage({
           </div>
           <div className="text-right text-sm text-slate-600">
             <div>{session.progressPct}% complete</div>
-            <div>{session.joinDate ? `Join ${session.joinDate}` : ""}</div>
+            <div>
+              {session.joinDate
+                ? `Join ${formatJoinDate(session.joinDate)}`
+                : ""}
+            </div>
           </div>
         </div>
       </header>
@@ -329,6 +412,11 @@ export default function PreboardingPage({
             <p className="text-sm font-medium text-slate-800">
               {session.offerLetter.subject}
             </p>
+            {session.offerLetter.source === "uploaded" && (
+              <p className="mt-1 text-xs font-medium text-emerald-700">
+                Official PDF uploaded by HR
+              </p>
+            )}
 
             {session.offerLetter.pdfUrl ? (
               <div className="mt-4 overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50/60">
@@ -341,7 +429,11 @@ export default function PreboardingPage({
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <a
-                      href={session.offerLetter.pdfUrl}
+                      href={
+                        session.offerLetter.updatedAt
+                          ? `${session.offerLetter.pdfUrl}${session.offerLetter.pdfUrl.includes("?") ? "&" : "?"}v=${encodeURIComponent(session.offerLetter.updatedAt)}`
+                          : session.offerLetter.pdfUrl
+                      }
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex h-9 items-center justify-center rounded-md bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-800"
@@ -361,6 +453,7 @@ export default function PreboardingPage({
                 </div>
                 <div className="bg-slate-100">
                   <iframe
+                    key={session.offerLetter.pdfUrl + (session.offerLetter.updatedAt || "")}
                     title="Offer letter PDF"
                     src={`${session.offerLetter.pdfUrl}#toolbar=1&navpanes=0`}
                     className="h-[min(70vh,640px)] w-full border-0"
@@ -529,10 +622,17 @@ export default function PreboardingPage({
               .map((t) => (
                 <div
                   key={t.id}
-                  className="flex justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800"
+                  className="flex justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800"
                 >
-                  <span>{t.title}</span>
-                  <span className="text-slate-600">{t.status}</span>
+                  <span>
+                    {t.title}
+                    {t.dueAt ? (
+                      <span className="mt-0.5 block text-xs text-slate-500">
+                        Due {formatJoinDate(t.dueAt)}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="shrink-0 text-slate-600">{t.status}</span>
                 </div>
               ))}
           </div>
