@@ -8,7 +8,7 @@ import {
 } from "./queries";
 
 export function useMyOnboarding() {
-  const { data, loading, error, refetch } = useQuery(MY_ONBOARDING, {
+  const { data, loading, error, refetch } = useQuery<any>(MY_ONBOARDING, {
     fetchPolicy: "cache-and-network",
   });
   return {
@@ -20,7 +20,7 @@ export function useMyOnboarding() {
 }
 
 export function useMyAssignedOnboardingTasks() {
-  const { data, loading, error, refetch } = useQuery(MY_ASSIGNED_ONBOARDING_TASKS, {
+  const { data, loading, error, refetch } = useQuery<any>(MY_ASSIGNED_ONBOARDING_TASKS, {
     fetchPolicy: "cache-and-network",
   });
   return {
@@ -32,9 +32,9 @@ export function useMyAssignedOnboardingTasks() {
 }
 
 export function useOnboardingEmployeeMutations() {
-  const [completeTask, completeState] = useMutation(COMPLETE_MY_ONBOARDING_TASK);
-  const [acceptOffer, acceptState] = useMutation(ACCEPT_OFFER);
-  const [updateProfile, profileState] = useMutation(UPDATE_PREBOARDING_PROFILE);
+  const [completeTask, completeState] = useMutation<any>(COMPLETE_MY_ONBOARDING_TASK);
+  const [acceptOffer, acceptState] = useMutation<any>(ACCEPT_OFFER);
+  const [updateProfile, profileState] = useMutation<any>(UPDATE_PREBOARDING_PROFILE);
   return {
     completeTask,
     acceptOffer,
