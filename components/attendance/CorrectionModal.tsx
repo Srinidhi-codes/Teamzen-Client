@@ -13,6 +13,7 @@ import moment from "moment";
 import { FormTextarea } from "../common/FormTextArea";
 import { FormInput } from "../common/FormInput";
 import { PremiumModal } from "../common/PremiumModal";
+import { PhotoOverlay } from "../common/PhotoOverlay";
 
 export type AttendanceRow = {
     id: string;
@@ -51,6 +52,7 @@ export function CorrectionModal({ record, onClose, onSubmit }: Props) {
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
+    const [preview, setPreview] = useState<{ src: string; name: string } | null>(null);
 
     const update = (key: keyof CorrectionPayload, value: string) => {
         setForm((p) => ({ ...p, [key]: value }));
@@ -92,6 +94,7 @@ export function CorrectionModal({ record, onClose, onSubmit }: Props) {
     );
 
     return (
+        <>
         <PremiumModal
             isOpen={true}
             onClose={onClose}
@@ -163,11 +166,15 @@ export function CorrectionModal({ record, onClose, onSubmit }: Props) {
                             </div>
                             <div className="flex flex-wrap gap-3">
                                 {record.checkInSelfieUrl ? (
-                                    <a
-                                        href={record.checkInSelfieUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="block overflow-hidden rounded-md border border-border"
+                                    <button
+                                        type="button"
+                                        className="block cursor-zoom-in overflow-hidden rounded-md border border-border"
+                                        onClick={() =>
+                                            setPreview({
+                                                src: record.checkInSelfieUrl!,
+                                                name: "Check-in selfie",
+                                            })
+                                        }
                                     >
                                         <img
                                             src={record.checkInSelfieUrl}
@@ -177,18 +184,22 @@ export function CorrectionModal({ record, onClose, onSubmit }: Props) {
                                         <span className="block bg-muted px-1.5 py-0.5 text-center text-[10px] text-muted-foreground">
                                             Check in
                                         </span>
-                                    </a>
+                                    </button>
                                 ) : (
                                     <div className="flex h-20 w-20 items-center justify-center rounded-md border border-dashed border-border text-[10px] text-muted-foreground">
                                         No in selfie
                                     </div>
                                 )}
                                 {record.checkOutSelfieUrl ? (
-                                    <a
-                                        href={record.checkOutSelfieUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="block overflow-hidden rounded-md border border-border"
+                                    <button
+                                        type="button"
+                                        className="block cursor-zoom-in overflow-hidden rounded-md border border-border"
+                                        onClick={() =>
+                                            setPreview({
+                                                src: record.checkOutSelfieUrl!,
+                                                name: "Check-out selfie",
+                                            })
+                                        }
                                     >
                                         <img
                                             src={record.checkOutSelfieUrl}
@@ -198,7 +209,7 @@ export function CorrectionModal({ record, onClose, onSubmit }: Props) {
                                         <span className="block bg-muted px-1.5 py-0.5 text-center text-[10px] text-muted-foreground">
                                             Check out
                                         </span>
-                                    </a>
+                                    </button>
                                 ) : (
                                     <div className="flex h-20 w-20 items-center justify-center rounded-md border border-dashed border-border text-[10px] text-muted-foreground">
                                         No out selfie
@@ -283,5 +294,12 @@ export function CorrectionModal({ record, onClose, onSubmit }: Props) {
                 </div>
             </div>
         </PremiumModal>
+        <PhotoOverlay
+            open={Boolean(preview)}
+            onOpenChange={(open) => !open && setPreview(null)}
+            src={preview?.src}
+            name={preview?.name}
+        />
+        </>
     );
 }

@@ -39,6 +39,8 @@ export const API_ENDPOINTS = {
   // AI
   POLICIES: "/ai/policies/",
   CHAT: "/ai/chat/",
+  FORMAT_TEXT: "/ai/format-text/",
+  FEEDBACK_ATTACHMENTS: "/feedback/attachments/",
 
   // Password Reset
   PASSWORD_RESET_REQUEST: "/users/password-reset/",
