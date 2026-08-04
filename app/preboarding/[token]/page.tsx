@@ -101,6 +101,16 @@ async function gqlFetch<T>(query: string, variables: Record<string, unknown>): P
 const cardClass =
   "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm text-slate-900";
 
+/** Explicit light styles — theme tokens (bg-background) break on this public page. */
+const lightInputClass =
+  "bg-white text-slate-900 border-slate-300 placeholder:text-slate-400 hover:border-slate-400 focus:border-emerald-600 focus:ring-emerald-600/20";
+const lightPrimaryBtnClass =
+  "bg-emerald-700 text-white hover:bg-emerald-800 disabled:bg-emerald-700/50 disabled:text-white";
+const lightOutlineBtnClass =
+  "border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 hover:text-slate-900";
+const lightSelectClass =
+  "bg-white text-slate-900 border-slate-300 hover:border-slate-400 focus:border-emerald-600";
+
 export default function PreboardingPage({
   params,
 }: {
@@ -298,6 +308,7 @@ export default function PreboardingPage({
               <label key={key} className="text-sm text-slate-900">
                 <span className="mb-1 block text-slate-600">{label}</span>
                 <Input
+                  className={lightInputClass}
                   value={profile[key]}
                   onChange={(e) => setProfile({ ...profile, [key]: e.target.value })}
                 />
@@ -307,7 +318,7 @@ export default function PreboardingPage({
           <Button
             type="button"
             onClick={() => saveProfile().catch((e) => setError(e.message))}
-            className="mt-4"
+            className={`mt-4 ${lightPrimaryBtnClass}`}
           >
             Save details
           </Button>
@@ -345,9 +356,9 @@ export default function PreboardingPage({
             )}
             {session.offerLetter.status !== "accepted" ? (
               <div className="mt-4 space-y-3">
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-end gap-2">
                   <Input
-                    className="max-w-xs"
+                    className={`max-w-xs ${lightInputClass}`}
                     placeholder="Type full name to accept"
                     value={acceptedName}
                     onChange={(e) => setAcceptedName(e.target.value)}
@@ -356,6 +367,7 @@ export default function PreboardingPage({
                     type="button"
                     disabled={acceptedName.trim().length < 2}
                     onClick={() => acceptOffer().catch((e) => setMsg(e.message))}
+                    className={lightPrimaryBtnClass}
                   >
                     Accept offer
                   </Button>
@@ -377,6 +389,7 @@ export default function PreboardingPage({
                   <Button
                     type="button"
                     variant="outline"
+                    className={lightOutlineBtnClass}
                     onClick={() => signedOfferRef.current?.click()}
                   >
                     Upload signed offer PDF
@@ -401,6 +414,7 @@ export default function PreboardingPage({
                     <Button
                       type="button"
                       variant="outline"
+                      className={lightOutlineBtnClass}
                       onClick={() => signedOfferRef.current?.click()}
                     >
                       Upload signed offer PDF
@@ -419,7 +433,7 @@ export default function PreboardingPage({
               label="Document category"
               value={category}
               onValueChange={setCategory}
-              className="w-auto min-w-45"
+              className={`w-auto min-w-45 ${lightSelectClass}`}
               options={["id_proof", "pan", "aadhaar", "bank_proof", "education", "other"].map(
                 (c) => ({
                   label: c,
@@ -439,6 +453,7 @@ export default function PreboardingPage({
             <Button
               type="button"
               variant="outline"
+              className={lightOutlineBtnClass}
               onClick={() => fileRef.current?.click()}
             >
               Choose file
