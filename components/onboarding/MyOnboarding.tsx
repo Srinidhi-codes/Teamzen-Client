@@ -19,10 +19,17 @@ import {
 } from "@/components/onboarding/MyOnboardingTour";
 import client from "@/lib/api/client";
 
-function formatJoinDate(value?: string | null) {
-  if (!value) return "";
+function formatJoinDate(value?: string | Date | null) {
+  if (value == null || value === "") return "";
+  if (typeof value === "string") {
+    const day = value.trim().match(/^(\d{4}-\d{2}-\d{2})/);
+    if (day) {
+      const m = moment(day[1], "YYYY-MM-DD", true);
+      if (m.isValid()) return m.format("DD MMM YYYY");
+    }
+  }
   const m = moment(value);
-  return m.isValid() ? m.format("DD MMM YYYY") : value;
+  return m.isValid() ? m.format("DD MMM YYYY") : String(value);
 }
 
 const DOC_CATEGORIES = [
