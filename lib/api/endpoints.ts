@@ -41,6 +41,7 @@ export const API_ENDPOINTS = {
   CHAT: "/ai/chat/",
   FORMAT_TEXT: "/ai/format-text/",
   FEEDBACK_ATTACHMENTS: "/feedback/attachments/",
+  ONBOARDING_SIGNED_OFFER_UPLOAD: "/onboarding/offers/signed/upload/",
 
   // Password Reset
   PASSWORD_RESET_REQUEST: "/users/password-reset/",

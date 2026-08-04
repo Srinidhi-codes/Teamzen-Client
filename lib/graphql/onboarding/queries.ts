@@ -38,6 +38,8 @@ export const MY_ONBOARDING = gql`
         subject
         bodyHtml
         pdfUrl
+        signedPdfUrl
+        signedUploadedAt
         status
         acceptedName
         acceptedAt
