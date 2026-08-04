@@ -142,21 +142,42 @@ export default function MyOnboardingPage() {
           <h3 className="font-semibold">Offer letter</h3>
           <p className="text-sm font-medium">{onboarding.offerLetter.subject}</p>
           {onboarding.offerLetter.pdfUrl && (
-            <a
-              href={onboarding.offerLetter.pdfUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex text-sm text-primary underline"
-            >
-              Download offer PDF
-            </a>
+            <div className="overflow-hidden rounded-xl border border-border">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2">
+                <p className="text-sm font-medium">Offer letter PDF</p>
+                <div className="flex gap-2">
+                  <a
+                    href={onboarding.offerLetter.pdfUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm text-primary underline"
+                  >
+                    Open PDF
+                  </a>
+                  <a
+                    href={onboarding.offerLetter.pdfUrl}
+                    download="Offer_Letter.pdf"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm text-primary underline"
+                  >
+                    Download
+                  </a>
+                </div>
+              </div>
+              <iframe
+                title="Offer letter PDF"
+                src={`${onboarding.offerLetter.pdfUrl}#toolbar=1&navpanes=0`}
+                className="h-[min(60vh,520px)] w-full border-0 bg-muted"
+              />
+            </div>
           )}
           {onboarding.offerLetter.signedPdfUrl && (
             <a
               href={onboarding.offerLetter.signedPdfUrl}
               target="_blank"
               rel="noreferrer"
-              className="ml-3 inline-flex text-sm text-emerald-700 underline"
+              className="inline-flex text-sm text-emerald-700 underline"
             >
               View signed PDF
             </a>
