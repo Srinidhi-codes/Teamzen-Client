@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Card } from "@/components/common/Card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FormSelect } from "@/components/common/FormSelect";
 import {
   useMyAssignedOnboardingTasks,
   useMyOnboarding,
@@ -229,17 +230,13 @@ export default function MyOnboardingPage() {
       <Card className="space-y-3 p-4">
         <h3 className="font-semibold">Upload documents</h3>
         <div className="flex flex-wrap gap-2">
-          <select
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          <FormSelect
+            label="Document category"
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            {DOC_CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+            onValueChange={setCategory}
+            className="min-w-45"
+            options={DOC_CATEGORIES.map((c) => ({ label: c, value: c }))}
+          />
           <input
             ref={fileRef}
             type="file"

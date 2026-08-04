@@ -2,6 +2,9 @@
 
 import { use, useEffect, useRef, useState } from "react";
 import { usePreboardingTour } from "@/components/onboarding/PreboardingTour";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { FormSelect } from "@/components/common/FormSelect";
 
 const PREBOARDING_QUERY = `
   query PreboardingSession($inviteToken: String!) {
@@ -95,8 +98,6 @@ async function gqlFetch<T>(query: string, variables: Record<string, unknown>): P
   return json.data;
 }
 
-const fieldClass =
-  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20";
 const cardClass =
   "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm text-slate-900";
 
@@ -257,7 +258,7 @@ export default function PreboardingPage({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-slate-50 text-slate-900">
+    <div className="min-h-screen bg-linear-to-b from-emerald-50 to-slate-50 text-slate-900">
       <header className="border-b border-emerald-100 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
           <div>
@@ -296,21 +297,20 @@ export default function PreboardingPage({
             ).map(([key, label]) => (
               <label key={key} className="text-sm text-slate-900">
                 <span className="mb-1 block text-slate-600">{label}</span>
-                <input
-                  className={fieldClass}
+                <Input
                   value={profile[key]}
                   onChange={(e) => setProfile({ ...profile, [key]: e.target.value })}
                 />
               </label>
             ))}
           </div>
-          <button
+          <Button
             type="button"
             onClick={() => saveProfile().catch((e) => setError(e.message))}
-            className="mt-4 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
+            className="mt-4"
           >
             Save details
-          </button>
+          </Button>
         </section>
 
         {session.offerLetter && (
@@ -346,20 +346,19 @@ export default function PreboardingPage({
             {session.offerLetter.status !== "accepted" ? (
               <div className="mt-4 space-y-3">
                 <div className="flex flex-wrap gap-2">
-                  <input
-                    className={`${fieldClass} max-w-xs`}
+                  <Input
+                    className="max-w-xs"
                     placeholder="Type full name to accept"
                     value={acceptedName}
                     onChange={(e) => setAcceptedName(e.target.value)}
                   />
-                  <button
+                  <Button
                     type="button"
                     disabled={acceptedName.trim().length < 2}
                     onClick={() => acceptOffer().catch((e) => setMsg(e.message))}
-                    className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Accept offer
-                  </button>
+                  </Button>
                 </div>
                 <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3">
                   <p className="mb-2 text-sm text-slate-700">
@@ -375,13 +374,13 @@ export default function PreboardingPage({
                       if (f) uploadSignedOffer(f).catch((err) => setMsg(err.message));
                     }}
                   />
-                  <button
+                  <Button
                     type="button"
-                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50"
+                    variant="outline"
                     onClick={() => signedOfferRef.current?.click()}
                   >
                     Upload signed offer PDF
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : (
@@ -399,13 +398,13 @@ export default function PreboardingPage({
                         if (f) uploadSignedOffer(f).catch((err) => setMsg(err.message));
                       }}
                     />
-                    <button
+                    <Button
                       type="button"
-                      className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50"
+                      variant="outline"
                       onClick={() => signedOfferRef.current?.click()}
                     >
                       Upload signed offer PDF
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>
@@ -416,19 +415,18 @@ export default function PreboardingPage({
         <section id="preboarding-docs" className={cardClass}>
           <h2 className="mb-3 text-base font-semibold text-slate-900">Upload documents</h2>
           <div className="mb-3 flex flex-wrap gap-2">
-            <select
-              className={fieldClass + " w-auto"}
+            <FormSelect
+              label="Document category"
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              {["id_proof", "pan", "aadhaar", "bank_proof", "education", "other"].map(
-                (c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                )
+              onValueChange={setCategory}
+              className="w-auto min-w-45"
+              options={["id_proof", "pan", "aadhaar", "bank_proof", "education", "other"].map(
+                (c) => ({
+                  label: c,
+                  value: c,
+                })
               )}
-            </select>
+            />
             <input
               ref={fileRef}
               type="file"
@@ -438,13 +436,13 @@ export default function PreboardingPage({
                 if (f) uploadDoc(f).catch((err) => setMsg(err.message));
               }}
             />
-            <button
+            <Button
               type="button"
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50"
+              variant="outline"
               onClick={() => fileRef.current?.click()}
             >
               Choose file
-            </button>
+            </Button>
           </div>
           <div className="space-y-2">
             {session.documents.map((d) => (
