@@ -7,7 +7,7 @@ import { useNotifications } from "@/lib/hooks/useNotifications";
 import { Card } from "@/components/common/Card";
 import moment from "moment";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/common/Badge";
 import { LeaveCalendar } from "@/components/leaves/LeaveCalendar";
 import {
@@ -63,6 +63,20 @@ export default function LeavesPage() {
   const { companyHolidaysData } = useGraphQLCompanyHolidays();
   const [activeTab, setActiveTab] = useState<"overview" | "calendar">("overview");
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const action = searchParams.get("action");
+    const tab = searchParams.get("tab");
+    if (action === "apply") {
+      setShowForm(true);
+    }
+    if (tab === "calendar") {
+      setActiveTab("calendar");
+    } else if (tab === "overview") {
+      setActiveTab("overview");
+    }
+  }, [searchParams]);
 
   // Socket-based Real-time Refresh
   useNotifications((msg) => {

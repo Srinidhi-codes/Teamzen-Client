@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
     Send, X, Bot, User, Trash2,
     Loader2, Minimize2, Mic, MicOff, Cpu,
     MessageCircle
 } from 'lucide-react';
+import { usePathname } from "next/navigation";
 import { useVoiceWhisper } from "@/lib/hooks/useVoiceWhisper";
 import { VoiceWave } from "./VoiceWave";
 import { useAssistant } from "@/lib/api/assistant";
@@ -16,8 +17,53 @@ import { MessageRenderer } from "./MessageRenderer";
 import { useStore } from "@/lib/store/useStore";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
 
+function suggestionsForPath(pathname: string): string[] {
+    if (pathname.startsWith("/leaves")) {
+        return [
+            "What's my leave balance?",
+            "Help me apply for leave",
+            "Show my pending leave requests",
+        ];
+    }
+    if (pathname.startsWith("/attendance")) {
+        return [
+            "Have I checked in today?",
+            "Show my attendance trends",
+            "Help me fix a missing checkout",
+        ];
+    }
+    if (pathname.startsWith("/payroll")) {
+        return [
+            "Show my latest payslip",
+            "Explain my deductions",
+            "Compare my last two payslips",
+        ];
+    }
+    if (pathname.startsWith("/onboarding") || pathname.startsWith("/preboarding")) {
+        return [
+            "What's left on my onboarding?",
+            "Explain my next onboarding task",
+            "What documents do I still need?",
+        ];
+    }
+    if (pathname.startsWith("/policies")) {
+        return [
+            "What is the sick leave policy?",
+            "Summarize the attendance policy",
+            "What are WFH rules?",
+        ];
+    }
+    return [
+        "What's my leave balance?",
+        "Have I checked in today?",
+        "What is the company policy for sick leaves?",
+    ];
+}
+
 export function AssistantWidget() {
     const { assistantOpen: isOpen, setAssistantOpen: setIsOpen, user, assistantPayload, setAssistantPayload } = useStore();
+    const pathname = usePathname() || "/dashboard";
+    const emptySuggestions = useMemo(() => suggestionsForPath(pathname), [pathname]);
     const [input, setInput] = useState("");
     const [cancelledIds, setCancelledIds] = useState<Set<string>>(new Set());
     const [hasInitialGreeting, setHasInitialGreeting] = useState(false);
@@ -202,11 +248,7 @@ export function AssistantWidget() {
                                 </div>
                                 
                                 <div className="grid grid-cols-1 gap-2 w-full pt-2">
-                                    {[
-                                        "What's my leave balance?",
-                                        "How many days of casual leave do I have?",
-                                        "What is the company policy for sick leaves?",
-                                    ].map((q) => (
+                                    {emptySuggestions.map((q) => (
                                         <button
                                             key={q}
                                             onClick={() => handleSend(undefined, q)}

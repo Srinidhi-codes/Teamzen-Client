@@ -2,7 +2,7 @@
 "use client";
 
 export type MessagePart = {
-    type: 'text' | 'balance' | 'attendance' | 'error' | 'insight' | 'leavetype' | 'pendingleave' | 'payroll' | 'correction';
+    type: 'text' | 'balance' | 'attendance' | 'error' | 'insight' | 'leavetype' | 'pendingleave' | 'payroll' | 'correction' | 'route';
     value: any;
 };
 
@@ -35,6 +35,7 @@ export const useMessageParser = (content: string) => {
         { type: 'pendingleave', start: '[PENDING_LEAVE_CARD]', end: '[/PENDING_LEAVE_CARD]' },
         { type: 'payroll', start: '[PAYROLL_CARD]', end: '[/PAYROLL_CARD]' },
         { type: 'correction', start: '[CORRECTION_CARD]', end: '[/CORRECTION_CARD]' },
+        { type: 'route', start: '[ROUTE_CARD]', end: '[/ROUTE_CARD]' },
     ];
 
     const parts: MessagePart[] = [];

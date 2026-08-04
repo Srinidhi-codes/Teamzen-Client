@@ -11,6 +11,7 @@ import { PendingLeaveCard } from "./cards/PendingLeaveCard";
 import { PayrollCard } from "./cards/PayrollCard";
 import { CitationChips } from "./CitationChips";
 import { CorrectionCard } from "./cards/CorrectionCard";
+import { RouteCard } from "./cards/RouteCard";
 import type { PolicySource } from "@/lib/api/assistant";
 
 interface MessageRendererProps {
@@ -166,7 +167,7 @@ const ToolBadge = ({ activeTool }: { activeTool: { name: string; status: 'runnin
 
 export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLast, isStreaming, activeTool, toolsUsed, sources }: MessageRendererProps) => {
     const parts = useMessageParser(content);
-    const richCardTypes = ['balance', 'attendance', 'insight', 'leavetype', 'pendingleave', 'payroll', 'correction'];
+    const richCardTypes = ['balance', 'attendance', 'insight', 'leavetype', 'pendingleave', 'payroll', 'correction', 'route'];
 
     const renderableParts = parts.filter(part => {
         if (part.type === 'text') {
@@ -261,6 +262,15 @@ export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLas
                         />
                     );
                     if (part.type === 'payroll') return <PayrollCard {...part.value} />;
+                    if (part.type === 'route') {
+                        return (
+                            <RouteCard
+                                path={part.value.path || part.value.href || ""}
+                                label={part.value.label}
+                                reason={part.value.reason || part.value.message}
+                            />
+                        );
+                    }
                     if (part.type === 'error') {
                         const { title, message } = part.value;
                         return (
