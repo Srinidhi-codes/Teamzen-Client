@@ -4,7 +4,6 @@ import { use, useEffect, useRef, useState } from "react";
 import { usePreboardingTour } from "@/components/onboarding/PreboardingTour";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FormSelect } from "@/components/common/FormSelect";
 
 const PREBOARDING_QUERY = `
   query PreboardingSession($inviteToken: String!) {
@@ -108,8 +107,8 @@ const lightPrimaryBtnClass =
   "bg-emerald-700 text-white hover:bg-emerald-800 disabled:bg-emerald-700/50 disabled:text-white";
 const lightOutlineBtnClass =
   "border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 hover:text-slate-900";
-const lightSelectClass =
-  "bg-white text-slate-900 border-slate-300 hover:border-slate-400 focus:border-emerald-600";
+const lightNativeSelectClass =
+  "h-10 min-w-45 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-900 outline-none hover:border-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20";
 
 export default function PreboardingPage({
   params,
@@ -472,19 +471,23 @@ export default function PreboardingPage({
 
         <section id="preboarding-docs" className={cardClass}>
           <h2 className="mb-3 text-base font-semibold text-slate-900">Upload documents</h2>
-          <div className="mb-3 flex flex-wrap gap-2">
-            <FormSelect
-              label="Document category"
-              value={category}
-              onValueChange={setCategory}
-              className={`w-auto min-w-45 ${lightSelectClass}`}
-              options={["id_proof", "pan", "aadhaar", "bank_proof", "education", "other"].map(
-                (c) => ({
-                  label: c,
-                  value: c,
-                })
-              )}
-            />
+          <div className="mb-3 flex flex-wrap items-end gap-2">
+            <label className="text-sm text-slate-900">
+              <span className="mb-1 block text-slate-600">Document category</span>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className={lightNativeSelectClass}
+              >
+                {["id_proof", "pan", "aadhaar", "bank_proof", "education", "other"].map(
+                  (c) => (
+                    <option key={c} value={c} className="bg-white text-slate-900">
+                      {c}
+                    </option>
+                  )
+                )}
+              </select>
+            </label>
             <input
               ref={fileRef}
               type="file"
