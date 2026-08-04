@@ -15,6 +15,8 @@ import {
   Bell,
   TrendingUp,
   Briefcase,
+  MessageSquare,
+  ClipboardList,
   X,
 } from "lucide-react";
 import Image from "next/image";
@@ -34,9 +36,11 @@ const navItems: NavItem[] = [
   { name: "Attendance", href: "/attendance", icon: Clock },
   { name: "Payroll", href: "/payroll", icon: DollarSign },
   { name: "Employees", href: "/employees", icon: Briefcase },
+  { name: "Onboarding", href: "/onboarding", icon: ClipboardList },
   { name: "Performance", href: "/performance", icon: TrendingUp },
   { name: "Profile", href: "/profile", icon: UserCircle },
   { name: "Policies", href: "/policies", icon: BookCheck },
+  { name: "Feedback", href: "/feedback", icon: MessageSquare },
   { name: "Notifications", href: "/notifications", icon: Bell },
 ];
 

@@ -70,7 +70,15 @@ export const useAssistant = () => {
             const response = await fetch(`/api${API_ENDPOINTS.CHAT}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query, latitude, longitude, context: 'user', ...payload }),
+                body: JSON.stringify({
+                    query,
+                    latitude,
+                    longitude,
+                    context: 'user',
+                    page_path:
+                        typeof window !== 'undefined' ? window.location.pathname : '',
+                    ...payload,
+                }),
                 credentials: 'include',
             });
 
