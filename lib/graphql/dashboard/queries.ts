@@ -40,6 +40,8 @@ export const GET_USER_DASHBOARD_STATS = gql`
         message
         type
         query
+        path
+        label
       }
       wishMessage
     }

@@ -32,9 +32,10 @@ const STEP_ICONS: Record<string, React.ReactNode> = {
 interface FirstDayWizardProps {
   data: FirstDayWizardData;
   onClose: () => void;
+  onCompleted?: () => void;
 }
 
-export function FirstDayWizard({ data, onClose }: FirstDayWizardProps) {
+export function FirstDayWizard({ data, onClose, onCompleted }: FirstDayWizardProps) {
   const router = useRouter();
   const setAssistantOpen = useStore((s) => s.setAssistantOpen);
   const { updateUserAsync } = useGraphQLUpdateUser();
@@ -49,20 +50,24 @@ export function FirstDayWizard({ data, onClose }: FirstDayWizardProps) {
     [index, steps.length]
   );
 
-  const finish = async () => {
+  const finish = async (openAssistant = false) => {
     setBusy(true);
     try {
       await updateUserAsync({ has_seen_ai_onboarding: true });
+      onCompleted?.();
     } catch (e) {
       console.error(e);
     } finally {
       setBusy(false);
       onClose();
+      if (openAssistant) {
+        setTimeout(() => setAssistantOpen(true), 50);
+      }
     }
   };
 
   const goNext = () => {
-    if (isLast) void finish();
+    if (isLast) void finish(false);
     else setIndex((i) => Math.min(i + 1, steps.length - 1));
   };
 
@@ -171,10 +176,9 @@ export function FirstDayWizard({ data, onClose }: FirstDayWizardProps) {
           </div>
           <button
             type="button"
-            onClick={() => {
-              setAssistantOpen(true);
-            }}
-            className="w-full text-center text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            onClick={() => void finish(true)}
+            disabled={busy}
+            className="w-full text-center text-xs font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
           >
             Ask the assistant anything else
           </button>

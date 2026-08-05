@@ -707,30 +707,26 @@ export function EmployeeDashboard() {
         </div>
       </section>
 
-      {/* ── Insights digest ──────────────────────────────────── */}
+      {/* ── Next best actions ───────────────────────────────── */}
       {aiInsights.length > 0 && (
         <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
           <div className="mb-5 flex items-center gap-2.5">
             <span className="h-5 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
             <div className="flex items-center gap-2">
               <h2 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
-                Worth a look
+                Next up
               </h2>
             </div>
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             {aiInsights.slice(0, 3).map((insight: any, i: number) => {
               const isWarning = insight.type === "warning" || insight.type === "anomaly";
+              const openLabel = insight.label || "Open page";
               return (
-                <button
+                <div
                   key={i}
-                  type="button"
-                  onClick={() => {
-                    setAssistantQuery(insight.query);
-                    setAssistantOpen(true);
-                  }}
                   className={cn(
-                    "rounded-xl border p-4 text-left transition-colors hover:bg-muted/40",
+                    "flex flex-col rounded-xl border p-4",
                     isWarning
                       ? "border-amber-500/25 bg-amber-500/5"
                       : "border-border bg-background"
@@ -746,14 +742,31 @@ export function EmployeeDashboard() {
                   >
                     {insight.title || "Insight"}
                   </p>
-                  <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-foreground">
+                  <p className="mt-1.5 flex-1 line-clamp-3 text-sm leading-relaxed text-foreground">
                     {insight.message}
                   </p>
-                  <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary">
-                    Ask assistant
-                    <ArrowUpRight className="h-3 w-3" />
-                  </span>
-                </button>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                    {insight.path ? (
+                      <Link
+                        href={insight.path}
+                        className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                      >
+                        {openLabel}
+                        <ArrowUpRight className="h-3 w-3" />
+                      </Link>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAssistantQuery(insight.query);
+                        setAssistantOpen(true);
+                      }}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      Ask assistant
+                    </button>
+                  </div>
+                </div>
               );
             })}
           </div>

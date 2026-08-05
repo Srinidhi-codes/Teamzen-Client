@@ -69,6 +69,7 @@ export default function AttendancePage() {
   const [showMap, setShowMap] = useState(false);
   const [faceModal, setFaceModal] = useState<"enroll" | "verify-in" | "verify-out" | null>(null);
   const [pendingCoords, setPendingCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [now, setNow] = useState(() => new Date());
 
   const faceEnabled = !!user?.organization?.faceAttendanceEnabled;
   const faceEnrolled =
@@ -132,6 +133,11 @@ export default function AttendancePage() {
     };
   }, []);
 
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
   const todayAttendance = attendanceData[0];
   const loginDistance = todayAttendance?.loginDistance ? (todayAttendance.loginDistance / 1000).toFixed(2) : "0";
   const logoutDistance = todayAttendance?.logoutDistance ? (todayAttendance.logoutDistance / 1000).toFixed(2) : "0";
@@ -188,7 +194,12 @@ export default function AttendancePage() {
 
       if (faceEnabled) {
         if (!faceEnrolled) {
-          toast.message("Enroll your face first to punch attendance.");
+          toast.message("Enroll your face once to punch attendance.", {
+            action: {
+              label: "Profile",
+              onClick: () => router.push("/profile?tab=security&face=enroll"),
+            },
+          });
           setFaceModal("enroll");
           return;
         }
@@ -228,6 +239,7 @@ export default function AttendancePage() {
     result: { matchScore: number; verified: boolean; imageBase64: string; descriptor: number[] }
   ) => {
     const coords = pendingCoords || currentCoords || (await getLocationAsync());
+    const toastId = toast.loading(type === "in" ? "Checking in…" : "Checking out…");
     try {
       if (type === "in") {
         const data: any = await checkIn({
@@ -240,8 +252,9 @@ export default function AttendancePage() {
           faceDescriptor: result.descriptor,
         });
         const id = data?.checkIn?.id;
-        if (id) await uploadSelfie(String(id), "check_in", result.imageBase64);
-        toast.success("Checked in with face verification.");
+        // Selfie upload should not block the success toast / UI
+        if (id) void uploadSelfie(String(id), "check_in", result.imageBase64);
+        toast.success("Checked in with face verification.", { id: toastId });
       } else {
         const data: any = await checkOut({
           latitude: coords.latitude,
@@ -252,14 +265,14 @@ export default function AttendancePage() {
           faceDescriptor: result.descriptor,
         });
         const id = data?.checkOut?.id;
-        if (id) await uploadSelfie(String(id), "check_out", result.imageBase64);
-        toast.success("Checked out with face verification.");
+        if (id) void uploadSelfie(String(id), "check_out", result.imageBase64);
+        toast.success("Checked out with face verification.", { id: toastId });
       }
-      setFaceModal(null);
       setPendingCoords(null);
       requestCurrentLocation();
     } catch (error: any) {
-      toast.error(error?.message || "Attendance punch failed");
+      toast.error(error?.message || "Attendance punch failed", { id: toastId });
+      setPendingCoords(null);
     }
   };
 
@@ -273,7 +286,8 @@ export default function AttendancePage() {
   }
 
   const statusConfig = todayAttendance?.status ? STATUS_CONFIG[todayAttendance.status] : null;
-  const todayLabel = format(new Date(), "EEEE, MMMM do yyyy");
+  const todayLabel = format(now, "EEEE, MMMM do yyyy");
+  const liveTimeLabel = format(now, "hh:mm:ss a");
 
   return (
     <div className="space-y-10 animate-fade-in pb-20 p-4 sm:p-8">
@@ -305,19 +319,25 @@ export default function AttendancePage() {
               </p>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 {faceEnrolled
-                  ? "Check-in/out requires face verification. Location is still recorded and flagged if outside the geofence."
-                  : "Enroll your face once before you can punch attendance."}
+                  ? "Check-in/out requires face verification. Update or re-enroll anytime from your profile."
+                  : "Enroll your face once here, then you can punch. Later updates are on Profile → Security."}
               </p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            className="h-9 w-full sm:w-auto"
-            disabled={enrollFaceLoading}
-            onClick={() => setFaceModal("enroll")}
-          >
-            {faceEnrolled ? "Re-enroll face" : "Enroll face"}
-          </Button>
+          {faceEnrolled ? (
+            <Button variant="outline" className="h-9 w-full sm:w-auto" asChild>
+              <Link href="/profile?tab=security">Manage on profile</Link>
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              className="h-9 w-full sm:w-auto"
+              disabled={enrollFaceLoading}
+              onClick={() => setFaceModal("enroll")}
+            >
+              Enroll face
+            </Button>
+          )}
         </div>
       )}
 
@@ -329,25 +349,38 @@ export default function AttendancePage() {
           setFaceModal(null);
           setPendingCoords(null);
         }}
-        onSuccess={async (result) => {
-          if (faceModal === "enroll") {
-            const res = await enrollFace({
-              descriptor: result.descriptor,
-              imageBase64: result.imageBase64,
-            });
-            if (res?.error) {
-              toast.error(res.error);
-              return;
-            }
-            toast.success("Face enrolled successfully.");
-            setFaceModal(null);
-            await refetchMe();
+        onSuccess={(result) => {
+          const mode = faceModal;
+          // Close camera UI immediately; finish enroll/punch in the background
+          setFaceModal(null);
+
+          if (mode === "enroll") {
+            void (async () => {
+              const toastId = toast.loading("Saving face…");
+              try {
+                const res = await enrollFace({
+                  descriptor: result.descriptor,
+                  imageBase64: result.imageBase64,
+                });
+                if (res?.error) {
+                  toast.error(res.error, { id: toastId });
+                  return;
+                }
+                toast.success("Face enrolled successfully. You can punch now.", {
+                  id: toastId,
+                });
+                await refetchMe();
+              } catch (e: any) {
+                toast.error(e?.message || "Failed to save face.", { id: toastId });
+              }
+            })();
             return;
           }
-          if (faceModal === "verify-in") {
-            await completePunchWithFace("in", result);
-          } else if (faceModal === "verify-out") {
-            await completePunchWithFace("out", result);
+
+          if (mode === "verify-in") {
+            void completePunchWithFace("in", result);
+          } else if (mode === "verify-out") {
+            void completePunchWithFace("out", result);
           }
         }}
       />
@@ -364,6 +397,9 @@ export default function AttendancePage() {
                 <span className="text-xs sm:text-sm font-medium">Today</span>
               </div>
               <p className="text-lg sm:text-xl font-semibold tracking-tight">{todayLabel}</p>
+              <p className="text-3xl sm:text-4xl font-semibold tabular-nums tracking-tight">
+                {liveTimeLabel}
+              </p>
             </div>
           </div>
 

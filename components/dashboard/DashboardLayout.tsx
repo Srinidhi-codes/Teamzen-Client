@@ -21,6 +21,26 @@ const FirstDayWizard = dynamic(
   { ssr: false, loading: () => null }
 );
 
+function wizardDismissKey(userId?: string | number | null) {
+  return `teamzen_first_day_wizard_dismissed_${userId || "x"}`;
+}
+
+export function markFirstDayWizardDismissed(userId?: string | number | null) {
+  try {
+    sessionStorage.setItem(wizardDismissKey(userId), "1");
+  } catch {
+    // ignore
+  }
+}
+
+function wasFirstDayWizardDismissed(userId?: string | number | null) {
+  try {
+    return sessionStorage.getItem(wizardDismissKey(userId)) === "1";
+  } catch {
+    return false;
+  }
+}
+
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
@@ -35,28 +55,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   } = useStore();
 
   const [wizardOpen, setWizardOpen] = useState(false);
-  const { wizard, isLoading } = useFirstDayWizard(!!user);
+  const { wizard, isLoading, refetch } = useFirstDayWizard(!!user);
+
+  const closeWizard = () => {
+    markFirstDayWizardDismissed(user?.id);
+    setWizardOpen(false);
+  };
 
   useEffect(() => {
     if (!user || isLoading || !wizard?.shouldShow) return;
+    if (wasFirstDayWizardDismissed(user.id)) return;
+    if (wizardOpen) return;
+    // Already marked seen in profile and no incomplete nudge needed
+    if (user.hasSeenAiOnboarding === true) return;
 
-    if (!wizard.hasSeenAiOnboarding) {
-      const timer = setTimeout(() => setWizardOpen(true), 1800);
-      return () => clearTimeout(timer);
-    }
-
-    if (wizard.onboardingIncomplete) {
-      const key = `teamzen_wizard_nudge_${user.id || "x"}`;
-      try {
-        if (sessionStorage.getItem(key)) return;
-        sessionStorage.setItem(key, "1");
-      } catch {
-        // ignore
-      }
-      const timer = setTimeout(() => setWizardOpen(true), 2200);
-      return () => clearTimeout(timer);
-    }
-  }, [user, isLoading, wizard]);
+    const timer = setTimeout(() => setWizardOpen(true), 1800);
+    return () => clearTimeout(timer);
+  }, [user, isLoading, wizard, wizardOpen]);
 
   return (
     <div
@@ -83,7 +98,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <AssistantWidget />
       <OnboardingTour />
       {wizardOpen && wizard?.shouldShow && (
-        <FirstDayWizard data={wizard} onClose={() => setWizardOpen(false)} />
+        <FirstDayWizard
+          data={wizard}
+          onClose={closeWizard}
+          onCompleted={() => {
+            markFirstDayWizardDismissed(user?.id);
+            void refetch();
+          }}
+        />
       )}
     </div>
   );

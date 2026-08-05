@@ -27,6 +27,7 @@ export interface GraphQLUser {
     plan?: string | null;
     planExpiresAt?: string | null;
     faceAttendanceEnabled?: boolean;
+    weekendDays?: number[];
     logo?: {
       url: string;
     } | null;
