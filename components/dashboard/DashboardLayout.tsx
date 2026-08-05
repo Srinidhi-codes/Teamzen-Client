@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Sidebar } from "../common/Sidebar";
 import { Navbar } from "../common/Navbar";
 import dynamic from "next/dynamic";
 import { useStore } from "@/lib/store/useStore";
-import { useGraphQLUpdateUser } from "@/lib/api/graphqlHooks";
 import { cn } from "@/lib/utils";
+import { useFirstDayWizard } from "@/lib/graphql/ai/firstDayHook";
 
 const AssistantWidget = dynamic(() => import("../ai"), {
   ssr: false,
@@ -14,6 +14,10 @@ const AssistantWidget = dynamic(() => import("../ai"), {
 });
 const OnboardingTour = dynamic(
   () => import("../common/OnboardingTour").then((mod) => mod.OnboardingTour),
+  { ssr: false, loading: () => null }
+);
+const FirstDayWizard = dynamic(
+  () => import("../ai/FirstDayWizard").then((mod) => mod.FirstDayWizard),
   { ssr: false, loading: () => null }
 );
 
@@ -27,21 +31,32 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     setSidebarCollapsed: setIsCollapsed,
     sidebarMobileOpen: isMobileOpen,
     setSidebarMobileOpen: setIsMobileOpen,
-    setAssistantOpen,
     user,
   } = useStore();
 
-  const { updateUserAsync } = useGraphQLUpdateUser();
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const { wizard, isLoading } = useFirstDayWizard(!!user);
 
   useEffect(() => {
-    if (user && user.hasSeenAiOnboarding === false) {
-      const timer = setTimeout(() => {
-        setAssistantOpen(true);
-        updateUserAsync({ has_seen_ai_onboarding: true }).catch(console.error);
-      }, 5000);
+    if (!user || isLoading || !wizard?.shouldShow) return;
+
+    if (!wizard.hasSeenAiOnboarding) {
+      const timer = setTimeout(() => setWizardOpen(true), 1800);
       return () => clearTimeout(timer);
     }
-  }, [user, setAssistantOpen, updateUserAsync]);
+
+    if (wizard.onboardingIncomplete) {
+      const key = `teamzen_wizard_nudge_${user.id || "x"}`;
+      try {
+        if (sessionStorage.getItem(key)) return;
+        sessionStorage.setItem(key, "1");
+      } catch {
+        // ignore
+      }
+      const timer = setTimeout(() => setWizardOpen(true), 2200);
+      return () => clearTimeout(timer);
+    }
+  }, [user, isLoading, wizard]);
 
   return (
     <div
@@ -67,6 +82,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       <AssistantWidget />
       <OnboardingTour />
+      {wizardOpen && wizard?.shouldShow && (
+        <FirstDayWizard data={wizard} onClose={() => setWizardOpen(false)} />
+      )}
     </div>
   );
 }
