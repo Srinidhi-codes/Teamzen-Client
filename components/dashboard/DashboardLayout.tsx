@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Sidebar } from "../common/Sidebar";
 import { Navbar } from "../common/Navbar";
 import dynamic from "next/dynamic";
 import { useStore } from "@/lib/store/useStore";
-import { useGraphQLUpdateUser } from "@/lib/api/graphqlHooks";
 import { cn } from "@/lib/utils";
+import { useFirstDayWizard } from "@/lib/graphql/ai/firstDayHook";
 
 const AssistantWidget = dynamic(() => import("../ai"), {
   ssr: false,
@@ -16,6 +16,30 @@ const OnboardingTour = dynamic(
   () => import("../common/OnboardingTour").then((mod) => mod.OnboardingTour),
   { ssr: false, loading: () => null }
 );
+const FirstDayWizard = dynamic(
+  () => import("../ai/FirstDayWizard").then((mod) => mod.FirstDayWizard),
+  { ssr: false, loading: () => null }
+);
+
+function wizardDismissKey(userId?: string | number | null) {
+  return `teamzen_first_day_wizard_dismissed_${userId || "x"}`;
+}
+
+export function markFirstDayWizardDismissed(userId?: string | number | null) {
+  try {
+    sessionStorage.setItem(wizardDismissKey(userId), "1");
+  } catch {
+    // ignore
+  }
+}
+
+function wasFirstDayWizardDismissed(userId?: string | number | null) {
+  try {
+    return sessionStorage.getItem(wizardDismissKey(userId)) === "1";
+  } catch {
+    return false;
+  }
+}
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -27,21 +51,27 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     setSidebarCollapsed: setIsCollapsed,
     sidebarMobileOpen: isMobileOpen,
     setSidebarMobileOpen: setIsMobileOpen,
-    setAssistantOpen,
     user,
   } = useStore();
 
-  const { updateUserAsync } = useGraphQLUpdateUser();
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const { wizard, isLoading, refetch } = useFirstDayWizard(!!user);
+
+  const closeWizard = () => {
+    markFirstDayWizardDismissed(user?.id);
+    setWizardOpen(false);
+  };
 
   useEffect(() => {
-    if (user && user.hasSeenAiOnboarding === false) {
-      const timer = setTimeout(() => {
-        setAssistantOpen(true);
-        updateUserAsync({ has_seen_ai_onboarding: true }).catch(console.error);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [user, setAssistantOpen, updateUserAsync]);
+    if (!user || isLoading || !wizard?.shouldShow) return;
+    if (wasFirstDayWizardDismissed(user.id)) return;
+    if (wizardOpen) return;
+    // Already marked seen in profile and no incomplete nudge needed
+    if (user.hasSeenAiOnboarding === true) return;
+
+    const timer = setTimeout(() => setWizardOpen(true), 1800);
+    return () => clearTimeout(timer);
+  }, [user, isLoading, wizard, wizardOpen]);
 
   return (
     <div
@@ -67,6 +97,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       <AssistantWidget />
       <OnboardingTour />
+      {wizardOpen && wizard?.shouldShow && (
+        <FirstDayWizard
+          data={wizard}
+          onClose={closeWizard}
+          onCompleted={() => {
+            markFirstDayWizardDismissed(user?.id);
+            void refetch();
+          }}
+        />
+      )}
     </div>
   );
 }

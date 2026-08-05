@@ -11,8 +11,17 @@ import client from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { Loader2, ShieldCheck, ShieldAlert, KeyRound, Copy, Check } from "lucide-react";
 import { DevicesManager } from "./DevicesManager";
+import { FaceEnrollmentCard } from "./FaceEnrollmentCard";
 
-export function SecurityTab() {
+type SecurityTabProps = {
+  autoOpenFaceEnroll?: boolean;
+  onFaceEnrollAutoOpenConsumed?: () => void;
+};
+
+export function SecurityTab({
+  autoOpenFaceEnroll = false,
+  onFaceEnrollAutoOpenConsumed,
+}: SecurityTabProps) {
     const { success, error } = useToast();
     const { changePasswordAsync, isLoading } = useGraphQLChangePassword();
     const { refetch: refetchUser } = useGraphQLUser();
@@ -131,6 +140,10 @@ export function SecurityTab() {
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in transition-all duration-500">
+            <FaceEnrollmentCard
+              autoOpen={autoOpenFaceEnroll}
+              onAutoOpenConsumed={onFaceEnrollAutoOpenConsumed}
+            />
             <Card title="Change Password" hover gradient>
                 <form onSubmit={handleChangePassword} className="space-y-4">
                     <div>

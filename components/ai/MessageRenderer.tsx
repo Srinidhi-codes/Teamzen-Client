@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { X, Cpu, CheckCircle2, Loader2 } from "lucide-react";
+import { X, CheckCircle2, Loader2 } from "lucide-react";
 import { useMessageParser } from "./useMessageParser";
+import { useChatTypewriter } from "./useChatTypewriter";
 import { LeaveBalanceCard } from "./cards/LeaveBalanceCard";
 import { AttendanceCard } from "./cards/AttendanceCard";
 import { InsightCard } from "./cards/InsightCard";
@@ -11,6 +13,8 @@ import { PendingLeaveCard } from "./cards/PendingLeaveCard";
 import { PayrollCard } from "./cards/PayrollCard";
 import { CitationChips } from "./CitationChips";
 import { CorrectionCard } from "./cards/CorrectionCard";
+import { RouteCard } from "./cards/RouteCard";
+import { TypingIndicator } from "./TypingIndicator";
 import type { PolicySource } from "@/lib/api/assistant";
 
 interface MessageRendererProps {
@@ -25,13 +29,19 @@ interface MessageRendererProps {
     sources?: PolicySource[];
 }
 
-const renderInlineFormatting = (text: string) => {
+const renderInlineFormatting = (text: string, onPrimary = false) => {
     const parts = text.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, idx) => {
         if (part.startsWith('**') && part.endsWith('**')) {
             const cleanBoldText = part.slice(2, -2);
             return (
-                <span key={idx} className="font-semibold text-foreground">
+                <span
+                    key={idx}
+                    className={cn(
+                        "font-semibold",
+                        onPrimary ? "text-primary-foreground" : "text-foreground"
+                    )}
+                >
                     {cleanBoldText}
                 </span>
             );
@@ -40,7 +50,11 @@ const renderInlineFormatting = (text: string) => {
     });
 };
 
-const renderTextWithFormatting = (text: string, trailingCursor?: React.ReactNode) => {
+const renderTextWithFormatting = (
+    text: string,
+    trailingCursor?: React.ReactNode,
+    onPrimary = false
+) => {
     let lines = text.split('\n');
     const processedLines: string[] = [];
     for (const line of lines) {
@@ -56,7 +70,7 @@ const renderTextWithFormatting = (text: string, trailingCursor?: React.ReactNode
     lines = processedLines;
 
     return (
-        <div className="space-y-2 w-full">
+        <div className="space-y-1.5 w-full">
             {lines.map((line, lineIdx) => {
                 const isLastLine = lineIdx === lines.length - 1;
                 let currentLine = line.trim();
@@ -74,9 +88,14 @@ const renderTextWithFormatting = (text: string, trailingCursor?: React.ReactNode
                     return (
                         <h4
                             key={lineIdx}
-                            className="font-semibold text-sm text-primary border-b border-border pb-1.5 mb-2 mt-4 inline-block"
+                            className={cn(
+                                "font-semibold text-sm pb-1 mb-1 mt-2 border-b",
+                                onPrimary
+                                    ? "text-primary-foreground border-primary-foreground/25"
+                                    : "text-foreground border-border"
+                            )}
                         >
-                            {renderInlineFormatting(cleanText)}
+                            {renderInlineFormatting(cleanText, onPrimary)}
                             {isLastLine && trailingCursor}
                         </h4>
                     );
@@ -87,9 +106,12 @@ const renderTextWithFormatting = (text: string, trailingCursor?: React.ReactNode
                     return (
                         <div
                             key={lineIdx}
-                            className="font-semibold text-sm text-foreground mt-3 mb-1"
+                            className={cn(
+                                "font-semibold text-sm mt-2 mb-0.5",
+                                onPrimary ? "text-primary-foreground" : "text-foreground"
+                            )}
                         >
-                            {renderInlineFormatting(currentLine)}
+                            {renderInlineFormatting(currentLine, onPrimary)}
                             {isLastLine && trailingCursor}
                         </div>
                     );
@@ -99,11 +121,16 @@ const renderTextWithFormatting = (text: string, trailingCursor?: React.ReactNode
                     return (
                         <div
                             key={lineIdx}
-                            className="flex items-start gap-2 text-sm leading-relaxed my-1 pl-2"
+                            className="flex items-start gap-2 text-sm leading-relaxed pl-0.5"
                         >
-                            <span className="text-primary mt-1.5 shrink-0 block w-1.5 h-1.5 rounded-full bg-primary/60" />
+                            <span
+                                className={cn(
+                                    "mt-2 shrink-0 block w-1 h-1 rounded-full",
+                                    onPrimary ? "bg-primary-foreground/70" : "bg-primary/70"
+                                )}
+                            />
                             <span className="flex-1">
-                                {renderInlineFormatting(currentLine)}
+                                {renderInlineFormatting(currentLine, onPrimary)}
                                 {isLastLine && trailingCursor}
                             </span>
                         </div>
@@ -112,7 +139,7 @@ const renderTextWithFormatting = (text: string, trailingCursor?: React.ReactNode
 
                 return (
                     <p key={lineIdx} className="text-sm leading-relaxed">
-                        {renderInlineFormatting(currentLine)}
+                        {renderInlineFormatting(currentLine, onPrimary)}
                         {isLastLine && trailingCursor}
                     </p>
                 );
@@ -127,14 +154,13 @@ const formatToolName = (name: string) =>
 
 // Permanent pills shown on the message after it's generated — like Cursor's "Used X tool"
 const ToolUsedPills = ({ tools }: { tools: string[] }) => (
-    <div className="flex flex-wrap gap-1.5 mb-3">
+    <div className="flex flex-wrap gap-1.5 mb-2.5">
         {tools.map((tool, i) => (
             <div
                 key={i}
-                className="inline-flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400"
+                className="inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted/80 border border-border text-muted-foreground"
             >
-                <CheckCircle2 className="w-2.5 h-2.5 shrink-0" />
-                <Cpu className="w-2.5 h-2.5 shrink-0 opacity-50" />
+                <CheckCircle2 className="w-2.5 h-2.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                 <span>{formatToolName(tool)}</span>
             </div>
         ))}
@@ -144,29 +170,50 @@ const ToolUsedPills = ({ tools }: { tools: string[] }) => (
 // Tool activity badge — shows while a tool is running or just completed
 const ToolBadge = ({ activeTool }: { activeTool: { name: string; status: 'running' | 'completed' } }) => {
     const cleanName = formatToolName(activeTool.name);
-
     const isRunning = activeTool.status === 'running';
 
     return (
         <div className={cn(
-            "inline-flex items-center gap-1.5 text-[10px] font-medium px-3 py-1.5 rounded-md transition-all duration-300 animate-in fade-in",
+            "inline-flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1 rounded-full transition-all duration-300 animate-in fade-in",
             isRunning
-                ? "text-primary/80 bg-primary/10 border border-primary/20"
-                : "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
+                ? "text-primary bg-primary/10 border border-primary/20"
+                : "text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
         )}>
             {isRunning
                 ? <Loader2 className="w-3 h-3 animate-spin shrink-0" />
                 : <CheckCircle2 className="w-3 h-3 shrink-0" />
             }
-            <Cpu className="w-3 h-3 shrink-0 opacity-50" />
-            <span>{isRunning ? 'Querying: ' : '✓ '}{cleanName}</span>
+            <span>{isRunning ? `Using ${cleanName}` : cleanName}</span>
         </div>
     );
 };
 
 export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLast, isStreaming, activeTool, toolsUsed, sources }: MessageRendererProps) => {
-    const parts = useMessageParser(content);
-    const richCardTypes = ['balance', 'attendance', 'insight', 'leavetype', 'pendingleave', 'payroll', 'correction'];
+    // Keep typing after SSE ends until the UI has caught up (ChatGPT-style)
+    const [typeSession, setTypeSession] = useState(false);
+    useEffect(() => {
+        if (isStreaming && role === "assistant" && isLast) {
+            setTypeSession(true);
+        }
+    }, [isStreaming, role, isLast]);
+
+    const typewriterOn = role === "assistant" && !!isLast && (isStreaming || typeSession);
+    const { revealed, isTyping, done } = useChatTypewriter(content, typewriterOn);
+
+    useEffect(() => {
+        if (done && !isStreaming && typeSession) {
+            setTypeSession(false);
+        }
+    }, [done, isStreaming, typeSession]);
+
+    // Reset when navigating away from this message being "live"
+    useEffect(() => {
+        if (!isLast || role !== "assistant") {
+            setTypeSession(false);
+        }
+    }, [isLast, role]);
+
+    const parts = useMessageParser(revealed);
 
     const renderableParts = parts.filter(part => {
         if (part.type === 'text') {
@@ -175,31 +222,24 @@ export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLas
         return true;
     });
 
-    // Show dots when we're waiting for the first token
-    const showDots = isLast && isStreaming && role === 'assistant' && renderableParts.length === 0;
+    const waitingForFirstToken =
+        typewriterOn &&
+        !content.trim() &&
+        (isStreaming || !!activeTool);
 
-    if (showDots) {
+    if (waitingForFirstToken) {
         return (
-            <div className="bg-muted/50 border border-border rounded-xl rounded-tl-md p-4 flex flex-col gap-2 w-max max-w-[85%] animate-in fade-in duration-300">
-                {/* Show permanent tool pills even in loading state if tools already fired */}
+            <div className="animate-in fade-in duration-300 space-y-2">
                 {toolsUsed && toolsUsed.length > 0 && <ToolUsedPills tools={toolsUsed} />}
-                <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
-                </div>
-                {activeTool && (
-                    <div className="border-t border-border/50 pt-1.5 mt-0.5">
-                        <ToolBadge activeTool={activeTool} />
-                    </div>
-                )}
+                <TypingIndicator activeTool={activeTool} />
             </div>
         );
     }
 
+    const showCursor = typewriterOn && (isStreaming || isTyping);
+
     return (
-        <div className="space-y-3 w-full">
-            {/* Permanent tool usage pills — always visible on assistant messages that used tools */}
+        <div className="space-y-2.5 w-full">
             {role === 'assistant' && toolsUsed && toolsUsed.length > 0 && (
                 <ToolUsedPills tools={toolsUsed} />
             )}
@@ -208,18 +248,19 @@ export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLas
 
                 if (part.type === 'text') {
                     const text = part.value.trim();
-                    const cursor = isLast && isStreaming && isFinalPart ? (
-                        <span className="inline-block w-2 h-4 bg-primary/40 ml-1 animate-pulse align-middle rounded-sm" />
+                    const isUser = role === 'user';
+                    const cursor = showCursor && isFinalPart ? (
+                        <span className="inline-block w-[2px] h-3.5 bg-current/70 ml-0.5 animate-pulse align-middle rounded-sm" />
                     ) : undefined;
 
                     return (
                         <div key={idx} className={cn(
-                            "max-w-[85%] p-4 rounded-xl text-sm leading-relaxed relative",
-                            role === 'user'
-                                ? "bg-primary text-primary-foreground rounded-tr-md ml-auto"
-                                : "bg-muted/50 border border-border rounded-tl-md font-medium text-foreground/90 w-full"
+                            "px-3.5 py-2.5 text-sm leading-relaxed relative shadow-sm",
+                            isUser
+                                ? "max-w-[min(100%,340px)] ml-auto rounded-2xl rounded-br-md bg-primary text-primary-foreground"
+                                : "w-full max-w-full rounded-2xl rounded-bl-md border border-border/70 bg-background/95 text-foreground"
                         )}>
-                            {renderTextWithFormatting(text, cursor)}
+                            {renderTextWithFormatting(text, cursor, isUser)}
                         </div>
                     );
                 }
@@ -261,15 +302,24 @@ export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLas
                         />
                     );
                     if (part.type === 'payroll') return <PayrollCard {...part.value} />;
+                    if (part.type === 'route') {
+                        return (
+                            <RouteCard
+                                path={part.value.path || part.value.href || ""}
+                                label={part.value.label}
+                                reason={part.value.reason || part.value.message}
+                            />
+                        );
+                    }
                     if (part.type === 'error') {
                         const { title, message } = part.value;
                         return (
-                            <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-5 space-y-2 animate-in zoom-in-95 duration-500 w-full">
+                            <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-4 space-y-1.5 animate-in fade-in duration-300 w-full">
                                 <div className="flex items-center gap-2 text-destructive">
                                     <X className="w-4 h-4" />
                                     <h4 className="font-semibold text-xs">{title || "Error"}</h4>
                                 </div>
-                                <p className="text-sm text-destructive/80 font-medium">{message}</p>
+                                <p className="text-sm text-destructive/80">{message}</p>
                             </div>
                         );
                     }
@@ -277,25 +327,19 @@ export const MessageRenderer = ({ content, role, cancelledIds, handleSend, isLas
                 })();
 
                 return (
-                    <div key={idx} className="relative w-full">
+                    <div key={idx} className="relative w-full animate-in fade-in slide-in-from-bottom-1 duration-300">
                         {cardContent}
-                        {isLast && isStreaming && isFinalPart && (
-                            <div className="mt-2 ml-4">
-                                <span className="inline-block w-2 h-4 bg-primary/40 animate-pulse align-middle rounded-sm" />
-                            </div>
-                        )}
                     </div>
                 );
             })}
 
-            {/* Live spinning badge during streaming — disappears once done (replaced by permanent pills above) */}
-            {isLast && activeTool && role === 'assistant' && renderableParts.length > 0 && (
-                <div className="pl-1">
+            {showCursor && activeTool && role === 'assistant' && renderableParts.length > 0 && (
+                <div className="pl-0.5">
                     <ToolBadge activeTool={activeTool} />
                 </div>
             )}
 
-            {role === 'assistant' && sources && sources.length > 0 && (
+            {role === 'assistant' && sources && sources.length > 0 && !isTyping && (
                 <CitationChips sources={sources} />
             )}
         </div>

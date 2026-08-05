@@ -47,6 +47,7 @@ export const GET_LEAVE_REQUESTS = gql`
       user{
         id
         firstName
+        lastName
       }
       leaveType{
         id
@@ -60,6 +61,7 @@ export const GET_LEAVE_REQUESTS = gql`
       approvedBy{
         id
         firstName
+        lastName
       }
       approvalComments
     }

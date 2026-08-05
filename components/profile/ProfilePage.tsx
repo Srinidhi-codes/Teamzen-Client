@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useGraphQLUser, useGraphQLUpdateUser } from "@/lib/api/graphqlHooks";
 import { useUpdateUser as useRestUpdateUser } from "@/lib/api/hooks"; // Keep REST for image upload if needed
 import { useToast } from "@/components/common/ToastProvider";
@@ -19,6 +19,7 @@ import { Briefcase, Calendar, IndianRupee, Loader2, Lock, User } from "lucide-re
 
 export default function ProfilePage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { user, isLoading: isUserLoading, error: userError, refetch: refetchUser } = useGraphQLUser();
   const { updateUserAsync: updateGraphQLUser, isLoading: isUpdatingGraphQL } =
     useGraphQLUpdateUser();
@@ -30,11 +31,16 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<Partial<UserFormData>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [autoOpenFaceEnroll, setAutoOpenFaceEnroll] = useState(false);
 
   useEffect(() => {
     const tab = searchParams?.get("tab");
     if (tab && ["personal", "employment", "financial", "security", "integrations"].includes(tab)) {
       setActiveTab(tab);
+    }
+    if (searchParams?.get("face") === "enroll") {
+      setActiveTab("security");
+      setAutoOpenFaceEnroll(true);
     }
   }, [searchParams]);
 
@@ -288,7 +294,15 @@ export default function ProfilePage() {
           />
         )}
 
-        {activeTab === "security" && <SecurityTab />}
+        {activeTab === "security" && (
+          <SecurityTab
+            autoOpenFaceEnroll={autoOpenFaceEnroll}
+            onFaceEnrollAutoOpenConsumed={() => {
+              setAutoOpenFaceEnroll(false);
+              router.replace("/profile?tab=security", { scroll: false });
+            }}
+          />
+        )}
         {activeTab === "integrations" && <IntegrationsTab />}
       </div>
 

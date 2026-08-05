@@ -117,7 +117,7 @@ export function useAttendanceMutations() {
         const response = await enrollFaceMutation({
             variables: { input },
             refetchQueries: [{ query: GET_ME }],
-            awaitRefetchQueries: true,
+            awaitRefetchQueries: false,
         });
         return response.data?.enrollFace;
     };

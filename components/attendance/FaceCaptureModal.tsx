@@ -118,25 +118,33 @@ export function FaceCaptureModal({
           );
           return;
         }
-        await onSuccess({
-          descriptor: [...descriptor],
-          matchScore,
-          verified: true,
-          imageBase64,
-        });
-      } else {
-        await onSuccess({
+        stopCamera();
+        setBusy(false);
+        // Close immediately — parent handles punch/API without blocking the camera UI
+        void Promise.resolve(
+          onSuccess({
+            descriptor: [...descriptor],
+            matchScore,
+            verified: true,
+            imageBase64,
+          })
+        );
+        return;
+      }
+
+      stopCamera();
+      setBusy(false);
+      void Promise.resolve(
+        onSuccess({
           descriptor: [...descriptor],
           matchScore: 1,
           verified: true,
           imageBase64,
-        });
-      }
-      stopCamera();
+        })
+      );
     } catch (e: any) {
       setHint("Hold still, face the camera, and ensure good lighting");
       setError(e?.message || "Capture failed");
-    } finally {
       setBusy(false);
     }
   };
@@ -144,8 +152,11 @@ export function FaceCaptureModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[220] flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4">
-      <div className="flex max-h-[calc(100dvh-0.5rem)] w-full max-w-md flex-col overflow-hidden rounded-t-xl border border-border bg-card shadow-lg sm:rounded-xl">
+    <div
+      className="fixed inset-0 z-[220] flex items-start justify-center overflow-y-auto bg-black/60 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:items-center sm:p-4 sm:pt-4"
+      style={{ height: "100dvh", maxHeight: "100dvh" }}
+    >
+      <div className="flex max-h-[min(88dvh,720px)] w-full max-w-md shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-lg sm:my-0">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2 text-sm font-semibold">
             <ScanFace className="h-4 w-4 text-primary" />

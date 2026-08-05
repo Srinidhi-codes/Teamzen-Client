@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_MY_NOTIFICATIONS, GET_UNREAD_COUNT } from "@/lib/graphql/notifications/queries";
 import { MARK_NOTIFICATION_READ, MARK_ALL_READ, DELETE_NOTIFICATION } from "@/lib/graphql/notifications/mutations";
@@ -31,26 +30,6 @@ import moment from "moment";
 
 export function NotificationBell() {
     const router = useRouter();
-    const [isOpen, setIsOpen] = useState(false);
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-    const handleMouseEnter = () => {
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        setIsOpen(true);
-    };
-
-    const handleMouseLeave = () => {
-        timeoutRef.current = setTimeout(() => {
-            setIsOpen(false);
-        }, 150);
-    };
-
-    // Clean up timeout on unmount
-    useEffect(() => {
-        return () => {
-            if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        };
-    }, []);
 
     const { data: notificationsData, refetch: refetchNotifications } = useQuery(GET_MY_NOTIFICATIONS, {
         variables: { level: 'personal' }
@@ -121,24 +100,20 @@ export function NotificationBell() {
     }
 
     return (
-        <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
+        <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
                 <button
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="p-2.5 rounded-2xl transition-all relative hover:bg-primary/10 text-muted-foreground hover:text-primary active:scale-95 group"
+                    type="button"
+                    className="relative flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    aria-label="Notifications"
                 >
                     {unreadCount > 0 ? (
-                        <BellRing className={cn(
-                            "w-6 h-6 text-primary transition-all origin-top group-hover:animate-bell-ring",
-                            !isOpen && "animate-pulse"
-                        )} />
+                        <BellRing className={cn("h-4 w-4 text-primary", "animate-pulse")} />
                     ) : (
-                        <Bell className="w-6 h-6 transition-all origin-top group-hover:text-primary group-hover:animate-bell-ring" />
+                        <Bell className="h-4 w-4" />
                     )}
                     {unreadCount > 0 && (
-                        <span className="absolute top-2 right-2 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-medium rounded-full flex items-center justify-center border-2 border-background">
+                        <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full border-2 border-background bg-destructive px-0.5 text-[9px] font-medium leading-none text-destructive-foreground">
                             {unreadCount > 9 ? "9+" : unreadCount}
                         </span>
                     )}
@@ -147,8 +122,6 @@ export function NotificationBell() {
 
             <DropdownMenuContent
                 align="end"
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
                 className="w-[calc(100vw-20px)] sm:w-96 p-0 overflow-hidden border-border bg-card rounded-xl shadow-lg animate-in zoom-in-95 duration-200"
             >
                 <DropdownMenuLabel className="p-0">
