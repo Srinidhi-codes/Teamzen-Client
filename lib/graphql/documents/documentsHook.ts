@@ -8,12 +8,16 @@ import {
 } from "./queries";
 
 export function useMyDocuments() {
-  const issued = useQuery(MY_ISSUED_DOCUMENTS, { fetchPolicy: "cache-and-network" });
+  const issued = useQuery(MY_ISSUED_DOCUMENTS, {
+    fetchPolicy: "cache-and-network",
+  }) as any;
   const requests = useQuery(MY_DOCUMENT_REQUESTS, {
     variables: { status: null },
     fetchPolicy: "cache-and-network",
-  });
-  const uploads = useQuery(MY_VAULT_UPLOADS, { fetchPolicy: "cache-and-network" });
+  }) as any;
+  const uploads = useQuery(MY_VAULT_UPLOADS, {
+    fetchPolicy: "cache-and-network",
+  }) as any;
 
   return {
     issued: issued.data?.myIssuedDocuments || [],
