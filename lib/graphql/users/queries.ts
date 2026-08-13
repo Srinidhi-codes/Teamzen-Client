@@ -48,6 +48,8 @@ export const GET_ME = gql`
           url
         }
         accent
+        plan
+        planExpiresAt
         faceAttendanceEnabled
         weekendDays
       }

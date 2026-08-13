@@ -3,28 +3,30 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/api/hooks";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import {
     User,
     Mail,
     Lock,
     FileText,
-    Check,
-    ShieldCheck,
     Building,
     Crown,
 } from "lucide-react";
 import { Input } from "../ui/input";
 import { FormSelect } from "../common/FormSelect";
 import { AuthShell } from "./AuthShell";
+import {
+    AUTH_INPUT_CLASS,
+    AuthFooterLink,
+    AuthSubmitButton,
+    PasswordChecklist,
+} from "./auth-ui";
 
 export default function RegisterForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { register } = useAuth();
 
-    // Get plan from search params
-    const selectedPlan = searchParams.get('plan') || 'free';
+    const selectedPlan = searchParams.get("plan") || "free";
 
     const [formData, setFormData] = useState({
         email: "",
@@ -80,6 +82,7 @@ export default function RegisterForm() {
         <AuthShell
             title="Create account"
             description="Set up your organization and admin access."
+            wide
         >
             <form className="space-y-5" onSubmit={handleSubmit}>
                 <div className="space-y-4">
@@ -96,6 +99,7 @@ export default function RegisterForm() {
                             onChange={(e) =>
                                 setFormData({ ...formData, organization_name: e.target.value })
                             }
+                            className={AUTH_INPUT_CLASS}
                         />
                     </div>
 
@@ -106,9 +110,9 @@ export default function RegisterForm() {
                         icon={<Crown className="h-4 w-4" />}
                         placeholder="Select a plan"
                         options={[
-                            { value: "free", label: "Free - Up to 10 Employees" },
-                            { value: "pro", label: "Pro - Up to 100 Employees" },
-                            { value: "elite", label: "Elite - Unlimited & AI" },
+                            { value: "free", label: "Free — ₹0/mo · Up to 10 employees" },
+                            { value: "pro", label: "Pro — ₹3,999/mo · Up to 100 employees" },
+                            { value: "elite", label: "Elite — ₹14,999/mo · Unlimited & AI" },
                         ]}
                     />
 
@@ -124,6 +128,7 @@ export default function RegisterForm() {
                                 onChange={(e) =>
                                     setFormData({ ...formData, email: e.target.value })
                                 }
+                                className={AUTH_INPUT_CLASS}
                             />
                         </div>
                         <div className="space-y-2">
@@ -137,6 +142,7 @@ export default function RegisterForm() {
                                 onChange={(e) =>
                                     setFormData({ ...formData, username: e.target.value })
                                 }
+                                className={AUTH_INPUT_CLASS}
                             />
                         </div>
                     </div>
@@ -153,6 +159,7 @@ export default function RegisterForm() {
                                 onChange={(e) =>
                                     setFormData({ ...formData, first_name: e.target.value })
                                 }
+                                className={AUTH_INPUT_CLASS}
                             />
                         </div>
                         <div className="space-y-2">
@@ -166,6 +173,7 @@ export default function RegisterForm() {
                                 onChange={(e) =>
                                     setFormData({ ...formData, last_name: e.target.value })
                                 }
+                                className={AUTH_INPUT_CLASS}
                             />
                         </div>
                     </div>
@@ -182,6 +190,7 @@ export default function RegisterForm() {
                                 onChange={(e) =>
                                     setFormData({ ...formData, password: e.target.value })
                                 }
+                                className={AUTH_INPUT_CLASS}
                             />
                         </div>
                         <div className="space-y-2">
@@ -190,51 +199,18 @@ export default function RegisterForm() {
                                 type="password"
                                 placeholder="Confirm password"
                                 required
-                                icon={<ShieldCheck className="h-4 w-4" />}
+                                icon={<Lock className="h-4 w-4" />}
                                 value={formData.password2}
                                 onChange={(e) =>
                                     setFormData({ ...formData, password2: e.target.value })
                                 }
+                                className={AUTH_INPUT_CLASS}
                             />
                         </div>
                     </div>
                 </div>
 
-                <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-3">
-                    <p className="text-sm font-medium text-foreground">Password requirements</p>
-                    <div className="grid grid-cols-2 gap-2.5 text-sm">
-                        {[
-                            { key: "length" as const, label: "8+ characters" },
-                            { key: "number" as const, label: "A number" },
-                            { key: "special" as const, label: "A special character" },
-                            { key: "uppercase" as const, label: "An uppercase letter" },
-                        ].map((item) => (
-                            <div
-                                key={item.key}
-                                className={`flex items-center gap-2 transition-colors ${
-                                    passwordCriteria[item.key]
-                                        ? "text-emerald-600"
-                                        : "text-muted-foreground"
-                                }`}
-                            >
-                                <div
-                                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors ${
-                                        passwordCriteria[item.key]
-                                            ? "border-emerald-600/30 bg-emerald-500/10"
-                                            : "border-border bg-background"
-                                    }`}
-                                >
-                                    <Check
-                                        className={`h-3 w-3 transition-opacity ${
-                                            passwordCriteria[item.key] ? "opacity-100" : "opacity-0"
-                                        }`}
-                                    />
-                                </div>
-                                <span className="font-medium">{item.label}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                <PasswordChecklist criteria={passwordCriteria} />
 
                 {Object.keys(errors).length > 0 && (
                     <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
@@ -251,21 +227,12 @@ export default function RegisterForm() {
                     </div>
                 )}
 
-                <button
-                    type="submit"
-                    disabled={register.isPending}
-                    className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
-                >
+                <AuthSubmitButton type="submit" disabled={register.isPending} loading={register.isPending}>
                     {register.isPending ? "Creating account…" : "Create account"}
-                </button>
+                </AuthSubmitButton>
             </form>
 
-            <p className="mt-8 text-center text-sm text-muted-foreground">
-                Already have an account?{" "}
-                <Link href="/login" className="font-medium text-primary hover:underline">
-                    Sign in
-                </Link>
-            </p>
+            <AuthFooterLink prompt="Already have an account?" href="/login" label="Sign in" />
         </AuthShell>
     );
 }

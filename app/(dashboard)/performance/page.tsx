@@ -28,6 +28,7 @@ import type {
   PerformanceGoal,
   PerformanceReview,
 } from "@/lib/graphql/performance/types";
+import { PlanFeatureGate } from "@/components/common/PlanFeatureGate";
 
 const GOAL_STATUSES = [
   { value: "not_started", label: "Not started" },
@@ -423,6 +424,11 @@ export default function PerformancePage() {
   const showTeam = myTeamReviews.length > 0;
 
   return (
+    <PlanFeatureGate
+      feature="advanced_analytics"
+      title="Elite plan required"
+      description="Performance goals and reviews are available on Elite. Ask your admin to upgrade in Settings → Plan & billing."
+    >
     <div className="animate-fade-in space-y-8 p-4 pb-20 sm:p-8">
       <PageHeader
         title="Performance"
@@ -518,5 +524,6 @@ export default function PerformancePage() {
         </Card>
       )}
     </div>
+    </PlanFeatureGate>
   );
 }

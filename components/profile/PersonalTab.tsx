@@ -1,9 +1,20 @@
-import { Card } from "@/components/common/Card";
 import { EditableField } from "@/components/common/EditableField";
 import { EditableSelectField } from "@/components/common/EditableSelectField";
+import { ProfileMetaRow, ProfileSection } from "./ProfileSection";
 import { UserFormData } from "./types";
 import moment from "moment";
-import { AtSign, Cake, CheckCircle, CircleXIcon, Mail, MapPin, Phone, User, VenusAndMars } from "lucide-react";
+import Link from "next/link";
+import {
+  AtSign,
+  Cake,
+  CheckCircle2,
+  Mail,
+  MapPin,
+  Phone,
+  User,
+  VenusAndMars,
+  XCircle,
+} from "lucide-react";
 
 interface PersonalTabProps {
     formData: Partial<UserFormData>;
@@ -21,9 +32,9 @@ export function PersonalTab({
     user,
 }: PersonalTabProps) {
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in transition-all duration-500">
-            <Card title="Basic Information" hover gradient>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <ProfileSection title="Basic information" icon={User} className="lg:col-span-8">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <EditableField
                         label="First Name"
                         value={formData.first_name || ""}
@@ -98,10 +109,10 @@ export function PersonalTab({
                         ]}
                     />
                 </div>
-            </Card>
+            </ProfileSection>
 
-            <Card title="Contact & Location" hover gradient>
-                <div className="space-y-4">
+            <div className="space-y-6 lg:col-span-4">
+                <ProfileSection title="Office" icon={MapPin}>
                     <EditableField
                         label="Office Location"
                         value={formData.office_location || ""}
@@ -111,39 +122,52 @@ export function PersonalTab({
                         error={errors.office_location}
                         placeholder="e.g. New York HQ"
                     />
-                    <div className="p-4 bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-                        <p className="text-sm font-semibold text-gray-700 mb-2">
-                            Account Status
-                        </p>
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">Active</span>
-                                <span
-                                    className={`badge ${user.is_active ? "badge-success" : "badge-danger"
-                                        }`}
-                                >
-                                    {user.is_active ? <CheckCircle className="text-green-500" /> : <CircleXIcon className="text-red-500" />}
+                </ProfileSection>
+
+                <ProfileSection title="Account status">
+                    <ProfileMetaRow label="Active">
+                        {user.is_active ? (
+                            <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                                <CheckCircle2 className="h-4 w-4" />
+                                Active
+                            </span>
+                        ) : (
+                            <span className="inline-flex items-center gap-1.5 text-destructive">
+                                <XCircle className="h-4 w-4" />
+                                Inactive
+                            </span>
+                        )}
+                    </ProfileMetaRow>
+                    <ProfileMetaRow label="Verified">
+                        {user.is_verified ? (
+                            <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                                <CheckCircle2 className="h-4 w-4" />
+                                Verified
+                            </span>
+                        ) : (
+                            <div className="space-y-1">
+                                <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                                    <XCircle className="h-4 w-4" />
+                                    Not verified
                                 </span>
+                                <p className="text-xs text-muted-foreground leading-snug">
+                                    Completes when all required{" "}
+                                    <Link
+                                        href="/onboarding"
+                                        className="underline underline-offset-2 hover:text-foreground"
+                                    >
+                                        onboarding
+                                    </Link>{" "}
+                                    tasks and documents are done.
+                                </p>
                             </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">Verified</span>
-                                <span
-                                    className={`badge ${user.is_verified ? "badge-success" : "badge-warning"
-                                        }`}
-                                >
-                                    {user.is_verified ? <CheckCircle className="text-green-500" /> : <CircleXIcon className="text-red-500" />}
-                                </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">Member Since</span>
-                                <span className="text-sm font-semibold text-gray-900">
-                                    {moment(user.dateOfJoining || "").format("ll")}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </Card>
+                        )}
+                    </ProfileMetaRow>
+                    <ProfileMetaRow label="Member since">
+                        {user.dateOfJoining ? moment(user.dateOfJoining).format("ll") : "—"}
+                    </ProfileMetaRow>
+                </ProfileSection>
+            </div>
         </div>
     );
 }

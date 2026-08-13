@@ -8,6 +8,8 @@ type RevealProps = {
   className?: string;
   delay?: number;
   as?: "div" | "section" | "article" | "header" | "footer";
+  from?: "up" | "left" | "right";
+  media?: boolean;
 };
 
 export function Reveal({
@@ -15,6 +17,8 @@ export function Reveal({
   className,
   delay = 0,
   as: Tag = "div",
+  from = "up",
+  media = false,
 }: RevealProps) {
   const ref = useRef<HTMLElement | null>(null);
   const [visible, setVisible] = useState(false);
@@ -25,12 +29,9 @@ export function Reveal({
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          observer.disconnect();
-        }
+        setVisible(entry.isIntersecting);
       },
-      { threshold: 0.16, rootMargin: "0px 0px -8% 0px" }
+      { threshold: 0.22, rootMargin: "0px 0px -10% 0px" }
     );
 
     observer.observe(el);
@@ -42,10 +43,13 @@ export function Reveal({
       ref={ref as never}
       className={cn(
         "landing-reveal",
+        from === "left" && "landing-reveal--from-left",
+        from === "right" && "landing-reveal--from-right",
+        media && "landing-reveal--media",
         visible && "landing-reveal--in",
         className
       )}
-      style={{ transitionDelay: `${delay}ms` }}
+      style={{ transitionDelay: visible ? `${delay}ms` : "0ms" }}
     >
       {children}
     </Tag>

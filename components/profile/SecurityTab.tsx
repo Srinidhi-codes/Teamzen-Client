@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card } from "@/components/common/Card";
+import { ProfileSection } from "./ProfileSection";
 import { useToast } from "@/components/common/ToastProvider";
 import { useGraphQLChangePassword, useGraphQLUser } from "@/lib/api/graphqlHooks";
 import { Input } from "../ui/input";
@@ -139,16 +139,55 @@ export function SecurityTab({
 
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in transition-all duration-500">
-            <FaceEnrollmentCard
-              autoOpen={autoOpenFaceEnroll}
-              onAutoOpenConsumed={onFaceEnrollAutoOpenConsumed}
-            />
-            <Card title="Change Password" hover gradient>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <ProfileSection title="Account protection" icon={ShieldCheck}>
+                <div className="space-y-3">
+                    <div
+                        className={`flex items-start justify-between gap-4 rounded-lg border px-4 py-3.5 ${
+                            is2FAEnabled
+                                ? "border-emerald-500/25 bg-emerald-500/10"
+                                : "border-border bg-muted/50"
+                        }`}
+                    >
+                        <div className="min-w-0 space-y-1">
+                            <p className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                                {is2FAEnabled ? (
+                                    <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                ) : (
+                                    <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                )}
+                                Two-factor authentication
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                {is2FAEnabled
+                                    ? "Your account is protected with a one-time code."
+                                    : "Add an extra step at sign-in with Google Authenticator or similar."}
+                            </p>
+                        </div>
+                        <label className="relative inline-flex shrink-0 cursor-pointer items-center">
+                            <input
+                                type="checkbox"
+                                className="peer sr-only"
+                                checked={is2FAEnabled}
+                                onChange={handleToggle2FA}
+                                disabled={isVerifying}
+                            />
+                            <div className="relative h-6 w-11 rounded-full bg-muted-foreground/25 after:absolute after:top-0.5 after:left-0.5 after:h-5 after:w-5 after:rounded-full after:bg-background after:transition-all peer-checked:bg-primary peer-checked:after:translate-x-5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring" />
+                        </label>
+                    </div>
+                    <FaceEnrollmentCard
+                        embedded
+                        autoOpen={autoOpenFaceEnroll}
+                        onAutoOpenConsumed={onFaceEnrollAutoOpenConsumed}
+                    />
+                </div>
+            </ProfileSection>
+
+            <ProfileSection title="Change password" icon={KeyRound}>
                 <form onSubmit={handleChangePassword} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Current Password
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-foreground">
+                            Current password
                         </label>
                         <Input
                             type="password"
@@ -157,9 +196,9 @@ export function SecurityTab({
                             required
                         />
                     </div>
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            New Password
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-foreground">
+                            New password
                         </label>
                         <Input
                             type="password"
@@ -169,9 +208,9 @@ export function SecurityTab({
                             minLength={8}
                         />
                     </div>
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Confirm New Password
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-foreground">
+                            Confirm new password
                         </label>
                         <Input
                             type="password"
@@ -181,68 +220,27 @@ export function SecurityTab({
                             minLength={8}
                         />
                     </div>
-                    <Button
-                        type="submit"
-                        className="btn-primary"
-                        disabled={isLoading}
-                    >
-                        {isLoading ? "Updating..." : "Update Password"}
+                    <Button type="submit" disabled={isLoading}>
+                        {isLoading ? "Updating…" : "Update password"}
                     </Button>
                 </form>
-            </Card>
+            </ProfileSection>
 
-            <Card title="Security Settings" hover gradient>
-                <div className="space-y-4">
-                    <div className={`p-4 border rounded-xl transition-all duration-300 ${
-                        is2FAEnabled 
-                            ? "bg-green-50 border-green-200" 
-                            : "bg-amber-50 border-amber-200"
-                    }`}>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="font-semibold text-gray-900 flex items-center gap-1.5">
-                                    {is2FAEnabled ? (
-                                        <ShieldCheck className="w-5 h-5 text-green-600" />
-                                    ) : (
-                                        <ShieldAlert className="w-5 h-5 text-amber-600" />
-                                    )}
-                                    Two-Factor Auth (2FA)
-                                </p>
-                                <p className="text-xs text-gray-600 mt-0.5">
-                                    {is2FAEnabled 
-                                        ? "Account is secured with Google Authenticator."
-                                        : "Enhance account safety using authenticator app codes."
-                                    }
-                                </p>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                                <input 
-                                    type="checkbox" 
-                                    className="sr-only peer" 
-                                    checked={is2FAEnabled}
-                                    onChange={handleToggle2FA}
-                                    disabled={isVerifying}
-                                />
-                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </Card>
-
-            <DevicesManager />
+            <div className="lg:col-span-2">
+                <DevicesManager />
+            </div>
 
             {/* Setup 2FA Modal */}
             {showSetupModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/55 backdrop-blur-xs animate-fade-in">
-                    <div className="w-full max-w-md bg-white p-8 rounded-3xl shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4 backdrop-blur-sm">
+                    <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-lg sm:p-8">
                         <form onSubmit={handleEnable2FA} className="space-y-6">
                             <div className="text-center space-y-2">
-                                <div className="mx-auto w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center">
-                                    <KeyRound className="w-6 h-6 text-indigo-600" />
+                                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                                    <KeyRound className="h-6 w-6 text-primary" />
                                 </div>
-                                <h3 className="text-xl font-bold text-gray-900">Enable Authenticator App</h3>
-                                <p className="text-xs text-gray-500">
+                                <h3 className="text-lg font-semibold tracking-tight text-foreground">Enable authenticator app</h3>
+                                <p className="text-xs text-muted-foreground">
                                     Scan the QR code below using your authenticator app (e.g. Google Authenticator).
                                 </p>
                             </div>
@@ -253,29 +251,29 @@ export function SecurityTab({
                                     <img 
                                         src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(provisioningUri)}`} 
                                         alt="2FA QR Code" 
-                                        className="border-4 border-white shadow-md rounded-xl bg-white"
+                                        className="rounded-xl border border-border bg-white"
                                     />
                                 )}
                             </div>
 
                             {/* Manual Setup Key */}
-                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200/60">
-                                <p className="text-xs font-medium text-muted-foreground mb-1.5">Setup key</p>
+                            <div className="rounded-lg border border-border bg-muted/50 p-4">
+                                <p className="mb-1.5 text-xs font-medium text-muted-foreground">Setup key</p>
                                 <div className="flex items-center justify-between gap-2">
-                                    <code className="text-xs font-mono text-gray-800 break-all select-all">{secret}</code>
-                                    <button 
-                                        type="button" 
+                                    <code className="break-all font-mono text-xs text-foreground select-all">{secret}</code>
+                                    <button
+                                        type="button"
                                         onClick={handleCopySecret}
-                                        className="text-gray-500 hover:text-indigo-600 p-1 rounded hover:bg-gray-200/50 transition-colors"
+                                        className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
                                     >
-                                        {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                                        {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
                                     </button>
                                 </div>
                             </div>
 
                             {/* Verification Code */}
                             <div className="space-y-1.5">
-                                <label className="block text-sm font-medium text-gray-700">Verification code</label>
+                                <label className="text-sm font-medium text-foreground">Verification code</label>
                                 <Input
                                     type="text"
                                     required
@@ -300,7 +298,7 @@ export function SecurityTab({
                                 <Button
                                     type="submit"
                                     disabled={isVerifying}
-                                    className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white"
+                                    className="flex-1"
                                 >
                                     {isVerifying ? <Loader2 className="animate-spin w-5 h-5 mx-auto" /> : "Verify & Enable"}
                                 </Button>
@@ -312,21 +310,21 @@ export function SecurityTab({
 
             {/* Disable 2FA Modal */}
             {showDisableModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/55 backdrop-blur-xs animate-fade-in">
-                    <div className="w-full max-w-sm bg-white p-8 rounded-3xl shadow-2xl border border-gray-100">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-lg sm:p-8">
                         <form onSubmit={handleDisable2FA} className="space-y-6">
                             <div className="text-center space-y-2">
-                                <div className="mx-auto w-12 h-12 bg-red-50 rounded-full flex items-center justify-center">
-                                    <ShieldAlert className="w-6 h-6 text-red-600" />
+                                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+                                    <ShieldAlert className="h-6 w-6 text-destructive" />
                                 </div>
-                                <h3 className="text-xl font-bold text-gray-900">Disable 2-Factor Auth</h3>
-                                <p className="text-xs text-gray-500">
+                                <h3 className="text-lg font-semibold tracking-tight text-foreground">Disable two-factor auth</h3>
+                                <p className="text-xs text-muted-foreground">
                                     Please enter the current 6-digit code from your authenticator app to confirm disabling.
                                 </p>
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="block text-sm font-medium text-gray-700">Verification code</label>
+                                <label className="text-sm font-medium text-foreground">Verification code</label>
                                 <Input
                                     type="text"
                                     required
@@ -350,7 +348,8 @@ export function SecurityTab({
                                 <Button
                                     type="submit"
                                     disabled={isVerifying}
-                                    className="flex-1 bg-red-600 hover:bg-red-500 text-white"
+                                    variant="destructive"
+                                    className="flex-1"
                                 >
                                     {isVerifying ? <Loader2 className="animate-spin w-5 h-5 mx-auto" /> : "Disable"}
                                 </Button>

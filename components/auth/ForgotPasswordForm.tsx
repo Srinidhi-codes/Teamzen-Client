@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, ArrowLeft, Loader2 } from "lucide-react";
+import { Mail, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import axios from "@/lib/api/client";
@@ -9,6 +9,7 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { toast } from "sonner";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { AuthImages } from "@/lib/brand-images";
+import { AUTH_INPUT_CLASS, AuthSubmitButton } from "@/components/auth/auth-ui";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -59,17 +60,13 @@ export function ForgotPasswordForm() {
               placeholder="you@company.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className={AUTH_INPUT_CLASS}
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
-          >
-            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+          <AuthSubmitButton type="submit" disabled={isLoading} loading={isLoading}>
             {isLoading ? "Sending…" : "Send reset link"}
-          </button>
+          </AuthSubmitButton>
 
           <Link
             href="/login"
@@ -87,7 +84,7 @@ export function ForgotPasswordForm() {
           <button
             type="button"
             onClick={() => setIsSent(false)}
-            className="inline-flex h-10 w-full items-center justify-center rounded-md border border-border bg-background text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-border bg-background text-sm font-medium text-foreground transition-colors hover:bg-muted"
           >
             Try a different email
           </button>

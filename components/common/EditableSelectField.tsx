@@ -1,4 +1,5 @@
 import { FormSelect } from "@/components/common/FormSelect";
+import { cn } from "@/lib/utils";
 
 interface EditableSelectFieldProps {
     label: string;
@@ -21,29 +22,27 @@ export function EditableSelectField({
         options.find((opt) => opt.value === value)?.label || "Not specified";
 
     return (
-        <div className="p-4 rounded-xl border border-border hover:bg-muted/30 transition-colors group">
-            <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-4 flex-1">
-                    <span className="text-muted-foreground pt-1">{icon}</span>
-                    <div className="flex-1 space-y-1">
-                        <p className="text-sm font-medium text-muted-foreground">
-                            {label}
+        <div className="rounded-lg bg-muted/50 px-3.5 py-3">
+            <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-background text-muted-foreground [&>svg]:h-4 [&>svg]:w-4">
+                    {icon}
+                </span>
+                <div className="min-w-0 flex-1 space-y-1">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                        {label}
+                    </p>
+                    {editable ? (
+                        <FormSelect
+                            value={value}
+                            onValueChange={onChange}
+                            options={options}
+                            className="h-9 bg-background py-1.5"
+                        />
+                    ) : (
+                        <p className={cn("truncate text-sm font-medium", value ? "text-foreground" : "text-muted-foreground")}>
+                            {displayValue}
                         </p>
-                        {editable ? (
-                            <div className="mt-1">
-                                <FormSelect
-                                    value={value}
-                                    onValueChange={onChange}
-                                    options={options}
-                                    className="bg-background/50 h-10 py-2"
-                                />
-                            </div>
-                        ) : (
-                            <p className="text-sm font-semibold text-foreground/90">
-                                {displayValue}
-                            </p>
-                        )}
-                    </div>
+                    )}
                 </div>
             </div>
         </div>

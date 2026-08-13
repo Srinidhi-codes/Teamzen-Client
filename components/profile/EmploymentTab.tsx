@@ -1,6 +1,6 @@
-import { Card } from "@/components/common/Card";
 import { EditableField } from "@/components/common/EditableField";
 import { EditableSelectField } from "@/components/common/EditableSelectField";
+import { ProfileSection } from "./ProfileSection";
 import { UserFormData } from "./types";
 import moment from "moment";
 import { Briefcase, Building, Calendar, Clipboard, IdCard, User } from "lucide-react";
@@ -13,6 +13,34 @@ interface EmploymentTabProps {
     user: any;
 }
 
+function StatTile({
+    label,
+    value,
+    hint,
+    bar,
+}: {
+    label: string;
+    value: string;
+    hint?: string;
+    bar?: number;
+}) {
+    return (
+        <div className="rounded-lg bg-muted/50 px-4 py-3.5">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+            <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{value}</p>
+            {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
+            {typeof bar === "number" ? (
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-border">
+                    <div
+                        className="h-full rounded-full bg-primary"
+                        style={{ width: `${Math.min(100, Math.max(0, bar))}%` }}
+                    />
+                </div>
+            ) : null}
+        </div>
+    );
+}
+
 export function EmploymentTab({
     formData,
     isEditing,
@@ -20,10 +48,12 @@ export function EmploymentTab({
     errors,
     user,
 }: EmploymentTabProps) {
+    const attendance = Number(user.attendance_rate) || 0;
+
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in transition-all duration-500">
-            <Card title="Employment Details" hover gradient>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <ProfileSection title="Employment details" icon={Briefcase} className="lg:col-span-8">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <EditableField
                         label="Employee ID"
                         value={formData.employee_id || ""}
@@ -83,53 +113,31 @@ export function EmploymentTab({
                         placeholder="Manager's Name"
                     />
                 </div>
-            </Card>
+            </ProfileSection>
 
-            <Card title="Work Statistics" hover gradient>
-                <div className="space-y-4">
-                    <div className="p-4 bg-linear-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-semibold text-gray-700">
-                                Attendance Rate
-                            </span>
-                            <span className="text-2xl font-bold text-green-600">{user.attendance_rate || 0}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                                className="bg-linear-to-r from-green-500 to-emerald-600 h-2 rounded-full"
-                                style={{ width: `${user.attendance_rate || 0}%` }}
-                            ></div>
-                        </div>
-                    </div>
-
-                    <div className="p-4 bg-linear-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-200">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-semibold text-gray-700">
-                                Leave Balance
-                            </span>
-                            <span className="text-2xl font-bold text-blue-600">{user.leave_balance || 0} days</span>
-                        </div>
-                        <p className="text-xs text-gray-600">Out of {user.total_leave_entitlement || 0} annual leaves</p>
-                    </div>
-
-                    <div className="p-4 bg-linear-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-semibold text-gray-700">
-                                Tenure
-                            </span>
-                            <span className="text-2xl font-bold text-purple-600">
-                                {user.tenure_display || "0m"}
-                            </span>
-                        </div>
-                        <p className="text-xs text-gray-600">
-                            Since{": "}
-                            {user.dateOfJoining
-                                ? moment(user.dateOfJoining).format("ll")
-                                : "N/A"}
-                        </p>
-                    </div>
+            <ProfileSection title="Work statistics" className="lg:col-span-4">
+                <div className="space-y-3">
+                    <StatTile
+                        label="Attendance rate"
+                        value={`${attendance}%`}
+                        bar={attendance}
+                    />
+                    <StatTile
+                        label="Leave balance"
+                        value={`${user.leave_balance || 0} days`}
+                        hint={`Of ${user.total_leave_entitlement || 0} annual leaves`}
+                    />
+                    <StatTile
+                        label="Tenure"
+                        value={user.tenure_display || "0m"}
+                        hint={
+                            user.dateOfJoining
+                                ? `Since ${moment(user.dateOfJoining).format("ll")}`
+                                : "Join date not set"
+                        }
+                    />
                 </div>
-            </Card>
+            </ProfileSection>
         </div>
     );
 }

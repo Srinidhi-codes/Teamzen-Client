@@ -180,6 +180,12 @@ export default function MyOnboardingPage() {
         />
       </div>
 
+      {onboarding.status === "completed" && (
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">
+          Onboarding complete — your account is now verified.
+        </div>
+      )}
+
       {msg && (
         <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm">
           {msg}

@@ -6,6 +6,8 @@ export const BrandImages = {
   mark: "/images/teamzen_zoomed.webp",
   logo: "/images/Teamzen_Logo.webp",
   logoAlt: "/images/Teamzen_Logo2.webp",
+  assistantChat: "/images/icons/assistant-chat.webp",
+  assistantMark: "/images/icons/assistant-mark.webp",
 } as const;
 
 export const AuthImages = {

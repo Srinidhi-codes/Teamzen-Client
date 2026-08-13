@@ -14,19 +14,21 @@ import {
   BookCheck,
   Bell,
   TrendingUp,
-  Briefcase,
   MessageSquare,
   ClipboardList,
   X,
 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { useStore } from "@/lib/store/useStore";
+import { hasPlanFeature, type PlanFeature } from "@/lib/plans";
 
 interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   roles?: string[];
+  feature?: PlanFeature;
 }
 
 const navItems: NavItem[] = [
@@ -34,12 +36,11 @@ const navItems: NavItem[] = [
   { name: "Team", href: "/team", icon: Users },
   { name: "Leaves", href: "/leaves", icon: Calendar },
   { name: "Attendance", href: "/attendance", icon: Clock },
-  { name: "Payroll", href: "/payroll", icon: DollarSign },
-  { name: "Employees", href: "/employees", icon: Briefcase },
+  { name: "Payroll", href: "/payroll", icon: DollarSign, feature: "payroll_basic" },
   { name: "Onboarding", href: "/onboarding", icon: ClipboardList },
-  { name: "Performance", href: "/performance", icon: TrendingUp },
+  { name: "Performance", href: "/performance", icon: TrendingUp, feature: "advanced_analytics" },
   { name: "Profile", href: "/profile", icon: UserCircle },
-  { name: "Policies", href: "/policies", icon: BookCheck },
+  { name: "Policies", href: "/policies", icon: BookCheck, feature: "policies" },
   { name: "Feedback", href: "/feedback", icon: MessageSquare },
   { name: "Notifications", href: "/notifications", icon: Bell },
 ];
@@ -58,6 +59,16 @@ export function Sidebar({
   closeMobile,
 }: SidebarProps) {
   const pathname = usePathname();
+  const { user } = useStore();
+
+  const visibleNavItems = navItems.filter((item) => {
+    if (!item.feature) return true;
+    return hasPlanFeature(
+      user?.organization?.plan,
+      user?.organization?.planExpiresAt,
+      item.feature
+    );
+  });
 
   return (
     <>
@@ -121,11 +132,11 @@ export function Sidebar({
         </div>
 
         <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const isActive =
               pathname === item.href ||
               (pathname.startsWith(item.href + "/") &&
-                !navItems.some(
+                !visibleNavItems.some(
                   (other) =>
                     other.href !== item.href &&
                     pathname.startsWith(other.href) &&
