@@ -20,9 +20,40 @@ const landingDisplay = Sora({
 });
 
 export const metadata: Metadata = {
-  title: "Teamzen — HRMS for modern teams",
+  title: {
+    default: "Teamzen — HRMS for modern teams",
+    template: "%s · Teamzen",
+  },
   description:
     "Attendance, leave, and payroll in one calm workforce workspace.",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+  ),
+  openGraph: {
+    title: "Teamzen — HRMS for modern teams",
+    description:
+      "Attendance, leave, and payroll in one calm workforce workspace.",
+    images: [
+      {
+        url: "/images/landing/general.webp",
+        width: 1920,
+        height: 1080,
+        alt: "Teamzen workforce platform",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Teamzen — HRMS for modern teams",
+    description:
+      "Attendance, leave, and payroll in one calm workforce workspace.",
+    images: ["/images/landing/general.webp"],
+  },
+  icons: {
+    icon: [{ url: "/images/teamzen_zoomed.webp", type: "image/webp" }],
+    apple: [{ url: "/images/teamzen_zoomed.webp" }],
+  },
 };
 
 export const viewport = {

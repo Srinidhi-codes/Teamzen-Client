@@ -1,6 +1,7 @@
 "use client";
 
 import { useAttendanceMutations, useGraphQlAttendance } from "@/lib/graphql/attendance/attendanceHooks";
+import { useQuery } from "@apollo/client/react";
 import { useEffect, useState } from "react";
 import { format, parse, differenceInSeconds } from "date-fns";
 import { useRouter } from "next/navigation";
@@ -23,6 +24,7 @@ import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store/useStore";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
+import { GET_MY_FACE } from "@/lib/graphql/users/queries";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -61,6 +63,10 @@ export default function AttendancePage() {
   const { refetch: refetchMe } = useGraphQLUser();
   const router = useRouter();
   const { user } = useStore();
+  const { data: faceData, refetch: refetchFace } = useQuery(GET_MY_FACE, {
+    skip: !user?.organization?.faceAttendanceEnabled,
+    fetchPolicy: "cache-first",
+  }) as any;
 
   const [currentCoords, setCurrentCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -71,10 +77,13 @@ export default function AttendancePage() {
   const [pendingCoords, setPendingCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [now, setNow] = useState(() => new Date());
 
+  const faceDescriptor = (faceData?.me?.faceDescriptor ?? user?.faceDescriptor) as number[] | undefined;
   const faceEnabled = !!user?.organization?.faceAttendanceEnabled;
   const faceEnrolled =
-    !!user?.faceEnrolled && Array.isArray(user?.faceDescriptor) && user.faceDescriptor.length === 128;
-  const enrolledDescriptor = (user as any)?.faceDescriptor as number[] | undefined;
+    !!(faceData?.me?.faceEnrolled ?? user?.faceEnrolled) &&
+    Array.isArray(faceDescriptor) &&
+    faceDescriptor.length === 128;
+  const enrolledDescriptor = faceDescriptor;
 
   const getDistanceKM = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
     const R = 6371; // Radius of the earth in km
@@ -370,6 +379,7 @@ export default function AttendancePage() {
                   id: toastId,
                 });
                 await refetchMe();
+                await refetchFace();
               } catch (e: any) {
                 toast.error(e?.message || "Failed to save face.", { id: toastId });
               }

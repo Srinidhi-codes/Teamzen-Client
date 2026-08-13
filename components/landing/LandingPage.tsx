@@ -7,7 +7,6 @@ import { useTheme } from "next-themes";
 import {
   Calendar,
   Check,
-  CircleDollarSign,
   Clock,
   MapPin,
   Moon,
@@ -18,6 +17,7 @@ import { useStore } from "@/lib/store/useStore";
 import { LandingNavbar } from "@/components/landing/LandingNavbar";
 import { DashboardPreview } from "@/components/landing/DashboardPreview";
 import { Reveal } from "@/components/landing/Reveal";
+import { BrandImages, LandingImages } from "@/lib/brand-images";
 
 const tiers = [
   {
@@ -85,8 +85,20 @@ export function LandingPage() {
       <LandingNavbar showDashboardCta={showDashboardCta} />
 
       {/* ── Hero ─────────────────────────────────────────────── */}
-      <header className="relative isolate pt-14 sm:pt-16">
-        <div className="landing-hero-atmosphere" aria-hidden />
+      <header className="relative isolate overflow-hidden pt-14 sm:pt-16">
+        <Image
+          src={LandingImages.hero}
+          alt=""
+          fill
+          priority
+          quality={85}
+          sizes="100vw"
+          className="object-cover object-[center_35%] opacity-90 dark:opacity-50"
+        />
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/55 via-background/70 to-[var(--landing-bg)] dark:from-background/70 dark:via-background/80"
+          aria-hidden
+        />
         <div className="landing-hero-grid" aria-hidden />
 
         <div className="relative mx-auto flex min-h-[calc(100svh-3.5rem)] max-w-6xl flex-col justify-end px-4 pb-8 pt-16 sm:min-h-[calc(100svh-4rem)] sm:px-6 sm:pb-12 sm:pt-20">
@@ -169,31 +181,16 @@ export function LandingPage() {
           </Reveal>
 
           <Reveal delay={120} className="landing-module-panel">
-            <div className="space-y-0 divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
-              {[
-                { day: "Mon", label: "Present", tone: "bg-emerald-500", time: "09:02" },
-                { day: "Tue", label: "Present", tone: "bg-emerald-500", time: "08:58" },
-                { day: "Wed", label: "On leave", tone: "bg-orange-400", time: "—" },
-                { day: "Thu", label: "Present", tone: "bg-emerald-500", time: "09:11" },
-                { day: "Fri", label: "Pending", tone: "bg-amber-400", time: "Today", active: true },
-              ].map((row) => (
-                <div
-                  key={row.day}
-                  className={cn(
-                    "flex items-center justify-between px-5 py-4",
-                    row.active && "bg-primary/5"
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className={cn("h-2 w-2 rounded-full", row.tone)} />
-                    <div>
-                      <p className="text-sm font-semibold">{row.day}</p>
-                      <p className="text-xs text-muted-foreground">{row.label}</p>
-                    </div>
-                  </div>
-                  <p className="text-sm tabular-nums text-muted-foreground">{row.time}</p>
-                </div>
-              ))}
+            <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-card">
+              <Image
+                src={LandingImages.attendance}
+                alt="Location-aware attendance with a clear week view"
+                fill
+                loading="lazy"
+                decoding="async"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover object-center"
+              />
             </div>
           </Reveal>
         </div>
@@ -203,32 +200,16 @@ export function LandingPage() {
       <section className="landing-band px-4 py-24 sm:px-6 sm:py-32">
         <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
           <Reveal className="order-2 lg:order-1">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8">
-              <p className="text-sm text-teal-200/80">Leave available</p>
-              <p className="mt-2 font-[family-name:var(--font-landing-display)] text-6xl font-semibold tracking-tight text-white tabular-nums sm:text-7xl">
-                19
-                <span className="ml-2 text-xl font-medium text-white/50">days</span>
-              </p>
-              <div className="mt-8 space-y-4">
-                {[
-                  { name: "Annual", pct: 67 },
-                  { name: "Sick", pct: 63 },
-                  { name: "Casual", pct: 50 },
-                ].map((b) => (
-                  <div key={b.name}>
-                    <div className="mb-1.5 flex justify-between text-sm text-white/70">
-                      <span>{b.name}</span>
-                      <span>{b.pct}%</span>
-                    </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-                      <div
-                        className="h-full rounded-full bg-teal-300 landing-bar-grow"
-                        style={{ width: `${b.pct}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+              <Image
+                src={LandingImages.leave}
+                alt="Leave balances and approvals that stay clear"
+                fill
+                loading="lazy"
+                decoding="async"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover object-center"
+              />
             </div>
           </Reveal>
 
@@ -269,28 +250,16 @@ export function LandingPage() {
           </Reveal>
 
           <Reveal delay={120} className="mx-auto mt-14 max-w-3xl">
-            <div className="overflow-hidden rounded-2xl border border-border bg-card">
-              <div className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-6">
-                <div className="flex items-center gap-2.5">
-                  <CircleDollarSign className="h-4 w-4 text-primary" />
-                  <p className="text-sm font-semibold">July 2026 payslip</p>
-                </div>
-                <span className="text-xs font-medium text-emerald-600">Paid</span>
-              </div>
-              <div className="grid gap-6 p-5 sm:grid-cols-3 sm:p-6">
-                {[
-                  { label: "Gross", value: "$6,400" },
-                  { label: "Deductions", value: "$1,120" },
-                  { label: "Net pay", value: "$5,280" },
-                ].map((row) => (
-                  <div key={row.label}>
-                    <p className="text-xs text-muted-foreground">{row.label}</p>
-                    <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">
-                      {row.value}
-                    </p>
-                  </div>
-                ))}
-              </div>
+            <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-border bg-card">
+              <Image
+                src={LandingImages.payroll}
+                alt="Clear payslips with gross, deductions, and net pay"
+                fill
+                loading="lazy"
+                decoding="async"
+                sizes="(max-width: 1024px) 100vw, 768px"
+                className="object-cover object-center"
+              />
             </div>
           </Reveal>
         </div>
@@ -430,12 +399,13 @@ export function LandingPage() {
           <div className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-md bg-card ring-1 ring-border">
               <Image
-                src="/images/teamzen_zoomed.png"
+                src={BrandImages.mark}
                 alt="Teamzen"
                 width={24}
                 height={24}
                 className="h-6 w-6 object-contain"
                 loading="lazy"
+                decoding="async"
               />
             </div>
             <span className="text-sm text-muted-foreground">

@@ -5,6 +5,8 @@ import moment from "moment";
 import { usePreboardingTour } from "@/components/onboarding/PreboardingTour";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import Image from "next/image";
+import { OnboardingImages } from "@/lib/brand-images";
 
 function formatJoinDate(value?: string | Date | null) {
   if (value == null || value === "") return "";
@@ -376,6 +378,17 @@ export default function PreboardingPage({
       </header>
 
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-8">
+        <div className="relative aspect-[21/9] overflow-hidden rounded-2xl border border-emerald-100 bg-emerald-50/50">
+          <Image
+            src={OnboardingImages.preboarding}
+            alt="Welcome to preboarding"
+            fill
+            priority
+            sizes="(max-width: 768px) 100vw, 768px"
+            className="object-cover object-center"
+          />
+        </div>
+
         {msg && (
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
             {msg}

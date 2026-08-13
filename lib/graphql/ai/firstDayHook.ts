@@ -7,7 +7,7 @@ import type { FirstDayWizardData } from "@/lib/graphql/ai/types";
 export function useFirstDayWizard(enabled = true) {
   const { data, loading, error, refetch } = useQuery(FIRST_DAY_WIZARD, {
     skip: !enabled,
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-first",
   }) as {
     data?: { firstDayWizard?: FirstDayWizardData };
     loading: boolean;

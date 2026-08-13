@@ -32,6 +32,8 @@ import { useNotifications } from "@/lib/hooks/useNotifications";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import moment from "moment";
 import { Pagination } from "@/components/common/Pagination";
+import { EmptyState } from "@/components/common/EmptyState";
+import { EmptyImages } from "@/lib/brand-images";
 
 export default function NotificationsPage() {
     const [filter, setFilter] = useState("all");
@@ -383,13 +385,12 @@ export default function NotificationsPage() {
                                 )}
                             </>
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
-                                <Bell className="w-10 h-10 text-muted-foreground/40 mb-4" />
-                                <h3 className="text-base font-semibold text-foreground mb-2">No notifications</h3>
-                                <p className="text-sm text-muted-foreground max-w-xs">
-                                    You&apos;re all caught up. New alerts will appear here.
-                                </p>
-                            </div>
+                            <EmptyState
+                                src={EmptyImages.notifications}
+                                title="No notifications"
+                                description="You're all caught up. New alerts will appear here."
+                                size="wide"
+                            />
                         )}
                     </TabsContent>
 
@@ -416,13 +417,12 @@ export default function NotificationsPage() {
                                 )}
                             </>
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
-                                <Bell className="w-10 h-10 text-muted-foreground/40 mb-4" />
-                                <h3 className="text-base font-semibold text-foreground mb-2">No unread notifications</h3>
-                                <p className="text-sm text-muted-foreground max-w-xs">
-                                    You&apos;re all caught up.
-                                </p>
-                            </div>
+                            <EmptyState
+                                src={EmptyImages.notifications}
+                                title="No unread notifications"
+                                description="You're all caught up."
+                                size="wide"
+                            />
                         )}
                     </TabsContent>
                 </Tabs>

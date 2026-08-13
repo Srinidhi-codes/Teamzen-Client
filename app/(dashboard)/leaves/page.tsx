@@ -38,6 +38,8 @@ import { DataTable, Column } from "@/components/common/DataTable";
 import { LeaveRequestModal } from "@/components/leaves/LeaveRequestModal";
 import { LeaveReviewModal } from "@/components/leaves/LeaveReviewModal";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/common/EmptyState";
+import { EmptyImages } from "@/lib/brand-images";
 import Image from "next/image";
 import { PageHeader } from "@/components/common/PageHeader";
 import { toast } from "sonner";
@@ -483,10 +485,12 @@ export default function LeavesPage() {
                   <LoadingSpinner />
                 </div>
               ) : teamLeavesData.length === 0 ? (
-                <div className="p-12 text-center space-y-3">
-                  <Users className="w-10 h-10 text-muted-foreground/30 mx-auto" />
-                  <p className="text-sm text-muted-foreground">No colleagues are currently on leave.</p>
-                </div>
+                <EmptyState
+                  src={EmptyImages.leaves}
+                  title="No one on leave"
+                  description="No colleagues are currently on leave."
+                  size="wide"
+                />
               ) : (
                 <div className="overflow-x-auto no-scrollbar">
                   <div className="flex gap-4 p-4 min-w-max">

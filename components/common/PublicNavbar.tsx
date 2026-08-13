@@ -13,7 +13,7 @@ export function PublicNavbar() {
         <Link href="/" className="flex items-center gap-2.5 text-foreground">
           <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-md bg-card ring-1 ring-border">
             <Image
-              src="/images/teamzen_zoomed.png"
+              src="/images/teamzen_zoomed.webp"
               alt="Teamzen"
               width={28}
               height={28}

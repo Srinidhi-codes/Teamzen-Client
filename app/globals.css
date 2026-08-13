@@ -502,12 +502,38 @@
   to { transform: scaleX(1); }
 }
 
+@keyframes hero-art-drift {
+  0%,
+  100% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.03) translate3d(-0.6%, 0, 0);
+  }
+}
+
+.hero-art {
+  object-fit: cover !important;
+  object-position: 72% center !important;
+  animation: hero-art-drift 28s ease-in-out infinite;
+  transform-origin: 72% center;
+  will-change: transform;
+}
+
+@media (min-width: 640px) {
+  .hero-art {
+    object-position: right center !important;
+    transform-origin: right center;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .landing-hero-item,
   .landing-reveal,
   .landing-preview-frame,
   .landing-hero-grid,
-  .landing-bar-grow {
+  .landing-bar-grow,
+  .hero-art {
     animation: none !important;
     transition: none !important;
     opacity: 1 !important;
