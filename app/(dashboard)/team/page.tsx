@@ -11,6 +11,8 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { PhotoOverlay } from "@/components/common/PhotoOverlay";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/common/EmptyState";
+import { EmptyImages } from "@/lib/brand-images";
 import {
   Briefcase,
   Building2,
@@ -1008,15 +1010,15 @@ export default function TeamPage() {
 
 function EmptyPeople({ query }: { query: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border px-4 py-12 text-center">
-      <Search className="h-5 w-5 text-muted-foreground/40" />
-      <p className="text-sm font-medium text-foreground">
-        {query ? "No matches" : "No people in this view"}
-      </p>
-      <p className="text-xs text-muted-foreground">
-        {query ? `Nothing found for “${query}”.` : "Your reporting circle will appear here."}
-      </p>
-    </div>
+    <EmptyState
+      src={EmptyImages.team}
+      title={query ? "No matches" : "No people in this view"}
+      description={
+        query ? `Nothing found for “${query}”.` : "Your reporting circle will appear here."
+      }
+      size="wide"
+      className="rounded-xl border border-dashed border-border"
+    />
   );
 }
 

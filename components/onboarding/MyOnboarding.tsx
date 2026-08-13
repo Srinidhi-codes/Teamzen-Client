@@ -18,6 +18,9 @@ import {
   useMyOnboardingTour,
 } from "@/components/onboarding/MyOnboardingTour";
 import client from "@/lib/api/client";
+import Image from "next/image";
+import { OnboardingImages, EmptyImages } from "@/lib/brand-images";
+import { EmptyState } from "@/components/common/EmptyState";
 
 function formatJoinDate(value?: string | Date | null) {
   if (value == null || value === "") return "";
@@ -119,9 +122,13 @@ export default function MyOnboardingPage() {
           title="My Onboarding"
           description="Your checklist will appear here when HR starts your onboarding."
         />
-        <Card className="p-8 text-center text-muted-foreground">
-          <ClipboardList className="mx-auto mb-3 h-10 w-10 opacity-40" />
-          No active onboarding.
+        <Card className="overflow-hidden p-0">
+          <EmptyState
+            src={EmptyImages.team}
+            title="No active onboarding"
+            description="Your checklist will appear here when HR starts your onboarding."
+            size="wide"
+          />
         </Card>
         {assigned.length > 0 && (
           <Card className="p-4 space-y-2">
@@ -153,6 +160,25 @@ export default function MyOnboardingPage() {
         }`}
         actions={<MyOnboardingTourButton />}
       />
+
+      <div className="relative aspect-[21/9] overflow-hidden rounded-2xl border border-border bg-[#e8eef4]">
+        <Image
+          src={
+            Number(onboarding.progressPct) >= 100
+              ? OnboardingImages.done
+              : OnboardingImages.welcome
+          }
+          alt={
+            Number(onboarding.progressPct) >= 100
+              ? "Onboarding complete"
+              : "Welcome to onboarding"
+          }
+          fill
+          priority
+          sizes="(max-width: 1280px) 100vw, 1280px"
+          className="object-cover object-[center_30%]"
+        />
+      </div>
 
       {msg && (
         <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm">

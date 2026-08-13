@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import axios from "axios";
+import { EmptyState } from "@/components/common/EmptyState";
+import { EmptyImages } from "@/lib/brand-images";
 import {
   MessageSquare,
   Paperclip,
@@ -257,9 +259,16 @@ export default function FeedbackPage() {
             </div>
             <div className="max-h-[65vh] divide-y divide-border overflow-y-auto">
               {!loading && items.length === 0 && (
-                <p className="px-4 py-12 text-center text-sm text-muted-foreground">
-                  {tab === "org" ? "No admin shares yet" : "You haven’t submitted feedback yet"}
-                </p>
+                <EmptyState
+                  src={EmptyImages.feedback}
+                  title={tab === "org" ? "No admin shares yet" : "No feedback yet"}
+                  description={
+                    tab === "org"
+                      ? "Org-wide updates from admin will appear here."
+                      : "You haven’t submitted feedback yet."
+                  }
+                  size="default"
+                />
               )}
               {items.map((item) => (
                 <button

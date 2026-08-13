@@ -9,6 +9,7 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { toast } from "sonner";
 import Link from "next/link";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { AuthImages } from "@/lib/brand-images";
 
 function ResetPasswordFormInner() {
   const [password, setPassword] = useState("");
@@ -59,6 +60,8 @@ function ResetPasswordFormInner() {
       <AuthShell
         title="Invalid link"
         description="This password reset link is invalid or has expired."
+        sideImage={AuthImages.security}
+        sideImageAlt="Password reset security illustration"
       >
         <div className="space-y-5">
           <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/40 p-3">
@@ -86,6 +89,8 @@ function ResetPasswordFormInner() {
           ? "Your password has been updated."
           : "Choose a new password for your account."
       }
+      sideImage={AuthImages.security}
+      sideImageAlt="Password reset security illustration"
     >
       {!isSuccess ? (
         <form className="space-y-5" onSubmit={handleSubmit}>
@@ -166,7 +171,12 @@ export function ResetPasswordForm() {
   return (
     <Suspense
       fallback={
-        <AuthShell title="Reset password" description="Loading…">
+        <AuthShell
+          title="Reset password"
+          description="Loading…"
+          sideImage={AuthImages.security}
+          sideImageAlt="Password reset security illustration"
+        >
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>

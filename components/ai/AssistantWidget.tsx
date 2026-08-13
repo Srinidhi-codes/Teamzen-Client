@@ -23,6 +23,7 @@ import { MessageRenderer } from "./MessageRenderer";
 import { TypingIndicator } from "./TypingIndicator";
 import { useStore } from "@/lib/store/useStore";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
+import Image from "next/image";
 
 function suggestionsForPath(pathname: string): string[] {
   if (pathname.startsWith("/leaves")) {
@@ -292,8 +293,16 @@ export function AssistantWidget() {
           >
             {messages.length === 0 && (
               <div className="flex h-full min-h-[280px] flex-col justify-center animate-in fade-in duration-500">
-                <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-background/80 text-primary shadow-sm">
-                  <Bot className="h-7 w-7" />
+                <div className="relative mx-auto mb-5 aspect-[16/10] w-full max-w-[320px] overflow-hidden rounded-xl ring-1 ring-border/70">
+                  <Image
+                    src="/images/empty/empty-assistant.webp"
+                    alt=""
+                    fill
+                    loading="lazy"
+                    decoding="async"
+                    sizes="320px"
+                    className="object-cover object-center"
+                  />
                 </div>
                 <div className="mx-auto max-w-[320px] text-center">
                   <h4 className="text-base font-semibold tracking-tight text-foreground">

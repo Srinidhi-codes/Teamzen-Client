@@ -12,6 +12,8 @@ import { useStore } from "@/lib/store/useStore";
 import { PayslipDetailsModal } from "@/components/payroll/PayslipDetailsModal";
 import { PageHeader } from "@/components/common/PageHeader";
 import { ModernStat } from "@/components/common/Stats";
+import { EmptyState } from "@/components/common/EmptyState";
+import { EmptyImages } from "@/lib/brand-images";
 
 const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -120,6 +122,14 @@ export default function PayrollPage() {
                     Payslip history
                 </h2>
                 <Card className="rounded-xl border border-border overflow-hidden">
+                    {!loading && payslips.length === 0 ? (
+                        <EmptyState
+                            src={EmptyImages.payslip}
+                            title="No payslips yet"
+                            description="Your payslip history will appear here after the next payroll run."
+                            size="wide"
+                        />
+                    ) : (
                     <DataTable
                         isLoading={loading}
                         data={payslips}
@@ -213,6 +223,7 @@ export default function PayrollPage() {
                             },
                         ]}
                     />
+                    )}
                 </Card>
             </div>
 

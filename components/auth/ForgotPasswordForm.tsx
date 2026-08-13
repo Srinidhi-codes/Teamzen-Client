@@ -8,6 +8,7 @@ import axios from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { toast } from "sonner";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { AuthImages } from "@/lib/brand-images";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -40,6 +41,8 @@ export function ForgotPasswordForm() {
       description={
         isSent ? "We've sent a reset link to your email." : "We'll email you a reset link."
       }
+      sideImage={AuthImages.security}
+      sideImageAlt="Password reset security illustration"
     >
       {!isSent ? (
         <form className="space-y-5" onSubmit={handleSubmit}>

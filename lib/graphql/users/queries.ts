@@ -52,7 +52,6 @@ export const GET_ME = gql`
         weekendDays
       }
       faceEnrolled
-      faceDescriptor
       faceEnrolledAt
       bankAccountNumber
       bankIfscCode
@@ -67,6 +66,17 @@ export const GET_ME = gql`
       hasSeenAiOnboarding
       createdAt
       updatedAt
+    }
+  }
+`;
+
+export const GET_MY_FACE = gql`
+  query MeFace {
+    me {
+      id
+      faceEnrolled
+      faceDescriptor
+      faceEnrolledAt
     }
   }
 `;

@@ -87,11 +87,13 @@ export function Sidebar({
             >
               <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white ring-1 ring-border">
                 <Image
-                  src="/images/teamzen_zoomed.png"
+                  src="/images/teamzen_zoomed.webp"
                   alt="Teamzen"
                   width={28}
                   height={28}
                   className="h-7 w-7 object-contain"
+                  loading="lazy"
+                  decoding="async"
                 />
               </div>
               <div className="min-w-0">

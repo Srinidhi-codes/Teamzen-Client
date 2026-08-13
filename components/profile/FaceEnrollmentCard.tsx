@@ -9,6 +9,8 @@ import { FaceCaptureModal } from "@/components/attendance/FaceCaptureModal";
 import { useAttendanceMutations } from "@/lib/graphql/attendance/attendanceHooks";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
 import { useStore } from "@/lib/store/useStore";
+import { useQuery } from "@apollo/client/react";
+import { GET_MY_FACE } from "@/lib/graphql/users/queries";
 
 type FaceEnrollmentCardProps = {
   /** Open the enroll camera when the card mounts (e.g. ?face=enroll). */
@@ -22,14 +24,18 @@ export function FaceEnrollmentCard({
 }: FaceEnrollmentCardProps) {
   const { user } = useStore();
   const { refetch: refetchMe } = useGraphQLUser();
+  const { data: faceData, refetch: refetchFace } = useQuery(GET_MY_FACE, {
+    skip: !user?.organization?.faceAttendanceEnabled,
+    fetchPolicy: "cache-first",
+  }) as any;
   const { enrollFace, enrollFaceLoading } = useAttendanceMutations();
   const [open, setOpen] = useState(false);
 
   const faceEnabled = !!user?.organization?.faceAttendanceEnabled;
   const faceEnrolled =
-    !!user?.faceEnrolled &&
-    Array.isArray(user?.faceDescriptor) &&
-    user.faceDescriptor.length === 128;
+    !!(faceData?.me?.faceEnrolled ?? user?.faceEnrolled) &&
+    Array.isArray(faceData?.me?.faceDescriptor) &&
+    faceData.me.faceDescriptor.length === 128;
   const enrolledAt = (user as any)?.faceEnrolledAt as string | undefined;
 
   useEffect(() => {
@@ -101,6 +107,7 @@ export function FaceEnrollmentCard({
                 { id: toastId }
               );
               await refetchMe();
+              await refetchFace();
             } catch (e: any) {
               toast.error(e?.message || "Failed to save face.", { id: toastId });
             }

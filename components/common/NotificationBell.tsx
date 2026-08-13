@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_MY_NOTIFICATIONS, GET_UNREAD_COUNT } from "@/lib/graphql/notifications/queries";
 import { MARK_NOTIFICATION_READ, MARK_ALL_READ, DELETE_NOTIFICATION } from "@/lib/graphql/notifications/mutations";
@@ -30,12 +31,16 @@ import moment from "moment";
 
 export function NotificationBell() {
     const router = useRouter();
+    const [menuOpen, setMenuOpen] = useState(false);
 
     const { data: notificationsData, refetch: refetchNotifications } = useQuery(GET_MY_NOTIFICATIONS, {
-        variables: { level: 'personal' }
+        variables: { level: 'personal' },
+        skip: !menuOpen,
+        fetchPolicy: "cache-first",
     }) as any;
     const { data: countData, refetch: refetchCount } = useQuery(GET_UNREAD_COUNT, {
-        variables: { level: 'personal' }
+        variables: { level: 'personal' },
+        fetchPolicy: "cache-first",
     }) as any;
 
     // Connect to WebSocket for real-time updates
@@ -100,7 +105,7 @@ export function NotificationBell() {
     }
 
     return (
-        <DropdownMenu modal={false}>
+        <DropdownMenu modal={false} open={menuOpen} onOpenChange={setMenuOpen}>
             <DropdownMenuTrigger asChild>
                 <button
                     type="button"

@@ -18,6 +18,7 @@ import {
 import { Input } from "../ui/input";
 import { AuthShell } from "./AuthShell";
 import { cn } from "@/lib/utils";
+import { AuthImages } from "@/lib/brand-images";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -288,6 +289,12 @@ export default function LoginForm() {
         step === "totp"
           ? "Enter the 6-digit code from your authenticator app."
           : "Use your work email to continue."
+      }
+      sideImage={step === "totp" ? AuthImages.security : AuthImages.employee}
+      sideImageAlt={
+        step === "totp"
+          ? "Secure authentication illustration"
+          : "Teamzen employee workspace illustration"
       }
     >
       {step === "totp" ? (
