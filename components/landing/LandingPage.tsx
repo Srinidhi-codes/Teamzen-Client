@@ -3,50 +3,43 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect } from "react";
-import { useTheme } from "next-themes";
-import {
-  Calendar,
-  Check,
-  Clock,
-  MapPin,
-  Moon,
-  Sun,
-} from "lucide-react";
+import { Calendar, Check, Clock, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store/useStore";
 import { LandingNavbar } from "@/components/landing/LandingNavbar";
 import { DashboardPreview } from "@/components/landing/DashboardPreview";
 import { Reveal } from "@/components/landing/Reveal";
+import { ThemeSwitch } from "@/components/landing/ThemeSwitch";
 import { BrandImages, LandingImages } from "@/lib/brand-images";
 
 const tiers = [
   {
     name: "Free",
-    price: "$0",
+    price: "₹0",
     duration: "/month",
     desc: "Basics for small teams getting started.",
-    features: ["Up to 10 employees", "Manual payroll", "Basic attendance", "Community support"],
+    features: ["Up to 10 employees", "Manual payroll", "Basic attendance", "Policies"],
     plan: "free",
     highlight: false,
   },
   {
     name: "Pro",
-    price: "$49",
+    price: "₹3,999",
     duration: "/month",
     desc: "Advanced tools for growing organizations.",
-    features: ["Up to 100 employees", "Automated payroll", "Basic AI chat", "Priority support"],
+    features: ["Up to 100 employees", "Automated payroll", "AI assistant", "Face attendance", "Priority support"],
     plan: "pro",
     highlight: true,
   },
   {
     name: "Elite",
-    price: "$199",
+    price: "₹14,999",
     duration: "/month",
     desc: "Full suite for larger enterprises.",
     features: [
       "Unlimited employees",
+      "Performance & analytics",
       "Full RAG AI support",
-      "Geo-fencing pro",
       "Dedicated account manager",
     ],
     plan: "elite",
@@ -56,7 +49,6 @@ const tiers = [
 
 export function LandingPage() {
   const { isAuthenticated, hasHydrated, logoutUser } = useStore();
-  const { theme, setTheme } = useTheme();
 
   // Clear stale localStorage auth when cookies are gone (prevents fake "Go to dashboard")
   useEffect(() => {
@@ -110,7 +102,7 @@ export function LandingPage() {
               Workforce clarity for modern teams
             </h1>
             <p className="landing-hero-item landing-hero-item-3 mx-auto mt-4 max-w-xl text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Attendance, leave, and payroll in one calm workspace — built for
+              Attendance, leave, and payroll in one calm workspace built for
               people ops that stay in balance.
             </p>
 
@@ -165,7 +157,7 @@ export function LandingPage() {
             </h2>
             <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
               Location-aware attendance with a week view that feels as clear as
-              your calendar. Geo-fencing when you need proof — quiet when you
+              your calendar. Geo-fencing when you need proof. Quiet when you
               don&apos;t.
             </p>
             <div className="mt-8 flex items-center gap-6 text-sm text-muted-foreground">
@@ -180,7 +172,7 @@ export function LandingPage() {
             </div>
           </Reveal>
 
-          <Reveal delay={120} className="landing-module-panel">
+          <Reveal delay={120} media from="right" className="landing-module-panel">
             <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-card">
               <Image
                 src={LandingImages.attendance}
@@ -189,7 +181,7 @@ export function LandingPage() {
                 loading="lazy"
                 decoding="async"
                 sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover object-center"
+                className="landing-module-photo object-cover object-center"
               />
             </div>
           </Reveal>
@@ -199,7 +191,7 @@ export function LandingPage() {
       {/* ── Modules: Leave ───────────────────────────────────── */}
       <section className="landing-band px-4 py-24 sm:px-6 sm:py-32">
         <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
-          <Reveal className="order-2 lg:order-1">
+          <Reveal media from="left" className="order-2 lg:order-1 landing-module-panel">
             <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-white/10 bg-white/5">
               <Image
                 src={LandingImages.leave}
@@ -208,7 +200,7 @@ export function LandingPage() {
                 loading="lazy"
                 decoding="async"
                 sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover object-center"
+                className="landing-module-photo object-cover object-center"
               />
             </div>
           </Reveal>
@@ -223,7 +215,7 @@ export function LandingPage() {
             </h2>
             <p className="mt-4 max-w-md text-sm leading-relaxed text-white/65 sm:text-base">
               Request time off, track every balance, and keep managers in the
-              loop — without the spreadsheet chase.
+              loop without the spreadsheet chase.
             </p>
             <div className="mt-8 inline-flex items-center gap-2 text-sm text-white/70">
               <Calendar className="h-4 w-4 text-teal-200" />
@@ -235,30 +227,40 @@ export function LandingPage() {
 
       {/* ── Modules: Payroll ─────────────────────────────────── */}
       <section className="border-t border-border/60 px-4 py-24 sm:px-6 sm:py-32">
-        <div className="mx-auto max-w-6xl">
-          <Reveal className="mx-auto max-w-2xl text-center">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
+          <Reveal>
             <p className="mb-3 text-sm font-medium tracking-wide text-primary">
               Payroll
             </p>
             <h2 className="font-[family-name:var(--font-landing-display)] text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
               Payslips that feel finished.
             </h2>
-            <p className="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-muted-foreground sm:text-base">
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
               Automated calculations, clear breakdowns, and a payroll trail your
               team can open without asking finance twice.
             </p>
+            <div className="mt-8 flex items-center gap-6 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-2">
+                <Check className="h-4 w-4 text-primary" />
+                Auto calculations
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <Check className="h-4 w-4 text-primary" />
+                Clear breakdowns
+              </span>
+            </div>
           </Reveal>
 
-          <Reveal delay={120} className="mx-auto mt-14 max-w-3xl">
-            <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-border bg-card">
+          <Reveal delay={120} media from="right" className="landing-module-panel">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-card">
               <Image
                 src={LandingImages.payroll}
                 alt="Clear payslips with gross, deductions, and net pay"
                 fill
                 loading="lazy"
                 decoding="async"
-                sizes="(max-width: 1024px) 100vw, 768px"
-                className="object-cover object-center"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="landing-module-photo object-cover object-center"
               />
             </div>
           </Reveal>
@@ -277,33 +279,8 @@ export function LandingPage() {
             </p>
           </Reveal>
 
-          <Reveal delay={100} className="mt-10 flex justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => setTheme("light")}
-              className={cn(
-                "inline-flex h-9 items-center gap-2 rounded-md border px-4 text-sm font-medium transition-colors",
-                hasHydrated && theme === "light"
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-border bg-background/60 text-foreground hover:bg-muted"
-              )}
-            >
-              <Sun className="h-4 w-4" />
-              Light
-            </button>
-            <button
-              type="button"
-              onClick={() => setTheme("dark")}
-              className={cn(
-                "inline-flex h-9 items-center gap-2 rounded-md border px-4 text-sm font-medium transition-colors",
-                hasHydrated && theme === "dark"
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-border bg-background/60 text-foreground hover:bg-muted"
-              )}
-            >
-              <Moon className="h-4 w-4" />
-              Dark
-            </button>
+          <Reveal delay={100} className="mt-10 flex justify-center">
+            <ThemeSwitch />
           </Reveal>
         </div>
       </section>
@@ -316,18 +293,18 @@ export function LandingPage() {
               Simple plans
             </h2>
             <p className="mt-3 text-sm text-muted-foreground sm:text-base">
-              Scale with your team — no surprise add-ons.
+              Scale with your team. No surprise add-ons.
             </p>
           </Reveal>
 
-          <div className="mt-14 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="landing-pricing-grid mt-14 grid grid-cols-1 gap-4 md:grid-cols-3">
             {tiers.map((tier, i) => (
               <Reveal key={tier.plan} delay={i * 90}>
                 <div
                   className={cn(
-                    "relative flex h-full flex-col rounded-2xl border p-6",
+                    "landing-pricing-card relative flex h-full flex-col rounded-2xl border p-6",
                     tier.highlight
-                      ? "border-foreground bg-foreground text-background"
+                      ? "landing-pricing-card--featured border-foreground bg-foreground text-background"
                       : "border-border bg-card/80"
                   )}
                 >

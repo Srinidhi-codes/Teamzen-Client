@@ -23,6 +23,7 @@ import { Card } from "@/components/common/Card";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store/useStore";
+import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
 import { GET_MY_FACE } from "@/lib/graphql/users/queries";
 import { cn } from "@/lib/utils";
@@ -32,6 +33,8 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { FaceCaptureModal } from "@/components/attendance/FaceCaptureModal";
 import axios from "axios";
 import { ScanFace } from "lucide-react";
+import Image from "next/image";
+import { LandingImages } from "@/lib/brand-images";
 
 const AttendanceMap = dynamic(() => import("@/components/attendance/AttendanceMap"), {
   ssr: false,
@@ -63,8 +66,11 @@ export default function AttendancePage() {
   const { refetch: refetchMe } = useGraphQLUser();
   const router = useRouter();
   const { user } = useStore();
+  const { can } = useOrgPlan();
+  const faceAllowed =
+    can("face_attendance") && !!user?.organization?.faceAttendanceEnabled;
   const { data: faceData, refetch: refetchFace } = useQuery(GET_MY_FACE, {
-    skip: !user?.organization?.faceAttendanceEnabled,
+    skip: !faceAllowed,
     fetchPolicy: "cache-first",
   }) as any;
 
@@ -78,7 +84,7 @@ export default function AttendancePage() {
   const [now, setNow] = useState(() => new Date());
 
   const faceDescriptor = (faceData?.me?.faceDescriptor ?? user?.faceDescriptor) as number[] | undefined;
-  const faceEnabled = !!user?.organization?.faceAttendanceEnabled;
+  const faceEnabled = faceAllowed;
   const faceEnrolled =
     !!(faceData?.me?.faceEnrolled ?? user?.faceEnrolled) &&
     Array.isArray(faceDescriptor) &&
@@ -400,14 +406,26 @@ export default function AttendancePage() {
         <div className="lg:col-span-8 space-y-10">
 
           {/* Main Visualizer */}
-          <div className="premium-card bg-primary text-primary-foreground relative overflow-hidden flex flex-col items-center justify-center py-10 sm:py-14">
-            <div className="relative z-10 flex flex-col items-center text-center space-y-3 sm:space-y-4 px-4">
-              <div className="flex items-center gap-2 sm:gap-3 bg-white/10 px-4 py-1.5 rounded-full border border-white/20">
-                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="text-xs sm:text-sm font-medium">Today</span>
+          <div className="relative overflow-hidden rounded-xl border border-border bg-[#e8eef4]">
+            <Image
+              src={LandingImages.attendance}
+              alt=""
+              aria-hidden
+              fill
+              priority
+              sizes="(max-width: 1024px) 100vw, 800px"
+              className="object-cover object-[78%_center] sm:object-right"
+            />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#e8eef4]/92 via-[#e8eef4]/70 to-[#e8eef4]/55 sm:bg-gradient-to-r sm:from-[#e8eef4]/90 sm:via-[#e8eef4]/40 sm:to-transparent" />
+            <div className="relative z-10 flex min-h-[200px] flex-col justify-center gap-3 px-5 py-10 sm:min-h-[240px] sm:max-w-md sm:gap-4 sm:px-8 sm:py-14">
+              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200/80 bg-white/80 px-4 py-1.5 text-slate-800 backdrop-blur-sm sm:gap-3">
+                <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-600" />
+                <span className="text-xs font-medium sm:text-sm">Today</span>
               </div>
-              <p className="text-lg sm:text-xl font-semibold tracking-tight">{todayLabel}</p>
-              <p className="text-3xl sm:text-4xl font-semibold tabular-nums tracking-tight">
+              <p className="text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">
+                {todayLabel}
+              </p>
+              <p className="text-3xl font-semibold tabular-nums tracking-tight text-slate-900 sm:text-4xl">
                 {liveTimeLabel}
               </p>
             </div>

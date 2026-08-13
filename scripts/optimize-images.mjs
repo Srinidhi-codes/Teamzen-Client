@@ -43,6 +43,19 @@ const JOBS = [
   { rel: "hero/evening-2.png", width: 1920, quality: 78 },
   { rel: "hero/night.png", width: 1920, quality: 78 },
   { rel: "hero/night-2.png", width: 1376, quality: 78 },
+  // assistant icons
+  {
+    rel: "icons/Gemini_Generated_Image_ae3x0cae3x0cae3x.png",
+    out: "icons/assistant-chat.webp",
+    width: 256,
+    quality: 88,
+  },
+  {
+    rel: "icons/Gemini_Generated_Image_zc5g30zc5g30zc5g.png",
+    out: "icons/assistant-mark.webp",
+    width: 256,
+    quality: 88,
+  },
   // logos
   { rel: "teamzen_zoomed.png", width: 256, quality: 90 },
   { rel: "Teamzen_Logo.png", width: 512, quality: 88 },
@@ -56,7 +69,7 @@ async function run() {
       console.warn("skip missing", job.rel);
       continue;
     }
-    const out = src.replace(/\.png$/i, ".webp");
+    const out = path.join(ROOT, job.out || job.rel.replace(/\.png$/i, ".webp"));
     await sharp(src)
       .rotate()
       .resize({ width: job.width, withoutEnlargement: true })

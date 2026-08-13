@@ -5,6 +5,7 @@ import { Calendar, Loader2, Link2, Unlink } from "lucide-react";
 import client from "@/lib/api/client";
 import { useToast } from "@/components/common/ToastProvider";
 import { Button } from "@/components/ui/button";
+import { ProfileSection } from "./ProfileSection";
 
 type Status = {
   configured: boolean;
@@ -87,20 +88,11 @@ export function IntegrationsTab() {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-6 space-y-4 max-w-xl">
-      <div className="flex items-start gap-3">
-        <div className="rounded-lg bg-muted p-2">
-          <Calendar className="h-5 w-5 text-foreground" />
-        </div>
-        <div className="flex-1 space-y-1">
-          <h3 className="text-base font-semibold text-foreground">Google Calendar</h3>
-          <p className="text-sm text-muted-foreground">
-            Sync approved leave to your calendar and let the AI check conflicts before
-            you apply.
-          </p>
-        </div>
-      </div>
-
+    <ProfileSection
+      title="Google Calendar"
+      icon={Calendar}
+      description="Sync approved leave to your calendar and let the assistant check conflicts before you apply."
+    >
       {loadError ? (
         <div className="space-y-2">
           <p className="text-sm text-destructive">{loadError}</p>
@@ -118,7 +110,7 @@ export function IntegrationsTab() {
           Render), then restart.
         </p>
       ) : status.connected ? (
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 rounded-lg bg-muted/50 px-4 py-3">
           <span className="text-sm text-foreground">
             Connected{status.calendar_id ? ` · ${status.calendar_id}` : ""}
           </span>
@@ -151,6 +143,6 @@ export function IntegrationsTab() {
           </p>
         </div>
       )}
-    </div>
+    </ProfileSection>
   );
 }

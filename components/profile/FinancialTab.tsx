@@ -1,7 +1,7 @@
-import { Card } from "@/components/common/Card";
 import { EditableField } from "@/components/common/EditableField";
+import { ProfileSection } from "./ProfileSection";
 import { UserFormData } from "./types";
-import { BanknoteIcon, Hash, IdCard } from "lucide-react";
+import { AlertTriangle, BanknoteIcon, Hash, IdCard } from "lucide-react";
 
 interface FinancialTabProps {
     formData: Partial<UserFormData>;
@@ -11,6 +11,15 @@ interface FinancialTabProps {
     user: any;
 }
 
+function Notice({ children }: { children: React.ReactNode }) {
+    return (
+        <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3.5 py-3 text-sm text-amber-800 dark:text-amber-200">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>{children}</p>
+        </div>
+    );
+}
+
 export function FinancialTab({
     formData,
     isEditing,
@@ -18,18 +27,24 @@ export function FinancialTab({
     errors,
     user,
 }: FinancialTabProps) {
+    const hasBank = !!(user.bankAccountNumber || user.bank_account_number || formData.bank_account_number);
+    const hasPan = !!(user.panNumber || user.pan_number || formData.pan_number);
+    const hasAadhar = !!(user.aadharNumber || user.aadhar_number || formData.aadhar_number);
+
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in transition-all duration-500">
-            <Card title="Bank Details" hover gradient>
-                <div className="space-y-4 sm:space-y-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <ProfileSection
+                title="Bank details"
+                icon={BanknoteIcon}
+                description="Used for salary transfers"
+            >
+                <div className="space-y-3">
                     <EditableField
                         label="Bank Account Number"
                         value={formData.bank_account_number || ""}
                         icon={<BanknoteIcon />}
                         editable={isEditing}
-                        onChange={(value) =>
-                            handleInputChange("bank_account_number", value)
-                        }
+                        onChange={(value) => handleInputChange("bank_account_number", value)}
                         error={errors.bank_account_number}
                         sensitive
                         placeholder="Account Number"
@@ -39,45 +54,28 @@ export function FinancialTab({
                         value={formData.bank_ifsc_code || ""}
                         icon={<Hash />}
                         editable={isEditing}
-                        onChange={(value) =>
-                            handleInputChange("bank_ifsc_code", value.toUpperCase())
-                        }
+                        onChange={(value) => handleInputChange("bank_ifsc_code", value.toUpperCase())}
                         error={errors.bank_ifsc_code}
                         placeholder="e.g., SBIN0001234"
                     />
-                    {!user.bank_account_number && (
-                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-                            <p className="text-sm text-yellow-800 flex items-center">
-                                <svg
-                                    className="w-5 h-5 mr-2"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                                    />
-                                </svg>
-                                Please add your bank details to receive salary payments
-                            </p>
-                        </div>
+                    {!hasBank && (
+                        <Notice>Add your bank details to receive salary payments.</Notice>
                     )}
                 </div>
-            </Card>
+            </ProfileSection>
 
-            <Card title="Tax Information" hover gradient>
-                <div className="space-y-4">
+            <ProfileSection
+                title="Tax information"
+                icon={IdCard}
+                description="Required for payroll processing"
+            >
+                <div className="space-y-3">
                     <EditableField
                         label="PAN Number"
                         value={formData.pan_number || ""}
                         icon={<IdCard />}
                         editable={isEditing}
-                        onChange={(value) =>
-                            handleInputChange("pan_number", value.toUpperCase())
-                        }
+                        onChange={(value) => handleInputChange("pan_number", value.toUpperCase())}
                         error={errors.pan_number}
                         sensitive
                         placeholder="e.g., ABCDE1234F"
@@ -101,28 +99,11 @@ export function FinancialTab({
                         error={errors.uan_number}
                         placeholder="Universal Account Number"
                     />
-                    {(!user.pan_number || !user.aadhar_number) && (
-                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-                            <p className="text-sm text-yellow-800 flex items-center">
-                                <svg
-                                    className="w-5 h-5 mr-2"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                                    />
-                                </svg>
-                                Tax documents are required for payroll processing
-                            </p>
-                        </div>
+                    {(!hasPan || !hasAadhar) && (
+                        <Notice>PAN and Aadhar are required for payroll processing.</Notice>
                     )}
                 </div>
-            </Card>
+            </ProfileSection>
         </div>
     );
 }

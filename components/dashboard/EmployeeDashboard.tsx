@@ -145,9 +145,10 @@ const dayTone: Record<
     dot: "bg-muted-foreground/30",
   },
   not_started: {
-    label: "Upcoming",
+    label: "Pending check-in",
     bar: "bg-border",
     dot: "bg-muted-foreground/20",
+    Icon: Clock,
   },
 };
 

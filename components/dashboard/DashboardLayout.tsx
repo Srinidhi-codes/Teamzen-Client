@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { Sidebar } from "../common/Sidebar";
 import { Navbar } from "../common/Navbar";
+import { LocationSyncBanner } from "../common/LocationSyncBanner";
 import dynamic from "next/dynamic";
 import { useStore } from "@/lib/store/useStore";
 import { cn } from "@/lib/utils";
 import { useFirstDayWizard } from "@/lib/graphql/ai/firstDayHook";
+import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
 
 const AssistantWidget = dynamic(() => import("../ai"), {
   ssr: false,
@@ -53,9 +55,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     setSidebarMobileOpen: setIsMobileOpen,
     user,
   } = useStore();
+  const { can } = useOrgPlan();
+  const canUseAssistant = can("ai_assistant");
 
   const [wizardOpen, setWizardOpen] = useState(false);
-  const { wizard, isLoading, refetch } = useFirstDayWizard(!!user);
+  const { wizard, isLoading, refetch } = useFirstDayWizard(!!user && canUseAssistant);
 
   const closeWizard = () => {
     markFirstDayWizardDismissed(user?.id);
@@ -63,6 +67,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   useEffect(() => {
+    if (!canUseAssistant) return;
     if (!user || isLoading || !wizard?.shouldShow) return;
     if (wasFirstDayWizardDismissed(user.id)) return;
     if (wizardOpen) return;
@@ -71,7 +76,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
     const timer = setTimeout(() => setWizardOpen(true), 1800);
     return () => clearTimeout(timer);
-  }, [user, isLoading, wizard, wizardOpen]);
+  }, [user, isLoading, wizard, wizardOpen, canUseAssistant]);
 
   return (
     <div
@@ -91,13 +96,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           isCollapsed ? "md:ml-16" : "md:ml-60"
         )}
       >
+        <LocationSyncBanner />
         <Navbar onMenuClick={() => setIsMobileOpen(true)} />
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       </div>
 
-      <AssistantWidget />
+      {canUseAssistant && <AssistantWidget />}
       <OnboardingTour />
-      {wizardOpen && wizard?.shouldShow && (
+      {canUseAssistant && wizardOpen && wizard?.shouldShow && (
         <FirstDayWizard
           data={wizard}
           onClose={closeWizard}

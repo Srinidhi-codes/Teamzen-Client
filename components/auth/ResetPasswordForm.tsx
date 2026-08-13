@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { AuthImages } from "@/lib/brand-images";
+import { AUTH_INPUT_CLASS, AuthSubmitButton } from "@/components/auth/auth-ui";
 
 function ResetPasswordFormInner() {
   const [password, setPassword] = useState("");
@@ -72,7 +73,7 @@ function ResetPasswordFormInner() {
           </div>
           <Link
             href="/forgot-password"
-            className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Request a new link
           </Link>
@@ -109,6 +110,7 @@ function ResetPasswordFormInner() {
                   placeholder="Enter new password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className={`${AUTH_INPUT_CLASS} pr-10`}
                 />
                 <button
                   type="button"
@@ -134,18 +136,14 @@ function ResetPasswordFormInner() {
                 placeholder="Confirm new password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                className={AUTH_INPUT_CLASS}
               />
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
-          >
-            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isLoading ? "Updating…" : "Reset password"}
-          </button>
+            <AuthSubmitButton type="submit" disabled={isLoading} loading={isLoading}>
+              {isLoading ? "Updating…" : "Reset password"}
+            </AuthSubmitButton>
         </form>
       ) : (
         <div className="space-y-5">
@@ -157,7 +155,7 @@ function ResetPasswordFormInner() {
           </div>
           <Link
             href="/login"
-            className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Sign in
           </Link>

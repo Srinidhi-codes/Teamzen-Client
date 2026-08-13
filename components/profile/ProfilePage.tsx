@@ -217,8 +217,8 @@ export default function ProfilePage() {
   if (!user && userError) {
     return (
       <div className="flex flex-col items-center justify-center h-96 text-center">
-        <div className="text-red-600 text-lg font-semibold mb-2">Could not load profile</div>
-        <p className="text-gray-600 mb-4">{userError.message}</p>
+        <div className="text-lg font-semibold text-foreground mb-2">Could not load profile</div>
+        <p className="text-muted-foreground mb-4">{userError.message}</p>
         <button onClick={() => refetchUser()} className="btn-primary">Retry</button>
       </div>
     );

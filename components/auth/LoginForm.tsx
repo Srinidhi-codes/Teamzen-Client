@@ -10,8 +10,6 @@ import {
   Lock,
   Eye,
   EyeOff,
-  Loader2,
-  MapPin,
   KeyRound,
   ShieldCheck,
 } from "lucide-react";
@@ -19,15 +17,26 @@ import { Input } from "../ui/input";
 import { AuthShell } from "./AuthShell";
 import { cn } from "@/lib/utils";
 import { AuthImages } from "@/lib/brand-images";
+import {
+  AUTH_INPUT_CLASS,
+  AuthDivider,
+  AuthFooterLink,
+  AuthSubmitButton,
+  GoogleMark,
+} from "./auth-ui";
+
+function markLocationSyncNeeded() {
+  try {
+    sessionStorage.setItem("teamzen_sync_location", "1");
+  } catch {
+    /* ignore */
+  }
+}
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLocating, setIsLocating] = useState(false);
-  const [showLocationModal, setShowLocationModal] = useState(false);
-  const [locationError, setLocationError] = useState("");
-
   const [authType, setAuthType] = useState<"password" | "otp">("password");
   const [step, setStep] = useState<"login" | "otp_code" | "totp">("login");
   const [otpCode, setOtpCode] = useState("");
@@ -60,7 +69,7 @@ export default function LoginForm() {
         google.accounts.id.renderButton(document.getElementById("google-signin-btn"), {
           theme: "outline",
           size: "large",
-          width: 360,
+          width: 400,
           text: "signin_with",
           shape: "rectangular",
         });
@@ -124,48 +133,11 @@ export default function LoginForm() {
     };
   }, [hasHydrated, isAuthenticated, router, logoutUser]);
 
-  const requestLocation = async (): Promise<{
-    latitude: number;
-    longitude: number;
-  } | null> => {
-    setIsLocating(true);
-    setLocationError("");
-
-    return new Promise((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setIsLocating(false);
-          setShowLocationModal(false);
-          resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-        },
-        (err) => {
-          setIsLocating(false);
-          if (err.code === 1) {
-            setLocationError(
-              "Location is blocked. Allow location access in your browser settings, then try again."
-            );
-          } else {
-            setLocationError("We couldn't get your location. Please try again.");
-          }
-          setShowLocationModal(true);
-          resolve(null);
-        },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-      );
-    });
-  };
-
   const handleGoogleCredentialResponse = async (response: any) => {
     const idToken = response.credential;
-    const coords = await requestLocation();
     try {
       const loginResult = await googleLogin.mutateAsync({
         id_token: idToken,
-        latitude: coords?.latitude,
-        longitude: coords?.longitude,
       });
 
       if (loginResult.totp_required) {
@@ -173,7 +145,8 @@ export default function LoginForm() {
         setStep("totp");
       } else if (loginResult.user) {
         loginUser(loginResult.user);
-        window.location.href = "/dashboard";
+        markLocationSyncNeeded();
+        router.replace("/dashboard");
       }
     } catch (err: any) {
       alert(err.message || "Google sign-in failed");
@@ -193,13 +166,10 @@ export default function LoginForm() {
           alert(error.message || "Failed to send verification code");
         }
       } else if (step === "otp_code") {
-        const coords = await requestLocation();
         try {
           const result = await verifyOtp.mutateAsync({
             email,
             otp: otpCode,
-            latitude: coords?.latitude,
-            longitude: coords?.longitude,
           });
 
           if (result.totp_required) {
@@ -207,17 +177,15 @@ export default function LoginForm() {
             setStep("totp");
           } else if (result.user) {
             loginUser(result.user);
-            window.location.href = "/dashboard";
+            markLocationSyncNeeded();
+            router.replace("/dashboard");
           }
         } catch (error: any) {
           alert(error.message || "Invalid OTP code");
         }
       }
     } else {
-      const coords = await requestLocation();
-      if (coords) {
-        performLogin(coords.latitude, coords.longitude);
-      }
+      await performLogin();
     }
   };
 
@@ -234,30 +202,26 @@ export default function LoginForm() {
   const handleVerifyTotp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!totpCode) return;
-    const coords = await requestLocation();
     try {
       const result = await verifyTotp.mutateAsync({
         temp_token: tempToken,
         code: totpCode,
-        latitude: coords?.latitude,
-        longitude: coords?.longitude,
       });
       if (result.user) {
         loginUser(result.user);
-        window.location.href = "/dashboard";
+        markLocationSyncNeeded();
+        router.replace("/dashboard");
       }
     } catch (error: any) {
       alert(error.message || "Invalid authenticator code");
     }
   };
 
-  const performLogin = async (lat?: number, lon?: number) => {
+  const performLogin = async () => {
     try {
       const response = await login.mutateAsync({
         email,
         password,
-        latitude: lat ? parseFloat(lat.toFixed(10)) : undefined,
-        longitude: lon ? parseFloat(lon.toFixed(10)) : undefined,
       });
 
       if (response && response.totp_required) {
@@ -268,7 +232,8 @@ export default function LoginForm() {
 
       if (response && response.user) {
         loginUser(response.user);
-        window.location.href = "/dashboard";
+        markLocationSyncNeeded();
+        router.replace("/dashboard");
       }
     } catch (error: any) {
       alert(error.message || "Login failed");
@@ -276,8 +241,9 @@ export default function LoginForm() {
   };
 
   const submitLabel = () => {
-    if (isLocating) return "Getting location…";
-    if (login.isPending || verifyOtp.isPending || requestOtp.isPending) return "Please wait…";
+    if (login.isPending || verifyOtp.isPending || requestOtp.isPending || verifyTotp.isPending) {
+      return "Signing in…";
+    }
     if (authType === "otp") return step === "login" ? "Send code" : "Verify and sign in";
     return "Sign in";
   };
@@ -320,18 +286,13 @@ export default function LoginForm() {
               placeholder="000000"
               value={totpCode}
               onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
-              className="text-center font-mono tracking-widest"
+              className={cn(AUTH_INPUT_CLASS, "text-center font-mono tracking-widest")}
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={verifyTotp.isPending || isLocating}
-            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
-          >
-            {(verifyTotp.isPending || isLocating) && <Loader2 className="h-4 w-4 animate-spin" />}
+          <AuthSubmitButton type="submit" disabled={verifyTotp.isPending} loading={verifyTotp.isPending}>
             Verify and sign in
-          </button>
+          </AuthSubmitButton>
 
           <button
             type="button"
@@ -347,14 +308,14 @@ export default function LoginForm() {
       ) : (
         <>
           {step === "login" && (
-            <div className="mb-5 grid grid-cols-2 gap-1 rounded-md border border-border bg-muted/40 p-1">
+            <div className="mb-6 grid grid-cols-2 gap-1 rounded-lg border border-border bg-muted/40 p-1">
               <button
                 type="button"
                 onClick={() => setAuthType("password")}
                 className={cn(
-                  "rounded-md px-3 py-2 text-sm transition-colors",
+                  "rounded-md px-3 py-2.5 text-sm transition-colors",
                   authType === "password"
-                    ? "bg-background font-medium text-foreground shadow-sm"
+                    ? "bg-card font-medium text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
@@ -364,9 +325,9 @@ export default function LoginForm() {
                 type="button"
                 onClick={() => setAuthType("otp")}
                 className={cn(
-                  "rounded-md px-3 py-2 text-sm transition-colors",
+                  "rounded-md px-3 py-2.5 text-sm transition-colors",
                   authType === "otp"
-                    ? "bg-background font-medium text-foreground shadow-sm"
+                    ? "bg-card font-medium text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
@@ -391,6 +352,7 @@ export default function LoginForm() {
                     placeholder="you@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    className={AUTH_INPUT_CLASS}
                   />
                 </div>
 
@@ -418,6 +380,7 @@ export default function LoginForm() {
                         placeholder="Enter your password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        className={cn(AUTH_INPUT_CLASS, "pr-10")}
                       />
                       <button
                         type="button"
@@ -450,7 +413,7 @@ export default function LoginForm() {
                     placeholder="000000"
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                    className="text-center font-mono tracking-widest"
+                    className={cn(AUTH_INPUT_CLASS, "text-center font-mono tracking-widest")}
                   />
                 </div>
                 <div className="text-center text-sm">
@@ -469,22 +432,21 @@ export default function LoginForm() {
               </div>
             )}
 
-            <button
+            <AuthSubmitButton
               type="submit"
               disabled={
                 login.isPending ||
                 requestOtp.isPending ||
-                verifyOtp.isPending ||
-                isLocating
+                verifyOtp.isPending
               }
-              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
-            >
-              {(login.isPending ||
+              loading={
+                login.isPending ||
                 requestOtp.isPending ||
-                verifyOtp.isPending ||
-                isLocating) && <Loader2 className="h-4 w-4 animate-spin" />}
+                verifyOtp.isPending
+              }
+            >
               {submitLabel()}
-            </button>
+            </AuthSubmitButton>
 
             {step === "otp_code" && (
               <button
@@ -502,72 +464,22 @@ export default function LoginForm() {
 
           {step === "login" && (
             <div className="mt-6 space-y-4">
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="h-px flex-1 bg-border" />
-                Or continue with
-                <span className="h-px flex-1 bg-border" />
-              </div>
-              <div className="flex justify-center">
-                <div id="google-signin-btn" />
+              <AuthDivider />
+              <div className="relative h-11 w-full overflow-hidden rounded-lg border border-border bg-white">
+                <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center gap-2.5 text-sm font-medium text-slate-800">
+                  <GoogleMark />
+                  Sign in with Google
+                </div>
+                <div
+                  id="google-signin-btn"
+                  className="absolute inset-0 z-10 flex items-center justify-center opacity-[0.02]"
+                />
               </div>
             </div>
           )}
 
-          <p className="mt-8 text-center text-sm text-muted-foreground">
-            New here?{" "}
-            <Link href="/register" className="font-medium text-primary hover:underline">
-              Create an account
-            </Link>
-          </p>
+          <AuthFooterLink prompt="New here?" href="/register" label="Create an account" />
         </>
-      )}
-
-      {showLocationModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-lg">
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <MapPin className="h-4 w-4" />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-base font-semibold text-foreground">Allow location</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Location helps verify check-ins and secure session logging. You can skip if needed.
-                  </p>
-                </div>
-              </div>
-
-              {locationError && (
-                <p className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-                  {locationError}
-                </p>
-              )}
-
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => requestLocation()}
-                  disabled={isLocating}
-                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-                >
-                  {isLocating && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Allow location
-                </button>
-                <button
-                  onClick={() => {
-                    setShowLocationModal(false);
-                    if (authType === "password") {
-                      performLogin();
-                    }
-                  }}
-                  className="inline-flex h-9 items-center justify-center rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  Skip and sign in
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
     </AuthShell>
   );

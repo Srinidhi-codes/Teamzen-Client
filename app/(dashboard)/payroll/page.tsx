@@ -87,7 +87,7 @@ export default function PayrollPage() {
                             </div>
                             <div className="space-y-0.5">
                                 <p className="text-sm text-muted-foreground">Gross pay</p>
-                                <p className="text-xl font-semibold tabular-nums text-primary">
+                                <p className="text-xl font-semibold tabular-nums">
                                     {showSalaries ? `₹${Number(latestPayslip.grossEarnings).toLocaleString()}` : "₹ ••••••••"}
                                 </p>
                             </div>
@@ -156,7 +156,7 @@ export default function PayrollPage() {
                                 key: "netPay",
                                 label: "Net pay",
                                 render: (val: any) => (
-                                    <span className="text-sm font-medium text-primary tabular-nums">
+                                    <span className="text-sm font-medium text-emerald-600 tabular-nums">
                                         {showSalaries ? `₹${Number(val).toLocaleString()}` : "••••••••"}
                                     </span>
                                 )
@@ -202,23 +202,6 @@ export default function PayrollPage() {
                                             <Download className="h-4 w-4" />
                                         </Button>
                                     </div>
-                                )
-                            },
-                            {
-                                key: "ai",
-                                label: "Ask AI",
-                                render: (_val: any, row: any) => (
-                                    <Button
-                                        variant="ghost"
-                                        className="h-9 rounded-md text-sm font-medium hover:bg-primary/5 text-primary"
-                                        onClick={() => {
-                                            setAssistantPayload({ payslip_id: row.id });
-                                            setAssistantQuery(`Explain my payslip for ${monthNames[row.payrollRun.month - 1]} ${row.payrollRun.year} in detail.`);
-                                            setAssistantOpen(true);
-                                        }}
-                                    >
-                                        Explain
-                                    </Button>
                                 )
                             },
                         ]}
