@@ -33,6 +33,11 @@ function markLocationSyncNeeded() {
   }
 }
 
+function postLoginPath(user: any): string {
+  const active = user?.isActive ?? user?.is_active;
+  return active === false ? "/exit" : "/dashboard";
+}
+
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -133,6 +138,14 @@ export default function LoginForm() {
     };
   }, [hasHydrated, isAuthenticated, router, logoutUser]);
 
+  const goAfterLogin = (user: any) => {
+    loginUser(user);
+    if ((user?.isActive ?? user?.is_active) !== false) {
+      markLocationSyncNeeded();
+    }
+    router.replace(postLoginPath(user));
+  };
+
   const handleGoogleCredentialResponse = async (response: any) => {
     const idToken = response.credential;
     try {
@@ -144,9 +157,7 @@ export default function LoginForm() {
         setTempToken(loginResult.temp_token);
         setStep("totp");
       } else if (loginResult.user) {
-        loginUser(loginResult.user);
-        markLocationSyncNeeded();
-        router.replace("/dashboard");
+        goAfterLogin(loginResult.user);
       }
     } catch (err: any) {
       alert(err.message || "Google sign-in failed");
@@ -176,9 +187,7 @@ export default function LoginForm() {
             setTempToken(result.temp_token);
             setStep("totp");
           } else if (result.user) {
-            loginUser(result.user);
-            markLocationSyncNeeded();
-            router.replace("/dashboard");
+            goAfterLogin(result.user);
           }
         } catch (error: any) {
           alert(error.message || "Invalid OTP code");
@@ -208,9 +217,7 @@ export default function LoginForm() {
         code: totpCode,
       });
       if (result.user) {
-        loginUser(result.user);
-        markLocationSyncNeeded();
-        router.replace("/dashboard");
+        goAfterLogin(result.user);
       }
     } catch (error: any) {
       alert(error.message || "Invalid authenticator code");
@@ -231,9 +238,7 @@ export default function LoginForm() {
       }
 
       if (response && response.user) {
-        loginUser(response.user);
-        markLocationSyncNeeded();
-        router.replace("/dashboard");
+        goAfterLogin(response.user);
       }
     } catch (error: any) {
       alert(error.message || "Login failed");

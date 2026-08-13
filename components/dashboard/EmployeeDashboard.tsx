@@ -462,7 +462,16 @@ export function EmployeeDashboard() {
             </Link>
           </div>
 
-          {last7Days.length > 0 ? (
+          {isDashboardLoading && last7Days.length === 0 ? (
+            <div className="flex flex-1 flex-col justify-center gap-2 px-5 py-4 sm:px-6">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-9 animate-pulse rounded-md bg-muted/60"
+                />
+              ))}
+            </div>
+          ) : last7Days.length > 0 ? (
             <ul className="flex flex-1 flex-col justify-center divide-y divide-border">
               {last7Days.map((d: any, i: number) => {
                 const meta = dayTone[d.status] || dayTone.not_started;
@@ -532,13 +541,12 @@ export function EmployeeDashboard() {
               })}
             </ul>
           ) : (
-            <EmptyState
-              src={EmptyImages.attendance}
-              title="No week data yet"
-              description="Your last 7 days will appear here once attendance starts."
-              size="compact"
-              className="flex-1"
-            />
+            <div className="flex flex-1 flex-col items-center justify-center gap-1 px-5 py-8 text-center sm:px-6">
+              <p className="text-sm font-medium text-foreground">No week data yet</p>
+              <p className="text-xs text-muted-foreground">
+                Your last 7 days will appear here once attendance starts.
+              </p>
+            </div>
           )}
         </section>
 
