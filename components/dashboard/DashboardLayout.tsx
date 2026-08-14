@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "../common/Sidebar";
 import { Navbar } from "../common/Navbar";
 import { LocationSyncBanner } from "../common/LocationSyncBanner";
@@ -9,6 +10,7 @@ import { useStore } from "@/lib/store/useStore";
 import { cn } from "@/lib/utils";
 import { useFirstDayWizard } from "@/lib/graphql/ai/firstDayHook";
 import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
+import { isExitOnlyHref, isInactiveEmployee } from "@/lib/exitAccess";
 
 const AssistantWidget = dynamic(() => import("../ai"), {
   ssr: false,
@@ -56,7 +58,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     user,
   } = useStore();
   const { can } = useOrgPlan();
-  const canUseAssistant = can("ai_assistant");
+  const pathname = usePathname();
+  const router = useRouter();
+  const inactive = isInactiveEmployee(user);
+  const canUseAssistant = can("ai_assistant") && !inactive;
 
   const [wizardOpen, setWizardOpen] = useState(false);
   const { wizard, isLoading, refetch } = useFirstDayWizard(!!user && canUseAssistant);
@@ -67,11 +72,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   useEffect(() => {
+    if (!inactive || !pathname) return;
+    if (!isExitOnlyHref(pathname)) {
+      router.replace("/exit");
+    }
+  }, [inactive, pathname, router]);
+
+  useEffect(() => {
     if (!canUseAssistant) return;
     if (!user || isLoading || !wizard?.shouldShow) return;
     if (wasFirstDayWizardDismissed(user.id)) return;
     if (wizardOpen) return;
-    // Already marked seen in profile and no incomplete nudge needed
     if (user.hasSeenAiOnboarding === true) return;
 
     const timer = setTimeout(() => setWizardOpen(true), 1800);
@@ -96,13 +107,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           isCollapsed ? "md:ml-16" : "md:ml-60"
         )}
       >
-        <LocationSyncBanner />
+        {!inactive && <LocationSyncBanner />}
         <Navbar onMenuClick={() => setIsMobileOpen(true)} />
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       </div>
 
       {canUseAssistant && <AssistantWidget />}
-      <OnboardingTour />
+      {!inactive && <OnboardingTour />}
       {canUseAssistant && wizardOpen && wizard?.shouldShow && (
         <FirstDayWizard
           data={wizard}

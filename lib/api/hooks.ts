@@ -41,7 +41,7 @@ export const useAuth = () => {
   });
 
   const verifyOtp = useMutation({
-    mutationFn: async (data: { email: string; otp: string; latitude?: number; longitude?: number }) => {
+    mutationFn: async (data: { email: string; otp: string; remember_me?: boolean; latitude?: number; longitude?: number }) => {
       const response = await fetch('/api/auth/otp-verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -57,7 +57,7 @@ export const useAuth = () => {
   });
 
   const verifyTotp = useMutation({
-    mutationFn: async (data: { temp_token: string; code: string; latitude?: number; longitude?: number }) => {
+    mutationFn: async (data: { temp_token: string; code: string; remember_me?: boolean; latitude?: number; longitude?: number }) => {
       const response = await fetch('/api/auth/totp-verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -73,7 +73,7 @@ export const useAuth = () => {
   });
 
   const googleLogin = useMutation({
-    mutationFn: async (data: { id_token: string; latitude?: number; longitude?: number }) => {
+    mutationFn: async (data: { id_token: string; remember_me?: boolean; latitude?: number; longitude?: number }) => {
       const response = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

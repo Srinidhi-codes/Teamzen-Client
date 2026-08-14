@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/api/hooks";
 import { useStore } from "@/lib/store/useStore";
 import { useRouter } from "next/navigation";
@@ -33,6 +33,11 @@ function markLocationSyncNeeded() {
   }
 }
 
+function postLoginPath(user: any): string {
+  const active = user?.isActive ?? user?.is_active;
+  return active === false ? "/exit" : "/dashboard";
+}
+
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,6 +48,9 @@ export default function LoginForm() {
   const [totpCode, setTotpCode] = useState("");
   const [tempToken, setTempToken] = useState("");
   const [countdown, setCountdown] = useState(0);
+  const [rememberMe, setRememberMe] = useState(false);
+  const rememberMeRef = useRef(false);
+  rememberMeRef.current = rememberMe;
 
   const { login, requestOtp, verifyOtp, verifyTotp, googleLogin } = useAuth();
   const { loginUser, logoutUser, isAuthenticated, hasHydrated } = useStore();
@@ -133,20 +141,27 @@ export default function LoginForm() {
     };
   }, [hasHydrated, isAuthenticated, router, logoutUser]);
 
+  const goAfterLogin = (user: any) => {
+    loginUser(user);
+    if ((user?.isActive ?? user?.is_active) !== false) {
+      markLocationSyncNeeded();
+    }
+    router.replace(postLoginPath(user));
+  };
+
   const handleGoogleCredentialResponse = async (response: any) => {
     const idToken = response.credential;
     try {
       const loginResult = await googleLogin.mutateAsync({
         id_token: idToken,
+        remember_me: rememberMeRef.current,
       });
 
       if (loginResult.totp_required) {
         setTempToken(loginResult.temp_token);
         setStep("totp");
       } else if (loginResult.user) {
-        loginUser(loginResult.user);
-        markLocationSyncNeeded();
-        router.replace("/dashboard");
+        goAfterLogin(loginResult.user);
       }
     } catch (err: any) {
       alert(err.message || "Google sign-in failed");
@@ -170,15 +185,14 @@ export default function LoginForm() {
           const result = await verifyOtp.mutateAsync({
             email,
             otp: otpCode,
+            remember_me: rememberMe,
           });
 
           if (result.totp_required) {
             setTempToken(result.temp_token);
             setStep("totp");
           } else if (result.user) {
-            loginUser(result.user);
-            markLocationSyncNeeded();
-            router.replace("/dashboard");
+            goAfterLogin(result.user);
           }
         } catch (error: any) {
           alert(error.message || "Invalid OTP code");
@@ -206,11 +220,10 @@ export default function LoginForm() {
       const result = await verifyTotp.mutateAsync({
         temp_token: tempToken,
         code: totpCode,
+        remember_me: rememberMe,
       });
       if (result.user) {
-        loginUser(result.user);
-        markLocationSyncNeeded();
-        router.replace("/dashboard");
+        goAfterLogin(result.user);
       }
     } catch (error: any) {
       alert(error.message || "Invalid authenticator code");
@@ -222,6 +235,7 @@ export default function LoginForm() {
       const response = await login.mutateAsync({
         email,
         password,
+        remember_me: rememberMe,
       });
 
       if (response && response.totp_required) {
@@ -231,9 +245,7 @@ export default function LoginForm() {
       }
 
       if (response && response.user) {
-        loginUser(response.user);
-        markLocationSyncNeeded();
-        router.replace("/dashboard");
+        goAfterLogin(response.user);
       }
     } catch (error: any) {
       alert(error.message || "Login failed");
@@ -430,6 +442,18 @@ export default function LoginForm() {
                   )}
                 </div>
               </div>
+            )}
+
+            {step === "login" && (
+              <label className="flex cursor-pointer items-center gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 rounded border-border text-primary accent-primary"
+                />
+                <span className="text-sm text-muted-foreground">Remember me</span>
+              </label>
             )}
 
             <AuthSubmitButton

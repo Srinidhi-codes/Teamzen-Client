@@ -264,7 +264,7 @@ export default function PreboardingPage({
     form.append("category", category);
     form.append("title", file.name);
     form.append("invite_token", token);
-    const res = await fetch("/api/onboarding/documents/upload/", {
+    const res = await fetch("/api/onboarding/documents/upload", {
       method: "POST",
       body: form,
     });
@@ -280,7 +280,7 @@ export default function PreboardingPage({
     form.append("invite_token", token);
     form.append("mark_accepted", "true");
     if (acceptedName.trim()) form.append("accepted_name", acceptedName.trim());
-    const res = await fetch("/api/onboarding/offers/signed/upload/", {
+    const res = await fetch("/api/onboarding/offers/signed/upload", {
       method: "POST",
       body: form,
     });

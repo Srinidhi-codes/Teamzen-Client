@@ -16,12 +16,15 @@ import {
   TrendingUp,
   MessageSquare,
   ClipboardList,
+  FileText,
+  LogOut,
   X,
 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store/useStore";
 import { hasPlanFeature, type PlanFeature } from "@/lib/plans";
+import { isExitOnlyHref, isInactiveEmployee } from "@/lib/exitAccess";
 
 interface NavItem {
   name: string;
@@ -29,19 +32,37 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   roles?: string[];
   feature?: PlanFeature;
+  /** Only show for inactive (exited) employees */
+  exitOnly?: boolean;
+  /** Hide for inactive employees */
+  hideWhenInactive?: boolean;
 }
 
 const navItems: NavItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Team", href: "/team", icon: Users },
-  { name: "Leaves", href: "/leaves", icon: Calendar },
-  { name: "Attendance", href: "/attendance", icon: Clock },
-  { name: "Payroll", href: "/payroll", icon: DollarSign, feature: "payroll_basic" },
-  { name: "Onboarding", href: "/onboarding", icon: ClipboardList },
-  { name: "Performance", href: "/performance", icon: TrendingUp, feature: "advanced_analytics" },
-  { name: "Profile", href: "/profile", icon: UserCircle },
-  { name: "Policies", href: "/policies", icon: BookCheck, feature: "policies" },
-  { name: "Feedback", href: "/feedback", icon: MessageSquare },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, hideWhenInactive: true },
+  { name: "Team", href: "/team", icon: Users, hideWhenInactive: true },
+  { name: "Leaves", href: "/leaves", icon: Calendar, hideWhenInactive: true },
+  { name: "Attendance", href: "/attendance", icon: Clock, hideWhenInactive: true },
+  {
+    name: "Payroll",
+    href: "/payroll",
+    icon: DollarSign,
+    feature: "payroll_basic",
+    hideWhenInactive: true,
+  },
+  { name: "Documents", href: "/documents", icon: FileText },
+  { name: "Onboarding", href: "/onboarding", icon: ClipboardList, hideWhenInactive: true },
+  { name: "Exit / F&F", href: "/exit", icon: LogOut, exitOnly: true },
+  {
+    name: "Performance",
+    href: "/performance",
+    icon: TrendingUp,
+    feature: "advanced_analytics",
+    hideWhenInactive: true,
+  },
+  { name: "Profile", href: "/profile", icon: UserCircle, hideWhenInactive: true },
+  { name: "Policies", href: "/policies", icon: BookCheck, feature: "policies", hideWhenInactive: true },
+  { name: "Feedback", href: "/feedback", icon: MessageSquare, hideWhenInactive: true },
   { name: "Notifications", href: "/notifications", icon: Bell },
 ];
 
@@ -60,8 +81,12 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useStore();
+  const inactive = isInactiveEmployee(user);
 
   const visibleNavItems = navItems.filter((item) => {
+    if (item.exitOnly && !inactive) return false;
+    if (inactive && item.hideWhenInactive) return false;
+    if (inactive && !isExitOnlyHref(item.href) && !item.exitOnly) return false;
     if (!item.feature) return true;
     return hasPlanFeature(
       user?.organization?.plan,
@@ -69,6 +94,8 @@ export function Sidebar({
       item.feature
     );
   });
+
+  const homeHref = inactive ? "/exit" : "/dashboard";
 
   return (
     <>
@@ -92,7 +119,7 @@ export function Sidebar({
         <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border px-3">
           {(!isCollapsed || isMobileOpen) && (
             <Link
-              href="/dashboard"
+              href={homeHref}
               className="flex min-w-0 items-center gap-2.5 px-1"
               onClick={() => isMobileOpen && closeMobile()}
             >
@@ -109,7 +136,9 @@ export function Sidebar({
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-foreground">Teamzen</p>
-                <p className="truncate text-xs text-muted-foreground">Employee</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {inactive ? "Exit portal" : "Employee"}
+                </p>
               </div>
             </Link>
           )}

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import axios from "axios";
 import { cn } from "@/lib/utils";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
 
 const AI_MODES = [
   { id: "improve", label: "Improve" },
@@ -24,6 +25,8 @@ function Textarea({ className, enableAi = true, value, onChange, ...props }: Tex
   const ref = React.useRef<HTMLTextAreaElement>(null);
   const [busy, setBusy] = React.useState(false);
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const { can } = useOrgPlan();
+  const showAi = enableAi && can("ai_assistant");
 
   const runAi = async (mode: string) => {
     setMenuOpen(false);
@@ -73,7 +76,7 @@ function Textarea({ className, enableAi = true, value, onChange, ...props }: Tex
 
   return (
     <div className="relative w-full">
-      {enableAi && (
+      {showAi && (
         <div className="absolute right-2 top-2 z-10">
           <button
             type="button"
@@ -116,7 +119,7 @@ function Textarea({ className, enableAi = true, value, onChange, ...props }: Tex
       <textarea
         ref={ref}
         data-slot="textarea"
-        className={cn("textarea", enableAi && "pt-10", className)}
+        className={cn("textarea", showAi && "pt-10", className)}
         {...props}
         value={value}
         onChange={onChange}

@@ -1,22 +1,23 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
   Calendar,
   CheckCircle2,
   Clock,
   MapPin,
+  ScanFace,
   TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const week = [
-  { day: "Mon", date: "Jul 21", status: "present", label: "Present" },
-  { day: "Tue", date: "Jul 22", status: "present", label: "Present" },
-  { day: "Wed", date: "Jul 23", status: "leave", label: "On leave" },
-  { day: "Thu", date: "Jul 24", status: "present", label: "Present" },
-  { day: "Fri", date: "Jul 25", status: "pending", label: "Today", today: true },
+  { day: "Mon", date: "Aug 10", status: "present", label: "Present" },
+  { day: "Tue", date: "Aug 11", status: "present", label: "Present" },
+  { day: "Wed", date: "Aug 12", status: "leave", label: "On leave" },
+  { day: "Thu", date: "Aug 13", status: "present", label: "Present" },
+  { day: "Fri", date: "Aug 14", status: "pending", label: "Today", today: true },
 ];
 
 const leaves = [
@@ -31,17 +32,22 @@ const metrics = [
   { label: "Leave left", value: "19", hint: "Available days", icon: Calendar },
 ];
 
+const NAV = ["Dashboard", "Attendance", "Leaves", "Payroll", "Team"];
+
 /**
  * Faithful UI mock of the employee dashboard — used as the landing hero product shot.
  */
 export function DashboardPreview({ className }: { className?: string }) {
   const frameRef = useRef<HTMLDivElement>(null);
+  const [toast, setToast] = useState(false);
 
   useEffect(() => {
     const frame = frameRef.current;
     if (!frame) return;
 
-    const onScroll = () => {
+    let raf = 0;
+    const updateTransform = () => {
+      raf = 0;
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         frame.style.transform = "none";
         return;
@@ -54,20 +60,31 @@ export function DashboardPreview({ className }: { className?: string }) {
       frame.style.transform = `translate3d(0, ${lift}px, 0) rotateX(${tilt}deg)`;
     };
 
-    onScroll();
+    const onScroll = () => {
+      if (!raf) raf = window.requestAnimationFrame(updateTransform);
+    };
+
+    updateTransform();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (raf) window.cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setToast(true), 1400);
+    return () => window.clearTimeout(id);
   }, []);
 
   return (
     <div className={cn("landing-preview-perspective", className)}>
       <div
         ref={frameRef}
-        className="landing-preview-frame will-change-transform"
+        className="landing-preview-frame"
         aria-hidden
       >
         <div className="overflow-hidden rounded-2xl border border-border bg-background shadow-[0_40px_100px_-20px_rgba(15,40,50,0.45)] transition-colors duration-500 dark:shadow-[0_40px_100px_-20px_rgba(0,0,0,0.55)]">
-          {/* Window chrome */}
           <div className="flex items-center gap-2 border-b border-border bg-card px-4 py-3 transition-colors duration-500">
             <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
@@ -77,9 +94,8 @@ export function DashboardPreview({ className }: { className?: string }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-[56px_1fr] sm:grid-cols-[180px_1fr]">
-            {/* Sidebar */}
-            <aside className="border-r border-border bg-card p-3 transition-colors duration-500 sm:p-4">
+          <div className="grid grid-cols-[44px_1fr] min-[380px]:grid-cols-[52px_1fr] sm:grid-cols-[180px_1fr]">
+            <aside className="border-r border-border bg-card p-2 transition-colors duration-500 min-[380px]:p-2.5 sm:p-4">
               <div className="mb-5 flex items-center gap-2">
                 <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-[10px] font-bold text-primary-foreground">
                   Tz
@@ -89,28 +105,39 @@ export function DashboardPreview({ className }: { className?: string }) {
                 </span>
               </div>
               <nav className="space-y-1">
-                {["Dashboard", "Attendance", "Leaves", "Payroll", "Team"].map(
-                  (item, i) => (
-                    <div
-                      key={item}
-                      className={cn(
-                        "rounded-md px-2 py-1.5 text-[11px] sm:text-xs",
-                        i === 0
-                          ? "bg-primary/15 font-semibold text-primary"
-                          : "text-foreground/70"
-                      )}
-                    >
-                      <span className="hidden sm:inline">{item}</span>
-                      <span className="sm:hidden">{item.slice(0, 1)}</span>
-                    </div>
-                  )
-                )}
+                {NAV.map((item, i) => (
+                  <div
+                    key={item}
+                    className={cn(
+                      "rounded-md px-2 py-1.5 text-[11px] sm:text-xs",
+                      i === 0
+                        ? "bg-primary/15 font-semibold text-primary"
+                        : "text-foreground/70"
+                    )}
+                  >
+                    <span className="hidden sm:inline">{item}</span>
+                    <span className="sm:hidden">{item.slice(0, 1)}</span>
+                  </div>
+                ))}
               </nav>
             </aside>
 
-            {/* Main */}
-            <div className="space-y-3 bg-background p-3 transition-colors duration-500 sm:space-y-4 sm:p-5">
-              {/* Today hero — mirrors EmployeeDashboard */}
+            <div className="relative space-y-3 bg-background p-3 transition-colors duration-500 sm:space-y-4 sm:p-5">
+              <div
+                className={cn(
+                  "pointer-events-none absolute right-6 top-6 z-20 hidden max-w-[13rem] rounded-lg border border-border bg-card/95 px-3 py-2 shadow-lg backdrop-blur-sm transition-all duration-500 lg:block motion-reduce:transition-none",
+                  toast ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
+                )}
+              >
+                <p className="flex items-center gap-1.5 text-[10px] font-semibold text-foreground">
+                  <ScanFace className="h-3 w-3 text-primary" />
+                  12 teammates in
+                </p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">
+                  Face + geofence already verified
+                </p>
+              </div>
+
               <div className="relative overflow-hidden rounded-xl bg-[oklch(0.32_0.05_200)] p-4 text-white sm:p-5 dark:bg-[oklch(0.28_0.045_200)]">
                 <div
                   className="pointer-events-none absolute inset-0 opacity-50"
@@ -122,7 +149,7 @@ export function DashboardPreview({ className }: { className?: string }) {
                 <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <p className="text-[10px] font-medium tracking-wide text-teal-100 sm:text-xs">
-                      Friday, July 25
+                      Friday, August 14
                     </p>
                     <h3 className="mt-1 text-lg font-semibold tracking-tight sm:text-2xl">
                       Good morning, <span className="text-teal-100">Alex</span>
@@ -135,8 +162,8 @@ export function DashboardPreview({ className }: { className?: string }) {
                       Today · Pending check-in
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <span className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white px-3 text-[11px] font-semibold text-[oklch(0.28_0.04_200)]">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="landing-wf-cta-pulse inline-flex h-8 items-center gap-1.5 rounded-lg bg-white px-3 text-[11px] font-semibold text-[oklch(0.28_0.04_200)]">
                       <MapPin className="h-3 w-3" />
                       Check in
                     </span>
@@ -148,8 +175,7 @@ export function DashboardPreview({ className }: { className?: string }) {
               </div>
 
               <div className="grid gap-3 lg:grid-cols-12">
-                {/* Leave */}
-                <div className="rounded-xl border border-border bg-card p-3 transition-colors duration-500 sm:p-4 lg:col-span-4">
+                <div className="hidden rounded-xl border border-border bg-card p-3 transition-colors duration-500 min-[360px]:block sm:p-4 lg:col-span-4">
                   <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="h-4 w-1 rounded-full bg-primary" />
@@ -186,7 +212,6 @@ export function DashboardPreview({ className }: { className?: string }) {
                   </div>
                 </div>
 
-                {/* Week */}
                 <div className="rounded-xl border border-border bg-card transition-colors duration-500 lg:col-span-5">
                   <div className="flex items-center justify-between border-b border-border px-3 py-2.5 sm:px-4">
                     <div className="flex items-center gap-2">
@@ -223,7 +248,7 @@ export function DashboardPreview({ className }: { className?: string }) {
                               "h-1.5 w-1.5 rounded-full",
                               d.status === "present" && "bg-emerald-500",
                               d.status === "leave" && "bg-orange-400",
-                              d.status === "pending" && "bg-amber-400"
+                              d.status === "pending" && "bg-amber-400 landing-wf-pulse"
                             )}
                           />
                           <span className="font-medium text-foreground/75">{d.label}</span>
@@ -247,12 +272,14 @@ export function DashboardPreview({ className }: { className?: string }) {
                   </ul>
                 </div>
 
-                {/* Metrics */}
-                <div className="grid grid-cols-3 gap-2 lg:col-span-3 lg:grid-cols-1">
-                  {metrics.map((m) => (
+                <div className="hidden grid-cols-2 gap-2 min-[420px]:grid min-[420px]:grid-cols-3 lg:col-span-3 lg:grid-cols-1">
+                  {metrics.map((m, index) => (
                     <div
                       key={m.label}
-                      className="rounded-xl border border-border bg-card p-3 transition-colors duration-500"
+                      className={cn(
+                        "rounded-xl border border-border bg-card p-3 transition-colors duration-500",
+                        index === 2 && "col-span-2 min-[420px]:col-span-1"
+                      )}
                     >
                       <m.icon className="mb-2 h-3.5 w-3.5 text-foreground/55" />
                       <p className="text-lg font-semibold tracking-tight text-foreground tabular-nums sm:text-xl">

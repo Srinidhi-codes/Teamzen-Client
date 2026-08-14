@@ -10,6 +10,14 @@ export const BrandImages = {
   assistantMark: "/images/icons/assistant-mark.webp",
 } as const;
 
+/** Channel marks for the landing Everywhere showcase. Served through next/image, which re-encodes to WebP. */
+export const ChannelImages = {
+  slack: "/images/icons/slack.jpg",
+  telegram: "/images/icons/telegram.jpg",
+  whatsapp: "/images/icons/whatsapp.jpg",
+  mcp: "/images/icons/mcp.png",
+} as const;
+
 export const AuthImages = {
   employee: "/images/auth/login-employee.webp",
   admin: "/images/auth/login-admin.webp",

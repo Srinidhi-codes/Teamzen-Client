@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { clearAuthCookies, setRefreshedAuthCookies, wantsRememberMe } from './lib/authCookies'
 
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl
@@ -44,41 +45,25 @@ export async function proxy(request: NextRequest) {
                 const normalizedBaseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL : `${API_BASE_URL}/`
                 const normalizedEndpoint = refreshEndpoint.startsWith('/') ? refreshEndpoint.slice(1) : refreshEndpoint
 
+                const remember = wantsRememberMe(request)
+                const rememberCookie = request.cookies.get('remember_me')?.value
+                const cookieHeader = rememberCookie
+                    ? `refresh_token=${refreshToken}; remember_me=${rememberCookie}`
+                    : `refresh_token=${refreshToken}`
+
                 const response = await fetch(`${normalizedBaseUrl}${normalizedEndpoint}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Cookie': `refresh_token=${refreshToken}`,
+                        'Cookie': cookieHeader,
                     },
                     credentials: 'include',
                 })
 
                 if (response.ok) {
                     const data = await response.json()
-
                     const nextResponse = NextResponse.next()
-
-                    const cookieOptions = {
-                        httpOnly: true,
-                        secure: process.env.NODE_ENV === 'production',
-                        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-                        path: '/',
-                    } as const
-
-                    if (data.access) {
-                        nextResponse.cookies.set('access_token', data.access, {
-                            ...cookieOptions,
-                            maxAge: 30 * 60, // 30 minutes
-                        })
-                    }
-
-                    if (data.refresh) {
-                        nextResponse.cookies.set('refresh_token', data.refresh, {
-                            ...cookieOptions,
-                            maxAge: 7 * 24 * 60 * 60, // 7 days
-                        })
-                    }
-
+                    setRefreshedAuthCookies(nextResponse, data, remember)
                     return nextResponse
                 }
             } catch (error) {
@@ -89,10 +74,7 @@ export async function proxy(request: NextRequest) {
         // No refresh token or refresh failed → redirect to login
         const loginUrl = new URL('/login', request.url)
         const response = NextResponse.redirect(loginUrl)
-
-        response.cookies.delete('access_token')
-        response.cookies.delete('refresh_token')
-
+        clearAuthCookies(response)
         return response
     }
 
