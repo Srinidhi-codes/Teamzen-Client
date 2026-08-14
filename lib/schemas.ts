@@ -5,9 +5,17 @@ export const userProfileSchema = z.object({
   phone_number: z.string()
     .regex(/^\d{10}$/, "Phone number must be 10 digits")
     .optional().or(z.literal("")),
-  pan_number: z.string()
-    .regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, "Invalid PAN format (e.g., ABCDE1234F)")
-    .optional().or(z.literal("")),
+  pan_number: z
+    .string()
+    .trim()
+    .transform((v) => v.toUpperCase())
+    .pipe(
+      z
+        .string()
+        .regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, "Invalid PAN format (e.g., ABCDE1234F)")
+        .or(z.literal(""))
+    )
+    .optional(),
   aadhar_number: z.string()
     .regex(/^\d{12}$/, "Aadhar must be 12 digits")
     .optional().or(z.literal("")),

@@ -18,7 +18,7 @@ const tiers = [
     price: "₹0",
     duration: "/month",
     desc: "Basics for small teams getting started.",
-    features: ["Up to 10 employees", "Manual payroll", "Basic attendance", "Policies"],
+    features: ["Up to 10 employees", "Manual payroll", "Basic attendance", "Policies", "Light & dark mode"],
     plan: "free",
     highlight: false,
   },
@@ -27,7 +27,7 @@ const tiers = [
     price: "₹3,999",
     duration: "/month",
     desc: "Advanced tools for growing organizations.",
-    features: ["Up to 100 employees", "Automated payroll", "AI assistant", "Face attendance", "Priority support"],
+    features: ["Up to 100 employees", "Automated payroll", "AI assistant", "AI write", "Color themes", "Face attendance", "Priority support"],
     plan: "pro",
     highlight: true,
   },
@@ -293,21 +293,22 @@ export function LandingPage() {
               Simple plans
             </h2>
             <p className="mt-3 text-sm text-muted-foreground sm:text-base">
-              Scale with your team. No surprise add-ons.
+              Scale with your team. No surprise add-ons. Hover to compare plans.
             </p>
           </Reveal>
 
-          <div className="landing-pricing-grid mt-14 grid grid-cols-1 gap-4 md:grid-cols-3">
-            {tiers.map((tier, i) => (
-              <Reveal key={tier.plan} delay={i * 90}>
-                <div
-                  className={cn(
-                    "landing-pricing-card relative flex h-full flex-col rounded-2xl border p-6",
-                    tier.highlight
-                      ? "landing-pricing-card--featured border-foreground bg-foreground text-background"
-                      : "border-border bg-card/80"
-                  )}
-                >
+          <div className="plan-deck landing-pricing-grid mt-14">
+            {tiers.map((tier) => (
+              <div
+                key={tier.plan}
+                data-plan={tier.plan}
+                className={cn(
+                  "landing-pricing-card plan-deck-card relative flex h-full flex-col rounded-2xl border p-6",
+                  tier.highlight
+                    ? "landing-pricing-card--featured border-foreground bg-foreground text-background"
+                    : "border-border bg-card"
+                )}
+              >
                   {tier.highlight && (
                     <span className="absolute -top-2.5 left-4 rounded-md bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
                       Popular
@@ -364,7 +365,6 @@ export function LandingPage() {
                     Select {tier.name}
                   </Link>
                 </div>
-              </Reveal>
             ))}
           </div>
         </div>

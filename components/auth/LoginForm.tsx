@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/api/hooks";
 import { useStore } from "@/lib/store/useStore";
 import { useRouter } from "next/navigation";
@@ -48,6 +48,9 @@ export default function LoginForm() {
   const [totpCode, setTotpCode] = useState("");
   const [tempToken, setTempToken] = useState("");
   const [countdown, setCountdown] = useState(0);
+  const [rememberMe, setRememberMe] = useState(false);
+  const rememberMeRef = useRef(false);
+  rememberMeRef.current = rememberMe;
 
   const { login, requestOtp, verifyOtp, verifyTotp, googleLogin } = useAuth();
   const { loginUser, logoutUser, isAuthenticated, hasHydrated } = useStore();
@@ -151,6 +154,7 @@ export default function LoginForm() {
     try {
       const loginResult = await googleLogin.mutateAsync({
         id_token: idToken,
+        remember_me: rememberMeRef.current,
       });
 
       if (loginResult.totp_required) {
@@ -181,6 +185,7 @@ export default function LoginForm() {
           const result = await verifyOtp.mutateAsync({
             email,
             otp: otpCode,
+            remember_me: rememberMe,
           });
 
           if (result.totp_required) {
@@ -215,6 +220,7 @@ export default function LoginForm() {
       const result = await verifyTotp.mutateAsync({
         temp_token: tempToken,
         code: totpCode,
+        remember_me: rememberMe,
       });
       if (result.user) {
         goAfterLogin(result.user);
@@ -229,6 +235,7 @@ export default function LoginForm() {
       const response = await login.mutateAsync({
         email,
         password,
+        remember_me: rememberMe,
       });
 
       if (response && response.totp_required) {
@@ -435,6 +442,18 @@ export default function LoginForm() {
                   )}
                 </div>
               </div>
+            )}
+
+            {step === "login" && (
+              <label className="flex cursor-pointer items-center gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 rounded border-border text-primary accent-primary"
+                />
+                <span className="text-sm text-muted-foreground">Remember me</span>
+              </label>
             )}
 
             <AuthSubmitButton

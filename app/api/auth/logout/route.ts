@@ -1,13 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { clearAuthCookies } from "@/lib/authCookies";
 
-export async function POST(request: NextRequest) {
+export async function POST() {
     try {
         const nextResponse = NextResponse.json({ success: true }, { status: 200 });
-
-        nextResponse.cookies.delete("access_token");
-        nextResponse.cookies.delete("refresh_token");
-        nextResponse.cookies.delete("session_can_refresh");
-
+        clearAuthCookies(nextResponse);
         return nextResponse;
     } catch (error) {
         console.error("Logout proxy error:", error);

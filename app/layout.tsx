@@ -75,6 +75,20 @@ const THEME_BOOT_SCRIPT = `
       else if (state && state.user && state.user.organization && state.user.organization.accent) {
         accent = state.user.organization.accent;
       }
+      var org = state && state.user && state.user.organization;
+      var plan = org && (org.plan || '').toLowerCase();
+      var expires = org && (org.planExpiresAt || org.plan_expires_at);
+      var paid = plan === 'pro' || plan === 'elite';
+      if (paid && expires) {
+        var end = new Date(expires);
+        if (!isNaN(end.getTime())) {
+          var today = new Date();
+          today.setHours(0,0,0,0);
+          end.setHours(0,0,0,0);
+          if (end < today) paid = false;
+        }
+      }
+      if (!paid) accent = 'teal';
     }
     root.setAttribute('data-accent', accent);
 

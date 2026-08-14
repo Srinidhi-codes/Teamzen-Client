@@ -5,6 +5,7 @@ import { Loader2, Sparkles, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import axios from "axios";
+import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
 
 interface FormTextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label: string;
@@ -34,6 +35,8 @@ export function FormTextarea({
   const ref = useRef<HTMLTextAreaElement>(null);
   const [busy, setBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { can } = useOrgPlan();
+  const showAi = enableAi && can("ai_assistant");
 
   const runAi = async (mode: string) => {
     setMenuOpen(false);
@@ -90,7 +93,7 @@ export function FormTextarea({
           {label}
           {props.required && <span className="ml-1 text-destructive">*</span>}
         </label>
-        {enableAi && (
+        {showAi && (
           <div className="relative">
             <button
               type="button"

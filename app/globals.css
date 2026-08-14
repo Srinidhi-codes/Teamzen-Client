@@ -522,37 +522,95 @@
   position: relative;
 }
 
+.plan-deck {
+  display: grid;
+  gap: 1rem;
+}
+
+.plan-deck-card[data-plan="pro"],
+.landing-pricing-card[data-plan="pro"] {
+  order: -1;
+}
+
 .landing-pricing-card {
   transform: translate3d(0, 0, 0) scale(1);
   transition:
-    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.5s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform, opacity, box-shadow;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .landing-pricing-grid:has(.landing-pricing-card:hover) .landing-pricing-card:not(:hover) {
-    opacity: 0.55;
-    transform: translate3d(0, 4px, 0) scale(0.98);
+@media (min-width: 768px) {
+  .plan-deck,
+  .landing-pricing-grid {
+    display: block;
+    position: relative;
+    isolation: isolate;
+    min-height: 32rem;
   }
 
-  .landing-pricing-card:hover {
+  .plan-deck-card,
+  .landing-pricing-grid .landing-pricing-card {
+    position: absolute;
+    top: 0.75rem;
+    left: 50%;
+    width: min(32%, 20rem);
+  }
+
+  .plan-deck-card[data-plan="free"],
+  .landing-pricing-card[data-plan="free"] {
     z-index: 1;
-    opacity: 1;
-    transform: translate3d(0, -8px, 0) scale(1.03);
-    border-color: oklch(0.45 0.09 200);
+    transform: translateX(calc(-50% - 1.75rem)) rotate(-8deg) scale(0.88);
+  }
+
+  .plan-deck-card[data-plan="pro"],
+  .landing-pricing-card[data-plan="pro"] {
+    z-index: 3;
+    transform: translateX(-50%) scale(1.04);
     box-shadow:
-      0 18px 40px -18px oklch(0.3 0.04 200 / 0.35),
-      0 8px 20px -12px oklch(0.3 0.04 200 / 0.2);
+      0 22px 48px -16px oklch(0.2 0.03 250 / 0.45),
+      0 10px 24px -12px oklch(0.2 0.03 250 / 0.28);
+  }
+
+  .plan-deck-card[data-plan="elite"],
+  .landing-pricing-card[data-plan="elite"] {
+    z-index: 2;
+    transform: translateX(calc(-50% + 1.75rem)) rotate(8deg) scale(0.88);
+  }
+
+  .plan-deck:hover .plan-deck-card[data-plan="free"],
+  .plan-deck:focus-within .plan-deck-card[data-plan="free"],
+  .landing-pricing-grid:hover .landing-pricing-card[data-plan="free"],
+  .landing-pricing-grid:focus-within .landing-pricing-card[data-plan="free"] {
+    z-index: 4;
+    transform: translateX(calc(-50% - 110%)) rotate(0deg) scale(1);
+  }
+
+  .plan-deck:hover .plan-deck-card[data-plan="pro"],
+  .plan-deck:focus-within .plan-deck-card[data-plan="pro"],
+  .landing-pricing-grid:hover .landing-pricing-card[data-plan="pro"],
+  .landing-pricing-grid:focus-within .landing-pricing-card[data-plan="pro"] {
+    transform: translateX(-50%) scale(1);
+  }
+
+  .plan-deck:hover .plan-deck-card[data-plan="elite"],
+  .plan-deck:focus-within .plan-deck-card[data-plan="elite"],
+  .landing-pricing-grid:hover .landing-pricing-card[data-plan="elite"],
+  .landing-pricing-grid:focus-within .landing-pricing-card[data-plan="elite"] {
+    z-index: 4;
+    transform: translateX(calc(-50% + 110%)) rotate(0deg) scale(1);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .landing-pricing-card:hover {
+    z-index: 5;
   }
 
   .landing-pricing-card--featured:hover {
     border-color: oklch(1 0 0 / 0.35);
-    box-shadow:
-      0 22px 48px -16px oklch(0.2 0.03 250 / 0.55),
-      0 10px 24px -12px oklch(0.2 0.03 250 / 0.35);
   }
 }
 
@@ -830,8 +888,25 @@
   }
 
   .landing-pricing-card,
-  .landing-pricing-grid:has(.landing-pricing-card:hover) .landing-pricing-card:not(:hover) {
+  .landing-pricing-grid .landing-pricing-card,
+  .plan-deck-card {
     transition: none !important;
+  }
+
+  .plan-deck,
+  .landing-pricing-grid.plan-deck {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    min-height: 0 !important;
+    gap: 1rem;
+  }
+
+  .plan-deck-card,
+  .landing-pricing-card {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    width: auto !important;
     transform: none !important;
     opacity: 1 !important;
     box-shadow: none !important;

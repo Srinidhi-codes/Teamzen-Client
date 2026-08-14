@@ -82,7 +82,11 @@ export default function ProfilePage() {
   ];
 
   const handleInputChange = (field: keyof UserFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    const next =
+      field === "pan_number" || field === "bank_ifsc_code"
+        ? value.toUpperCase()
+        : value;
+    setFormData((prev) => ({ ...prev, [field]: next }));
     // Clear error for this field
     if (errors[field]) {
       setErrors((prev) => {
@@ -102,11 +106,12 @@ export default function ProfilePage() {
     } catch (err) {
       if (err instanceof z.ZodError) {
         const newErrors: Record<string, string> = {};
-        (err as any).errors.forEach((e: any) => {
-          if (e.path[0]) {
-            newErrors[e.path[0] as string] = e.message;
+        for (const e of err.issues) {
+          const key = e.path[0];
+          if (typeof key === "string" && !newErrors[key]) {
+            newErrors[key] = e.message;
           }
-        });
+        }
         setErrors(newErrors);
       }
       return false;

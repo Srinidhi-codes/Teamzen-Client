@@ -135,7 +135,7 @@ export default function FeedbackPage() {
       if (files.length && payload.feedback?.id) {
         await uploadAttachments(payload.feedback.id, files);
       }
-      toast.success("Feedback submitted — admins have been notified");
+      toast.success("Feedback submitted — your company admin will review it");
       setTitle("");
       setMessage("");
       setFiles([]);
@@ -153,7 +153,7 @@ export default function FeedbackPage() {
     <div className="space-y-6">
       <PageHeader
         title="Feedback"
-        description="Share ideas and issues with admins, or read updates shared with the organization."
+        description="Share ideas and issues with your company admins, or read updates shared with the organization."
       />
 
       <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-muted/40 p-1">
@@ -187,7 +187,7 @@ export default function FeedbackPage() {
         <div className="mx-auto max-w-2xl rounded-xl border border-border bg-card p-5 sm:p-6">
           <h3 className="text-sm font-semibold">Submit feedback</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Private to admins. Attach screenshots or files (max 10MB each). Use AI write to polish your message.
+            Private to your company admins. They review it first and can forward valid items to Teamzen. Attach screenshots or files (max 10MB each).
           </p>
           <div className="mt-5 space-y-4">
             <FormInput
