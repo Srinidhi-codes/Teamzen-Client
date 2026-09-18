@@ -383,7 +383,6 @@ export function EmployeeDashboard() {
                   Leave available
                 </h2>
               </div>
-              <p className="pl-3.5 text-xs text-muted-foreground">Total days you can use</p>
               <p className="pl-3.5 pt-2 text-4xl font-semibold tracking-tight tabular-nums text-foreground sm:text-5xl">
                 {totalLeaveLeft}
                 <span className="ml-1.5 text-base font-medium text-muted-foreground">days</span>
@@ -626,9 +625,6 @@ export function EmployeeDashboard() {
                   Activity
                 </h2>
               </div>
-              <p className="pl-3.5 text-xs text-muted-foreground sm:text-sm">
-                Leave, attendance, and team updates
-              </p>
             </div>
             <Link
               href="/notifications"
@@ -711,7 +707,7 @@ export function EmployeeDashboard() {
           )}
         </section>
 
-        <section className="rounded-2xl border border-border bg-card lg:col-span-5">
+        <section className="rounded-2xl border border-border bg-card lg:col-span-5 flex flex-col overflow-hidden">
           <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
             <div className="space-y-1">
               <div className="flex items-center gap-2.5">
@@ -720,11 +716,8 @@ export function EmployeeDashboard() {
                   Team moments
                 </h2>
               </div>
-              <p className="pl-3.5 text-xs text-muted-foreground sm:text-sm">
-                Birthdays and work anniversaries
-              </p>
             </div>
-            <span className="text-xs font-medium text-muted-foreground">This month</span>
+            <span className="text-xs font-medium text-muted-foreground">{moment().format("MMM YY")}</span>
           </div>
 
           {upcomingEvents.length > 0 ? (
@@ -803,6 +796,7 @@ export function EmployeeDashboard() {
               title="No celebrations yet"
               description="Birthdays and anniversaries this month will show up here."
               size="compact"
+              className="flex-1"
             />
           )}
         </section>
@@ -818,12 +812,9 @@ export function EmployeeDashboard() {
                 Attendance trend
               </h2>
             </div>
-            <p className="pl-3.5 text-xs text-muted-foreground sm:text-sm">
-              Monthly presence over recent periods
-            </p>
           </div>
           <p className="pl-3.5 text-sm tabular-nums text-muted-foreground sm:pl-0">
-            Current rate{" "}
+            Current rate: {" "}
             <span className="font-semibold text-foreground">{stats.attendanceRate ?? 0}%</span>
           </p>
         </div>

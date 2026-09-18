@@ -84,9 +84,8 @@ export function EverywhereShowcase() {
           You’re covered everywhere.
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-white/60 sm:text-base">
-          Do the same HR work from the tools already open. Teamzen’s bot gateway
-          brings the assistant to Slack and Telegram today, with WhatsApp coming
-          soon, while MCP lets compatible AI clients use the same audited HR tools.
+          Teamzen’s bot gateway
+          brings the assistant to Slack and Telegram.
         </p>
       </div>
 
