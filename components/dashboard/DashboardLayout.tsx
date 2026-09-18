@@ -12,6 +12,10 @@ import { useFirstDayWizard } from "@/lib/graphql/ai/firstDayHook";
 import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
 import { isExitOnlyHref, isInactiveEmployee } from "@/lib/exitAccess";
 
+import { AnnouncementModal, AnnouncementItem } from "../common/AnnouncementModal";
+import { useQuery } from "@apollo/client/react";
+import { GET_MY_NOTIFICATIONS } from "@/lib/graphql/notifications/queries";
+
 const AssistantWidget = dynamic(() => import("../ai"), {
   ssr: false,
   loading: () => null,
@@ -65,6 +69,49 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const [wizardOpen, setWizardOpen] = useState(false);
   const { wizard, isLoading, refetch } = useFirstDayWizard(!!user && canUseAssistant);
+
+  // Announcement state
+  const [activeAnnouncement, setActiveAnnouncement] = useState<AnnouncementItem | null>(null);
+
+  // Query recent unread notifications to check for unread announcements
+  const { data: notifData } = useQuery(GET_MY_NOTIFICATIONS, {
+    variables: { level: "personal", isRead: false, page: 1, pageSize: 5 },
+    skip: !user || inactive,
+    fetchPolicy: "cache-and-network",
+  });
+
+  // Check unread announcements from query
+  useEffect(() => {
+    const results = (notifData as any)?.myNotifications?.results;
+    if (results && results.length > 0) {
+      const announcement = results.find((n: any) => n.verb === "announcement");
+      if (announcement && typeof window !== "undefined") {
+        const seen = localStorage.getItem(`teamzen_seen_announcement_${announcement.id}`);
+        if (!seen) {
+          setActiveAnnouncement(announcement);
+        }
+      }
+    }
+  }, [notifData]);
+
+  // Listen for real-time WebSocket announcement broadcasts
+  useEffect(() => {
+    const handleRealtimeAnnouncement = (e: any) => {
+      const data = e.detail;
+      if (data && data.verb === "announcement") {
+        setActiveAnnouncement({
+          id: data.id,
+          message: data.message,
+          imageUrl: data.imageUrl,
+          createdAt: data.createdAt,
+          actor: data.actor,
+        });
+      }
+    };
+
+    window.addEventListener("teamzen_announcement", handleRealtimeAnnouncement);
+    return () => window.removeEventListener("teamzen_announcement", handleRealtimeAnnouncement);
+  }, []);
 
   const closeWizard = () => {
     markFirstDayWizardDismissed(user?.id);
@@ -124,6 +171,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           }}
         />
       )}
+
+      {/* Global Announcement Popup Modal */}
+      <AnnouncementModal
+        isOpen={!!activeAnnouncement}
+        announcement={activeAnnouncement}
+        onClose={() => setActiveAnnouncement(null)}
+      />
     </div>
   );
 }

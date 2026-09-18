@@ -37,12 +37,14 @@ import { Pagination } from "@/components/common/Pagination";
 import { EmptyState } from "@/components/common/EmptyState";
 import { EmptyImages } from "@/lib/brand-images";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AnnouncementModal, AnnouncementItem } from "@/components/common/AnnouncementModal";
 
 export default function NotificationsPage() {
     const [filter, setFilter] = useState("all");
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 10;
     const [selectedNotif, setSelectedNotif] = useState<any>(null);
+    const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementItem | null>(null);
 
     const { data, loading, refetch } = useQuery(GET_MY_NOTIFICATIONS, {
         variables: { 
@@ -130,7 +132,15 @@ export default function NotificationsPage() {
             {items.map((notif: any) => (
                 <div
                     key={notif.id}
-                    onClick={() => setSelectedNotif(notif)}
+                    onClick={() => {
+                        if (notif.verb === "announcement") {
+                            setSelectedAnnouncement(notif);
+                            if (!notif.isRead) handleMarkRead(notif.id);
+                        } else {
+                            setSelectedNotif(notif);
+                            if (!notif.isRead) handleMarkRead(notif.id);
+                        }
+                    }}
                     className={cn(
                         "group relative p-4 sm:p-5 transition-colors border-l-4 cursor-pointer",
                         getBgColor(notif)
@@ -486,6 +496,12 @@ export default function NotificationsPage() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <AnnouncementModal
+                isOpen={!!selectedAnnouncement}
+                announcement={selectedAnnouncement}
+                onClose={() => setSelectedAnnouncement(null)}
+            />
         </div>
     );
 }

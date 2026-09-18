@@ -14,7 +14,8 @@ import {
     CheckCircle2,
     XCircle,
     ArrowRight,
-    BellRing
+    BellRing,
+    Megaphone
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -27,11 +28,12 @@ import {
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import moment from "moment";
-
+import { AnnouncementModal, AnnouncementItem } from "./AnnouncementModal";
 
 export function NotificationBell() {
     const router = useRouter();
     const [menuOpen, setMenuOpen] = useState(false);
+    const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementItem | null>(null);
 
     const { data: notificationsData, refetch: refetchNotifications } = useQuery(GET_MY_NOTIFICATIONS, {
         variables: { level: 'personal' },
@@ -77,12 +79,14 @@ export function NotificationBell() {
     };
 
     const getIcon = (notif: any) => {
+        if (notif.verb === 'announcement') return <Megaphone className="w-4 h-4 text-indigo-500" />;
         if (notif.verb === 'approved') return <CheckCircle2 className="w-4 h-4 text-emerald-500" />;
         if (notif.verb === 'rejected') return <XCircle className="w-4 h-4 text-destructive" />;
         return notif.isRead ? <MailOpen className="w-4 h-4 text-primary/60" /> : <Mail className="w-4 h-4 text-primary" />;
     };
 
     const getBgColor = (notif: any) => {
+        if (notif.verb === 'announcement') return "bg-indigo-500/10 hover:bg-indigo-500/20";
         if (notif.verb === 'approved') return "bg-emerald-500/10 hover:bg-emerald-500/20";
         if (notif.verb === 'rejected') return "bg-destructive/10 hover:bg-destructive/20";
         if (notif.verb === 'cancelled') return "bg-blue-500/10 hover:bg-blue-500/20";
@@ -90,6 +94,12 @@ export function NotificationBell() {
     };
 
     const handleRedirect = (notif: any) => {
+        if (notif.verb === 'announcement') {
+            !notif.isRead && handleMarkRead(notif.id);
+            setSelectedAnnouncement(notif);
+            setMenuOpen(false);
+            return;
+        }
         if (notif.targetType === 'Leave Request') {
             !notif.isRead && handleMarkRead(notif.id);
             router.push(`/leaves`);
@@ -105,6 +115,7 @@ export function NotificationBell() {
     }
 
     return (
+        <>
         <DropdownMenu modal={false} open={menuOpen} onOpenChange={setMenuOpen}>
             <DropdownMenuTrigger asChild>
                 <button
@@ -219,5 +230,12 @@ export function NotificationBell() {
                 </div>
             </DropdownMenuContent>
         </DropdownMenu>
+
+        <AnnouncementModal
+            isOpen={!!selectedAnnouncement}
+            announcement={selectedAnnouncement}
+            onClose={() => setSelectedAnnouncement(null)}
+        />
+    </>
     );
 }

@@ -110,6 +110,10 @@ export function useNotifications(
                     }
                 }
 
+                if (typeof window !== "undefined" && data.verb === "announcement") {
+                    window.dispatchEvent(new CustomEvent("teamzen_announcement", { detail: data }));
+                }
+
                 if (callbackRef.current) {
                     callbackRef.current(data);
                 }
