@@ -233,7 +233,7 @@ function SelfReviewCard({
           )}
           {review.status === "self_submitted" && (
             <p className="text-xs text-muted-foreground">
-              Submitted — awaiting feedback from{" "}
+              Submitted awaiting feedback from{" "}
               {review.reviewerName || "your manager"}.
             </p>
           )}

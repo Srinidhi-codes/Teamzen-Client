@@ -24,6 +24,7 @@ import { LeaveWorkflow } from "@/components/landing/LeaveWorkflow";
 import { PayrollWorkflow } from "@/components/landing/PayrollWorkflow";
 import { AiCopilotShowcase } from "@/components/landing/AiCopilotShowcase";
 import { EverywhereShowcase } from "@/components/landing/EverywhereShowcase";
+import { ScrollToTop } from "@/components/landing/ScrollToTop";
 import { BrandImages } from "@/lib/brand-images";
 
 const tiers = [
@@ -65,7 +66,7 @@ const values = [
   {
     icon: ScanFace,
     title: "Check in that proves itself",
-    copy: "Face match, geofence, and timestamp in one tap — then the week view fills itself.",
+    copy: "Face match, geofence, and timestamp in one tap then the week view fills itself.",
   },
   {
     icon: Calendar,
@@ -113,7 +114,7 @@ export function LandingPage() {
 
         <div className="relative mx-auto flex min-h-[calc(100svh-3.5rem)] max-w-6xl flex-col justify-end px-4 pb-8 pt-16 sm:min-h-[calc(100svh-4rem)] sm:px-6 sm:pb-12 sm:pt-20">
           <div className="mx-auto max-w-3xl text-center">
-            <p className="landing-hero-item landing-hero-item-1 mb-5 font-[family-name:var(--font-landing-display)] text-5xl font-semibold tracking-tight text-foreground sm:text-7xl md:text-8xl">
+            <p className="landing-hero-item landing-hero-item-1 mb-5 font-[family-name:var(--font-landing-display)] text-5xl font-semibold tracking-tight text-primary sm:text-7xl md:text-8xl">
               Teamzen
             </p>
             <h1 className="landing-hero-item landing-hero-item-2 text-balance text-2xl font-semibold tracking-tight text-foreground sm:text-4xl md:text-[2.75rem] md:leading-[1.15]">
@@ -441,6 +442,7 @@ export function LandingPage() {
           </div>
         </div>
       </footer>
+      <ScrollToTop />
     </div>
   );
 }

@@ -22,7 +22,9 @@ import {
     Calendar,
     UserPlus,
     Award,
-    Activity
+    Activity,
+    Image as ImageIcon,
+    Megaphone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -34,11 +36,13 @@ import moment from "moment";
 import { Pagination } from "@/components/common/Pagination";
 import { EmptyState } from "@/components/common/EmptyState";
 import { EmptyImages } from "@/lib/brand-images";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function NotificationsPage() {
     const [filter, setFilter] = useState("all");
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 10;
+    const [selectedNotif, setSelectedNotif] = useState<any>(null);
 
     const { data, loading, refetch } = useQuery(GET_MY_NOTIFICATIONS, {
         variables: { 
@@ -126,8 +130,9 @@ export default function NotificationsPage() {
             {items.map((notif: any) => (
                 <div
                     key={notif.id}
+                    onClick={() => setSelectedNotif(notif)}
                     className={cn(
-                        "group relative p-4 sm:p-5 transition-colors border-l-4",
+                        "group relative p-4 sm:p-5 transition-colors border-l-4 cursor-pointer",
                         getBgColor(notif)
                     )}
                 >
@@ -140,7 +145,8 @@ export default function NotificationsPage() {
                         )}>
                             {notif.verb === "approved" ? "✅" :
                                 notif.verb === "rejected" ? "❌" :
-                                    notif.isRead ? <MailOpen className="w-4 h-4" /> : <Mail className="w-4 h-4" />}
+                                    notif.verb === "announcement" ? <Megaphone className="w-4 h-4" /> :
+                                        notif.isRead ? <MailOpen className="w-4 h-4" /> : <Mail className="w-4 h-4" />}
                         </div>
 
                         <div className="flex-1 min-w-0 space-y-1">
@@ -156,7 +162,10 @@ export default function NotificationsPage() {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            onClick={() => handleMarkRead(notif.id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleMarkRead(notif.id);
+                                            }}
                                             className="h-8 w-8 rounded-md hover:bg-emerald-500/10 hover:text-emerald-600"
                                             title="Mark as read"
                                         >
@@ -166,7 +175,10 @@ export default function NotificationsPage() {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        onClick={() => handleDelete(notif.id)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDelete(notif.id);
+                                        }}
                                         className="h-8 w-8 rounded-md hover:bg-destructive/10 hover:text-destructive opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"
                                         title="Delete"
                                     >
@@ -176,6 +188,17 @@ export default function NotificationsPage() {
                             </div>
 
                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                                {notif.verb === "announcement" && (
+                                    <div className="flex items-center gap-1 text-primary font-medium">
+                                        Announcement
+                                    </div>
+                                )}
+                                {notif.imageUrl && (
+                                    <div className="flex items-center gap-1 text-blue-500">
+                                        <ImageIcon className="w-3.5 h-3.5" />
+                                        <span>Image</span>
+                                    </div>
+                                )}
                                 <div className="flex items-center gap-1.5">
                                     <Clock className="w-3 h-3" />
                                     {moment(notif.createdAt).format("MMM DD, YYYY HH:mm A")}
@@ -433,6 +456,36 @@ export default function NotificationsPage() {
                     Privacy policy · Terms of service · Help center
                 </p>
             </div>
+
+            <Dialog open={!!selectedNotif} onOpenChange={(open) => !open && setSelectedNotif(null)}>
+                <DialogContent className="max-w-xl p-6">
+                    <DialogHeader>
+                        <DialogTitle className="capitalize text-lg">{selectedNotif?.verb || "Notification"}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                            {selectedNotif?.message}
+                        </p>
+                        {selectedNotif?.imageUrl && (
+                            <div className="mt-4 rounded-md overflow-hidden border border-border">
+                                <img 
+                                    src={selectedNotif.imageUrl} 
+                                    alt="Attachment" 
+                                    className="w-full max-h-[400px] object-cover" 
+                                />
+                            </div>
+                        )}
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground pt-4 border-t border-border">
+                            <div className="flex items-center gap-1">
+                                <Clock className="w-3.5 h-3.5" />
+                                {selectedNotif ? moment(selectedNotif.createdAt).format("MMM DD, YYYY HH:mm A") : ""}
+                            </div>
+                            <span>·</span>
+                            <div>From: {selectedNotif?.actor?.firstName || "System"}</div>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

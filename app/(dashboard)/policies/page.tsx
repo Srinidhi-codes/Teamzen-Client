@@ -26,7 +26,6 @@ export default function PoliciesPage() {
                         title="Refresh"
                     >
                         <RotateCcw className="w-4 h-4" />
-                        Refresh
                     </button>
                 }
             />

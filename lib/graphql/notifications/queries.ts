@@ -9,6 +9,7 @@ export const GET_MY_NOTIFICATIONS = gql`
         message
         targetType
         targetId
+        imageUrl
         isRead
         createdAt
         actor {

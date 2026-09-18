@@ -1439,25 +1439,24 @@
   100% { transform: rotate(0deg); }
 }
 
-.lamp-shade {
+.lamp-shade-svg {
   display: block;
-  width: 8.5rem;
-  height: 4rem;
-  clip-path: polygon(26% 0, 74% 0, 100% 100%, 0 100%);
-  border-radius: 0.35rem 0.35rem 0.75rem 0.75rem;
-  background: linear-gradient(180deg, oklch(0.62 0.03 245), oklch(0.42 0.03 245));
-  transition: background 0.6s ease, filter 0.6s ease;
+  width: 10rem;
+  height: auto;
+  filter: drop-shadow(0 15px 25px rgba(0,0,0,0.5));
+  transition: filter 0.6s ease;
+  z-index: 2;
+  position: relative;
 }
 
-.lamp[data-on="true"] .lamp-shade {
-  background: linear-gradient(180deg, oklch(0.86 0.08 85), oklch(0.72 0.13 65));
-  filter: drop-shadow(0 10px 24px oklch(0.75 0.14 70 / 0.35));
+.lamp[data-on="true"] .lamp-shade-svg {
+  filter: drop-shadow(0 20px 40px rgb(251 191 36 / 0.5));
 }
 
 .lamp-bulb {
   position: absolute;
   left: 50%;
-  top: 3.7rem;
+  top: 5rem;
   width: 1.05rem;
   height: 1.05rem;
   transform: translateX(-50%);
@@ -1476,7 +1475,7 @@
 .lamp-beam {
   position: absolute;
   left: 50%;
-  top: 4rem;
+  top: 5.5rem;
   width: 15rem;
   height: 9rem;
   transform: translateX(-50%);
@@ -1498,8 +1497,9 @@
 
 .lamp-cord {
   position: absolute;
-  top: 4rem;
-  right: 1.35rem;
+  top: 5.2rem;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 3;
   display: flex;
   min-width: 2.75rem;
