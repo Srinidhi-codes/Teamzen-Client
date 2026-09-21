@@ -737,7 +737,9 @@ export function EmployeeDashboard() {
                             ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
                             : event.type === "holiday" || event.type === "optional_holiday"
                               ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                              : "bg-sky-500/10 text-sky-700 dark:text-sky-400")
+                              : event.type === "leave"
+                                ? "bg-orange-500/10 text-orange-700 dark:text-orange-400"
+                                : "bg-sky-500/10 text-sky-700 dark:text-sky-400")
                       )}
                     >
                       {src ? (
@@ -762,6 +764,8 @@ export function EmployeeDashboard() {
                           <Gift className="h-3 w-3 text-amber-500" />
                         ) : event.type === "holiday" || event.type === "optional_holiday" ? (
                           <Calendar className="h-3 w-3 text-emerald-500" />
+                        ) : event.type === "leave" ? (
+                          <Plane className="h-3 w-3 text-orange-500" />
                         ) : (
                           <Award className="h-3 w-3 text-sky-500" />
                         )}
@@ -771,7 +775,9 @@ export function EmployeeDashboard() {
                             ? "Optional holiday"
                             : event.type === "holiday"
                               ? "Holiday"
-                              : "Anniversary"}
+                              : event.type === "leave"
+                                ? "On Leave"
+                                : "Anniversary"}
                         <span>·</span>
                         {moment(event.date).format("MMM D")}
                       </p>
