@@ -265,6 +265,7 @@ export default function LoginForm() {
   };
 
   return (
+    <>
     <AuthShell
       title={step === "totp" ? "Two-factor authentication" : "Sign in"}
       description={
