@@ -22,17 +22,19 @@ export function AuthShell({
   wide = false,
 }: AuthShellProps) {
   return (
-    <div className="flex min-h-screen flex-col bg-background lg:grid lg:grid-cols-2">
-      <aside className="relative flex min-h-[240px] flex-col justify-between overflow-hidden bg-[#e8eef4] lg:min-h-screen">
+    <div className="relative min-h-screen lg:grid lg:grid-cols-2">
+      {/* Background Image Container */}
+      <aside className="absolute inset-0 z-0 lg:relative lg:flex lg:flex-col lg:justify-between lg:bg-[#e8eef4] lg:overflow-hidden">
         <Image
           src={sideImage}
           alt={sideImageAlt}
           fill
           priority
-          sizes="50vw"
+          sizes="100vw, (min-width: 1024px) 50vw"
           className="object-cover object-center"
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-black/25" />
+        {/* Overlay: dark on mobile for text readability, gradient on desktop */}
+        <div className="absolute inset-0 bg-black/60 lg:bg-gradient-to-t lg:from-black/55 lg:via-black/15 lg:to-black/25" />
 
         <div className="relative z-10 hidden px-10 pt-12 lg:block">
           <Link href="/" className="inline-flex items-center gap-3">
@@ -63,8 +65,14 @@ export function AuthShell({
         </div>
       </aside>
 
-      <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:px-12">
-        <div className={cn("mx-auto w-full", wide ? "max-w-lg" : "max-w-md")}>
+      {/* Form Container */}
+      <div className="relative z-10 flex min-h-screen flex-col justify-center px-4 py-12 sm:px-6 lg:px-12 lg:bg-background">
+        <div 
+          className={cn(
+            "mx-auto w-full rounded-2xl bg-background/95 p-6 shadow-2xl backdrop-blur-xl border border-white/20 sm:p-8 lg:rounded-none lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none lg:border-none",
+            wide ? "max-w-lg" : "max-w-md"
+          )}
+        >
           <div className="mb-8 lg:hidden">
             <Link href="/" className="inline-flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-card ring-1 ring-border">
@@ -90,7 +98,7 @@ export function AuthShell({
 
           {children}
 
-          <p className={cn("mt-10 text-center text-xs text-muted-foreground lg:hidden")}>
+          <p className="mt-10 text-center text-xs text-muted-foreground lg:hidden">
             © {new Date().getFullYear()} Teamzen Pvt. Ltd.
           </p>
         </div>
