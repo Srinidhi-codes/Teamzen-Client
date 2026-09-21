@@ -38,6 +38,7 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { EmptyImages } from "@/lib/brand-images";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AnnouncementModal, AnnouncementItem } from "@/components/common/AnnouncementModal";
+import { EmailList } from "@/components/email/EmailList";
 
 export default function NotificationsPage() {
     const [filter, setFilter] = useState("all");
@@ -120,108 +121,22 @@ export default function NotificationsPage() {
         }
     };
 
-    const getBgColor = (notif: any) => {
-        if (notif.verb?.includes('approved')) return "bg-emerald-500/10 hover:bg-emerald-500/15 border-emerald-500/20";
-        if (notif.verb?.includes('rejected')) return "bg-destructive/10 hover:bg-destructive/15 border-destructive/20";
-        if (notif.verb?.includes('cancelled')) return "bg-blue-500/10 hover:bg-blue-500/15 border-blue-500/20";
-        return !notif.isRead ? "bg-primary/5 hover:bg-primary/10 border-primary/20" : "hover:bg-muted/30 border-transparent";
-    };
-
     const renderNotifications = (items: any[]) => (
-        <div className="divide-y divide-border/30 max-h-[600px] overflow-y-auto custom-scrollbar">
-            {items.map((notif: any) => (
-                <div
-                    key={notif.id}
-                    onClick={() => {
-                        if (notif.verb === "announcement") {
-                            setSelectedAnnouncement(notif);
-                            if (!notif.isRead) handleMarkRead(notif.id);
-                        } else {
-                            setSelectedNotif(notif);
-                            if (!notif.isRead) handleMarkRead(notif.id);
-                        }
-                    }}
-                    className={cn(
-                        "group relative p-4 sm:p-5 transition-colors border-l-4 cursor-pointer",
-                        getBgColor(notif)
-                    )}
-                >
-                    <div className="flex gap-3 sm:gap-4">
-                        <div className={cn(
-                            "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-                            notif.isRead
-                                ? "bg-muted/50 text-muted-foreground"
-                                : "bg-primary/10 text-primary"
-                        )}>
-                            {notif.verb === "approved" ? "✅" :
-                                notif.verb === "rejected" ? "❌" :
-                                    notif.verb === "announcement" ? <Megaphone className="w-4 h-4" /> :
-                                        notif.isRead ? <MailOpen className="w-4 h-4" /> : <Mail className="w-4 h-4" />}
-                        </div>
-
-                        <div className="flex-1 min-w-0 space-y-1">
-                            <div className="flex justify-between items-start gap-2">
-                                <h4 className={cn(
-                                    "text-sm font-medium leading-relaxed line-clamp-2",
-                                    notif.isRead ? "text-muted-foreground" : "text-foreground"
-                                )}>
-                                    {notif.message}
-                                </h4>
-                                <div className="flex items-center gap-0.5 shrink-0">
-                                    {!notif.isRead && (
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleMarkRead(notif.id);
-                                            }}
-                                            className="h-8 w-8 rounded-md hover:bg-emerald-500/10 hover:text-emerald-600"
-                                            title="Mark as read"
-                                        >
-                                            <CheckCircle2 className="w-4 h-4" />
-                                        </Button>
-                                    )}
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDelete(notif.id);
-                                        }}
-                                        className="h-8 w-8 rounded-md hover:bg-destructive/10 hover:text-destructive opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"
-                                        title="Delete"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                                {notif.verb === "announcement" && (
-                                    <div className="flex items-center gap-1 text-primary font-medium">
-                                        Announcement
-                                    </div>
-                                )}
-                                {notif.imageUrl && (
-                                    <div className="flex items-center gap-1 text-blue-500">
-                                        <ImageIcon className="w-3.5 h-3.5" />
-                                        <span>Image</span>
-                                    </div>
-                                )}
-                                <div className="flex items-center gap-1.5">
-                                    <Clock className="w-3 h-3" />
-                                    {moment(notif.createdAt).format("MMM DD, YYYY HH:mm A")}
-                                </div>
-                                <div className="flex items-center gap-1.5 capitalize">
-                                    <span className="text-border">·</span>
-                                    {notif.actor?.firstName || "System"}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            ))}
+        <div className="max-h-[600px] overflow-y-auto custom-scrollbar p-1">
+            <EmailList 
+                items={items}
+                onItemClick={(notif) => {
+                    if (notif.verb === "announcement") {
+                        setSelectedAnnouncement(notif);
+                        if (!notif.isRead) handleMarkRead(notif.id);
+                    } else {
+                        setSelectedNotif(notif);
+                        if (!notif.isRead) handleMarkRead(notif.id);
+                    }
+                }}
+                onMarkRead={handleMarkRead}
+                onDelete={handleDelete}
+            />
         </div>
     );
 
