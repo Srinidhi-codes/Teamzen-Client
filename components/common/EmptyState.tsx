@@ -15,9 +15,9 @@ type EmptyStateProps = {
 };
 
 const minH: Record<EmptyStateSize, string> = {
-  compact: "min-h-[220px] sm:min-h-[260px]",
-  default: "min-h-[300px] sm:min-h-[360px]",
-  wide: "min-h-[360px] sm:min-h-[480px]",
+  compact: "min-h-[220px] sm:min-h-[280px]",
+  default: "min-h-[320px] sm:min-h-[400px]",
+  wide: "h-[360px] sm:h-[460px]",
 };
 
 /** Illustrated empty state — art fills the parent card; copy sits in the left cream space. */
@@ -41,7 +41,7 @@ export function EmptyState({
           loading="lazy"
           decoding="async"
           sizes="100vw"
-          className="object-cover object-right-top"
+          className="object-cover object-bottom"
         />
         <div className="absolute inset-y-0 left-0 z-10 flex w-[58%] max-w-lg flex-col justify-center px-5 py-6 text-left sm:w-[46%] sm:px-8">
           <h3 className="text-base font-semibold tracking-tight text-slate-900 sm:text-lg">

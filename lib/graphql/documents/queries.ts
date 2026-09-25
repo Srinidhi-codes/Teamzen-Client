@@ -47,3 +47,19 @@ export const MY_VAULT_UPLOADS = gql`
     }
   }
 `;
+
+export const MY_EMPLOYEE_DOCUMENT_REQUESTS = gql`
+  query MyEmployeeDocumentRequests($status: String) {
+    myEmployeeDocumentRequests(status: $status) {
+      id
+      category
+      customTitle
+      reason
+      status
+      issuedDocumentUrl
+      issuedAt
+      rejectedReason
+      createdAt
+    }
+  }
+`;

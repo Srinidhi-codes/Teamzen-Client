@@ -56,7 +56,8 @@ export function euclideanDistance(a: number[], b: number[]): number {
 }
 
 export function distanceToSimilarity(distance: number): number {
-  return Math.max(0, 1 - distance);
+  // Exact cosine similarity for unit-normalized embeddings: 1 - (d^2)/2
+  return Math.max(0, Math.min(1, 1 - (distance * distance) / 2));
 }
 
 export function isFaceMatch(distance: number): boolean {

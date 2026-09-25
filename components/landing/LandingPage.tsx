@@ -198,8 +198,8 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section id="modules" className="scroll-mt-16 border-t border-border/60 px-4 py-16 sm:scroll-mt-20 sm:px-6 sm:py-20 lg:py-28">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 xl:grid-cols-2 xl:gap-16">
+      <section id="modules" className="scroll-mt-16 overflow-hidden border-t border-border/60 px-4 py-12 sm:scroll-mt-20 sm:px-6 sm:py-20 lg:py-28">
+        <div className="mx-auto grid max-w-6xl items-center gap-8 sm:gap-10 xl:grid-cols-2 xl:gap-16">
           <Reveal>
             <p className="mb-3 text-sm font-medium tracking-wide text-primary">
               Attendance
@@ -229,18 +229,18 @@ export function LandingPage() {
             </div>
           </Reveal>
 
-          <Reveal delay={120} media from="right" className="landing-module-panel">
+          <Reveal delay={120} media from="right" className="landing-module-panel min-w-0">
             <AttendanceWorkflow />
           </Reveal>
         </div>
       </section>
 
-      <section className="landing-band px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
+      <section className="landing-band px-4 py-12 sm:px-6 sm:py-20 lg:py-28">
         <LeaveWorkflow />
       </section>
 
-      <section className="border-t border-border/60 px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 xl:grid-cols-2 xl:gap-16">
+      <section className="overflow-hidden border-t border-border/60 px-4 py-12 sm:px-6 sm:py-20 lg:py-28">
+        <div className="mx-auto grid max-w-6xl items-center gap-8 sm:gap-10 xl:grid-cols-2 xl:gap-16">
           <Reveal>
             <p className="mb-3 text-sm font-medium tracking-wide text-primary">
               Payroll
@@ -264,13 +264,13 @@ export function LandingPage() {
             </div>
           </Reveal>
 
-          <Reveal delay={120} media from="right" className="landing-module-panel">
+          <Reveal delay={120} media from="right" className="landing-module-panel min-w-0">
             <PayrollWorkflow />
           </Reveal>
         </div>
       </section>
 
-      <section className="ai-showcase-section border-t border-border/60 px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
+      <section className="ai-showcase-section overflow-hidden border-t border-border/60 px-4 py-12 sm:px-6 sm:py-20 lg:py-28">
         <div className="mx-auto max-w-6xl">
           <Reveal>
             <AiCopilotShowcase />
@@ -278,7 +278,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="px-4 py-8 sm:px-6 sm:py-12">
+      <section className="overflow-hidden px-4 py-6 sm:px-6 sm:py-12">
         <EverywhereShowcase />
       </section>
 
@@ -385,7 +385,7 @@ export function LandingPage() {
 
       <section className="border-t border-border/60 px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
         <Reveal>
-          <div className="landing-cta mx-auto flex max-w-5xl flex-col items-start justify-between gap-6 rounded-3xl border border-border bg-card px-6 py-10 sm:px-10 sm:py-12 lg:flex-row lg:items-center">
+          <div className="landing-cta mx-auto flex max-w-5xl flex-col items-start justify-between gap-6 rounded-2xl border border-border bg-card px-5 py-8 sm:rounded-3xl sm:px-10 sm:py-12 lg:flex-row lg:items-center">
             <div className="max-w-xl">
               <h2 className="font-[family-name:var(--font-landing-display)] text-3xl font-semibold tracking-tight sm:text-4xl">
                 Ready to run people ops with less noise?

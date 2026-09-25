@@ -23,6 +23,7 @@ export function LocationSyncBanner() {
   const handleSync = useCallback(() => {
     if (!navigator.geolocation) {
       setIsBlocked(true);
+      setIsVisible(true);
       return;
     }
 
@@ -46,6 +47,7 @@ export function LocationSyncBanner() {
           refetch();
         } catch (err) {
           console.error("Failed to update location:", err);
+          setIsVisible(true);
         } finally {
           setIsSyncing(false);
         }
@@ -53,6 +55,7 @@ export function LocationSyncBanner() {
       (err) => {
         if (err.code === 1) setIsBlocked(true);
         setIsSyncing(false);
+        setIsVisible(true);
       },
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 }
     );
@@ -67,31 +70,48 @@ export function LocationSyncBanner() {
       pendingSync = false;
     }
     const needsLocation = pendingSync || Boolean(latestLog && !latestLog.latitude);
-    setIsVisible(needsLocation);
-    if (!needsLocation || askedRef.current) return;
-
+    
+    if (!needsLocation) {
+      setIsVisible(false);
+      return;
+    }
+    
+    if (askedRef.current) return;
     askedRef.current = true;
 
-    const requestNativePrompt = () => handleSync();
+    const requestNativePrompt = () => {
+      setIsVisible(true);
+      handleSync();
+    };
 
     if (navigator.permissions?.query) {
       navigator.permissions
-        .query({ name: "geolocation" })
+        .query({ name: "geolocation" as PermissionName })
         .then((result) => {
           if (result.state === "denied") {
             setIsBlocked(true);
+            setIsVisible(true);
             return;
           }
-          requestNativePrompt();
+          
+          if (result.state === "granted") {
+            setIsVisible(false);
+            handleSync();
+          } else {
+            requestNativePrompt();
+          }
+
           result.onchange = () => {
-            if (result.state === "denied") setIsBlocked(true);
-            else if (result.state === "granted") {
+            if (result.state === "denied") {
+              setIsBlocked(true);
+              setIsVisible(true);
+            } else if (result.state === "granted") {
               setIsBlocked(false);
               handleSync();
             }
           };
         })
-        .catch(requestNativePrompt);
+        .catch(() => requestNativePrompt());
     } else {
       requestNativePrompt();
     }

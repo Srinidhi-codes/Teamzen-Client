@@ -5,6 +5,7 @@ import { ReactNode } from "react";
 interface ModalProps {
   isOpen: boolean;
   title: string;
+  description?: string;
   children: ReactNode;
   onClose: () => void;
   onConfirm?: () => void;
@@ -16,6 +17,7 @@ interface ModalProps {
 export function Modal({
   isOpen,
   title,
+  description,
   children,
   onClose,
   onConfirm,
@@ -37,7 +39,7 @@ export function Modal({
         <div className="flex justify-between items-center p-6 border-b border-border/50">
           <div>
             <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">Authentication required</p>
+            {description && <p className="text-sm text-muted-foreground mt-0.5">{description}</p>}
           </div>
           <button
             onClick={onClose}

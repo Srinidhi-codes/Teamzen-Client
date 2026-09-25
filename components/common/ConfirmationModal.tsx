@@ -18,7 +18,8 @@ interface ConfirmationModalProps {
     description: string;
     confirmText?: string;
     cancelText?: string;
-    variant?: "primary" | "destructive" | "warning" | "success";
+    hideCancel?: boolean;
+    variant?: "primary" | "destructive" | "warning" | "success" | "error";
 }
 
 const ConfirmationModal = ({
@@ -29,6 +30,7 @@ const ConfirmationModal = ({
     description,
     confirmText = "Confirm",
     cancelText = "Cancel",
+    hideCancel = false,
     variant = "primary"
 }: ConfirmationModalProps) => {
 
@@ -46,6 +48,13 @@ const ConfirmationModal = ({
             btnClass: "btn-destructive",
             shadeClass: "from-destructive/20",
             label: "Delete"
+        },
+        error: {
+            icon: XCircle,
+            iconClass: "bg-destructive/10 text-destructive",
+            btnClass: "btn-destructive",
+            shadeClass: "from-destructive/20",
+            label: "Error"
         },
         warning: {
             icon: AlertTriangle,
@@ -88,18 +97,20 @@ const ConfirmationModal = ({
                 </div>
 
                 <div className="p-4 bg-muted/5 flex items-center justify-end gap-3">
-                    <button
-                        onClick={onClose}
-                        className="btn-ghost"
-                    >
-                        {cancelText}
-                    </button>
+                    {!hideCancel && (
+                        <button
+                            onClick={onClose}
+                            className="btn-ghost"
+                        >
+                            {cancelText}
+                        </button>
+                    )}
                     <button
                         onClick={() => {
                             onConfirm();
                             onClose();
                         }}
-                        className={`btn ${variant === 'primary' || variant === 'destructive' ? '' : 'px-10 py-4 shadow-2xl '} ${config.btnClass}`}
+                        className={`btn ${variant === 'primary' || variant === 'destructive' || variant === 'error' ? '' : 'px-10 py-4 shadow-2xl '} ${config.btnClass}`}
                     >
                         {confirmText}
                     </button>

@@ -48,7 +48,10 @@ export function DashboardPreview({ className }: { className?: string }) {
     let raf = 0;
     const updateTransform = () => {
       raf = 0;
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      if (
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+        window.innerWidth < 640
+      ) {
         frame.style.transform = "none";
         return;
       }
@@ -84,7 +87,7 @@ export function DashboardPreview({ className }: { className?: string }) {
         className="landing-preview-frame"
         aria-hidden
       >
-        <div className="overflow-hidden rounded-2xl border border-border bg-background shadow-[0_40px_100px_-20px_rgba(15,40,50,0.45)] transition-colors duration-500 dark:shadow-[0_40px_100px_-20px_rgba(0,0,0,0.55)]">
+        <div className="overflow-hidden rounded-2xl border border-border bg-background shadow-[0_40px_100px_-20px_rgba(15,40,50,0.45)] transition-colors duration-500 dark:shadow-[0_40px_100px_-20px_rgba(0,0,0,0.55)] max-w-full">
           <div className="flex items-center gap-2 border-b border-border bg-card px-4 py-3 transition-colors duration-500">
             <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
@@ -174,7 +177,7 @@ export function DashboardPreview({ className }: { className?: string }) {
                 </div>
               </div>
 
-              <div className="grid gap-3 lg:grid-cols-12">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-12">
                 <div className="hidden rounded-xl border border-border bg-card p-3 transition-colors duration-500 min-[360px]:block sm:p-4 lg:col-span-4">
                   <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">

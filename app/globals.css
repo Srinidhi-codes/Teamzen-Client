@@ -237,8 +237,15 @@
     @apply border-border outline-ring/50;
   }
 
+  html {
+    overflow-x: clip;
+    max-width: 100%;
+  }
+
   body {
-    @apply bg-background text-foreground font-sans antialiased overflow-x-hidden;
+    @apply bg-background text-foreground font-sans antialiased;
+    overflow-x: clip;
+    max-width: 100%;
     touch-action: manipulation;
     -webkit-text-size-adjust: 100%;
   }
@@ -358,6 +365,15 @@
 
 .animate-slide-up {
   animation: slideUp 0.3s ease-out forwards;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
 .login-bg {
@@ -480,23 +496,45 @@
 }
 
 .landing-reveal--from-left {
-  transform: translateX(-56px);
+  transform: translateX(-20px);
 }
 
 .landing-reveal--from-right {
-  transform: translateX(56px);
+  transform: translateX(20px);
 }
 
 .landing-reveal--media {
-  transform: translateY(36px) scale(0.92);
+  transform: translateY(24px) scale(0.97);
 }
 
 .landing-reveal--media.landing-reveal--from-left {
-  transform: translateX(-64px) scale(0.92);
+  transform: translateX(-24px) scale(0.97);
 }
 
 .landing-reveal--media.landing-reveal--from-right {
-  transform: translateX(64px) scale(0.92);
+  transform: translateX(24px) scale(0.97);
+}
+
+@media (min-width: 768px) {
+  .landing-reveal--from-left {
+    transform: translateX(-56px);
+  }
+
+  .landing-reveal--from-right {
+    transform: translateX(56px);
+  }
+
+  .landing-reveal--media {
+    transform: translateY(36px) scale(0.92);
+  }
+
+  .landing-reveal--media.landing-reveal--from-left {
+    transform: translateX(-64px) scale(0.92);
+  }
+
+  .landing-reveal--media.landing-reveal--from-right {
+    transform: translateX(64px) scale(0.92);
+  }
 }
 
 .landing-reveal--in {
@@ -532,7 +570,7 @@
   container-type: inline-size;
 }
 
-@container (min-width: 44rem) {
+@container (min-width: 28rem) {
   .workflow-inner-grid--attendance {
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
   }
@@ -1525,10 +1563,6 @@
 }
 
 @media (min-width: 1280px) and (max-height: 699px) {
-  .leave-sticky-panel {
-    position: static !important;
-  }
-
   .leave-story-step {
     min-height: 30rem;
   }
@@ -1704,5 +1738,435 @@
   .lamp-cord-line {
     transition: none !important;
     animation: none !important;
+  }
+}
+
+/* ================================================================
+   LANDING PAGE – PRODUCTION-LEVEL RESPONSIVE SYSTEM
+   Strategy: mobile-first, component-scoped, no !important abuse.
+   Breakpoints: 320 → 480 → 640 → 768 → 1024 → 1280 → 1536
+   ================================================================ */
+
+/* ─── 1. Global containment: nothing bleeds past viewport ──── */
+.landing-root {
+  overflow-x: hidden;
+  overflow-x: clip; /* keep sticky children working */
+}
+
+/* Constrain the perspective wrapper so the 3-D frame never leaks */
+.landing-preview-perspective {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.landing-preview-frame {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Workflow containers: always min-width:0 to honour CSS grid */
+.landing-workflow,
+.landing-module-panel {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* ─── 2. Hero section ───────────────────────────────────────── */
+/* Float badges: desktop-only (already hidden < lg in JSX, belt+suspenders) */
+.landing-float-card {
+  /* shown only when container is wide enough */
+}
+
+@media (max-width: 1023px) {
+  .landing-float-card {
+    display: none !important;
+  }
+}
+
+/* ─── 3. Workflow inner grids ───────────────────────────────── */
+/*
+  .workflow-inner-grid is a container-query driven grid.
+  Container query fires at 28rem — which is the ProductWindow width.
+  On phones the ProductWindow is full viewport width, so the grid
+  goes 2-col at ~280px which is fine. The problem was the old
+  44rem threshold never fired on small screens — now fixed.
+  Extra rule: if somehow the container is very narrow, force 1-col.
+*/
+@container (max-width: 20rem) {
+  .workflow-inner-grid--attendance,
+  .workflow-inner-grid--payroll {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ─── 4. Dashboard Preview (hero product shot) ──────────────── */
+/* The `lg:col-span-*` grid only matters at 1024+.
+   Below that, sm:grid-cols-2 takes care of the 2-panel layout.
+   The leave-available panel is hidden below min-[360px] already. */
+@media (max-width: 639px) {
+  /* single-column dashboard cards on tiny phones */
+  .grid.gap-3.sm\\:grid-cols-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ─── 5. LeaveWorkflow cards (balance grid) ─────────────────── */
+/*
+  Inside LeaveDemo, the balance bar has grid-cols-3.
+  On very narrow containers (< 280px) the 3 cells overflow.
+  This is an inner-element fix.
+*/
+@media (max-width: 359px) {
+  /* Force the leave balance grid to 1 column on the smallest phones */
+  .min-h-\\[24rem\\] .grid.grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    font-size: 0.65rem;
+  }
+}
+
+/* ─── 6. Pricing cards ──────────────────────────────────────── */
+/* Below 768 px: single-column */
+@media (max-width: 767px) {
+  .plan-deck,
+  .landing-pricing-grid {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 26rem;
+    margin-inline: auto;
+  }
+
+  /* Pro card first on mobile */
+  .plan-deck-card[data-plan="pro"],
+  .landing-pricing-card[data-plan="pro"] {
+    order: -1;
+  }
+
+  .landing-pricing-card {
+    padding: 1.25rem;
+  }
+}
+
+/* Tablet 768–1023: 3-col (already defined in existing @media 768) */
+
+/* ─── 7. AI showcase section ────────────────────────────────── */
+/* Single column below 1024 px */
+@media (max-width: 1023px) {
+  .ai-showcase-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.5rem;
+    max-width: 42rem;
+    margin-inline: auto;
+  }
+}
+
+/* Restore 2-col at desktop */
+@media (min-width: 1024px) {
+  .ai-showcase-grid {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 0.78fr);
+    max-width: none;
+    gap: 5rem;
+  }
+}
+
+/* ─── 8. Everywhere / Omnichannel section ───────────────────── */
+/* Below 1024 px: disable the absolute-positioned constellation.
+   Stack hub → channels → demo vertically. */
+@media (max-width: 1023px) {
+  .everywhere-stage {
+    /* Override the `display: block` set at 1024+ back to flex stack */
+    display: flex !important;
+    flex-direction: column;
+    gap: 1rem;
+    min-height: unset;
+  }
+
+  .everywhere-network {
+    display: none !important;
+  }
+
+  /* Hub: reset absolute positioning added at lg */
+  .everywhere-hub {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    border-radius: 1rem;
+  }
+
+  /* Channel list: reset absolute positioning */
+  .everywhere-channel-list {
+    position: static !important;
+    width: 100% !important;
+    transform: none !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.55rem;
+  }
+
+  /* Channel demo: reset absolute positioning */
+  .channel-demo {
+    position: static !important;
+    width: 100% !important;
+    transform: none !important;
+  }
+}
+
+@media (max-width: 479px) {
+  .everywhere-shell {
+    padding: 2rem 1rem 1.5rem;
+    border-radius: 1rem;
+  }
+
+  .everywhere-hub {
+    min-height: 4.5rem;
+  }
+}
+
+/* ─── 9. CTA section ────────────────────────────────────────── */
+@media (max-width: 639px) {
+  .landing-cta {
+    padding: 1.5rem 1.25rem;
+    border-radius: 1.25rem;
+  }
+
+  .landing-cta h2 {
+    font-size: 1.5rem;
+    line-height: 1.25;
+  }
+}
+
+/* ─── 10. Footer ────────────────────────────────────────────── */
+@media (max-width: 639px) {
+  footer .mx-auto.flex {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+}
+
+/* ─── 11. Landscape phones ──────────────────────────────────── */
+@media (max-height: 560px) and (orientation: landscape) {
+  header > div.relative {
+    min-height: auto !important;
+    padding-top: 1rem;
+    padding-bottom: 1.5rem;
+  }
+}
+
+
+/* ── Tiny phones (≤ 380 px) ─────────────────────────── */
+@media (max-width: 380px) {
+  .landing-pricing-card {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  /* Hero CTA buttons: tighter gap */
+  .landing-hero-item-4 a,
+  .landing-hero-item-4 button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ── All phones (< 640 px) ──────────────────────────── */
+@media (max-width: 639px) {
+  /* Prevent horizontal scrollbar from decorative elements */
+  .landing-root {
+    overflow-x: hidden;
+  }
+
+  /* Dashboard preview – clip overflowing chrome art */
+  #product {
+    overflow: hidden;
+    border-radius: 1rem;
+  }
+
+  /* Floating badge cards that only show on lg+ are fine, but avoid leaking */
+  .landing-float-card {
+    display: none !important;
+  }
+
+  /* Workflow module panels: full-width, no clipping */
+  .landing-module-panel {
+    width: 100%;
+    overflow: hidden;
+  }
+
+  /* AI showcase: single column, copy then chat */
+  .ai-showcase-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 2rem;
+  }
+
+  /* Everywhere shell: reduce padding, slight bleed for drama */
+  .everywhere-shell {
+    padding: 2.5rem 1rem 1.5rem;
+    border-radius: 1.25rem;
+  }
+
+  /* Everywhere stage: simple vertical stack on mobile */
+  .everywhere-stage {
+    display: flex !important;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 2rem;
+    position: relative;
+  }
+
+  /* Hub compact on mobile */
+  .everywhere-hub {
+    min-height: 5rem;
+    border-radius: 1rem;
+  }
+
+  /* Channel list: 2 per row on small phones */
+  .everywhere-channel-list {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    position: static !important;
+    width: 100% !important;
+    transform: none !important;
+  }
+
+  /* Network constellation: hide on mobile (decorative only) */
+  .everywhere-network {
+    display: none !important;
+  }
+
+  /* Channel demo: full width on mobile */
+  .channel-demo {
+    position: static !important;
+    width: 100% !important;
+    transform: none !important;
+  }
+
+  /* Pricing: single column on phone */
+  .plan-deck,
+  .landing-pricing-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  /* Keep Pro card first on mobile */
+  .plan-deck-card[data-plan="pro"],
+  .landing-pricing-card[data-plan="pro"] {
+    order: -1;
+  }
+
+  /* CTA section padding */
+  .landing-cta {
+    padding: 1.75rem 1.25rem !important;
+  }
+
+  /* CTA heading: don't overflow */
+  .landing-cta h2 {
+    font-size: 1.625rem;
+    line-height: 1.22;
+  }
+
+  /* Footer: stack vertically */
+  footer > div.mx-auto {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: center;
+  }
+}
+
+/* ── Tablet portrait (640 px – 767 px) ─────────────── */
+@media (min-width: 640px) and (max-width: 767px) {
+  /* Everywhere channel list: 2 columns */
+  .everywhere-channel-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    position: static !important;
+    width: 100% !important;
+    transform: none !important;
+  }
+
+  .everywhere-stage {
+    display: flex !important;
+    flex-direction: column;
+    gap: 1rem;
+    position: relative;
+  }
+
+  .channel-demo {
+    position: static !important;
+    width: 100% !important;
+    transform: none !important;
+  }
+
+  .everywhere-network {
+    display: none !important;
+  }
+
+  /* Module sections: stack until xl */
+  .ai-showcase-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 2.5rem;
+  }
+}
+
+/* ── Tablet landscape (768 px – 1023 px) ────────────── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Pricing: 3 columns (already handled by plan-deck @media 768) */
+
+  /* AI showcase: single column until lg */
+  .ai-showcase-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 3rem;
+    max-width: 44rem;
+    margin-inline: auto;
+  }
+
+  /* Everywhere: still stacked — constellation needs 1024 px+ */
+  .everywhere-channel-list {
+    position: static !important;
+    width: 100% !important;
+    transform: none !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .everywhere-stage {
+    display: flex !important;
+    flex-direction: column;
+    gap: 1rem;
+    position: relative;
+  }
+
+  .channel-demo {
+    position: static !important;
+    width: 100% !important;
+    transform: none !important;
+  }
+
+  .everywhere-network {
+    display: none !important;
+  }
+
+  .everywhere-hub {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+  }
+}
+
+/* ── Desktop (≥ 1024 px) – constellation activates ─── */
+@media (min-width: 1024px) {
+  /* AI showcase 2-column */
+  .ai-showcase-grid {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 0.78fr) !important;
+    max-width: none;
+    gap: 5rem;
+  }
+}
+
+/* ── Landscape phones (short screens) ───────────────── */
+@media (max-height: 600px) and (orientation: landscape) {
+  header > div.relative {
+    min-height: auto;
+    padding-top: 0.75rem;
+    padding-bottom: 1.25rem;
   }
 }

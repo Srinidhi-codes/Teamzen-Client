@@ -24,6 +24,7 @@ import {
   AuthSubmitButton,
   GoogleMark,
 } from "./auth-ui";
+import ConfirmationModal from "../common/ConfirmationModal";
 
 function markLocationSyncNeeded() {
   try {
@@ -51,6 +52,9 @@ export default function LoginForm() {
   const [rememberMe, setRememberMe] = useState(false);
   const rememberMeRef = useRef(false);
   rememberMeRef.current = rememberMe;
+
+  const [errorModal, setErrorModal] = useState({ isOpen: false, message: "" });
+  const showError = (message: string) => setErrorModal({ isOpen: true, message });
 
   const { login, requestOtp, verifyOtp, verifyTotp, googleLogin } = useAuth();
   const { loginUser, logoutUser, isAuthenticated, hasHydrated } = useStore();
@@ -164,7 +168,7 @@ export default function LoginForm() {
         goAfterLogin(loginResult.user);
       }
     } catch (err: any) {
-      alert(err.message || "Google sign-in failed");
+      showError(err.message || "Google sign-in failed");
     }
   };
 
@@ -178,7 +182,7 @@ export default function LoginForm() {
           setStep("otp_code");
           setCountdown(60);
         } catch (error: any) {
-          alert(error.message || "Failed to send verification code");
+          showError(error.message || "Failed to send verification code");
         }
       } else if (step === "otp_code") {
         try {
@@ -195,7 +199,7 @@ export default function LoginForm() {
             goAfterLogin(result.user);
           }
         } catch (error: any) {
-          alert(error.message || "Invalid OTP code");
+          showError(error.message || "Invalid OTP code");
         }
       }
     } else {
@@ -209,7 +213,7 @@ export default function LoginForm() {
       await requestOtp.mutateAsync(email);
       setCountdown(60);
     } catch (error: any) {
-      alert(error.message || "Failed to send code");
+      showError(error.message || "Failed to send code");
     }
   };
 
@@ -226,7 +230,7 @@ export default function LoginForm() {
         goAfterLogin(result.user);
       }
     } catch (error: any) {
-      alert(error.message || "Invalid authenticator code");
+      showError(error.message || "Invalid authenticator code");
     }
   };
 
@@ -248,7 +252,7 @@ export default function LoginForm() {
         goAfterLogin(response.user);
       }
     } catch (error: any) {
-      alert(error.message || "Login failed");
+      showError(error.message || "Login failed");
     }
   };
 
@@ -261,6 +265,7 @@ export default function LoginForm() {
   };
 
   return (
+    <>
     <AuthShell
       title={step === "totp" ? "Two-factor authentication" : "Sign in"}
       description={
@@ -506,5 +511,17 @@ export default function LoginForm() {
         </>
       )}
     </AuthShell>
+
+    <ConfirmationModal
+      isOpen={errorModal.isOpen}
+      title="Authentication Error"
+      description={errorModal.message || "Please try again or contact support if the issue persists."}
+      onClose={() => setErrorModal({ isOpen: false, message: "" })}
+      onConfirm={() => setErrorModal({ isOpen: false, message: "" })}
+      confirmText="Close"
+      variant="error"
+      hideCancel={true}
+    />
+    </>
   );
 }
