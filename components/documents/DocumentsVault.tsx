@@ -39,7 +39,9 @@ export default function DocumentsVault() {
   const [tab, setTab] = useState<Tab>("issued");
   const [uploadingId, setUploadingId] = useState<string | null>(null);
 
-  const [createReq, { loading: creating }] = useMutation(CREATE_EMPLOYEE_DOCUMENT_REQUEST);
+  const [createReq, { loading: creating }] = useMutation<{
+    createEmployeeDocumentRequest: { success: boolean; error?: string | null; id?: string | null };
+  }>(CREATE_EMPLOYEE_DOCUMENT_REQUEST);
   const [modalOpen, setModalOpen] = useState(false);
   const [reqCategory, setReqCategory] = useState("bonafide");
   const [reqTitle, setReqTitle] = useState("");
