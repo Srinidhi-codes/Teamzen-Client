@@ -62,11 +62,13 @@ export function WorkflowStepRail({
   dark?: boolean;
 }) {
   return (
-    <div className="mt-4 flex min-w-0 items-center gap-2 sm:mt-5">
+    /* Outer: full-width, clips any accidental bleed */
+    <div className="mt-4 w-full min-w-0 overflow-hidden sm:mt-5">
+      {/* Scrollable pill track — Replay lives inside so it scrolls with pills */}
       <div
         role="tablist"
         aria-label="Workflow steps"
-        className="scrollbar-hide flex min-w-0 flex-1 flex-nowrap gap-1.5 overflow-x-auto pb-1"
+        className="scrollbar-hide flex min-w-0 flex-nowrap items-center gap-1.5 overflow-x-auto pb-1"
       >
         {steps.map((item, index) => {
           const active = index === current;
@@ -79,7 +81,7 @@ export function WorkflowStepRail({
               aria-selected={active}
               onClick={() => onSelect(index)}
               className={cn(
-                "inline-flex min-h-11 shrink-0 items-center rounded-full border px-3 text-xs font-medium transition-colors motion-reduce:transition-none",
+                "inline-flex h-10 shrink-0 items-center rounded-full border px-3 text-[11px] font-medium transition-colors motion-reduce:transition-none sm:h-11 sm:px-3.5 sm:text-xs",
                 dark
                   ? active
                     ? "border-white/30 bg-white text-[#102027]"
@@ -93,27 +95,29 @@ export function WorkflowStepRail({
                       : "border-border bg-card text-muted-foreground hover:text-foreground"
               )}
             >
-              <span className="mr-1.5 tabular-nums opacity-70">{index + 1}</span>
+              <span className="mr-1 tabular-nums opacity-70 sm:mr-1.5">{index + 1}</span>
               {item.label}
             </button>
           );
         })}
+
+        {/* Replay sits INSIDE the scroll track — never overflows */}
+        {onReplay ? (
+          <button
+            type="button"
+            onClick={onReplay}
+            className={cn(
+              "ml-1 inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[11px] font-medium transition-colors motion-reduce:transition-none sm:h-11 sm:px-3 sm:text-xs",
+              dark
+                ? "border-white/15 bg-white/5 text-white/70 hover:bg-white/10"
+                : "border-border bg-card text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <RotateCcw className="h-3 w-3 shrink-0" />
+            <span className="hidden sm:inline">Replay</span>
+          </button>
+        ) : null}
       </div>
-      {onReplay ? (
-        <button
-          type="button"
-          onClick={onReplay}
-          className={cn(
-            "inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors motion-reduce:transition-none",
-            dark
-              ? "border-white/15 bg-white/5 text-white/70 hover:bg-white/10"
-              : "border-border bg-card text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <RotateCcw className="h-3 w-3" />
-          Replay
-        </button>
-      ) : null}
     </div>
   );
 }

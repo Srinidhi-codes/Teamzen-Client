@@ -2,11 +2,12 @@
 
 import { useRef, useState } from "react";
 import moment from "moment";
-import { ClipboardList, Upload, CheckCircle2 } from "lucide-react";
+import { ClipboardList, Upload, CheckCircle2, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Card } from "@/components/common/Card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { FormSelect } from "@/components/common/FormSelect";
 import {
   useMyAssignedOnboardingTasks,
@@ -21,6 +22,7 @@ import client from "@/lib/api/client";
 import Image from "next/image";
 import { OnboardingImages, EmptyImages } from "@/lib/brand-images";
 import { EmptyState } from "@/components/common/EmptyState";
+import ConfirmationModal from "@/components/common/ConfirmationModal";
 
 function formatJoinDate(value?: string | Date | null) {
   if (value == null || value === "") return "";
@@ -53,6 +55,7 @@ export default function MyOnboardingPage() {
   const [acceptedName, setAcceptedName] = useState("");
   const [category, setCategory] = useState("pan");
   const [msg, setMsg] = useState("");
+  const [docToDelete, setDocToDelete] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const signedOfferRef = useRef<HTMLInputElement>(null);
 
@@ -67,6 +70,29 @@ export default function MyOnboardingPage() {
     });
     setMsg("Document uploaded — awaiting HR verification");
     refetch();
+  }
+
+  async function deleteDoc(docId: string) {
+    try {
+      const { data } = await client.post("graphql/", {
+        query: `mutation DeleteEmployeeDocument($id: ID!) {
+          deleteEmployeeDocument(documentId: $id) { success error }
+        }`,
+        variables: { id: docId }
+      });
+      if (data?.errors?.length) {
+        throw new Error(data.errors[0].message);
+      }
+      if (!data?.data?.deleteEmployeeDocument?.success) {
+        throw new Error(data?.data?.deleteEmployeeDocument?.error || "Failed to delete document");
+      }
+      setMsg("Document deleted");
+      setDocToDelete(null);
+      refetch();
+    } catch (e: any) {
+      setMsg(e.message);
+      setDocToDelete(null);
+    }
   }
 
   async function uploadSignedOffer(file: File) {
@@ -362,15 +388,41 @@ export default function MyOnboardingPage() {
             }) => (
               <div
                 key={d.id}
-                className="flex justify-between rounded-lg border border-border px-3 py-2 text-sm"
+                className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm shadow-sm"
               >
-                <span>
-                  {d.category} · {d.fileName}
-                </span>
-                <span className="text-muted-foreground">
-                  {d.verificationStatus}
-                  {d.rejectionReason ? ` — ${d.rejectionReason}` : ""}
-                </span>
+                <div className="flex flex-col">
+                  <span className="font-medium">{d.fileName}</span>
+                  <span className="text-xs text-muted-foreground">{d.category}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Badge
+                    variant={d.verificationStatus === "verified" ? "default" : "secondary"}
+                    className={
+                      d.verificationStatus === "verified"
+                        ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100"
+                        : d.verificationStatus === "rejected"
+                          ? "bg-rose-100 text-rose-800 hover:bg-rose-100 capitalize"
+                          : "bg-amber-100 text-amber-800 hover:bg-amber-100 capitalize"
+                    }
+                  >
+                    {d.verificationStatus.replace("_", " ")}
+                  </Badge>
+                  {d.rejectionReason && (
+                    <span className="text-xs text-rose-600 max-w-[150px] truncate" title={d.rejectionReason}>
+                      {d.rejectionReason}
+                    </span>
+                  )}
+                  {d.verificationStatus !== "verified" && (
+                    <button
+                      type="button"
+                      onClick={() => setDocToDelete(d.id)}
+                      className="text-rose-600 transition-colors hover:text-rose-800"
+                      title="Delete document"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             )
           )}
@@ -453,6 +505,17 @@ export default function MyOnboardingPage() {
           )}
         </Card>
       )}
+      <ConfirmationModal
+        isOpen={!!docToDelete}
+        onClose={() => setDocToDelete(null)}
+        onConfirm={() => {
+          if (docToDelete) deleteDoc(docToDelete);
+        }}
+        title="Delete Document"
+        description="Are you sure you want to delete this document? This action cannot be undone."
+        variant="destructive"
+        confirmText="Delete"
+      />
     </div>
   );
 }

@@ -6,6 +6,10 @@ import { usePreboardingTour } from "@/components/onboarding/PreboardingTour";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Trash2 } from "lucide-react";
+import ConfirmationModal from "@/components/common/ConfirmationModal";
 import { OnboardingImages } from "@/lib/brand-images";
 
 function formatJoinDate(value?: string | Date | null) {
@@ -111,9 +115,15 @@ async function gqlFetch<T>(query: string, variables: Record<string, unknown>): P
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query, variables }),
   });
+  if (!res.ok) {
+    throw new Error(`API error (${res.status}) - The server might be unreachable.`);
+  }
   const json = await res.json();
   if (json.errors?.length) {
     throw new Error(json.errors[0].message || "GraphQL error");
+  }
+  if (!json.data) {
+    throw new Error("Invalid GraphQL response");
   }
   return json.data;
 }
@@ -142,6 +152,7 @@ export default function PreboardingPage({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState("");
+  const [docToDelete, setDocToDelete] = useState<string | null>(null);
   const [acceptedName, setAcceptedName] = useState("");
   const [category, setCategory] = useState("pan");
   const [profile, setProfile] = useState({
@@ -222,8 +233,12 @@ export default function PreboardingPage({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query: mutation, variables }),
     });
+    if (!res.ok) {
+      throw new Error(`API error (${res.status}) - The server might be unreachable.`);
+    }
     const json = await res.json();
     if (json.errors?.length) throw new Error(json.errors[0].message);
+    if (!json.data) throw new Error("Invalid GraphQL response");
     return json.data;
   }
 
@@ -272,6 +287,26 @@ export default function PreboardingPage({
     if (!res.ok) throw new Error(json.error || "Upload failed");
     setMsg(`Uploaded ${json.file_name} (${json.category})`);
     load();
+  }
+
+  async function deleteDoc(docId: string) {
+    try {
+      const data = await mutate(
+        `mutation DeletePreboardingDocument($input: DeletePreboardingDocumentInput!) {
+          deletePreboardingDocument(input: $input) { success error }
+        }`,
+        { input: { inviteToken: token, documentId: docId } }
+      );
+      if (!data.deletePreboardingDocument.success) {
+        throw new Error(data.deletePreboardingDocument.error || "Failed to delete document");
+      }
+      setMsg("Document deleted");
+      setDocToDelete(null);
+      load();
+    } catch (e: any) {
+      setMsg(e.message);
+      setDocToDelete(null);
+    }
   }
 
   async function uploadSignedOffer(file: File) {
@@ -357,18 +392,23 @@ export default function PreboardingPage({
   return (
     <div className="min-h-screen bg-linear-to-b from-emerald-50 to-slate-50 text-slate-900">
       <header className="border-b border-emerald-100 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
+        <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
               Preboarding
             </p>
-            <h1 className="text-lg font-semibold text-slate-900">
-              Welcome, {session.userName}
-            </h1>
           </div>
-          <div className="text-right text-sm text-slate-600">
-            <div>{session.progressPct}% complete</div>
-            <div>
+          <div className="w-full sm:w-48 space-y-1.5 sm:text-right text-sm text-slate-600">
+            <div className="flex items-center justify-between sm:justify-end gap-2">
+              <span className="font-semibold text-emerald-700">{session.progressPct}% complete</span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+              <div
+                className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                style={{ width: `${session.progressPct}%` }}
+              />
+            </div>
+            <div className="text-xs">
               {session.joinDate
                 ? `Join ${formatJoinDate(session.joinDate)}`
                 : ""}
@@ -387,6 +427,17 @@ export default function PreboardingPage({
             sizes="(max-width: 768px) 100vw, 768px"
             className="object-cover object-center"
           />
+          <div className="absolute inset-0" />
+          <div className="absolute inset-y-0 left-0 sm:-left-5 flex w-full max-w-[90%] sm:max-w-[60%] flex-col justify-center px-4 sm:px-8 md:px-12">
+            <h2 className="mb-2 text-2xl lg:max-w-full max-w-[2rem] font-bold tracking-tight text-primary md:text-4xl">
+              Welcome aboard, {session.userName.split(" ")[0]}!
+            </h2>
+            <p className="hidden text-sm leading-relaxed text-primary/70 sm:block md:text-base">
+              We're thrilled to have you join the team.
+              <br />
+              Please complete your preboarding checklist below.
+            </p>
+          </div>
         </div>
 
         {msg && (
@@ -396,7 +447,8 @@ export default function PreboardingPage({
         )}
 
         <section id="preboarding-details" className={cardClass}>
-          <h2 className="mb-3 text-base font-semibold text-slate-900">Your details</h2>
+          <h2 className="text-base font-semibold text-slate-900">Your details</h2>
+          <hr className="mb-4 mt-2 border-slate-200" />
           <div className="grid gap-3 sm:grid-cols-2">
             {(
               [
@@ -428,7 +480,8 @@ export default function PreboardingPage({
 
         {session.offerLetter && (
           <section id="preboarding-offer" className={cardClass}>
-            <h2 className="mb-2 text-base font-semibold text-slate-900">Offer letter</h2>
+            <h2 className="text-base font-semibold text-slate-900">Offer letter</h2>
+            <hr className="mb-4 mt-2 border-slate-200" />
             <p className="text-sm font-medium text-slate-800">
               {session.offerLetter.subject}
             </p>
@@ -521,7 +574,7 @@ export default function PreboardingPage({
                   />
                   <Button
                     type="button"
-                    disabled={acceptedName.trim().length < 2}
+                    disabled={acceptedName.trim().toLowerCase() !== session.userName.toLowerCase()}
                     onClick={() => acceptOffer().catch((e) => setMsg(e.message))}
                     className={lightPrimaryBtnClass}
                   >
@@ -583,23 +636,23 @@ export default function PreboardingPage({
         )}
 
         <section id="preboarding-docs" className={cardClass}>
-          <h2 className="mb-3 text-base font-semibold text-slate-900">Upload documents</h2>
+          <h2 className="text-base font-semibold text-slate-900">Upload documents</h2>
+          <hr className="mb-4 mt-2 border-slate-200" />
           <div className="mb-3 flex flex-wrap items-end gap-2">
             <label className="text-sm text-slate-900">
               <span className="mb-1 block text-slate-600">Document category</span>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className={lightNativeSelectClass}
-              >
-                {["id_proof", "pan", "aadhaar", "bank_proof", "education", "other"].map(
-                  (c) => (
-                    <option key={c} value={c} className="bg-white text-slate-900">
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger className="w-[180px] bg-white text-slate-900">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["id_proof", "pan", "aadhaar", "bank_proof", "education", "other"].map((c) => (
+                    <SelectItem key={c} value={c}>
                       {c}
-                    </option>
-                  )
-                )}
-              </select>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </label>
             <input
               ref={fileRef}
@@ -623,41 +676,87 @@ export default function PreboardingPage({
             {session.documents.map((d) => (
               <div
                 key={d.id}
-                className="flex justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800"
+                className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm"
               >
-                <span>
-                  {d.category} · {d.fileName}
-                </span>
-                <span className="text-slate-600">{d.verificationStatus}</span>
+                <div className="flex flex-col">
+                  <span className="font-medium text-slate-900">{d.fileName}</span>
+                  <span className="text-xs text-slate-500">{d.category}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Badge
+                    variant={d.verificationStatus === "verified" ? "default" : "secondary"}
+                    className={
+                      d.verificationStatus === "verified"
+                        ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100"
+                        : d.verificationStatus === "rejected"
+                          ? "bg-rose-100 text-rose-800 hover:bg-rose-100 capitalize"
+                          : "bg-amber-100 text-amber-800 hover:bg-amber-100 capitalize"
+                    }
+                  >
+                    {d.verificationStatus.replace("_", " ")}
+                  </Badge>
+                  {d.verificationStatus !== "verified" && (
+                    <button
+                      type="button"
+                      onClick={() => setDocToDelete(d.id)}
+                      className="text-rose-600 transition-colors hover:text-rose-800"
+                      title="Delete document"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         </section>
 
         <section id="preboarding-checklist" className={cardClass}>
-          <h2 className="mb-3 text-base font-semibold text-slate-900">Checklist</h2>
+          <h2 className="text-base font-semibold text-slate-900">Checklist</h2>
+          <hr className="mb-4 mt-2 border-slate-200" />
           <div className="space-y-2">
             {session.tasks
               .filter((t) => t.assigneeRole === "hire")
               .map((t) => (
                 <div
                   key={t.id}
-                  className="flex justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm"
                 >
-                  <span>
-                    {t.title}
-                    {t.dueAt ? (
-                      <span className="mt-0.5 block text-xs text-slate-500">
+                  <div className="flex flex-col">
+                    <span className="font-medium">{t.title}</span>
+                    {t.dueAt && (
+                      <span className="mt-0.5 text-xs text-slate-500">
                         Due {formatJoinDate(t.dueAt)}
                       </span>
-                    ) : null}
-                  </span>
-                  <span className="shrink-0 text-slate-600">{t.status}</span>
+                    )}
+                  </div>
+                  <Badge
+                    variant={t.status === "completed" ? "default" : "secondary"}
+                    className={
+                      t.status === "completed"
+                        ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100"
+                        : "bg-amber-100 text-amber-800 hover:bg-amber-100 capitalize"
+                    }
+                  >
+                    {t.status.replace("_", " ")}
+                  </Badge>
                 </div>
               ))}
           </div>
         </section>
       </main>
+
+      <ConfirmationModal
+        isOpen={!!docToDelete}
+        onClose={() => setDocToDelete(null)}
+        onConfirm={() => {
+          if (docToDelete) deleteDoc(docToDelete);
+        }}
+        title="Delete Document"
+        description="Are you sure you want to delete this document? This action cannot be undone."
+        variant="destructive"
+        confirmText="Delete"
+      />
     </div>
   );
 }
