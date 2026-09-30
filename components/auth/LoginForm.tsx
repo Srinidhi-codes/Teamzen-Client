@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/api/hooks";
 import { useStore } from "@/lib/store/useStore";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Mail,
@@ -53,12 +52,14 @@ export default function LoginForm() {
   const rememberMeRef = useRef(false);
   rememberMeRef.current = rememberMe;
 
+  const isRedirectingRef = useRef(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
   const [errorModal, setErrorModal] = useState({ isOpen: false, message: "" });
   const showError = (message: string) => setErrorModal({ isOpen: true, message });
 
   const { login, requestOtp, verifyOtp, verifyTotp, googleLogin } = useAuth();
   const { loginUser, logoutUser, isAuthenticated, hasHydrated } = useStore();
-  const router = useRouter();
 
   useEffect(() => {
     if (step !== "login") return;
@@ -105,8 +106,9 @@ export default function LoginForm() {
 
   // Only send logged-in users to the app if cookies are still valid.
   // Stale localStorage alone used to bounce: /login → /dashboard → /login.
+  // Never run this when an active login redirect is in progress.
   useEffect(() => {
-    if (!hasHydrated || !isAuthenticated) return;
+    if (!hasHydrated || !isAuthenticated || isRedirectingRef.current) return;
 
     let cancelled = false;
     (async () => {
@@ -115,7 +117,7 @@ export default function LoginForm() {
           credentials: "include",
         });
         const session = await sessionRes.json().catch(() => ({}));
-        if (cancelled) return;
+        if (cancelled || isRedirectingRef.current) return;
 
         if (!session?.authenticated) {
           logoutUser();
@@ -127,30 +129,35 @@ export default function LoginForm() {
             method: "POST",
             credentials: "include",
           });
-          if (cancelled) return;
+          if (cancelled || isRedirectingRef.current) return;
           if (!refreshRes.ok) {
             logoutUser();
             return;
           }
         }
 
-        router.replace("/dashboard");
+        isRedirectingRef.current = true;
+        setIsRedirecting(true);
+        window.location.replace("/dashboard");
       } catch {
-        if (!cancelled) logoutUser();
+        if (!cancelled && !isRedirectingRef.current) logoutUser();
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [hasHydrated, isAuthenticated, router, logoutUser]);
+  }, [hasHydrated, isAuthenticated, logoutUser]);
 
   const goAfterLogin = (user: any) => {
+    isRedirectingRef.current = true;
+    setIsRedirecting(true);
     loginUser(user);
     if ((user?.isActive ?? user?.is_active) !== false) {
       markLocationSyncNeeded();
     }
-    router.replace(postLoginPath(user));
+    const dest = postLoginPath(user);
+    window.location.replace(dest);
   };
 
   const handleGoogleCredentialResponse = async (response: any) => {
@@ -257,6 +264,9 @@ export default function LoginForm() {
   };
 
   const submitLabel = () => {
+    if (isRedirecting) {
+      return "Redirecting…";
+    }
     if (login.isPending || verifyOtp.isPending || requestOtp.isPending || verifyTotp.isPending) {
       return "Signing in…";
     }
@@ -307,8 +317,12 @@ export default function LoginForm() {
             />
           </div>
 
-          <AuthSubmitButton type="submit" disabled={verifyTotp.isPending} loading={verifyTotp.isPending}>
-            Verify and sign in
+          <AuthSubmitButton
+            type="submit"
+            disabled={isRedirecting || verifyTotp.isPending}
+            loading={isRedirecting || verifyTotp.isPending}
+          >
+            {isRedirecting ? "Redirecting…" : "Verify and sign in"}
           </AuthSubmitButton>
 
           <button
@@ -464,11 +478,13 @@ export default function LoginForm() {
             <AuthSubmitButton
               type="submit"
               disabled={
+                isRedirecting ||
                 login.isPending ||
                 requestOtp.isPending ||
                 verifyOtp.isPending
               }
               loading={
+                isRedirecting ||
                 login.isPending ||
                 requestOtp.isPending ||
                 verifyOtp.isPending
