@@ -39,6 +39,7 @@ import { EmptyImages } from "@/lib/brand-images";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AnnouncementModal, AnnouncementItem } from "@/components/common/AnnouncementModal";
 import { EmailList } from "@/components/email/EmailList";
+import { PageSkeleton } from "@/components/common/PageSkeleton";
 
 export default function NotificationsPage() {
     const [filter, setFilter] = useState("all");
@@ -247,13 +248,10 @@ export default function NotificationsPage() {
 
                     <TabsContent value="activity" className="m-0 border-none outline-none pb-6">
                         {activityLoading ? (
-                            <div className="flex flex-col items-center justify-center py-24 space-y-3">
-                                <div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-                                <p className="text-sm text-muted-foreground">Loading…</p>
-                            </div>
+                            <PageSkeleton variant="list" />
                         ) : activities.length > 0 ? (
                             <>
-                                <div className="divide-y divide-border/30 max-h-[600px] overflow-y-auto custom-scrollbar">
+                                <div className="divide-y divide-border/30 max-h-150 overflow-y-auto custom-scrollbar">
                                     {paginatedActivities.map((item: any) => {
                                         const isLeave = item.id.includes('leave');
                                         const isNotif = item.id.includes('notif');
@@ -313,10 +311,7 @@ export default function NotificationsPage() {
 
                     <TabsContent value="all" className="p-0 m-0 pb-6">
                         {loading ? (
-                            <div className="flex flex-col items-center justify-center py-24 space-y-3">
-                                <div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-                                <p className="text-sm text-muted-foreground">Loading…</p>
-                            </div>
+                            <PageSkeleton variant="list" />
                         ) : notifications.length > 0 ? (
                             <>
                                 {renderNotifications(paginatedNotifications)}
@@ -345,10 +340,7 @@ export default function NotificationsPage() {
 
                     <TabsContent value="unread" className="p-0 m-0 pb-6">
                         {loading ? (
-                            <div className="flex flex-col items-center justify-center py-24 space-y-3">
-                                <div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-                                <p className="text-sm text-muted-foreground">Loading…</p>
-                            </div>
+                            <PageSkeleton variant="list" />
                         ) : notifications.length > 0 ? (
                             <>
                                 {renderNotifications(paginatedNotifications)}

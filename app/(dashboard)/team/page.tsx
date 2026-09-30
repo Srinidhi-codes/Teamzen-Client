@@ -9,6 +9,7 @@ import { useGraphQLTeamLeaves, useGraphQLLeaveRequests } from "@/lib/graphql/lea
 import { useGraphQLTeamAttendanceToday } from "@/lib/graphql/attendance/attendanceHooks";
 import { PageHeader } from "@/components/common/PageHeader";
 import { PhotoOverlay } from "@/components/common/PhotoOverlay";
+import { PageSkeleton } from "@/components/common/PageSkeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -476,9 +477,8 @@ export default function TeamPage() {
 
   if (loading && !data) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        <p className="text-sm text-muted-foreground">Loading…</p>
+      <div className="p-4 sm:p-6 lg:p-8">
+        <PageSkeleton variant="split" />
       </div>
     );
   }

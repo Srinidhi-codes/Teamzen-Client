@@ -3,6 +3,7 @@ import moment from "moment";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, TrendingUp, RotateCcw, PenLine, SquareArrowOutUpRight } from "lucide-react";
+import { PageSkeleton } from "@/components/common/PageSkeleton";
 
 export type AttendanceRow = {
     id: string;
@@ -315,24 +316,29 @@ export function AttendanceTable({
         <>
             {/* Desktop View */}
             <div className="hidden md:block bg-card rounded-xl border border-border overflow-hidden p-1 sm:p-2">
-                <div className="overflow-x-auto custom-scrollbar">
-                    <DataTable
-                        columns={columns}
-                        data={data}
-                        isLoading={isLoading}
-                        total={total}
-                        currentPage={currentPage}
-                        pageSize={pageSize}
-                        onPageChange={onPageChange}
-                    />
-                </div>
+                {isLoading ? (
+                    <div className="p-4">
+                        <PageSkeleton variant="list" />
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <DataTable
+                            columns={columns}
+                            data={data}
+                            total={total}
+                            currentPage={currentPage}
+                            pageSize={pageSize}
+                            onPageChange={onPageChange}
+                        />
+                    </div>
+                )}
             </div>
 
             {/* Mobile View */}
             <div className="md:hidden">
                 {isLoading ? (
-                    <div className="flex justify-center p-8 text-muted-foreground">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <div className="p-2">
+                        <PageSkeleton variant="list" />
                     </div>
                 ) : data?.length ? (
                     <div className="space-y-1 pb-4">

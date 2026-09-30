@@ -170,8 +170,9 @@ export function AnnouncementModal({
       >
         <DialogContent
           className={cn(
-            "w-[calc(100%-24px)] sm:max-w-2xl",
-            "max-h-[90vh]",
+            "w-[calc(100%-32px)] sm:max-w-2xl",
+            "fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] bottom-auto right-auto",
+            "max-h-[72dvh] sm:max-h-[85dvh]",
             "flex flex-col",
             "p-0 overflow-hidden",
             "border border-border/70",
@@ -277,8 +278,8 @@ export function AnnouncementModal({
                 onClick={handlePrev}
                 aria-label="Previous announcement"
                 className={cn(
-                  "absolute left-3 top-1/2 z-20 -translate-y-1/2",
-                  "hidden sm:flex h-9 w-9 items-center justify-center",
+                  "absolute left-1.5 sm:left-3 top-1/2 z-20 -translate-y-1/2",
+                  "flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center",
                   "rounded-full border border-border",
                   "bg-background/90 backdrop-blur",
                   "shadow-sm",
@@ -287,7 +288,7 @@ export function AnnouncementModal({
                   "transition-all"
                 )}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
               </button>
             )}
 
@@ -297,8 +298,8 @@ export function AnnouncementModal({
                 onClick={handleNext}
                 aria-label="Next announcement"
                 className={cn(
-                  "absolute right-3 top-1/2 z-20 -translate-y-1/2",
-                  "hidden sm:flex h-9 w-9 items-center justify-center",
+                  "absolute right-1.5 sm:right-3 top-1/2 z-20 -translate-y-1/2",
+                  "flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center",
                   "rounded-full border border-border",
                   "bg-background/90 backdrop-blur",
                   "shadow-sm",
@@ -307,13 +308,13 @@ export function AnnouncementModal({
                   "transition-all"
                 )}
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
               </button>
             )}
 
-            <div className="px-6 py-6 sm:px-14 sm:py-7">
+            <div className="px-10 py-5 sm:px-14 sm:py-7">
               {/* Main message */}
-              <p className="text-[15px] sm:text-base leading-7 text-foreground/90 whitespace-pre-wrap">
+              <p className="text-[14px] sm:text-[15px] leading-6 sm:leading-7 text-foreground/90 whitespace-pre-wrap">
                 {body}
               </p>
 

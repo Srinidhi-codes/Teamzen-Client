@@ -23,6 +23,7 @@ import {
 import { toast } from "sonner";
 import { Card } from "@/components/common/Card";
 import { Badge } from "@/components/common/Badge";
+import { PageSkeleton } from "@/components/common/PageSkeleton";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store/useStore";
 import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
@@ -296,9 +297,8 @@ export default function AttendancePage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 space-y-4">
-        <div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-        <p className="text-sm text-muted-foreground">Loading…</p>
+      <div className="p-4 sm:p-8">
+        <PageSkeleton variant="punch" />
       </div>
     );
   }

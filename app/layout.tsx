@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Sora } from "next/font/google";
 import { Providers } from "./providers";
+import { PwaRegister } from "@/components/pwa/PwaRegister";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,6 +30,15 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
   ),
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Teamzen",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   openGraph: {
     title: "Teamzen — HRMS for modern teams",
     description:
@@ -51,15 +61,25 @@ export const metadata: Metadata = {
     images: ["/images/landing/general.webp"],
   },
   icons: {
-    icon: [{ url: "/images/teamzen_zoomed.webp", type: "image/webp" }],
-    apple: [{ url: "/images/teamzen_zoomed.webp" }],
+    icon: [
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+      { url: "/images/teamzen_zoomed.webp", type: "image/webp" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
 };
 
-export const viewport = {
+export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#090a0f" },
+  ],
 };
 
 const THEME_BOOT_SCRIPT = `
@@ -116,7 +136,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${landingDisplay.variable} font-sans antialiased`}
       >
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <PwaRegister />
+        </Providers>
       </body>
     </html>
   );

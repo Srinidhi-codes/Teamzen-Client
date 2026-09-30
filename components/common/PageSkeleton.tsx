@@ -1,7 +1,7 @@
 export function PageSkeleton({
   variant = "default",
 }: {
-  variant?: "default" | "punch" | "split";
+  variant?: "default" | "punch" | "split" | "inline" | "list";
 }) {
   if (variant === "punch") {
     return (
@@ -38,6 +38,28 @@ export function PageSkeleton({
           </div>
           <div className="h-72 rounded-xl border border-border bg-card lg:col-span-4" />
         </div>
+      </div>
+    );
+  }
+
+  if (variant === "inline") {
+    return (
+      <div className="animate-pulse w-full py-4" aria-busy="true" aria-label="Loading">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-[200px] rounded-xl border border-border bg-card/60" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === "list") {
+    return (
+      <div className="animate-pulse w-full space-y-2 py-2" aria-busy="true" aria-label="Loading">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-[80px] rounded-xl border border-border bg-card/40" />
+        ))}
       </div>
     );
   }
