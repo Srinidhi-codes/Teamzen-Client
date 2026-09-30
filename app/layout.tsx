@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Sora } from "next/font/google";
 import { Providers } from "./providers";
 import { PwaRegister } from "@/components/pwa/PwaRegister";
+import { CookieConsent } from "@/components/common/CookieConsent";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -143,6 +144,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <PwaRegister />
+          <CookieConsent />
         </Providers>
       </body>
     </html>

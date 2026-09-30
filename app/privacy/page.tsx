@@ -241,7 +241,25 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold tracking-tight">10. Children</h2>
+            <h2 className="text-lg font-semibold tracking-tight">10. Cookies &amp; Storage Technologies</h2>
+            <p>
+              Teamzen uses cookies and browser local storage to deliver our workforce platform securely and reliably. We categorize these technologies as follows:
+            </p>
+            <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+              <li>
+                <strong className="text-foreground">Strictly Essential Cookies:</strong> Secure, HTTP-only authentication tokens (<code className="rounded bg-muted px-1.5 py-0.5 text-xs">access_token</code>, <code className="rounded bg-muted px-1.5 py-0.5 text-xs">refresh_token</code>) and security cookies (<code className="rounded bg-muted px-1.5 py-0.5 text-xs">remember_me</code>, <code className="rounded bg-muted px-1.5 py-0.5 text-xs">csrftoken</code>). These are strictly necessary to authenticate your login sessions and protect against cross-site request forgery.
+              </li>
+              <li>
+                <strong className="text-foreground">Functional &amp; Preference Storage:</strong> Client storage used to remember your UI theme (<code className="rounded bg-muted px-1.5 py-0.5 text-xs">dark</code> or <code className="rounded bg-muted px-1.5 py-0.5 text-xs">light</code>), organizational color accent, and sidebar collapse state.
+              </li>
+              <li>
+                <strong className="text-foreground">Managing Preferences:</strong> You can modify or withdraw non-essential cookie consent at any time using our in-app Cookie Notice banner or via your browser settings. Essential session cookies cannot be disabled without preventing you from logging into the platform.
+              </li>
+            </ul>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-lg font-semibold tracking-tight">11. Children</h2>
             <p>
               Teamzen is a workplace product and is not directed to children under 16. We do
               not knowingly collect personal information from children.
@@ -249,7 +267,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold tracking-tight">11. Changes</h2>
+            <h2 className="text-lg font-semibold tracking-tight">12. Changes</h2>
             <p>
               We may update this Privacy Policy from time to time. The &quot;Last
               updated&quot; date at the top will change when we do. Continued use of Teamzen
@@ -258,7 +276,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold tracking-tight">12. Contact</h2>
+            <h2 className="text-lg font-semibold tracking-tight">13. Contact</h2>
             <p>
               For privacy questions about Teamzen, contact us at{" "}
               <a
