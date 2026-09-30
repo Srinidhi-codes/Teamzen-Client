@@ -26,7 +26,7 @@ export function PhotoOverlay({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[min(92vw,28rem)] border-0 bg-black/90 p-0 text-white shadow-2xl">
+      <DialogContent className="fixed top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 bottom-auto w-[min(92vw,28rem)] max-w-[min(92vw,28rem)] max-h-[88dvh] overflow-hidden rounded-2xl border-0 bg-black/90 p-0 text-white shadow-2xl">
         <DialogTitle className="sr-only">{title}</DialogTitle>
         <div className="relative overflow-hidden rounded-xl">
           <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 pr-12">

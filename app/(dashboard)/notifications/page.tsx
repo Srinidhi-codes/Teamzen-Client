@@ -376,7 +376,7 @@ export default function NotificationsPage() {
             </div>
 
             <Dialog open={!!selectedNotif} onOpenChange={(open) => !open && setSelectedNotif(null)}>
-                <DialogContent className="max-w-xl p-6">
+                <DialogContent className="fixed top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 bottom-auto w-[min(94vw,36rem)] max-w-xl max-h-[85dvh] overflow-y-auto p-5 sm:p-6 rounded-2xl shadow-2xl">
                     <DialogHeader>
                         <DialogTitle className="capitalize text-lg">{selectedNotif?.verb || "Notification"}</DialogTitle>
                     </DialogHeader>
