@@ -6,6 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Teamzen",
     description: "Attendance, leave, and payroll in one calm workforce workspace.",
     start_url: "/",
+    scope: "/",
     id: "/",
     display: "standalone",
     orientation: "portrait-primary",
