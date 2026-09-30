@@ -109,9 +109,9 @@ export default function LoginForm() {
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  // Only send logged-in users to the app if cookies are still valid.
-  // Stale localStorage alone used to bounce: /login → /dashboard → /login.
-  // Never run this when an active login redirect is in progress.
+  // Only sync auth state from session cookies on mount.
+  // If cookies are gone, clear stale localStorage (logoutUser).
+  // Never trigger automatic redirects on mount to prevent /login <-> /dashboard bounce loops.
   useEffect(() => {
     if (!hasHydrated || !isAuthenticated || isRedirectingRef.current) return;
 
@@ -126,24 +126,7 @@ export default function LoginForm() {
 
         if (!session?.authenticated) {
           logoutUser();
-          return;
         }
-
-        if (!session.hasAccess && session.hasRefresh) {
-          const refreshRes = await fetch("/api/auth/refresh", {
-            method: "POST",
-            credentials: "include",
-          });
-          if (cancelled || isRedirectingRef.current) return;
-          if (!refreshRes.ok) {
-            logoutUser();
-            return;
-          }
-        }
-
-        isRedirectingRef.current = true;
-        setIsRedirecting(true);
-        window.location.replace("/dashboard");
       } catch {
         if (!cancelled && !isRedirectingRef.current) logoutUser();
       }
