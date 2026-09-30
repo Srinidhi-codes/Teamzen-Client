@@ -71,21 +71,26 @@ export default function LoginForm() {
     document.body.appendChild(script);
 
     script.onload = () => {
-      const google = (window as any).google;
-      if (google) {
-        google.accounts.id.initialize({
-          client_id:
-            process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
-            "1016839352936-google-placeholder.apps.googleusercontent.com",
-          callback: handleGoogleCredentialResponse,
-        });
-        google.accounts.id.renderButton(document.getElementById("google-signin-btn"), {
-          theme: "outline",
-          size: "large",
-          width: 400,
-          text: "signin_with",
-          shape: "rectangular",
-        });
+      try {
+        const google = (window as any).google;
+        const btn = document.getElementById("google-signin-btn");
+        if (google && btn) {
+          google.accounts.id.initialize({
+            client_id:
+              process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+              "1016839352936-google-placeholder.apps.googleusercontent.com",
+            callback: handleGoogleCredentialResponse,
+          });
+          google.accounts.id.renderButton(btn, {
+            theme: "outline",
+            size: "large",
+            width: 400,
+            text: "signin_with",
+            shape: "rectangular",
+          });
+        }
+      } catch (err) {
+        console.warn("Google sign-in button init note:", err);
       }
     };
 

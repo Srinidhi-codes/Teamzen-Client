@@ -65,35 +65,43 @@ export function PwaRegister() {
       }
     }
 
-    // 3. Register Service Worker (only if secure context or localhost)
-    if (typeof window !== "undefined" && "serviceWorker" in navigator && window.isSecureContext) {
-      const registerSW = () => {
-        navigator.serviceWorker
-          .register("/sw.js", { scope: "/" })
-          .then((registration) => {
-            registration.onupdatefound = () => {
-              const installingWorker = registration.installing;
-              if (installingWorker) {
-                installingWorker.onstatechange = () => {
-                  if (
-                    installingWorker.state === "installed" &&
-                    navigator.serviceWorker.controller
-                  ) {
-                    console.log("[PWA] New version ready.");
-                  }
-                };
-              }
-            };
-          })
-          .catch((err) => {
-            console.warn("[PWA] Service worker registration note:", err);
-          });
-      };
+    // 3. Register Service Worker (only in production; unregister in development to prevent HMR/Fast Refresh loops)
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      if (process.env.NODE_ENV !== "production") {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (const reg of registrations) {
+            reg.unregister();
+          }
+        });
+      } else if (window.isSecureContext) {
+        const registerSW = () => {
+          navigator.serviceWorker
+            .register("/sw.js", { scope: "/" })
+            .then((registration) => {
+              registration.onupdatefound = () => {
+                const installingWorker = registration.installing;
+                if (installingWorker) {
+                  installingWorker.onstatechange = () => {
+                    if (
+                      installingWorker.state === "installed" &&
+                      navigator.serviceWorker.controller
+                    ) {
+                      console.log("[PWA] New version ready.");
+                    }
+                  };
+                }
+              };
+            })
+            .catch((err) => {
+              console.warn("[PWA] Service worker registration note:", err);
+            });
+        };
 
-      if (document.readyState === "complete") {
-        registerSW();
-      } else {
-        window.addEventListener("load", registerSW);
+        if (document.readyState === "complete") {
+          registerSW();
+        } else {
+          window.addEventListener("load", registerSW);
+        }
       }
     }
 
