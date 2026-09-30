@@ -174,7 +174,7 @@ export function LeaveCalendar({ myLeaves, teamLeaves, holidays }: LeaveCalendarP
                 key={i}
                 onClick={() => setSelectedDay(isSelected ? null : day.clone())}
                 className={cn(
-                  "min-h-[70px] sm:min-h-[110px] p-1 sm:p-2 cursor-pointer transition-colors relative",
+                  "sm:min-h-[110px] aspect-square sm:aspect-auto p-1 sm:p-2 flex flex-col items-center sm:items-start cursor-pointer transition-colors relative",
                   !isCurrentMonth && "bg-muted/20",
                   isSelected && "bg-primary/5 ring-2 ring-inset ring-primary/30",
                   !isSelected && "hover:bg-muted/30",
@@ -182,7 +182,7 @@ export function LeaveCalendar({ myLeaves, teamLeaves, holidays }: LeaveCalendarP
                 )}
               >
                 <div className={cn(
-                  "w-7 h-7 flex items-center justify-center rounded-full text-xs font-medium mb-1",
+                  "w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full text-xs font-medium mb-0.5 sm:mb-1",
                   isToday ? "bg-primary text-primary-foreground" : "",
                   !isToday && !isCurrentMonth ? "text-muted-foreground/40" : "",
                   !isToday && isCurrentMonth ? "text-foreground" : "",
@@ -190,58 +190,70 @@ export function LeaveCalendar({ myLeaves, teamLeaves, holidays }: LeaveCalendarP
                   {day.date()}
                 </div>
 
-                {holidayEvents.slice(0, 1).map((h) => (
-                  <div
-                    key={h.id}
-                    className="text-[11px] font-medium px-1.5 py-0.5 rounded-md bg-blue-500/15 text-blue-600 dark:text-blue-400 truncate mb-0.5 border border-blue-500/20"
-                    title={h.name}
-                  >
-                    {h.name}
-                  </div>
-                ))}
+                {/* Mobile: Dots Indicator */}
+                <div className="flex sm:hidden flex-wrap justify-center gap-0.5 w-full mt-0.5">
+                  {holidayEvents.length > 0 && <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
+                  {myLeaveEvents.filter((l) => l.status !== "cancelled").slice(0, 2).map(l => (
+                    <span key={l.id} className={cn("w-1.5 h-1.5 rounded-full", l.status === "approved" ? "bg-green-500" : "bg-orange-500")} />
+                  ))}
+                  {teamLeaveEvents.length > 0 && <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />}
+                </div>
 
-                {myLeaveEvents.slice(0, holidayEvents.length > 0 ? 1 : 2).filter((l) => l.status !== "cancelled").map((l) => (
-                  <div
-                    key={l.id}
-                    className={cn(
-                      "text-[11px] font-medium px-1.5 py-0.5 rounded-md truncate mb-0.5 border",
-                      l.status === "approved"
-                        ? "bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/20"
-                        : "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/20"
-                    )}
-                    title={`${l.leaveType.name} (${l.status})`}
-                  >
-                    {l.leaveType.name}
-                  </div>
-                ))}
+                {/* Desktop: Text Blocks */}
+                <div className="hidden sm:flex flex-col w-full space-y-0.5">
+                  {holidayEvents.slice(0, 1).map((h) => (
+                    <div
+                      key={h.id}
+                      className="text-[11px] font-medium px-1.5 py-0.5 rounded-md bg-blue-500/15 text-blue-600 dark:text-blue-400 truncate border border-blue-500/20"
+                      title={h.name}
+                    >
+                      {h.name}
+                    </div>
+                  ))}
 
-                {teamLeaveEvents.length > 0 && (
-                  <div className="space-y-0.5">
-                    {teamLeaveEvents.slice(0, 2).filter((l) => l.status !== "cancelled").map((l) => (
-                      <div
-                        key={l.id}
-                        className="flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded-md bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-500/20 truncate"
-                        title={`${l.user.firstName} ${l.user.lastName} — ${l.leaveType.name}`}
-                      >
-                        <span className="shrink-0 w-3.5 h-3.5 rounded-full bg-purple-500 text-white flex items-center justify-center text-[7px] font-medium">
-                          {l.user.firstName.charAt(0)}
-                        </span>
-                        <span className="truncate">{l.user.firstName}</span>
-                      </div>
-                    ))}
-                    {teamLeaveEvents.length > 2 && (
-                      <div className="text-[11px] font-medium text-muted-foreground px-1.5">
-                        +{teamLeaveEvents.length - 2} more
-                      </div>
-                    )}
-                  </div>
-                )}
+                  {myLeaveEvents.slice(0, holidayEvents.length > 0 ? 1 : 2).filter((l) => l.status !== "cancelled").map((l) => (
+                    <div
+                      key={l.id}
+                      className={cn(
+                        "text-[11px] font-medium px-1.5 py-0.5 rounded-md truncate border",
+                        l.status === "approved"
+                          ? "bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/20"
+                          : "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/20"
+                      )}
+                      title={`${l.leaveType.name} (${l.status})`}
+                    >
+                      {l.leaveType.name}
+                    </div>
+                  ))}
 
-                {totalEvents > 3 && (
-                  <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
-                    +{totalEvents - 3} more
-                  </div>
-                )}
+                  {teamLeaveEvents.length > 0 && (
+                    <div className="space-y-0.5">
+                      {teamLeaveEvents.slice(0, 2).filter((l) => l.status !== "cancelled").map((l) => (
+                        <div
+                          key={l.id}
+                          className="flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded-md bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-500/20 truncate"
+                          title={`${l.user.firstName} ${l.user.lastName} — ${l.leaveType.name}`}
+                        >
+                          <span className="shrink-0 w-3.5 h-3.5 rounded-full bg-purple-500 text-white flex items-center justify-center text-[7px] font-medium">
+                            {l.user.firstName.charAt(0)}
+                          </span>
+                          <span className="truncate">{l.user.firstName}</span>
+                        </div>
+                      ))}
+                      {teamLeaveEvents.length > 2 && (
+                        <div className="text-[11px] font-medium text-muted-foreground px-1.5">
+                          +{teamLeaveEvents.length - 2} more
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {totalEvents > 3 && (
+                    <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
+                      +{totalEvents - 3} more
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}

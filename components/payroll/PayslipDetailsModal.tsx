@@ -42,7 +42,7 @@ export function PayslipDetailsModal({ isOpen, onClose, payslip }: PayslipDetails
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-2xl overflow-hidden bg-card border border-border sm:rounded-xl rounded-none h-full sm:h-auto py-3">
-                <DialogHeader className="p-6 pb-0">
+                <DialogHeader className="px-6 py-5 border-b border-border/50">
                     <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                         <div>
                             <p className="text-xs font-medium text-muted-foreground mb-1">Payslip details</p>
@@ -80,6 +80,8 @@ export function PayslipDetailsModal({ isOpen, onClose, payslip }: PayslipDetails
                         </div>
                     </div>
 
+                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-3">
                             <div className="flex items-center gap-2">
@@ -88,6 +90,7 @@ export function PayslipDetailsModal({ isOpen, onClose, payslip }: PayslipDetails
                                 </div>
                                 <h4 className="text-sm font-medium">Earnings</h4>
                             </div>
+                            <div className="mx-4 border-t border-border/50"></div>
                             <div className="space-y-2">
                                 {earnings.map((e: any) => (
                                     <div key={e.id} className="flex justify-between items-center">
@@ -108,6 +111,7 @@ export function PayslipDetailsModal({ isOpen, onClose, payslip }: PayslipDetails
                                 </div>
                                 <h4 className="text-sm font-medium">Deductions</h4>
                             </div>
+                            <div className="mx-4 border-t border-border/50"></div>
                             <div className="space-y-2">
                                 {deductions.map((d: any) => (
                                     <div key={d.id} className="flex justify-between items-center">
@@ -124,7 +128,7 @@ export function PayslipDetailsModal({ isOpen, onClose, payslip }: PayslipDetails
                             </div>
                         </div>
                     </div>
-
+                    
                     <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div className="space-y-1">

@@ -92,12 +92,13 @@ export default function DocumentsVault() {
   return (
     <div className="space-y-6">
       <PageHeader
+        eyebrow="Vault"
         title="Documents"
         description="Download Form 16 and certificates, or upload files HR has requested."
       />
 
-      <div className="flex flex-wrap gap-2 border-b border-border pb-2 justify-between items-center">
-        <div className="flex flex-wrap gap-2">
+      <div className="flex flex-col sm:flex-row gap-4 sm:gap-2 pb-4 sm:pb-2 justify-between items-start sm:items-center">
+        <div className="flex gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 hide-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {(
             [
               ["issued", "Issued"],
@@ -111,7 +112,7 @@ export default function DocumentsVault() {
             type="button"
             onClick={() => setTab(key)}
             className={cn(
-              "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+              "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0",
               tab === key
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted"
@@ -122,7 +123,7 @@ export default function DocumentsVault() {
         ))}
         </div>
         
-        <Button size="sm" onClick={() => setModalOpen(true)}>Request Document</Button>
+        <Button size="sm" onClick={() => setModalOpen(true)} className="w-full sm:w-auto flex-shrink-0">Request Document</Button>
         
         <Modal 
           isOpen={modalOpen} 
@@ -190,8 +191,8 @@ export default function DocumentsVault() {
             </div>
           )}
           {issued.map((doc: any) => (
-            <Card key={doc.id} className="flex items-start justify-between gap-3 p-4">
-              <div className="min-w-0 space-y-1">
+            <Card key={doc.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4">
+              <div className="min-w-0 space-y-1 w-full">
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4 shrink-0 text-primary" />
                   <p className="truncate font-medium">{doc.title}</p>
@@ -205,7 +206,7 @@ export default function DocumentsVault() {
                 </p>
               </div>
               {doc.downloadUrl && (
-                <Button asChild size="sm" variant="outline">
+                <Button asChild size="sm" variant="outline" className="w-full sm:w-auto shrink-0">
                   <a href={doc.downloadUrl} target="_blank" rel="noreferrer">
                     <Download className="mr-1.5 h-3.5 w-3.5" />
                     Download
@@ -229,25 +230,25 @@ export default function DocumentsVault() {
             />
           )}
           {requests.map((req: any) => (
-            <Card key={req.id} className="p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="font-medium">{req.title}</p>
-                  <p className="text-xs text-muted-foreground capitalize">
-                    {req.category?.replace(/_/g, " ")} · {req.status}
-                    {req.dueAt ? ` · due ${moment(req.dueAt).format("ll")}` : ""}
+            <Card key={req.id} className="p-4 flex flex-col sm:flex-row items-start justify-between gap-4">
+              <div className="min-w-0 w-full">
+                <p className="font-medium truncate">{req.title}</p>
+                <p className="text-xs text-muted-foreground capitalize truncate">
+                  {req.category?.replace(/_/g, " ")} · {req.status}
+                  {req.dueAt ? ` · due ${moment(req.dueAt).format("ll")}` : ""}
+                </p>
+                {req.description && (
+                  <p className="mt-1 text-sm text-muted-foreground">{req.description}</p>
+                )}
+                {req.verificationStatus && (
+                  <p className="mt-1 text-xs">
+                    Verification: {req.verificationStatus}
                   </p>
-                  {req.description && (
-                    <p className="mt-1 text-sm text-muted-foreground">{req.description}</p>
-                  )}
-                  {req.verificationStatus && (
-                    <p className="mt-1 text-xs">
-                      Verification: {req.verificationStatus}
-                    </p>
-                  )}
-                </div>
+                )}
+              </div>
+              <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto shrink-0">
                 {req.status === "open" && (
-                  <label className="inline-flex cursor-pointer items-center">
+                  <label className="w-full sm:w-auto inline-flex cursor-pointer items-center justify-center">
                     <input
                       type="file"
                       className="hidden"
@@ -255,14 +256,14 @@ export default function DocumentsVault() {
                       disabled={uploadingId === req.id}
                       onChange={(e) => onUpload(req.id, e.target.files?.[0])}
                     />
-                    <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted">
+                    <span className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted">
                       <Upload className="h-3.5 w-3.5" />
                       {uploadingId === req.id ? "Uploading…" : "Upload"}
                     </span>
                   </label>
                 )}
                 {req.fileUrl && (
-                  <Button asChild size="sm" variant="ghost">
+                  <Button asChild size="sm" variant="ghost" className="w-full sm:w-auto">
                     <a href={req.fileUrl} target="_blank" rel="noreferrer">
                       View file
                     </a>
@@ -363,16 +364,16 @@ export default function DocumentsVault() {
             />
           )}
           {uploads.map((doc: any) => (
-            <Card key={doc.id} className="flex items-center justify-between gap-3 p-4">
-              <div>
-                <p className="font-medium">{doc.title || doc.fileName}</p>
-                <p className="text-xs text-muted-foreground capitalize">
+            <Card key={doc.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4">
+              <div className="min-w-0 w-full">
+                <p className="font-medium truncate">{doc.title || doc.fileName}</p>
+                <p className="text-xs text-muted-foreground capitalize truncate">
                   {doc.category?.replace(/_/g, " ")} · {doc.verificationStatus}
                   {doc.source ? ` · ${doc.source.replace(/_/g, " ")}` : ""}
                 </p>
               </div>
               {doc.fileUrl && (
-                <Button asChild size="sm" variant="outline">
+                <Button asChild size="sm" variant="outline" className="w-full sm:w-auto shrink-0">
                   <a href={doc.fileUrl} target="_blank" rel="noreferrer">
                     Open
                   </a>

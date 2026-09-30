@@ -71,11 +71,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { wizard, isLoading, refetch } = useFirstDayWizard(!!user && canUseAssistant);
 
   // Announcement state
-  const [activeAnnouncement, setActiveAnnouncement] = useState<AnnouncementItem | null>(null);
+  const [activeAnnouncements, setActiveAnnouncements] = useState<AnnouncementItem[]>([]);
 
   // Query recent unread notifications to check for unread announcements
   const { data: notifData } = useQuery(GET_MY_NOTIFICATIONS, {
-    variables: { level: "personal", isRead: false, page: 1, pageSize: 5 },
+    variables: { level: "personal", isRead: false, page: 1, pageSize: 20 },
     skip: !user || inactive,
     fetchPolicy: "cache-and-network",
   });
@@ -84,12 +84,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   useEffect(() => {
     const results = (notifData as any)?.myNotifications?.results;
     if (results && results.length > 0) {
-      const announcement = results.find((n: any) => n.verb === "announcement");
-      if (announcement && typeof window !== "undefined") {
-        const seen = localStorage.getItem(`teamzen_seen_announcement_${announcement.id}`);
-        if (!seen) {
-          setActiveAnnouncement(announcement);
-        }
+      const announcements = results.filter(
+        (n: any) => n.verb === "announcement" && !localStorage.getItem(`teamzen_seen_announcement_${n.id}`)
+      );
+      if (announcements.length > 0) {
+        setActiveAnnouncements(announcements);
       }
     }
   }, [notifData]);
@@ -99,12 +98,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const handleRealtimeAnnouncement = (e: any) => {
       const data = e.detail;
       if (data && data.verb === "announcement") {
-        setActiveAnnouncement({
-          id: data.id,
-          message: data.message,
-          imageUrl: data.imageUrl,
-          createdAt: data.createdAt,
-          actor: data.actor,
+        setActiveAnnouncements(prev => {
+          if (!prev.find((p) => p.id === data.id)) {
+            return [data, ...prev];
+          }
+          return prev;
         });
       }
     };
@@ -174,9 +172,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Global Announcement Popup Modal */}
       <AnnouncementModal
-        isOpen={!!activeAnnouncement}
-        announcement={activeAnnouncement}
-        onClose={() => setActiveAnnouncement(null)}
+        isOpen={activeAnnouncements.length > 0}
+        announcements={activeAnnouncements}
+        onClose={() => setActiveAnnouncements([])}
       />
     </div>
   );

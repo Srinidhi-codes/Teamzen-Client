@@ -28,6 +28,7 @@ import { useQuery } from "@apollo/client/react";
 import { GET_USER_DASHBOARD_STATS } from "@/lib/graphql/dashboard/queries";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { useTheme } from "next-themes";
 import { useStore } from "@/lib/store/useStore";
 import { EmptyState } from "@/components/common/EmptyState";
 import { EmptyImages } from "@/lib/brand-images";
@@ -73,8 +74,8 @@ function greetingForHour(hour: number) {
 }
 
 function periodForHour(hour: number): DayPeriod {
-  if (hour >= 5 && hour < 11) return "morning";
-  if (hour >= 11 && hour < 17) return "noon";
+  if (hour >= 5 && hour < 12) return "morning";
+  if (hour >= 12 && hour < 17) return "noon";
   if (hour >= 17 && hour < 21) return "evening";
   return "night";
 }
@@ -128,7 +129,7 @@ const dayTone: Record<
     Icon: Plane,
   },
   absent: {
-    label: "Absent",
+    label: "On leave",
     bar: "bg-red-500",
     dot: "bg-red-500",
     Icon: XCircle,
@@ -166,6 +167,7 @@ export function EmployeeDashboard() {
     fetchPolicy: "cache-first",
     nextFetchPolicy: "cache-first",
   });
+  const { resolvedTheme } = useTheme();
 
   const isInitialLoading = !user && isUserLoading && !dashboardData;
   const now = useMemo(() => moment(), []);
@@ -232,7 +234,7 @@ export function EmployeeDashboard() {
   const primaryLeave = leaveBalances[0];
   const period = periodForHour(now.hour());
   const heroMeta = periodHero[period];
-  const dark = heroMeta.dark;
+  const dark = resolvedTheme === "dark";
   const heroSrc = heroSrcForDay(period, now.date());
 
   return (
@@ -240,7 +242,7 @@ export function EmployeeDashboard() {
       {/* ── Today hero ───────────────────────────────────────── */}
       <section
         className={cn(
-          "relative overflow-hidden rounded-2xl border border-border",
+          "relative overflow-hidden rounded-b-[34px] shadow-sm -mx-4 -mt-6 sm:-mx-6 lg:-mx-8 mb-6",
           dark ? "bg-[#16122a]" : "bg-[#e8eef4]"
         )}
       >
@@ -253,41 +255,39 @@ export function EmployeeDashboard() {
           sizes="(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1280px"
           className="hero-art"
         />
+        {/* Glass Overlay */}
         <div
           className={cn(
             "pointer-events-none absolute inset-0",
             dark
-              ? "bg-gradient-to-b from-[#16122a]/75 via-[#16122a]/35 to-[#16122a]/55 sm:bg-gradient-to-r sm:from-[#16122a]/70 sm:via-[#16122a]/20 sm:to-transparent"
-              : "bg-gradient-to-b from-[#e8eef4]/90 via-[#e8eef4]/55 to-[#e8eef4]/70 sm:bg-gradient-to-r sm:from-[#e8eef4]/88 sm:via-[#e8eef4]/30 sm:to-transparent"
+              ? "bg-black/20 backdrop-blur-[0.5px]"
+              : "bg-black/20 backdrop-blur-[0.5px]"
           )}
         />
-
-        <div className="relative z-10 flex min-h-[300px] flex-col justify-between gap-5 p-5 sm:min-h-[300px] sm:p-8 lg:min-h-[340px] lg:p-10">
+        <div className="relative z-10 flex min-h-[300px] flex-col justify-between gap-5 px-6 py-8 sm:min-h-[300px] sm:px-10 sm:py-10 lg:min-h-[340px] lg:px-12 lg:py-12">
           <div className="max-w-xl space-y-4 sm:space-y-5">
             <div className="space-y-1.5 sm:space-y-2">
               <p
                 className={cn(
                   "text-xs font-medium tracking-wide sm:text-sm",
-                  dark ? "text-white/70" : "text-slate-600"
                 )}
               >
                 {now.format("dddd, MMMM D")}
               </p>
               <h1
                 className={cn(
-                  "text-2xl font-semibold tracking-tight text-balance sm:text-4xl lg:text-5xl",
-                  dark ? "text-white" : "text-slate-900"
+                  "text-2xl font-semibold tracking-tight text-balance sm:text-4xl lg:text-5xl", dark ? "text-white" : "text-black"
                 )}
               >
                 {greetingForHour(now.hour())},{" "}
-                <span className={dark ? "text-indigo-100" : "text-slate-800"}>
+                <br className="sm:visible lg:hidden"/>
+                <span className="text-teal-600">
                   {user?.firstName || "there"}
                 </span>
               </h1>
               <p
                 className={cn(
-                  "line-clamp-2 text-xs sm:text-base",
-                  dark ? "text-white/70" : "text-slate-600"
+                  "line-clamp-2 text-xs sm:text-base text-slate-600"
                 )}
               >
                 {[user?.designation?.name, user?.department?.name, user?.organization?.name]
@@ -304,7 +304,7 @@ export function EmployeeDashboard() {
                   : "border-slate-200/80 bg-white/80 text-slate-800"
               )}
             >
-              <TodayIcon className={cn("h-3.5 w-3.5", dark ? "text-white/80" : "text-slate-600")} />
+              <TodayIcon className="h-3.5 w-3.5 text-slate-600" />
               <span className="text-xs font-medium sm:text-sm">Today · {todayMeta.label}</span>
             </div>
 
@@ -505,7 +505,7 @@ export function EmployeeDashboard() {
                           className={cn("h-2 w-2 shrink-0 rounded-full", meta.dot)}
                           aria-hidden
                         />
-                        <span className="truncate text-sm text-muted-foreground">
+                        <span className="truncate text-xs sm:text-sm text-muted-foreground">
                           {meta.label}
                         </span>
                         {isToday && (
@@ -550,7 +550,7 @@ export function EmployeeDashboard() {
         </section>
 
         {/* Compact metrics stack */}
-        <section className="grid grid-cols-3 gap-3 lg:col-span-3 lg:grid-cols-1">
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:col-span-3 lg:grid-cols-1">
           {[
             {
               label: "Attendance",
@@ -558,6 +558,7 @@ export function EmployeeDashboard() {
               href: "/attendance",
               icon: TrendingUp,
               hint: "Overall rate",
+              className: "col-span-2 sm:col-span-1 lg:col-span-1",
             },
             {
               label: "Days present",
@@ -577,7 +578,10 @@ export function EmployeeDashboard() {
             <Link
               key={m.label}
               href={m.href}
-              className="flex flex-col justify-between rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-muted/30 sm:p-5"
+              className={cn(
+                "flex flex-col justify-between rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-muted/30 sm:p-5",
+                m.className
+              )}
             >
               <div className="mb-3 flex items-center justify-between">
                 <m.icon className="h-4 w-4 text-muted-foreground" />
@@ -596,7 +600,7 @@ export function EmployeeDashboard() {
       </div>
 
       {/* ── Shortcuts ────────────────────────────────────────── */}
-      <nav className="flex flex-wrap gap-2">
+      <nav className="flex gap-2 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {[
           { href: "/attendance", label: "Attendance", icon: Clock },
           { href: "/leaves", label: "Leaves", icon: Calendar },
@@ -606,7 +610,7 @@ export function EmployeeDashboard() {
           <Link
             key={item.href}
             href={item.href}
-            className="inline-flex h-9 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
+            className="inline-flex shrink-0 h-9 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
           >
             <item.icon className="h-3.5 w-3.5 text-muted-foreground" />
             {item.label}

@@ -1,13 +1,14 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import moment from "moment";
-import { ClipboardList, Upload, CheckCircle2, Trash2 } from "lucide-react";
+import { ClipboardList, Upload, CheckCircle2, Trash2, Download, ExternalLink } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Card } from "@/components/common/Card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { FormSelect } from "@/components/common/FormSelect";
 import {
   useMyAssignedOnboardingTasks,
@@ -18,11 +19,13 @@ import {
   MyOnboardingTourButton,
   useMyOnboardingTour,
 } from "@/components/onboarding/MyOnboardingTour";
+import { useGraphQLUser, useGraphQLUpdateUser } from "@/lib/api/graphqlHooks";
 import client from "@/lib/api/client";
 import Image from "next/image";
 import { OnboardingImages, EmptyImages } from "@/lib/brand-images";
 import { EmptyState } from "@/components/common/EmptyState";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
+import { cn } from "@/lib/utils";
 
 function formatJoinDate(value?: string | Date | null) {
   if (value == null || value === "") return "";
@@ -56,6 +59,39 @@ export default function MyOnboardingPage() {
   const [category, setCategory] = useState("pan");
   const [msg, setMsg] = useState("");
   const [docToDelete, setDocToDelete] = useState<string | null>(null);
+
+  const { user, refetch: refetchUser } = useGraphQLUser();
+  const { updateUserAsync, isLoading: isUpdatingGraphQL } = useGraphQLUpdateUser();
+
+  const [profile, setProfile] = useState({
+    phone_number: "",
+    pan_number: "",
+    aadhar_number: "",
+    bank_account_number: "",
+    bank_ifsc_code: "",
+  });
+
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        phone_number: user.phoneNumber || "",
+        pan_number: user.panNumber || "",
+        aadhar_number: user.aadharNumber || "",
+        bank_account_number: user.bankAccountNumber || "",
+        bank_ifsc_code: user.bankIfscCode || "",
+      });
+    }
+  }, [user]);
+
+  async function saveProfile() {
+    try {
+      await updateUserAsync(profile);
+      setMsg("Details saved successfully");
+      refetchUser();
+    } catch (e: any) {
+      setMsg(e.message);
+    }
+  }
   const fileRef = useRef<HTMLInputElement>(null);
   const signedOfferRef = useRef<HTMLInputElement>(null);
 
@@ -178,16 +214,26 @@ export default function MyOnboardingPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        eyebrow="Onboarding"
         title="My Onboarding"
-        description={`${onboarding.status.replace("_", " ")} · ${onboarding.progressPct}% complete${
-          onboarding.joinDate
-            ? ` · Join ${formatJoinDate(onboarding.joinDate)}`
-            : ""
-        }`}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-2 mt-1">
+            <span className={cn(
+              "rounded-md px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider",
+              onboarding.status === "completed" ? "bg-emerald-500/10 text-emerald-700 border border-emerald-500/20" :
+              "bg-primary/10 text-primary border border-primary/20"
+            )}>
+              {onboarding.status.replace("_", " ")}
+            </span>
+            {onboarding.joinDate && (
+              <span className="text-muted-foreground text-sm font-medium">· Join {formatJoinDate(onboarding.joinDate)}</span>
+            )}
+          </span>
+        }
         actions={<MyOnboardingTourButton />}
       />
 
-      <div className="relative aspect-[21/9] overflow-hidden rounded-2xl border border-border bg-[#e8eef4]">
+      <div className="relative aspect-[21/9] max-h-[250px] md:max-h-[300px] lg:max-h-[350px] w-full overflow-hidden rounded-2xl border border-border bg-[#e8eef4]">
         <Image
           src={
             Number(onboarding.progressPct) >= 100
@@ -204,11 +250,21 @@ export default function MyOnboardingPage() {
           sizes="(max-width: 1280px) 100vw, 1280px"
           className="object-cover object-[center_30%]"
         />
+        <div className="absolute inset-y-0 top-0 md:-top-8 lg:-top-25 xl:-top-40 left-0 w-1/2 flex flex-col justify-center px-4">
+          <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-extrabold tracking-tight text-[#2d3748] mb-2 sm:mb-3 lg:mb-4">
+            {Number(onboarding.progressPct) >= 100 ? "You're All Set!" : "Welcome Aboard!"}
+          </h2>
+          <p className="text-xs hidden md:block md:text-base lg:text-md font-medium text-[#4a5568] max-w-[60%] leading-relaxed">
+            {Number(onboarding.progressPct) >= 100 
+              ? "Your onboarding journey is complete. We're excited to have you on the team."
+              : "We're thrilled to have you here. Let's get your onboarding tasks checked off so you can dive right in."}
+          </p>
+        </div>
       </div>
 
       {onboarding.status === "completed" && (
         <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">
-          Onboarding complete — your account is now verified.
+          Onboarding complete your account is now verified.
         </div>
       )}
 
@@ -219,7 +275,6 @@ export default function MyOnboardingPage() {
       )}
 
       <div id="my-onboarding-progress">
-      <Card className="p-4">
         <div className="mb-2 flex items-center justify-between text-sm">
           <span className="font-medium">Progress</span>
           <span className="tabular-nums">{onboarding.progressPct}%</span>
@@ -230,39 +285,42 @@ export default function MyOnboardingPage() {
             style={{ width: `${onboarding.progressPct}%` }}
           />
         </div>
-      </Card>
       </div>
 
       {onboarding.offerLetter && (
         <div id="my-onboarding-offer">
         <Card className="space-y-3 p-4">
-          <h3 className="font-semibold">Offer letter</h3>
-          <p className="text-sm font-medium">{onboarding.offerLetter.subject}</p>
+          <p className="text-sm font-medium pb-2">{onboarding.offerLetter.subject}</p>
+          <Separator />
           {onboarding.offerLetter.source === "uploaded" && (
             <p className="text-xs font-medium text-emerald-700">Official PDF uploaded by HR</p>
           )}
           {onboarding.offerLetter.pdfUrl && (
-            <div className="overflow-hidden rounded-xl border border-border">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2">
+            <div className="overflow-hidden rounded-xl border border-border my-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border bg-muted/40 px-4 py-3">
                 <p className="text-sm font-medium">Offer letter PDF</p>
-                <div className="flex gap-2">
-                  <a
-                    href={onboarding.offerLetter.pdfUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-sm text-primary underline"
-                  >
-                    Open PDF
-                  </a>
-                  <a
-                    href={onboarding.offerLetter.pdfUrl}
-                    download="Offer_Letter.pdf"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-sm text-primary underline"
-                  >
-                    Download
-                  </a>
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                  <Button asChild size="sm" variant="outline" className="h-8 flex-1 sm:flex-none">
+                    <a
+                      href={onboarding.offerLetter.pdfUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                      Open PDF
+                    </a>
+                  </Button>
+                  <Button asChild size="sm" variant="default" className="h-8 flex-1 sm:flex-none">
+                    <a
+                      href={onboarding.offerLetter.pdfUrl}
+                      download="Offer_Letter.pdf"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <Download className="w-3.5 h-3.5 mr-1.5" />
+                      Download
+                    </a>
+                  </Button>
                 </div>
               </div>
               <iframe
@@ -317,7 +375,15 @@ export default function MyOnboardingPage() {
             </>
           )}
           {onboarding.offerLetter.status === "accepted" && (
-            <p className="text-sm text-emerald-700">Offer accepted.</p>
+            <div className="flex items-center gap-3 px-4 py-2 my-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+              <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-600 shrink-0">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+              <div className="space-y-0.5 min-w-0">
+                <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-400">Offer Accepted</p>
+                <p className="text-xs text-emerald-700/80 dark:text-emerald-500/80">You have successfully accepted the offer letter.</p>
+              </div>
+            </div>
           )}
           {!onboarding.offerLetter.signedPdfUrl && (
             <div className="rounded-lg border border-dashed border-border p-3">
@@ -348,12 +414,46 @@ export default function MyOnboardingPage() {
         </div>
       )}
 
+      <div id="my-onboarding-details" className="mb-6">
+        <Card className="p-4">
+          <h3 className="font-semibold pb-2 border-b border-border/50 mb-4">Your Details</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {(
+              [
+                ["phone_number", "Phone Number"],
+                ["pan_number", "PAN Number"],
+                ["aadhar_number", "Aadhaar Number"],
+                ["bank_account_number", "Bank Account Number"],
+                ["bank_ifsc_code", "Bank IFSC Code"],
+              ] as const
+            ).map(([key, label]) => (
+              <label key={key} className="text-sm">
+                <span className="mb-1.5 block font-medium text-muted-foreground">{label}</span>
+                <Input
+                  value={profile[key as keyof typeof profile]}
+                  onChange={(e) => setProfile({ ...profile, [key]: e.target.value })}
+                  placeholder={`Enter ${label.toLowerCase()}`}
+                />
+              </label>
+            ))}
+          </div>
+          <Button
+            type="button"
+            className="mt-6"
+            disabled={isUpdatingGraphQL}
+            onClick={() => saveProfile()}
+          >
+            {isUpdatingGraphQL ? "Saving..." : "Save details"}
+          </Button>
+        </Card>
+      </div>
+
       <div id="my-onboarding-docs">
       <Card className="space-y-3 p-4">
-        <h3 className="font-semibold">Upload documents</h3>
+        <h3 className="font-semibold pb-2 border-b border-border/50 mb-3">Upload Documents</h3>
         <div className="flex flex-wrap gap-2">
           <FormSelect
-            label="Document category"
+            label=""
             value={category}
             onValueChange={setCategory}
             className="min-w-45"
@@ -431,8 +531,9 @@ export default function MyOnboardingPage() {
       </div>
 
       <div id="my-onboarding-checklist">
-      <Card className="space-y-2 p-4">
-        <h3 className="font-semibold">Your checklist</h3>
+      <Card className="p-4">
+        <h3 className="font-semibold pb-2 border-b border-border/50 mb-3">Your Checklist</h3>
+        <div className="flex flex-col gap-3">
         {hireTasks.map(
           (task: {
             id: string;
@@ -443,7 +544,7 @@ export default function MyOnboardingPage() {
           }) => (
             <div
               key={task.id}
-              className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-y-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
                 <p className="text-sm font-medium flex items-center gap-2">
@@ -452,10 +553,20 @@ export default function MyOnboardingPage() {
                   )}
                   {task.title}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {task.status}
-                  {task.dueAt ? ` · due ${formatJoinDate(task.dueAt)}` : ""}
-                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={cn(
+                    "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                    task.status === "completed" ? "bg-emerald-500/10 text-emerald-700 border border-emerald-500/20" :
+                    "bg-amber-500/10 text-amber-700 border border-amber-500/20"
+                  )}>
+                    {task.status}
+                  </span>
+                  {task.dueAt && (
+                    <span className="text-xs text-muted-foreground font-medium">
+                      due {formatJoinDate(task.dueAt)}
+                    </span>
+                  )}
+                </div>
               </div>
               {task.status !== "completed" && task.status !== "skipped" && (
                 <Button
@@ -467,28 +578,48 @@ export default function MyOnboardingPage() {
                     refetch();
                   }}
                 >
-                  Mark done
+                  Mark Done
                 </Button>
               )}
             </div>
           )
         )}
+        </div>
       </Card>
       </div>
 
       {assigned.length > 0 && (
-        <Card className="space-y-2 p-4">
-          <h3 className="font-semibold">Tasks assigned to you (for teammates)</h3>
-          {assigned.map(
+        <Card className="p-4 mt-6">
+          <h3 className="font-semibold pb-2 border-b border-border/50 mb-3">Tasks assigned</h3>
+          <div className="flex flex-col gap-3">
+          {assigned?.map(
             (t: { id: string; title: string; status: string; dueAt?: string }) => (
               <div
                 key={t.id}
-                className="flex items-center justify-between rounded-lg border border-border p-3 text-sm"
+                className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
               >
-                <span>
-                  {t.title}
-                  {t.dueAt ? ` · due ${formatJoinDate(t.dueAt)}` : ""}
-                </span>
+                <div>
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    {t.status === "completed" && (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    )}
+                    {t.title}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={cn(
+                      "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                      t.status === "completed" ? "bg-emerald-500/10 text-emerald-700 border border-emerald-500/20" :
+                      "bg-amber-500/10 text-amber-700 border border-amber-500/20"
+                    )}>
+                      {t.status}
+                    </span>
+                    {t.dueAt && (
+                      <span className="text-xs text-muted-foreground font-medium">
+                        due {formatJoinDate(t.dueAt)}
+                      </span>
+                    )}
+                  </div>
+                </div>
                 <Button
                   size="sm"
                   variant="outline"
@@ -498,11 +629,12 @@ export default function MyOnboardingPage() {
                     refetch();
                   }}
                 >
-                  Complete
+                  Mark Done
                 </Button>
               </div>
             )
           )}
+          </div>
         </Card>
       )}
       <ConfirmationModal

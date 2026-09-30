@@ -143,6 +143,7 @@ export default function NotificationsPage() {
     return (
         <div className="p-4 sm:p-8 space-y-6 animate-fade-in mx-auto">
             <PageHeader
+                eyebrow="Updates"
                 title="Notifications"
                 description="Updates about approvals, requests, and account activity."
                 actions={
@@ -215,11 +216,11 @@ export default function NotificationsPage() {
             <Card className="rounded-xl border-border overflow-hidden min-h-[500px]">
                 <Tabs defaultValue="all" onValueChange={handleFilterChange} className="w-full">
                     <div className="px-4 sm:px-6 pt-5 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b border-border/40 pb-5">
-                        <TabsList className="bg-muted/50 p-1 rounded-md w-full sm:w-auto">
-                            <TabsTrigger value="all" className="rounded-md px-4 py-1.5 text-sm font-medium">
+                        <TabsList className="flex items-center bg-muted/40 p-1 rounded-xl border border-border w-full sm:w-fit flex-wrap sm:flex-nowrap h-auto">
+                            <TabsTrigger value="all" className="flex-1 sm:flex-none rounded-lg px-4 py-2 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
                                 All
                             </TabsTrigger>
-                            <TabsTrigger value="unread" className="rounded-md px-4 py-1.5 text-sm font-medium">
+                            <TabsTrigger value="unread" className="flex-1 sm:flex-none rounded-lg px-4 py-2 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
                                 Unread
                                 {unreadCount > 0 && (
                                     <span className="ml-2 rounded-md px-1.5 py-0.5 text-[11px] font-medium bg-destructive text-destructive-foreground">
@@ -227,7 +228,7 @@ export default function NotificationsPage() {
                                     </span>
                                 )}
                             </TabsTrigger>
-                            <TabsTrigger value="activity" className="rounded-md px-4 py-1.5 text-sm font-medium">
+                            <TabsTrigger value="activity" className="flex-1 sm:flex-none rounded-lg px-4 py-2 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
                                 Activity
                             </TabsTrigger>
                         </TabsList>
@@ -287,7 +288,7 @@ export default function NotificationsPage() {
                                     })}
                                 </div>
                                 {totalActivityPages > 1 && (
-                                    <div className="px-6 pt-2">
+                                    <div className="p-6 border-t border-border/30 bg-muted/10">
                                         <Pagination
                                             currentPage={currentPage}
                                             totalPages={totalActivityPages}
@@ -320,7 +321,7 @@ export default function NotificationsPage() {
                             <>
                                 {renderNotifications(paginatedNotifications)}
                                 {totalNotificationPages > 1 && (
-                                    <div className="px-6 pt-2">
+                                    <div className="p-6 border-t border-border/30 bg-muted/10">
                                         <Pagination
                                             currentPage={currentPage}
                                             totalPages={totalNotificationPages}
@@ -352,7 +353,7 @@ export default function NotificationsPage() {
                             <>
                                 {renderNotifications(paginatedNotifications)}
                                 {totalNotificationPages > 1 && (
-                                    <div className="px-6 pt-2">
+                                    <div className="p-6 border-t border-border/30 bg-muted/10">
                                         <Pagination
                                             currentPage={currentPage}
                                             totalPages={totalNotificationPages}

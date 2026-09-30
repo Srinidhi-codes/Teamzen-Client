@@ -186,7 +186,16 @@ export function NotificationBell() {
                                         "text-sm leading-snug mb-1 line-clamp-2",
                                         notif.isRead ? "text-muted-foreground font-medium" : "text-foreground font-bold"
                                     )}>
-                                        {notif.message}
+                                        {notif.targetType === "Announcement" || notif.verb === "announcement" ? (
+                                            (() => {
+                                                try {
+                                                    const parsed = JSON.parse(notif.message);
+                                                    return parsed.title || parsed.body;
+                                                } catch (e) {
+                                                    return notif.message;
+                                                }
+                                            })()
+                                        ) : notif.message}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
                                         {moment(notif.createdAt).format("MMM DD, YYYY HH:mm A")}

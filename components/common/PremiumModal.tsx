@@ -17,7 +17,7 @@ interface PremiumModalProps {
     title: string;
     subtitle?: string;
     badge?: string;
-    icon: LucideIcon;
+    icon?: LucideIcon;
     children: React.ReactNode;
     containerClassName?: string;
     headerClassName?: string;
@@ -36,9 +36,10 @@ export function PremiumModal({
 }: PremiumModalProps) {
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="p-0 border-none bg-transparent shadow-none w-full min-w-fit max-w-[90vw] lg:max-w-3xl">
+            <DialogContent className="p-0 border-none bg-transparent shadow-none w-full sm:min-w-fit lg:max-w-3xl">
                 <div className={cn(
-                    "bg-card rounded-xl w-full shadow-lg border border-border text-start overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 max-h-[min(90dvh,800px)]",
+                    "bg-card w-full shadow-lg border border-border text-start overflow-hidden flex flex-col max-h-[90dvh] sm:max-h-[min(90dvh,800px)]",
+                    "rounded-t-2xl rounded-b-none sm:rounded-xl border-b-0 sm:border-b",
                     containerClassName
                 )}>
                     <div className={cn(
@@ -48,7 +49,7 @@ export function PremiumModal({
                         <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                             <DialogHeader className="space-y-1 flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
-                                    <Icon className="w-5 h-5 text-primary shrink-0" />
+                                    {Icon && <Icon className="w-5 h-5 text-primary shrink-0" />}
                                     <DialogTitle className="text-lg sm:text-xl font-semibold text-foreground leading-tight truncate">
                                         {title || "Modal"}
                                     </DialogTitle>

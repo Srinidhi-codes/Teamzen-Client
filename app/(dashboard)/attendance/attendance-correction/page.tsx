@@ -96,15 +96,14 @@ export default function AttendanceCorrectionPage() {
         className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeftIcon className="h-4 w-4" />
-        Back
       </button>
 
       <PageHeader
-        title="Attendance correction"
-        description="Review records and request changes to check-in or check-out times."
+        title="Attendance Regularization"
+        description="Review records and request changes to punch-in or out."
       />
 
-      <Card>
+
         <div className="grid grid-cols-1 items-end gap-6 rounded-xl border border-border/50 bg-muted/5 p-6 md:grid-cols-3">
           <DatePickerSimple
             label="From"
@@ -128,17 +127,16 @@ export default function AttendanceCorrectionPage() {
             Search
           </Button>
         </div>
-      </Card>
+
 
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pb-4 border-b border-border/50">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <History className="h-4 w-4 text-primary" />
             Records
           </h2>
-          <span className="text-xs text-muted-foreground">
+          <div className="px-3 py-1 bg-primary/5 text-primary rounded-md text-xs font-medium border border-primary/10 whitespace-nowrap shrink-0">
             {attendance?.length || 0} records
-          </span>
+          </div>
         </div>
 
         <AttendanceTable

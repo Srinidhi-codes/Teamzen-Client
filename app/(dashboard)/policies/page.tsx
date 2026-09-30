@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { usePolicies } from "@/lib/api/hooks";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/common/PageHeader";
 
 import { Loader2, FileText, Maximize2, RotateCcw } from "lucide-react";
@@ -17,6 +18,7 @@ export default function PoliciesPage() {
     return (
         <div className="p-4 sm:p-6 space-y-6 animate-fade-in">
             <PageHeader
+                eyebrow="Company"
                 title="Policies"
                 description="Company policies and reference documents."
                 actions={
@@ -46,11 +48,14 @@ export default function PoliciesPage() {
                                             <FileText className="w-5 h-5" />
                                         </div>
                                         <div className="min-w-0">
-                                            <h3 className="font-semibold text-base leading-tight mb-1 line-clamp-1">{policy.title}</h3>
-                                            <div className="text-xs text-muted-foreground flex items-center gap-2">
-                                                <span>{moment(policy.created_at).format("MMM D, YYYY")}</span>
-                                                <span className="w-1 h-1 rounded-full bg-border" />
-                                                <span>{policy.file_size ? (policy.file_size / 1024 / 1024).toFixed(2) + ' MB' : '0 MB'}</span>
+                                            <h3 className="font-semibold text-base leading-tight mb-1 line-clamp-1" title={policy.title}>{policy.title}</h3>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <span className="inline-flex items-center rounded-md bg-muted/50 px-2 py-0.5 text-[10px] sm:text-[11px] font-medium text-muted-foreground border border-border/50">
+                                                    {moment(policy.created_at).format("MMM D, YYYY")}
+                                                </span>
+                                                <span className="inline-flex items-center rounded-md bg-muted/50 px-2 py-0.5 text-[10px] sm:text-[11px] font-medium text-muted-foreground border border-border/50">
+                                                    {policy.file_size ? (policy.file_size / 1024 / 1024).toFixed(2) + ' MB' : '0 MB'}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -68,7 +73,10 @@ export default function PoliciesPage() {
                                 )}
 
                                 <div className="mt-auto flex justify-between items-center pt-4 border-t border-border/50">
-                                    <button
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        className="w-full sm:w-auto font-medium"
                                         onClick={() => {
                                             setSelectedPdf({
                                                 url: policy.file_url || policy.file,
@@ -77,10 +85,9 @@ export default function PoliciesPage() {
                                             setIsViewOpen(true);
                                             setZoom(1);
                                         }}
-                                        className="text-sm font-medium text-primary hover:text-primary/80"
                                     >
                                         View document
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
                         </div>
