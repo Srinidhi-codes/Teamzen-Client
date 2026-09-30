@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
                 'Content-Type': 'application/json',
                 'Cookie': cookieHeader,
             },
+            body: JSON.stringify({ refresh: refreshToken }),
         });
 
         const responseText = await djangoResponse.text();
@@ -39,7 +40,9 @@ export async function POST(request: NextRequest) {
 
         if (!djangoResponse.ok) {
             const errResponse = NextResponse.json(data, { status: djangoResponse.status });
-            clearAuthCookies(errResponse);
+            if (djangoResponse.status === 401) {
+                clearAuthCookies(errResponse);
+            }
             return errResponse;
         }
 

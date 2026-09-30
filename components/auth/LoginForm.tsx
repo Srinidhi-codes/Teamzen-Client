@@ -71,21 +71,26 @@ export default function LoginForm() {
     document.body.appendChild(script);
 
     script.onload = () => {
-      const google = (window as any).google;
-      if (google) {
-        google.accounts.id.initialize({
-          client_id:
-            process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
-            "1016839352936-google-placeholder.apps.googleusercontent.com",
-          callback: handleGoogleCredentialResponse,
-        });
-        google.accounts.id.renderButton(document.getElementById("google-signin-btn"), {
-          theme: "outline",
-          size: "large",
-          width: 400,
-          text: "signin_with",
-          shape: "rectangular",
-        });
+      try {
+        const google = (window as any).google;
+        const btn = document.getElementById("google-signin-btn");
+        if (google && btn) {
+          google.accounts.id.initialize({
+            client_id:
+              process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+              "1016839352936-google-placeholder.apps.googleusercontent.com",
+            callback: handleGoogleCredentialResponse,
+          });
+          google.accounts.id.renderButton(btn, {
+            theme: "outline",
+            size: "large",
+            width: 400,
+            text: "signin_with",
+            shape: "rectangular",
+          });
+        }
+      } catch (err) {
+        console.warn("Google sign-in button init note:", err);
       }
     };
 
@@ -104,9 +109,9 @@ export default function LoginForm() {
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  // Only send logged-in users to the app if cookies are still valid.
-  // Stale localStorage alone used to bounce: /login → /dashboard → /login.
-  // Never run this when an active login redirect is in progress.
+  // Only sync auth state from session cookies on mount.
+  // If cookies are gone, clear stale localStorage (logoutUser).
+  // Never trigger automatic redirects on mount to prevent /login <-> /dashboard bounce loops.
   useEffect(() => {
     if (!hasHydrated || !isAuthenticated || isRedirectingRef.current) return;
 
@@ -121,24 +126,7 @@ export default function LoginForm() {
 
         if (!session?.authenticated) {
           logoutUser();
-          return;
         }
-
-        if (!session.hasAccess && session.hasRefresh) {
-          const refreshRes = await fetch("/api/auth/refresh", {
-            method: "POST",
-            credentials: "include",
-          });
-          if (cancelled || isRedirectingRef.current) return;
-          if (!refreshRes.ok) {
-            logoutUser();
-            return;
-          }
-        }
-
-        isRedirectingRef.current = true;
-        setIsRedirecting(true);
-        window.location.replace("/dashboard");
       } catch {
         if (!cancelled && !isRedirectingRef.current) logoutUser();
       }

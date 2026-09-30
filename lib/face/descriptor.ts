@@ -92,53 +92,86 @@ export async function extractFaceDescriptor(
   await loadFaceModels();
   const faceapi = await getFaceApi();
 
+  // On mobile devices / PWA, taking a raster snapshot into an offscreen canvas
+  // avoids video texture flickering/lock during WebGL inference.
+  let detectionTarget: HTMLCanvasElement | HTMLVideoElement | HTMLImageElement = input;
+  if (typeof document !== "undefined" && input instanceof HTMLVideoElement) {
+    if (input.videoWidth > 0 && input.videoHeight > 0) {
+      const snapCanvas = document.createElement("canvas");
+      snapCanvas.width = input.videoWidth;
+      snapCanvas.height = input.videoHeight;
+      const ctx = snapCanvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(input, 0, 0, input.videoWidth, input.videoHeight);
+        detectionTarget = snapCanvas;
+      }
+    }
+  }
+
   const options = new faceapi.TinyFaceDetectorOptions({
     inputSize: 416,
-    scoreThreshold: 0.5,
+    scoreThreshold: 0.45,
   });
 
-  const detections = await faceapi
-    .detectAllFaces(input, options)
-    .withFaceLandmarks()
-    .withFaceDescriptors();
+  const detectionPromise = (async () => {
+    const detections = await faceapi
+      .detectAllFaces(detectionTarget, options)
+      .withFaceLandmarks()
+      .withFaceDescriptors();
 
-  if (!detections.length) {
-    throw new Error("No face detected. Center your face and improve lighting.");
-  }
-  if (detections.length > 1) {
-    throw new Error("Multiple faces detected. Only one person should be in frame.");
-  }
+    if (!detections.length) {
+      throw new Error("No face detected. Center your face, look at the camera, and ensure good lighting.");
+    }
+    if (detections.length > 1) {
+      throw new Error("Multiple faces detected. Only one person should be in frame.");
+    }
 
-  const best = detections[0];
-  const box = best.detection.box;
-  const minSide = Math.min(
-    input instanceof HTMLVideoElement
-      ? input.videoWidth
-      : input instanceof HTMLImageElement
-        ? input.naturalWidth
-        : input.width,
-    input instanceof HTMLVideoElement
-      ? input.videoHeight
-      : input instanceof HTMLImageElement
-        ? input.naturalHeight
-        : input.height
-  );
-  if (box.width < minSide * 0.15 || box.height < minSide * 0.15) {
-    throw new Error("Move closer so your face fills more of the circle.");
-  }
-
-  if (!best.descriptor || best.descriptor.length === 0) {
-    throw new Error(
-      "Face embedding missing — recognition model may not have loaded. Hard-refresh and retry."
+    const best = detections[0];
+    const box = best.detection.box;
+    const minSide = Math.min(
+      detectionTarget instanceof HTMLVideoElement
+        ? detectionTarget.videoWidth
+        : detectionTarget instanceof HTMLImageElement
+          ? detectionTarget.naturalWidth
+          : detectionTarget.width,
+      detectionTarget instanceof HTMLVideoElement
+        ? detectionTarget.videoHeight
+        : detectionTarget instanceof HTMLImageElement
+          ? detectionTarget.naturalHeight
+          : detectionTarget.height
     );
-  }
+    if (box.width < minSide * 0.15 || box.height < minSide * 0.15) {
+      throw new Error("Move closer so your face fills more of the circle.");
+    }
 
-  const descriptor = normalizeDescriptor(best.descriptor);
+    if (!best.descriptor || best.descriptor.length === 0) {
+      throw new Error(
+        "Face embedding missing — recognition model may not have loaded. Hard-refresh and retry."
+      );
+    }
 
-  return {
-    descriptor,
-    detectionScore: best.detection.score,
-  };
+    const descriptor = normalizeDescriptor(best.descriptor);
+
+    return {
+      descriptor,
+      detectionScore: best.detection.score,
+    };
+  })();
+
+  const timeoutPromise = new Promise<{ descriptor: number[]; detectionScore: number }>(
+    (_, reject) =>
+      setTimeout(
+        () =>
+          reject(
+            new Error(
+              "Face verification timed out. Please check lighting and hold steady, then try again."
+            )
+          ),
+        12000
+      )
+  );
+
+  return Promise.race([detectionPromise, timeoutPromise]);
 }
 
 /** Snapshot video to JPEG data URL for audit upload. */
@@ -147,14 +180,15 @@ export function captureJpegFromVideo(
   canvas: HTMLCanvasElement,
   quality = 0.7
 ): string {
-  const w = video.videoWidth;
-  const h = video.videoHeight;
+  const w = video.videoWidth || 640;
+  const h = video.videoHeight || 480;
   const side = Math.min(w, h);
   const sx = (w - side) / 2;
   const sy = (h - side) / 2;
   canvas.width = 256;
   canvas.height = 256;
-  const ctx = canvas.getContext("2d")!;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return "";
   ctx.drawImage(video, sx, sy, side, side, 0, 0, 256, 256);
   return canvas.toDataURL("image/jpeg", quality);
 }

@@ -54,7 +54,7 @@ export function CookieConsent() {
     saveConsent({ preferences: true, analytics: true });
   };
 
-  const handleEssentialOnly = () => {
+  const handleRejectAll = () => {
     saveConsent({ preferences: false, analytics: false });
   };
 
@@ -147,55 +147,58 @@ export function CookieConsent() {
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-border/40">
-            <button
+          {/* Action Buttons: Reject All, Customize, Accept All */}
+          <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 border-t border-border/40">
+            <Button
               type="button"
-              onClick={() => setIsCustomizing((prev) => !prev)}
-              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground font-medium transition-colors"
+              variant="outline"
+              size="sm"
+              onClick={handleRejectAll}
+              className="h-8 rounded-lg text-xs font-medium order-2 sm:order-1"
             >
-              {isCustomizing ? (
-                <>
-                  Less options <ChevronUp className="h-3 w-3" />
-                </>
-              ) : (
-                <>
-                  Customize <ChevronDown className="h-3 w-3" />
-                </>
-              )}
-            </button>
+              Reject All
+            </Button>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 justify-end order-1 sm:order-2">
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                onClick={handleEssentialOnly}
-                className="h-8 rounded-lg text-xs font-medium"
+                onClick={() => setIsCustomizing((prev) => !prev)}
+                className="h-8 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground"
               >
-                Essential Only
+                {isCustomizing ? (
+                  <>
+                    Less options <ChevronUp className="ml-1 h-3 w-3" />
+                  </>
+                ) : (
+                  <>
+                    Customize <ChevronDown className="ml-1 h-3 w-3" />
+                  </>
+                )}
               </Button>
 
-              {isCustomizing ? (
+              {isCustomizing && (
                 <Button
                   type="button"
+                  variant="outline"
                   size="sm"
                   onClick={handleSaveCustom}
                   className="h-8 rounded-lg text-xs font-semibold"
                 >
                   <Check className="mr-1 h-3.5 w-3.5" />
-                  Save Preferences
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleAcceptAll}
-                  className="h-8 rounded-lg text-xs font-semibold"
-                >
-                  Accept All
+                  Save
                 </Button>
               )}
+
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleAcceptAll}
+                className="h-8 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                Accept All
+              </Button>
             </div>
           </div>
         </div>
