@@ -59,8 +59,6 @@ export function LeaveRequestModal({
             onClose={onClose}
             title="Request leave"
             subtitle="Submit a new leave request for approval"
-            badge="New request"
-            icon={FileText}
         >
             <form onSubmit={onSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

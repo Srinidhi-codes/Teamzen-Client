@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/lib/store/useStore";
 import {
   useGraphQLPerformanceGoals,
@@ -175,11 +176,6 @@ function SelfReviewCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
           <h3 className="text-sm font-semibold text-foreground">{review.cycleName}</h3>
-          <p className="text-xs text-muted-foreground">
-            {review.reviewerName
-              ? `Your manager ${review.reviewerName} will review you after you submit.`
-              : "Complete your self-assessment for this cycle."}
-          </p>
         </div>
         <Badge variant={reviewStatusVariant(review.status)}>
           {formatStatusLabel(review.status)}
@@ -432,7 +428,7 @@ export default function PerformancePage() {
     <div className="animate-fade-in space-y-8 p-4 pb-20 sm:p-8">
       <PageHeader
         title="Performance"
-        description="Submit your self-assessment. Managers review their direct reports — not the other way around."
+        description="Submit your self-assessment."
         eyebrow="Growth"
       />
 
@@ -444,7 +440,8 @@ export default function PerformancePage() {
       )}
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <Card title="My Goals" icon={Target}>
+        <Card title="My Goals">
+          <Separator className="mb-4 -mt-2" />
           {isLoading ? (
             <div className="space-y-4">
               {[1, 2].map((i) => (
@@ -474,7 +471,8 @@ export default function PerformancePage() {
           )}
         </Card>
 
-        <Card title="My Reviews" icon={ClipboardCheck}>
+        <Card title="My Reviews">
+          <Separator className="mb-4 -mt-2" />
           {isLoading ? (
             <div className="space-y-4">
               {[1, 2].map((i) => (

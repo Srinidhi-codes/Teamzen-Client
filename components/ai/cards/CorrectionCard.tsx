@@ -47,7 +47,7 @@ export const CorrectionCard = ({
                 </div>
                 <div>
                     <p className="text-[10px] font-medium text-amber-600/80 mb-0.5">
-                        Attendance correction
+                        Attendance Regularization
                     </p>
                     <h4 className="font-semibold text-lg text-foreground">
                         {date ? moment(date).format("MMM D, YYYY") : "Missed checkout"}

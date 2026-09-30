@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataTable, Column } from "@/components/common/DataTable";
+import { Pagination } from "@/components/common/Pagination";
 import { LeaveRequestModal } from "@/components/leaves/LeaveRequestModal";
 import { LeaveReviewModal } from "@/components/leaves/LeaveReviewModal";
 import { cn } from "@/lib/utils";
@@ -248,10 +249,18 @@ export default function LeavesPage() {
   return (
     <div className="p-4 sm:p-6 space-y-8 animate-fade-in relative min-h-screen">
       <PageHeader
+        eyebrow="Time Off"
         title="Leave management"
         description="View your balance, request time off, and track leave history."
         actions={
           <>
+            <Button
+              onClick={() => setShowForm(!showForm)}
+              className={cn("h-9 flex-1 sm:flex-none rounded-md", showForm ? "btn-secondary" : "btn-primary")}
+            >
+              {showForm ? <X className="w-4 h-4 mr-2" /> : null}
+              {showForm ? "Cancel request" : "Request leave"}
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -260,23 +269,15 @@ export default function LeavesPage() {
                 refetchRequests();
                 refetchTeam();
               }}
-              className="h-9 w-9 rounded-md border border-border"
+              className="h-9 w-9 shrink-0 rounded-md border border-border"
               title="Refresh"
             >
               <RotateCcw className="w-4 h-4" />
             </Button>
-            <Button
-              onClick={() => setShowForm(!showForm)}
-              className={cn("h-9 rounded-md", showForm ? "btn-secondary" : "btn-primary")}
-            >
-              {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-              {showForm ? "Cancel request" : "Request leave"}
-            </Button>
           </>
         }
       />
-      {/* Tab Bar */}
-      <div className="flex items-center bg-muted/40 p-1 rounded-xl border border-border w-fit">
+      <div className="flex items-center bg-muted/40 p-1 rounded-xl border border-border w-full sm:w-fit">
         {([
           { key: "overview", label: "Overview", icon: LayoutList },
           { key: "calendar", label: "Calendar", icon: CalendarDays },
@@ -284,7 +285,7 @@ export default function LeavesPage() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.key
+            className={`flex flex-1 sm:flex-none justify-center items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.key
               ? "bg-background text-primary shadow-sm"
               : "text-muted-foreground hover:text-foreground"
               }`}
@@ -308,15 +309,15 @@ export default function LeavesPage() {
           {/* Leave Balance Grid */}
           <div className="space-y-6">
             {leaveBalanceLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+              <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 overflow-x-auto pb-4 snap-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="rounded-xl border border-border h-40 animate-pulse bg-muted/50" />
+                  <div key={i} className="min-w-[280px] sm:min-w-0 shrink-0 snap-start rounded-xl border border-border h-40 animate-pulse bg-muted/50" />
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 overflow-x-auto pb-4 snap-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {leaveBalanceData?.map((balance: any) => (
-                  <div key={balance.id} className="rounded-xl border border-border bg-card p-4 sm:p-5">
+                  <div key={balance.id} className="min-w-[280px] sm:min-w-0 shrink-0 snap-start rounded-xl border border-border bg-card p-4 sm:p-5">
                     <div className="flex justify-between items-start mb-4">
                       <div className="space-y-1 min-w-0">
                         <h3 className="text-base font-semibold truncate">{balance.leaveType.name}</h3>
@@ -369,32 +370,91 @@ export default function LeavesPage() {
             {/* Left Column: History */}
             <div className="lg:col-span-8 space-y-6 sm:space-y-8">
               <div className="space-y-4 sm:space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <History className="w-4 h-4" />
-                    Leave history
-                  </h2>
-                  <div className="px-3 py-1 bg-primary/5 text-primary rounded-md text-xs font-medium border border-primary/10">
-                    {pendingCount} pending
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+                      My Requests
+                    </h2>
+                    <div className="px-3 py-1 bg-primary/5 text-primary rounded-md text-xs font-medium border border-primary/10 whitespace-nowrap shrink-0">
+                      {pendingCount} pending
+                    </div>
                   </div>
+                  <div className="h-px w-full bg-border" />
                 </div>
-                <DataTable
-                  columns={columns}
-                  data={paginatedData}
-                  isLoading={leaveRequestLoading}
-                  total={total}
-                  currentPage={currentPage}
-                  pageSize={pageSize}
-                  onPageChange={setCurrentPage}
-                  onRowClick={setViewDetails}
-                  paginationLabel="requests"
-                />
+                
+                {/* Desktop View */}
+                <div className="hidden sm:block">
+                  <DataTable
+                    columns={columns}
+                    data={paginatedData}
+                    isLoading={leaveRequestLoading}
+                    total={total}
+                    currentPage={currentPage}
+                    pageSize={pageSize}
+                    onPageChange={setCurrentPage}
+                    onRowClick={setViewDetails}
+                    paginationLabel="requests"
+                  />
+                </div>
+
+                {/* Mobile View */}
+                <div className="block sm:hidden space-y-3">
+                  {leaveRequestLoading ? (
+                     <div className="space-y-3">
+                        {[1, 2, 3].map(i => <div key={i} className="h-24 rounded-xl border border-border bg-muted/50 animate-pulse" />)}
+                     </div>
+                  ) : paginatedData.length === 0 ? (
+                     <div className="text-center py-8 text-muted-foreground text-sm border border-border rounded-xl bg-card">No requests found</div>
+                  ) : (
+                     <>
+                        <div className="space-y-3">
+                          {paginatedData.map((row: any) => (
+                            <div 
+                              key={row.id} 
+                              onClick={() => setViewDetails(row)}
+                              className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3 active:bg-muted/50 transition-colors"
+                            >
+                              <div className="flex justify-between items-start gap-2">
+                                <div className="space-y-1">
+                                  <h4 className="font-medium text-sm text-foreground">{row.leaveType?.name}</h4>
+                                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                                    <span>{moment(row.fromDate).format("MMM DD")}</span>
+                                    <ArrowRight className="w-3 h-3" />
+                                    <span>{moment(row.toDate).format("MMM DD")}</span>
+                                  </div>
+                                </div>
+                                <Badge variant={getStatusVariant(row.status) as any} className="capitalize text-[10px] px-2 py-0.5">
+                                  {row.status}
+                                </Badge>
+                              </div>
+                              <div className="flex justify-between items-center pt-3 border-t border-border/60">
+                                <span className="text-xs text-muted-foreground font-medium">{row.durationDays} day{row.durationDays !== 1 ? 's' : ''}</span>
+                                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {total > pageSize && (
+                          <div className="pt-2">
+                            <Pagination
+                              currentPage={currentPage}
+                              totalPages={Math.ceil(total / pageSize)}
+                              onPageChange={setCurrentPage}
+                              total={total}
+                              pageSize={pageSize}
+                              label="requests"
+                            />
+                          </div>
+                        )}
+                     </>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Right Column: Insights */}
-            <div className="lg:col-span-4 space-y-6 p-5 bg-card border border-border rounded-xl h-fit">
-              <Card title="Summary">
+            <div className="lg:col-span-4 space-y-6">
+              <Card className="p-5 bg-card border border-border rounded-xl h-fit" title="Summary">
                 <div className="space-y-6">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-sm">
@@ -475,10 +535,14 @@ export default function LeavesPage() {
 
           {/* Team on Leave Section */}
           <div className="space-y-6">
-            <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Team on leave
-            </h2>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-2 whitespace-nowrap">
+                  Team status
+                </h2>
+              </div>
+              <div className="h-px w-full bg-border" />
+            </div>
             <div className="rounded-xl border border-border bg-card overflow-hidden">
               {teamLeavesLoading ? (
                 <div className="p-8 flex justify-center">

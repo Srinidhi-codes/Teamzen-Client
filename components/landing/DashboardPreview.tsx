@@ -183,7 +183,7 @@ export function DashboardPreview({ className }: { className?: string }) {
                     <div className="flex items-center gap-2">
                       <span className="h-4 w-1 rounded-full bg-primary" />
                       <p className="text-xs font-semibold text-foreground sm:text-sm">
-                        Leave available
+                        Leave's available
                       </p>
                     </div>
                     <ArrowUpRight className="h-3.5 w-3.5 text-foreground/55" />

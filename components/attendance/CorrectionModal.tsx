@@ -98,13 +98,11 @@ export function CorrectionModal({ record, onClose, onSubmit }: Props) {
         <PremiumModal
             isOpen={true}
             onClose={onClose}
-            title="Attendance correction"
+            title="Attendance Regularization"
             subtitle={`Request a change for ${moment(record.attendanceDate).format("MMMM DD, YYYY")}`}
-            badge="Correction request"
-            icon={Calendar}
         >
-            <div className="space-y-8">
-                <div className="space-y-6 overflow-y-auto overflow-x-hidden p-6 sm:space-y-8 sm:p-8 custom-scrollbar">
+            <div className="space-y-6 sm:space-y-8">
+                <div className="space-y-6 overflow-x-hidden">
                     <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
                         <div className="absolute left-1/2 top-1/2 z-10 hidden h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-muted-foreground/60 shadow-sm sm:flex">
                             <ArrowRight className="h-5 w-5" />
@@ -287,9 +285,9 @@ export function CorrectionModal({ record, onClose, onSubmit }: Props) {
                         {loading ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
-                            <CheckCircle2 className="h-4 w-4" />
+                            ""
                         )}
-                        Submit request
+                         Request Regularization
                     </button>
                 </div>
             </div>

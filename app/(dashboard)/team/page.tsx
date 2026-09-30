@@ -95,26 +95,24 @@ function MemberRow({
       </Avatar>
 
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="truncate text-sm font-semibold text-foreground">{memberName(member)}</p>
-          {label && (
-            <span
-              className={cn(
-                "rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                highlight
-                  ? "bg-primary/10 text-primary"
-                  : "bg-muted text-muted-foreground"
-              )}
-            >
-              {label}
-            </span>
-          )}
-        </div>
+        <p className="truncate text-sm font-semibold text-foreground">{memberName(member)}</p>
         <p className="mt-0.5 truncate text-xs text-muted-foreground">
           {member.designation?.name || "Team member"}
           {member.department?.name ? ` · ${member.department.name}` : ""}
         </p>
       </div>
+      {label && (
+        <span
+          className={cn(
+            "shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+            highlight
+              ? "bg-primary/10 text-primary"
+              : "bg-muted text-muted-foreground"
+          )}
+        >
+          {label}
+        </span>
+      )}
 
       {interactive && <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50" />}
     </>
@@ -257,7 +255,6 @@ function HierarchyTree({
   const visiblePeers = peers.filter((p) => matchesQuery(p, query));
   const visibleSubs = subordinates.filter((s) => matchesQuery(s, query));
   const midRow = [
-    ...visiblePeers.map((p) => ({ member: p, label: "Peer" as const, highlight: false })),
     ...(userVisible && user
       ? [
           {
@@ -267,6 +264,7 @@ function HierarchyTree({
           },
         ]
       : []),
+    ...visiblePeers.map((p) => ({ member: p, label: "Peer" as const, highlight: false })),
   ];
 
   const hasAnything =
@@ -521,22 +519,22 @@ export default function TeamPage() {
         title={pageTitle}
         description="Your reporting circle, who’s in today, and who’s away."
         actions={
-          <div className="flex items-center gap-4 rounded-xl border border-border bg-background/70 px-4 py-3">
-            <div className="text-center">
+          <div className="flex w-full items-center justify-between gap-4 rounded-xl border border-border bg-background/70 px-4 py-3 sm:w-auto">
+            <div className="flex flex-1 flex-col items-center justify-center text-center">
               <p className="text-[11px] font-medium text-muted-foreground">Present</p>
               <p className="text-xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
                 {presentToday.length}
               </p>
             </div>
             <div className="h-8 w-px bg-border" />
-            <div className="text-center">
-              <p className="text-[11px] font-medium text-muted-foreground">Absent</p>
+            <div className="flex flex-1 flex-col items-center justify-center text-center">
+              <p className="text-[11px] font-medium text-muted-foreground">On leave</p>
               <p className="text-xl font-semibold tabular-nums text-red-600 dark:text-red-400">
                 {absentToday.length}
               </p>
             </div>
             <div className="h-8 w-px bg-border" />
-            <div className="text-center">
+            <div className="flex flex-1 flex-col items-center justify-center text-center">
               <p className="text-[11px] font-medium text-muted-foreground">Out today</p>
               <p className="text-xl font-semibold tabular-nums">{awayToday.length}</p>
             </div>
@@ -622,7 +620,7 @@ export default function TeamPage() {
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-md bg-red-500/10 px-2 py-1 text-red-700 dark:text-red-400">
               <UserX className="h-3.5 w-3.5" />
-              {absentToday.length} absent
+              {absentToday.length} on leave
             </span>
             {leaveToday.length > 0 && (
               <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2 py-1 text-amber-700 dark:text-amber-400">
@@ -649,7 +647,7 @@ export default function TeamPage() {
             }
           />
           <AttendanceTodayColumn
-            title="Absent"
+            title="On leave"
             empty="Everyone in your circle is accounted for"
             loading={attendanceLoading}
             tone="absent"
@@ -883,7 +881,7 @@ export default function TeamPage() {
                 <h2 className="text-base font-semibold tracking-tight sm:text-lg">Who’s away</h2>
               </div>
               <p className="pl-3.5 text-xs text-muted-foreground">
-                Approved or pending leave · today and next 14 days
+                Approved or pending leave
               </p>
             </div>
             <Link href="/leaves" className="text-sm font-medium text-primary hover:underline">
@@ -1104,23 +1102,9 @@ function AttendanceTodayColumn({
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate text-sm font-semibold text-foreground">
-                      {item.user.firstName} {item.user.lastName}
-                    </p>
-                    <span
-                      className={cn(
-                        "rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                        isLeave
-                          ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                          : tone === "present"
-                            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                            : "bg-red-500/10 text-red-700 dark:text-red-400"
-                      )}
-                    >
-                      {isLeave ? "Leave" : tone === "present" ? "Present" : "Absent"}
-                    </span>
-                  </div>
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {item.user.firstName} {item.user.lastName}
+                  </p>
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">
                     {item.user.designation?.name || "Team member"}
                     {tone === "present" && item.loginTime
@@ -1131,6 +1115,18 @@ function AttendanceTodayColumn({
                       : ""}
                   </p>
                 </div>
+                <span
+                  className={cn(
+                    "shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                    isLeave
+                      ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                      : tone === "present"
+                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                        : "bg-red-500/10 text-red-700 dark:text-red-400"
+                  )}
+                >
+                  {isLeave ? "Leave" : tone === "present" ? "Present" : "On leave"}
+                </span>
               </li>
             );
           })}

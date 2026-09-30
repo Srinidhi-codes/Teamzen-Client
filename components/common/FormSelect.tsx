@@ -67,7 +67,7 @@ export function FormSelect({
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
 
-          <SelectContent className="rounded-2xl border-border shadow-2xl animate-in zoom-in-95 duration-200 mt-18">
+          <SelectContent className="rounded-2xl border-border shadow-2xl animate-in zoom-in-95 duration-200 mt-10">
             {options
               ? options.map((option) => (
                 <SelectItem key={option.value} value={option.value} className="rounded-xl focus:bg-primary/10 focus:text-primary transition-colors cursor-pointer">

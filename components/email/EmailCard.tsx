@@ -101,8 +101,8 @@ export function EmailCard({
 
             {/* Content */}
             <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <div className="flex items-baseline justify-between gap-2">
-                    <div className="flex items-center gap-2 truncate">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
                         <span className={cn(
                             "truncate font-medium text-sm",
                             !isRead ? "text-foreground font-semibold" : "text-muted-foreground"
@@ -110,26 +110,33 @@ export function EmailCard({
                             {senderName}
                         </span>
                         {isAnnouncement && (
-                            <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
+                            <span className="inline-flex items-center rounded-full border px-1.5 py-0.5 sm:px-2 text-[9px] sm:text-[10px] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
                                 Announcement
                             </span>
                         )}
                     </div>
                     <time className={cn(
-                        "shrink-0 text-xs",
+                        "shrink-0 text-[11px] sm:text-xs",
                         !isRead ? "text-foreground font-medium" : "text-muted-foreground"
                     )}>
                         {moment(createdAt).format("MMM D, h:mm A")}
                     </time>
                 </div>
 
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start justify-between gap-2 sm:gap-4 mt-0.5">
                     <div className="min-w-0 flex-1">
                         <p className={cn(
                             "text-sm line-clamp-2 leading-relaxed",
                             !isRead ? "text-foreground font-medium" : "text-muted-foreground"
                         )}>
-                            {message}
+                            {isAnnouncement ? (() => {
+                                try {
+                                    const parsed = JSON.parse(message);
+                                    return parsed.title || parsed.body;
+                                } catch (e) {
+                                    return message;
+                                }
+                            })() : message}
                         </p>
                     </div>
 

@@ -24,7 +24,9 @@ import {
   ExternalLink,
   ImageIcon,
   X,
+  UploadCloud,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 type FeedbackItem = {
   id: string;
@@ -153,10 +155,11 @@ export default function FeedbackPage() {
     <div className="space-y-6">
       <PageHeader
         title="Feedback"
+        eyebrow="Help & Support"
         description="Share ideas and issues with your company admins, or read updates shared with the organization."
       />
 
-      <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-muted/40 p-1">
+      <div className="flex items-center bg-muted/40 p-1 rounded-xl border border-border w-full sm:w-fit flex-wrap sm:flex-nowrap">
         {[
           { id: "mine" as const, label: "My feedback", icon: MessageSquare },
           { id: "org" as const, label: "From admin", icon: Megaphone },
@@ -170,13 +173,13 @@ export default function FeedbackPage() {
               type="button"
               onClick={() => setTab(t.id)}
               className={cn(
-                "inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors",
+                "flex flex-1 sm:flex-none justify-center items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
                 active
-                  ? "bg-background font-medium text-foreground shadow-sm"
+                  ? "bg-background text-primary shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-3.5 w-3.5" />
               {t.label}
             </button>
           );
@@ -185,12 +188,11 @@ export default function FeedbackPage() {
 
       {tab === "new" && (
         <div className="mx-auto max-w-2xl rounded-xl border border-border bg-card p-5 sm:p-6">
-          <h3 className="text-sm font-semibold">Submit feedback</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Private to your company admins. They review it first and can forward valid items to Teamzen. Attach screenshots or files (max 10MB each).
-          </p>
-          <div className="mt-5 space-y-4">
-            <FormInput
+          <div className="mb-5 pb-5 border-b border-border/60">
+            <h3 className="text-base sm:text-lg font-semibold text-foreground">Submit Feedback</h3>
+          </div>
+          <div className="space-y-4">
+            <Input
               label="Title"
               required
               value={title}
@@ -215,12 +217,25 @@ export default function FeedbackPage() {
               <label className="mb-2 block text-sm font-medium text-muted-foreground">
                 Attachments
               </label>
-              <input
-                type="file"
-                multiple
-                onChange={(e) => setFiles(Array.from(e.target.files || []))}
-                className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-1.5 file:text-sm file:font-medium"
-              />
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById('feedback-file-upload')?.click()}
+                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground h-9"
+                >
+                  <UploadCloud className="h-4 w-4" />
+                  Upload
+                </Button>
+                <input
+                  id="feedback-file-upload"
+                  type="file"
+                  multiple
+                  onChange={(e) => setFiles((prev) => [...prev, ...Array.from(e.target.files || [])])}
+                  className="hidden"
+                />
+              </div>
               {files.length > 0 && (
                 <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
                   {files.map((f) => (

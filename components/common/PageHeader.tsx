@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 interface PageHeaderProps {
   title: string;
-  description?: string;
+  description?: React.ReactNode;
   actions?: React.ReactNode;
   className?: string;
   /** Optional short label above the title, e.g. "Workforce" */
@@ -43,7 +43,7 @@ export function PageHeader({
       </div>
 
       {actions && (
-        <div className="flex shrink-0 flex-wrap items-center gap-2 sm:pb-0.5">
+        <div className="flex w-full shrink-0 flex-wrap items-center gap-2 sm:w-auto sm:pb-0.5">
           {actions}
         </div>
       )}

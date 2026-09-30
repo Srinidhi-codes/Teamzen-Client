@@ -17,6 +17,8 @@ import {
   LogIn,
   LogOut,
   ChevronDown,
+  Map,
+  EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/common/Card";
@@ -35,6 +37,7 @@ import axios from "axios";
 import { ScanFace } from "lucide-react";
 import Image from "next/image";
 import { LandingImages } from "@/lib/brand-images";
+import moment from "moment";
 
 const AttendanceMap = dynamic(() => import("@/components/attendance/AttendanceMap"), {
   ssr: false,
@@ -307,6 +310,7 @@ export default function AttendancePage() {
   return (
     <div className="space-y-10 animate-fade-in pb-20 p-4 sm:p-8">
       <PageHeader
+        eyebrow="Time Tracking"
         title="Attendance"
         description={
           user?.officeLocation?.name
@@ -318,8 +322,7 @@ export default function AttendancePage() {
             onClick={() => router.push("/attendance/attendance-correction")}
             className="h-9 rounded-md w-full sm:w-auto"
           >
-            <Edit className="w-4 h-4 mr-2 shrink-0" />
-            Request correction
+            Request Regularization
           </Button>
         }
       />
@@ -401,9 +404,9 @@ export default function AttendancePage() {
         }}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        {/* Left Column: Actions & Status */}
-        <div className="lg:col-span-8 space-y-10">
+      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:gap-10">
+        {/* Left Column: Visualizer & Actions */}
+        <div className="lg:col-span-8 space-y-6 lg:space-y-10 order-1">
 
           {/* Main Visualizer */}
           <div className="relative overflow-hidden rounded-xl border border-border bg-[#e8eef4]">
@@ -431,46 +434,137 @@ export default function AttendancePage() {
             </div>
           </div>
 
-          {/* Action Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div
-              className={`premium-card p-1 group transition-all duration-500 ${!todayAttendance?.loginTime ? 'hover:scale-[1.02] cursor-pointer' : 'opacity-40 grayscale pointer-events-none'}`}
-              onClick={() => !todayAttendance?.loginTime && handleAction('in')}
-            >
-              <div className="p-6 sm:p-8 rounded-xl border border-border/50 flex flex-col items-center text-center space-y-4 sm:space-y-6 group-hover:bg-primary/5 transition-colors">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <Check className="w-8 h-8 sm:w-10 sm:h-10" />
-                </div>
-                <div>
-                  <h3 className="text-lg sm:text-xl font-semibold tracking-tight">{checkInLoading ? "Checking in…" : "Check in"}</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2">Mark your arrival</p>
-                </div>
-                {todayAttendance?.loginTime && (
-                  <Badge variant="success">Logged at {todayAttendance.loginTime}</Badge>
-                )}
-              </div>
-            </div>
-
-            <div
-              className={`premium-card p-1 group transition-all duration-500 ${todayAttendance?.loginTime && !todayAttendance?.logoutTime ? 'hover:scale-[1.02] cursor-pointer' : 'opacity-40 grayscale pointer-events-none'}`}
-              onClick={() => todayAttendance?.loginTime && !todayAttendance?.logoutTime && handleAction('out')}
-            >
-              <div className="p-6 sm:p-8 rounded-xl border border-border/50 flex flex-col items-center text-center space-y-4 sm:space-y-6 group-hover:bg-primary/5 transition-colors">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <X className="w-8 h-8 sm:w-10 sm:h-10" />
-                </div>
-                <div>
-                  <h3 className="text-lg sm:text-xl font-semibold tracking-tight">{checkOutLoading ? "Checking out…" : "Check out"}</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2">Mark your departure</p>
-                </div>
-                {todayAttendance?.logoutTime && (
-                  <Badge variant="danger">Exited at {todayAttendance.logoutTime}</Badge>
-                )}
-              </div>
+          {/* Unified Action Card (Mobile App Style) */}
+          <div className="premium-card p-1">
+            <div className="p-6 sm:p-10 rounded-xl border border-border/50 bg-card/40 flex flex-col items-center text-center space-y-6 sm:space-y-8">
+              {!todayAttendance?.loginTime ? (
+                <>
+                  <button
+                    onClick={() => handleAction('in')}
+                    disabled={checkInLoading}
+                    className="relative group cursor-pointer flex flex-col items-center justify-center w-36 h-36 sm:w-44 sm:h-44 rounded-full bg-linear-to-br from-emerald-400 to-emerald-600 text-white shadow-xl shadow-emerald-500/30 transition-all hover:scale-105 active:scale-95 disabled:opacity-70 disabled:pointer-events-none"
+                  >
+                    <div className="absolute inset-0 rounded-full border-4 border-white/20 scale-[1.15] opacity-0 group-hover:scale-[1.25] group-hover:opacity-100 transition-all duration-500" />
+                    <ScanFace className="w-10 h-10 sm:w-12 sm:h-12 mb-2" />
+                    <span className="text-base sm:text-lg font-bold tracking-wider uppercase">
+                      {checkInLoading ? "Wait..." : "Punch In"}
+                    </span>
+                  </button>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-semibold tracking-tight text-foreground">Ready to start?</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">Tap the button above to mark your arrival.</p>
+                  </div>
+                </>
+              ) : todayAttendance?.loginTime && !todayAttendance?.logoutTime ? (
+                <>
+                  <button
+                    onClick={() => handleAction('out')}
+                    disabled={checkOutLoading}
+                    className="relative group cursor-pointer flex flex-col items-center justify-center w-36 h-36 sm:w-44 sm:h-44 rounded-full bg-linear-to-br from-rose-400 to-rose-600 text-white shadow-xl shadow-rose-500/30 transition-all hover:scale-105 active:scale-95 disabled:opacity-70 disabled:pointer-events-none"
+                  >
+                    <div className="absolute inset-0 rounded-full border-4 border-white/20 scale-[1.15] opacity-0 group-hover:scale-[1.25] group-hover:opacity-100 transition-all duration-500" />
+                    <LogOut className="w-10 h-10 sm:w-12 sm:h-12 mb-2" />
+                    <span className="text-base sm:text-lg font-bold tracking-wider uppercase">
+                      {checkOutLoading ? "Wait..." : "Punch Out"}
+                    </span>
+                  </button>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-semibold tracking-tight text-foreground">Active Session</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">Tap above when you're ready to leave.</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex flex-col items-center justify-center w-36 h-36 sm:w-44 sm:h-44 rounded-full bg-muted/40 text-muted-foreground border-4 border-border">
+                    <Check className="w-12 h-12 mb-2 text-emerald-500" />
+                    <span className="text-base sm:text-lg font-bold tracking-wider uppercase">
+                      Completed
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-semibold tracking-tight text-foreground">Shift Completed</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">You have finished your attendance for today.</p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
+        </div>
 
-          {/* Geofence Map Card — map mounts only when expanded */}
+                {/* Right Column: Status & Telemetry */}
+        <div className="lg:col-span-4 space-y-6 lg:space-y-10 order-2">
+          <Card title="Attendance Status">
+            <div className="space-y-8">
+              {statusConfig && (
+                <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-muted/20 border border-border/50 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-muted-foreground">Status</span>
+                    <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-xl ${statusConfig.variant === 'success' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-destructive/10 text-destructive'} flex items-center justify-center`}>
+                      <statusConfig.icon className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm tracking-tight">Today&apos;s status</p>
+                      <p className="text-xs text-muted-foreground">Based on your office location</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="premium-card p-4 sm:p-6 bg-muted/10 border-none space-y-3 sm:space-y-4">
+                  <LogIn className="w-4 h-4 text-primary" />
+                  <div className="space-y-1">
+                     <p className="text-xs font-medium text-muted-foreground">Check-in distance</p>
+                    <p className={`${(parseFloat(loginDistance) * 1000) > (user?.officeLocation?.geoRadiusMeters || 0) ? 'text-red-500' : 'text-green-500'} text-lg sm:text-xl font-semibold tabular-nums`}>{loginDistance}<span className="text-xs ml-1">km</span></p>
+                  </div>
+                </div>
+                <div className="premium-card p-4 sm:p-6 bg-muted/10 border-none space-y-3 sm:space-y-4">
+                  <LogOut className="w-4 h-4 text-primary" />
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">Check-out distance</p>
+                    <p className={`${(parseFloat(logoutDistance) * 1000) > (user?.officeLocation?.geoRadiusMeters || 0) ? 'text-red-500' : 'text-green-500'} text-lg sm:text-xl font-semibold tabular-nums`}>{logoutDistance}<span className="text-xs ml-1">km</span></p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6 pt-4 border-t border-border/50">
+                <h4 className="text-xs font-medium text-muted-foreground">Session summary</h4>
+                <div className="space-y-4">
+                  {[
+                    { label: "Check in", val: todayAttendance?.loginTime ? moment(todayAttendance.loginTime, "HH:mm:ss").format("hh:mm A") : "—", icon: Clock },
+                    { label: "Check out", val: todayAttendance?.logoutTime ? moment(todayAttendance.logoutTime, "HH:mm:ss").format("hh:mm A") : "—", icon: Clock },
+                    { 
+                      label: "Hours worked", 
+                      val: todayAttendance?.loginTime && !todayAttendance?.logoutTime 
+                        ? formatWorkedDuration(
+                            todayAttendance.attendanceDate,
+                            todayAttendance.loginTime
+                          )
+                        : todayAttendance?.workedHours 
+                          ? `${Number(todayAttendance.workedHours).toFixed(1)}h`
+                          : "0.0h", 
+                      icon: TrendingUp 
+                    },
+                  ].map((item, i) => (
+                    <div key={i} className="flex justify-between items-center group">
+                      <div className="flex items-center gap-3 opacity-60 group-hover:opacity-100 transition-opacity">
+                        <item.icon className="w-3.5 h-3.5" />
+                        <span className="text-xs font-medium">{item.label}</span>
+                      </div>
+                      <span className="text-xs font-semibold tabular-nums">{item.val}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Bottom Left Column: Map */}
+        <div className="lg:col-span-8 order-3">
           <div className="premium-card p-6 sm:p-8 space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
@@ -484,12 +578,26 @@ export default function AttendancePage() {
 
               <Button
                 type="button"
-                variant="outline"
-                className="h-9 rounded-md shrink-0"
+                variant={showMap ? "secondary" : "default"}
+                className={cn(
+                  "h-9 px-4 rounded-xl shadow-sm transition-all duration-300 font-medium text-xs sm:text-sm",
+                  showMap 
+                    ? "bg-muted hover:bg-muted/80 text-foreground border border-border" 
+                    : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-indigo-500/20"
+                )}
                 onClick={() => setShowMap((v) => !v)}
               >
-                {showMap ? "Hide map" : "Show map"}
-                <ChevronDown className={cn("w-4 h-4 ml-2 transition-transform", showMap && "rotate-180")} />
+                {showMap ? (
+                  <>
+                    <EyeOff className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2 opacity-70" />
+                    Hide map
+                  </>
+                ) : (
+                  <>
+                    <Map className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
+                    View map
+                  </>
+                )}
               </Button>
             </div>
 
@@ -520,7 +628,7 @@ export default function AttendancePage() {
                 ) : (
                   <>
                     <Check className="h-4 w-4 shrink-0" />
-                    <span>Location ready — expand the map to verify the geofence.</span>
+                    <span>Location ready expand the map to verify the geofence.</span>
                   </>
                 )}
               </div>
@@ -580,9 +688,9 @@ export default function AttendancePage() {
               const officeLng = Number(office.longitude);
               const radiusMeters = office.geoRadiusMeters || 200;
 
-              let activeLat: number | null = null;
-              let activeLng: number | null = null;
-              let activeDistanceMeters: number | null = null;
+              let activeLat = null;
+              let activeLng = null;
+              let activeDistanceMeters = null;
               let isWithin = false;
 
               if (mapTab === "live") {
@@ -697,77 +805,8 @@ export default function AttendancePage() {
           </div>
         </div>
 
-        {/* Right Column: Status & Telemetry */}
-        <div className="lg:col-span-4 space-y-10">
-          <Card title="Today's Attendance">
-            <div className="space-y-8">
-              {statusConfig && (
-                <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-muted/20 border border-border/50 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-muted-foreground">Status</span>
-                    <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-xl ${statusConfig.variant === 'success' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-destructive/10 text-destructive'} flex items-center justify-center`}>
-                      <statusConfig.icon className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm tracking-tight">Today&apos;s status</p>
-                      <p className="text-xs text-muted-foreground">Based on your office location</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="premium-card p-4 sm:p-6 bg-muted/10 border-none space-y-3 sm:space-y-4">
-                  <LogIn className="w-4 h-4 text-primary" />
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground">Check-in distance</p>
-                    <p className={`${(parseFloat(loginDistance) * 1000) > (user?.officeLocation?.geoRadiusMeters || 0) ? 'text-red-500' : 'text-green-500'} text-lg sm:text-xl font-semibold tabular-nums`}>{loginDistance}<span className="text-xs ml-1">km</span></p>
-                  </div>
-                </div>
-                <div className="premium-card p-4 sm:p-6 bg-muted/10 border-none space-y-3 sm:space-y-4">
-                  <LogOut className="w-4 h-4 text-primary" />
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground">Check-out distance</p>
-                    <p className={`${(parseFloat(logoutDistance) * 1000) > (user?.officeLocation?.geoRadiusMeters || 0) ? 'text-red-500' : 'text-green-500'} text-lg sm:text-xl font-semibold tabular-nums`}>{logoutDistance}<span className="text-xs ml-1">km</span></p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-6 pt-4 border-t border-border/50">
-                <h4 className="text-xs font-medium text-muted-foreground">Session summary</h4>
-                <div className="space-y-4">
-                  {[
-                    { label: "Check in", val: todayAttendance?.loginTime || "—", icon: Clock },
-                    { label: "Check out", val: todayAttendance?.logoutTime || "—", icon: Clock },
-                    { 
-                      label: "Hours worked", 
-                      val: todayAttendance?.loginTime && !todayAttendance?.logoutTime 
-                        ? formatWorkedDuration(
-                            todayAttendance.attendanceDate,
-                            todayAttendance.loginTime
-                          )
-                        : todayAttendance?.workedHours 
-                          ? `${Number(todayAttendance.workedHours).toFixed(1)}h`
-                          : "0.0h", 
-                      icon: TrendingUp 
-                    },
-                  ].map((item, i) => (
-                    <div key={i} className="flex justify-between items-center group">
-                      <div className="flex items-center gap-3 opacity-60 group-hover:opacity-100 transition-opacity">
-                        <item.icon className="w-3.5 h-3.5" />
-                        <span className="text-xs font-medium">{item.label}</span>
-                      </div>
-                      <span className="text-xs font-semibold tabular-nums">{item.val}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </Card>
-
+        {/* Bottom Right Column: Policy */}
+        <div className="lg:col-span-4 order-4">
           <div className="premium-card p-8 border border-primary/20 bg-primary/5 rounded-xl">
             <div className="space-y-4 text-center">
               <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto">
