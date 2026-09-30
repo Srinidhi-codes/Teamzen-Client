@@ -455,11 +455,14 @@ export function AnnouncementModal({
         <Dialog open={isZoomed} onOpenChange={setIsZoomed}>
           <DialogContent
             className={cn(
-              "max-w-[95vw] sm:max-w-5xl",
+              "max-w-[95vw] sm:max-w-5xl w-[95vw]",
               "p-2",
               "border-zinc-800",
               "bg-black/95",
-              "text-white"
+              "text-white",
+              "rounded-2xl",
+              "max-h-[88dvh]",
+              "fixed top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 bottom-auto"
             )}
           >
             <DialogTitle className="sr-only">

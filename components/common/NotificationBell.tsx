@@ -138,10 +138,12 @@ export function NotificationBell() {
 
             <DropdownMenuContent
                 align="end"
-                className="w-[calc(100vw-20px)] sm:w-96 p-0 overflow-hidden border-border bg-card rounded-xl shadow-lg animate-in zoom-in-95 duration-200"
+                sideOffset={8}
+                collisionPadding={12}
+                className="w-[calc(100vw-24px)] max-w-[calc(100vw-24px)] sm:max-w-md sm:w-96 p-0 overflow-hidden border-border bg-card rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200"
             >
                 <DropdownMenuLabel className="p-0">
-                    <div className="px-4 sm:px-5 py-4 flex justify-between items-center border-b border-border">
+                    <div className="px-4 sm:px-5 py-3.5 sm:py-4 flex justify-between items-center border-b border-border">
                         <div>
                             <p className="text-sm font-semibold text-foreground">Notifications</p>
                             {unreadCount > 0 && (
@@ -161,13 +163,13 @@ export function NotificationBell() {
 
                 <DropdownMenuSeparator className="m-0 opacity-50" />
 
-                <div className="max-h-[60vh] sm:max-h-[420px] overflow-y-auto no-scrollbar py-1">
+                <div className="max-h-[55dvh] sm:max-h-[420px] overflow-y-auto no-scrollbar py-1">
                     {notifications.length > 0 ? (
                         notifications.map((notif: any) => (
                             <DropdownMenuItem
                                 key={notif.id}
                                 className={cn(
-                                    "px-4 sm:px-5 py-3 sm:py-4 transition-colors cursor-pointer relative group flex items-start gap-3 sm:gap-4 mb-1 sm:mb-2 mx-1 rounded-2xl",
+                                    "px-3.5 sm:px-5 py-3 sm:py-4 transition-colors cursor-pointer relative group flex items-start gap-3 sm:gap-4 mb-1 sm:mb-2 mx-1 rounded-xl sm:rounded-2xl",
                                     getBgColor(notif)
                                 )}
                                 onClick={() => handleRedirect(notif)}

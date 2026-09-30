@@ -145,9 +145,9 @@ export function Navbar({ onMenuClick }: NavbarProps) {
           })}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-1">
-          <NotificationBell />
+        <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
           <ThemeSelector />
+          <NotificationBell />
 
           {user && (
             <DropdownMenu modal={false}>

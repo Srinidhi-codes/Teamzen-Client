@@ -23,7 +23,7 @@ export function PolicyPdfDialog({ open, onOpenChange, url, title, page }: Policy
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="flex h-[calc(100vh-8rem)] max-w-5xl flex-col gap-0 overflow-hidden p-0">
+            <DialogContent className="fixed top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 bottom-auto flex h-[85dvh] max-h-[90dvh] w-[95vw] max-w-5xl flex-col gap-0 overflow-hidden p-0 rounded-2xl border shadow-2xl">
                 <DialogHeader className="border-b border-border px-5 py-4 text-left">
                     <DialogTitle className="flex items-center gap-2 text-base">
                         <FileText className="h-4 w-4 text-muted-foreground" />

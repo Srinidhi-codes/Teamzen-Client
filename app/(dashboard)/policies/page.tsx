@@ -99,7 +99,7 @@ export default function PoliciesPage() {
             )}
 
             <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-                <DialogContent className="max-w-7xl w-[95vw] h-[90vh] sm:h-[85vh] flex flex-col p-0 overflow-hidden rounded-xl border shadow-lg">
+                <DialogContent className="fixed top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 bottom-auto max-w-7xl w-[95vw] h-[88dvh] sm:h-[85vh] max-h-[92dvh] flex flex-col p-0 overflow-hidden rounded-2xl border shadow-2xl">
                     <DialogHeader className="p-4 sm:p-6 pb-4 border-b bg-card flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <DialogTitle className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
