@@ -2,7 +2,7 @@
 
 import { useAttendanceMutations, useGraphQlAttendance } from "@/lib/graphql/attendance/attendanceHooks";
 import { useQuery } from "@apollo/client/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { format, parse, differenceInSeconds } from "date-fns";
 import { useRouter } from "next/navigation";
 import {
@@ -84,6 +84,7 @@ export default function AttendancePage() {
   const [mapTab, setMapTab] = useState<"live" | "checkin" | "checkout">("live");
   const [showMap, setShowMap] = useState(false);
   const [faceModal, setFaceModal] = useState<"enroll" | "verify-in" | "verify-out" | null>(null);
+  const activeFaceModeRef = useRef<"enroll" | "verify-in" | "verify-out" | null>(null);
   const [pendingCoords, setPendingCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [now, setNow] = useState(() => new Date());
 
@@ -219,11 +220,14 @@ export default function AttendancePage() {
               onClick: () => router.push("/profile?tab=security&face=enroll"),
             },
           });
+          activeFaceModeRef.current = "enroll";
           setFaceModal("enroll");
           return;
         }
         setPendingCoords(coords);
-        setFaceModal(type === "in" ? "verify-in" : "verify-out");
+        const nextMode = type === "in" ? "verify-in" : "verify-out";
+        activeFaceModeRef.current = nextMode;
+        setFaceModal(nextMode);
         return;
       }
 
@@ -287,10 +291,10 @@ export default function AttendancePage() {
         if (id) void uploadSelfie(String(id), "check_out", result.imageBase64);
         toast.success("Checked out with face verification.", { id: toastId });
       }
-      setPendingCoords(null);
       requestCurrentLocation();
     } catch (error: any) {
       toast.error(error?.message || "Attendance punch failed", { id: toastId });
+    } finally {
       setPendingCoords(null);
     }
   };
@@ -351,7 +355,10 @@ export default function AttendancePage() {
               variant="default"
               className="h-9 w-full sm:w-auto"
               disabled={enrollFaceLoading}
-              onClick={() => setFaceModal("enroll")}
+              onClick={() => {
+                activeFaceModeRef.current = "enroll";
+                setFaceModal("enroll");
+              }}
             >
               Enroll face
             </Button>
@@ -364,12 +371,13 @@ export default function AttendancePage() {
         mode={faceModal === "enroll" ? "enroll" : "verify"}
         enrolledDescriptor={enrolledDescriptor}
         onClose={() => {
+          activeFaceModeRef.current = null;
           setFaceModal(null);
           setPendingCoords(null);
         }}
         onSuccess={(result) => {
-          const mode = faceModal;
-          // Close camera UI immediately; finish enroll/punch in the background
+          const mode = activeFaceModeRef.current || faceModal;
+          activeFaceModeRef.current = null;
           setFaceModal(null);
 
           if (mode === "enroll") {
