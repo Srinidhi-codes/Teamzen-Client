@@ -39,5 +39,28 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "maskable",
       },
     ],
+    shortcuts: [
+      {
+        name: "Attendance",
+        short_name: "Attendance",
+        description: "Mark attendance and view check-ins",
+        url: "/attendance",
+        icons: [{ src: "/icons/icon-192x192.png", sizes: "192x192" }],
+      },
+      {
+        name: "Leaves",
+        short_name: "Leaves",
+        description: "Apply for leaves and check balance",
+        url: "/leaves",
+        icons: [{ src: "/icons/icon-192x192.png", sizes: "192x192" }],
+      },
+      {
+        name: "Payroll",
+        short_name: "Payroll",
+        description: "View salary slips and tax details",
+        url: "/payroll",
+        icons: [{ src: "/icons/icon-192x192.png", sizes: "192x192" }],
+      },
+    ],
   };
 }

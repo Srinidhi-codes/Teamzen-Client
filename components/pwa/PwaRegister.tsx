@@ -119,12 +119,26 @@ export function PwaRegister() {
       toast.success("Teamzen was installed successfully!");
     };
 
+    const handleOnline = () => {
+      toast.success("Back online. Connected to server.");
+    };
+
+    const handleOffline = () => {
+      toast.warning("You are offline. Showing cached workspace.", {
+        duration: 4000,
+      });
+    };
+
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleAppInstalled);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       window.removeEventListener("appinstalled", handleAppInstalled);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
