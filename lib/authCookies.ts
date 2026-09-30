@@ -14,8 +14,12 @@ export function wantsRememberMe(
   return cookie === "true" || cookie === "1";
 }
 
-function persistOpts(remember: boolean): { maxAge?: number } {
-  return remember ? { maxAge: REMEMBER_MAX_AGE } : {};
+function persistOpts(remember: boolean): { maxAge?: number; expires?: Date } {
+  if (!remember) return {};
+  return {
+    maxAge: REMEMBER_MAX_AGE,
+    expires: new Date(Date.now() + REMEMBER_MAX_AGE * 1000),
+  };
 }
 
 export function copyDjangoAuthCookies(
@@ -51,7 +55,11 @@ export function copyDjangoAuthCookies(
     const value = nameValue.substring(eqIdx + 1).trim();
 
     if (name === "access_token") {
-      nextResponse.cookies.set(name, value, { ...httpOnly, maxAge: ACCESS_MAX_AGE });
+      nextResponse.cookies.set(name, value, {
+        ...httpOnly,
+        maxAge: ACCESS_MAX_AGE,
+        expires: new Date(Date.now() + ACCESS_MAX_AGE * 1000),
+      });
       copiedAuth = true;
     } else if (name === "refresh_token") {
       nextResponse.cookies.set(name, value, { ...httpOnly, ...persist });
@@ -93,6 +101,7 @@ export function setRefreshedAuthCookies(
     nextResponse.cookies.set("access_token", data.access, {
       ...httpOnly,
       maxAge: ACCESS_MAX_AGE,
+      expires: new Date(Date.now() + ACCESS_MAX_AGE * 1000),
     });
   }
   if (data.refresh) {

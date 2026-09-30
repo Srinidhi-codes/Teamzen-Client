@@ -57,6 +57,7 @@ export async function proxy(request: NextRequest) {
                         'Content-Type': 'application/json',
                         'Cookie': cookieHeader,
                     },
+                    body: JSON.stringify({ refresh: refreshToken }),
                     credentials: 'include',
                 })
 
@@ -65,16 +66,24 @@ export async function proxy(request: NextRequest) {
                     const nextResponse = NextResponse.next()
                     setRefreshedAuthCookies(nextResponse, data, remember)
                     return nextResponse
+                } else if (response.status === 401) {
+                    // Truly expired or revoked refresh token
+                    const loginUrl = new URL('/login', request.url)
+                    const errResponse = NextResponse.redirect(loginUrl)
+                    clearAuthCookies(errResponse)
+                    return errResponse
                 }
             } catch (error) {
                 console.error('Token refresh failed in middleware:', error)
             }
         }
 
-        // No refresh token or refresh failed → redirect to login
+        // No refresh token or network error
         const loginUrl = new URL('/login', request.url)
         const response = NextResponse.redirect(loginUrl)
-        clearAuthCookies(response)
+        if (!refreshToken) {
+            clearAuthCookies(response)
+        }
         return response
     }
 

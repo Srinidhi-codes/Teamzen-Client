@@ -95,15 +95,38 @@ export const useAuth = () => {
 
 export const useTokenRefresh = () => {
   useEffect(() => {
-    // Refresh token every 25 minutes (before 30-minute expiry)
+    // 1. Proactively refresh token every 20 minutes (well before 30-minute expiry)
     const interval = setInterval(async () => {
       try {
         await refreshAuthToken();
       } catch (error) {
+        // ignore
       }
-    }, 25 * 60 * 1000); // 25 minutes
+    }, 20 * 60 * 1000);
 
-    return () => clearInterval(interval);
+    // 2. Proactively refresh when user wakes up device / returns to tab after hours away
+    let lastRefresh = Date.now();
+    const handleVisibilityOrFocus = async () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        if (Date.now() - lastRefresh > 5 * 60 * 1000) {
+          lastRefresh = Date.now();
+          try {
+            await refreshAuthToken();
+          } catch (error) {
+            // ignore
+          }
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+    window.addEventListener("focus", handleVisibilityOrFocus);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+    };
   }, []);
 };
 
