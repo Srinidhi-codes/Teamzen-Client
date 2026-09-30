@@ -9,6 +9,7 @@ import { StatsCard } from "@/components/common/Stats";
 import { Clock, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/common/Card";
+import { PageSkeleton } from "@/components/common/PageSkeleton";
 
 function displayName(user?: { firstName?: string; lastName?: string } | null) {
   if (!user) return "Team member";
@@ -74,10 +75,7 @@ export default function ApprovalsPage() {
 
       <Card title="Pending requests">
         {isLoading && !requests?.length ? (
-          <div className="flex flex-col items-center justify-center py-12 gap-3">
-            <div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-            <p className="text-sm text-muted-foreground">Loading…</p>
-          </div>
+          <PageSkeleton variant="list" />
         ) : pendingRequests?.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4">No pending approvals</p>
         ) : (

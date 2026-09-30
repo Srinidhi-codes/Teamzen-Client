@@ -1,0 +1,42 @@
+import type { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: "Teamzen - HRMS for modern teams",
+    short_name: "Teamzen",
+    description: "Attendance, leave, and payroll in one calm workforce workspace.",
+    start_url: "/",
+    id: "/",
+    display: "standalone",
+    orientation: "portrait-primary",
+    background_color: "#090a0f",
+    theme_color: "#090a0f",
+    categories: ["business", "productivity", "utilities"],
+    icons: [
+      {
+        src: "/icons/icon-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icons/icon-maskable-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "maskable",
+      },
+      {
+        src: "/icons/icon-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icons/icon-maskable-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
+    ],
+  };
+}

@@ -4,6 +4,7 @@ import { usePolicies } from "@/lib/api/hooks";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/common/PageHeader";
+import { PageSkeleton } from "@/components/common/PageSkeleton";
 
 import { Loader2, FileText, Maximize2, RotateCcw } from "lucide-react";
 import moment from "moment";
@@ -33,10 +34,7 @@ export default function PoliciesPage() {
             />
 
             {isLoading && !policies ? (
-                <div className="flex flex-col items-center justify-center p-12 space-y-3">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">Loading…</p>
-                </div>
+                <PageSkeleton variant="inline" />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {policies?.map((policy: any) => (
@@ -142,9 +140,8 @@ export default function PoliciesPage() {
                                 />
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2">
-                                <Loader2 className="w-6 h-6 animate-spin" />
-                                <p className="text-sm">Loading…</p>
+                            <div className="flex items-center justify-center h-full w-full p-4">
+                                <div className="w-full h-full rounded-lg bg-muted/30 animate-pulse border border-border/50" />
                             </div>
                         )}
                     </div>
