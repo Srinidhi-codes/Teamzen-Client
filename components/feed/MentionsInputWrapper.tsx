@@ -4,7 +4,7 @@ import React from 'react';
 import { MentionsInput, Mention } from 'react-mentions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-const defaultMentionStyle = {
+const defaultMentionStyle: any = {
   control: {
     backgroundColor: 'transparent',
     fontSize: 14,
