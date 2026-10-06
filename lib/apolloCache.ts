@@ -39,6 +39,7 @@ export const apolloCacheConfig: InMemoryCacheConfig = {
     AttendanceRecord: {
       keyFields: ["id"],
     },
+
   },
 };
 

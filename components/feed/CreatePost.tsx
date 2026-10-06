@@ -1,0 +1,161 @@
+import React, { useState } from 'react';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ImagePlus, Loader2 } from 'lucide-react';
+import { useFeedMutations } from '@/lib/graphql/feed/feedHooks';
+import { useUser } from '@/lib/api/hooks';
+import { toast } from 'sonner';
+import ConfirmationModal from '@/components/common/ConfirmationModal';
+import { RichTextEditor } from './RichTextEditor';
+
+export const CreatePost = () => {
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [errorModal, setErrorModal] = useState({
+    isOpen: false,
+    title: '',
+    description: '',
+  });
+  const { user } = useUser();
+  const { createPost, isCreatingPost } = useFeedMutations();
+
+  const handlePost = async () => {
+    if (!title.trim() && !content.trim()) {
+      setErrorModal({
+        isOpen: true,
+        title: 'Header and Body Required',
+        description: 'Please provide both a title (header) and body text for your post before publishing.',
+      });
+      return;
+    }
+
+    if (!title.trim()) {
+      setErrorModal({
+        isOpen: true,
+        title: 'Header Required',
+        description: 'Please enter a title (header) for your post before publishing.',
+      });
+      return;
+    }
+
+    if (!content.trim()) {
+      setErrorModal({
+        isOpen: true,
+        title: 'Body Required',
+        description: 'Please enter body text for your post before publishing.',
+      });
+      return;
+    }
+
+    try {
+      // Convert files to base64
+      const mediaB64 = await Promise.all(
+        selectedFiles.map((file) => {
+          return new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = error => reject(error);
+          });
+        })
+      );
+
+      await createPost({
+        variables: {
+          title,
+          content,
+          mediaB64: mediaB64.length > 0 ? mediaB64 : null,
+        }
+      });
+      setTitle('');
+      setContent('');
+      setSelectedFiles([]);
+      toast.success('Post created successfully!');
+    } catch (err) {
+      toast.error('Failed to create post');
+      console.error(err);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setSelectedFiles(Array.from(e.target.files));
+    }
+  };
+
+  return (
+    <>
+      <Card className="mb-6 shadow-sm border-gray-200/60 dark:border-gray-800">
+        <CardContent className="pt-6">
+          <div className="flex gap-4">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={user?.profilePictureUrl || (user as any)?.profilePicture} alt={user?.firstName} />
+              <AvatarFallback>{user?.firstName?.[0] || '?'}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 space-y-2">
+              <input
+                type="text"
+                placeholder="Post Title..."
+                className="w-full bg-transparent text-lg font-semibold focus:outline-none placeholder:text-gray-400 pb-2 border-b border-gray-100 dark:border-gray-800"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+              <RichTextEditor
+                placeholder="Share an update, milestone, or announcement..."
+                minHeight="120px"
+                value={content}
+                onChange={setContent}
+              />
+              {selectedFiles.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedFiles.map((f, i) => (
+                    <span key={i} className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
+                      {f.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="flex justify-between border-t py-3 border-gray-100 dark:border-gray-800">
+          <div>
+            <input 
+              type="file" 
+              multiple 
+              accept="image/*" 
+              id="media-upload" 
+              className="hidden" 
+              onChange={handleFileChange}
+            />
+            <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700" onClick={() => document.getElementById('media-upload')?.click()}>
+              <ImagePlus className="w-5 h-5 mr-2" />
+              Add Media
+            </Button>
+          </div>
+          <Button 
+            onClick={handlePost} 
+            disabled={isCreatingPost}
+            className="rounded-full px-6"
+          >
+            {isCreatingPost && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Post
+          </Button>
+        </CardFooter>
+      </Card>
+
+      <ConfirmationModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={() => setErrorModal(prev => ({ ...prev, isOpen: false }))}
+        title={errorModal.title}
+        description={errorModal.description}
+        confirmText="Got it"
+        variant="error"
+        hideCancel={true}
+      />
+    </>
+  );
+};

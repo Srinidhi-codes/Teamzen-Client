@@ -257,7 +257,7 @@ export function PwaRegister() {
     return (
       <aside
         aria-label="Install App"
-        className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-sm rounded-2xl border border-border/80 bg-card/95 p-3.5 shadow-2xl backdrop-blur-xl transition-all animate-in fade-in slide-in-from-bottom-4 sm:left-auto sm:right-6 sm:max-w-sm"
+        className="fixed bottom-[-70px] left-10 right-4 z-50 mx-auto max-w-sm rounded-2xl border border-border/80 bg-card/95 p-3.5 shadow-2xl backdrop-blur-xl transition-all animate-in fade-in slide-in-from-bottom-4 sm:left-auto sm:right-6 sm:max-w-sm"
       >
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
