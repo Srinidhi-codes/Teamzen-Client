@@ -73,7 +73,7 @@ export function useGraphQLChangePassword() {
 }
 
 export function useDirectoryUsers(search?: string) {
-  const { data, loading, error } = useQuery(GET_DIRECTORY_USERS, {
+  const { data, loading, error } = useQuery<any>(GET_DIRECTORY_USERS, {
     variables: { search },
     fetchPolicy: 'cache-first'
   });

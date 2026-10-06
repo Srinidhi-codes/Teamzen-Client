@@ -35,19 +35,19 @@ export const FeedLayout = () => {
         if (entries[0].isIntersecting && !loading && posts.length < total) {
           fetchMore({
             variables: { page: Math.ceil(posts.length / 10) + 1 },
-            updateQuery: (prev, { fetchMoreResult }) => {
+            updateQuery: (prev: any, { fetchMoreResult }: any) => {
               if (!fetchMoreResult) return prev;
               
               // Prevent duplicate posts by filtering
-              const existingIds = new Set(prev.posts.results.map((p: any) => p.id));
-              const newPosts = fetchMoreResult.posts.results.filter(
+              const existingIds = new Set((prev?.posts?.results || []).map((p: any) => p.id));
+              const newPosts = (fetchMoreResult?.posts?.results || []).filter(
                 (p: any) => !existingIds.has(p.id)
               );
 
               return {
                 posts: {
-                  ...fetchMoreResult.posts,
-                  results: [...(prev.posts.results || []), ...newPosts]
+                  ...fetchMoreResult?.posts,
+                  results: [...(prev?.posts?.results || []), ...newPosts]
                 }
               };
             }
@@ -85,8 +85,11 @@ export const FeedLayout = () => {
         <EmptyState 
           title="No posts yet" 
           description="Be the first to share an update with your team!" 
-          icon={<MessageCircle className="w-12 h-12 text-gray-300" />}
-        />
+        >
+          <div className="flex justify-center mt-2">
+            <MessageCircle className="w-10 h-10 text-gray-300" />
+          </div>
+        </EmptyState>
       ) : (
         <div className="space-y-4">
           {posts.map((post: any) => (

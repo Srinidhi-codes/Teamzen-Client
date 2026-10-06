@@ -13,7 +13,7 @@ import {
 } from "./mutations";
 
 export const useFeedPosts = (page = 1, pageSize = 10, authorId?: string) => {
-  const { data, loading, error, refetch, fetchMore } = useQuery(GET_POSTS, {
+  const { data, loading, error, refetch, fetchMore } = useQuery<any>(GET_POSTS, {
     variables: { page, pageSize, authorId },
     fetchPolicy: "cache-and-network",
   });
@@ -31,7 +31,7 @@ export const useFeedPosts = (page = 1, pageSize = 10, authorId?: string) => {
 const EMPTY_COMMENTS: any[] = [];
 
 export const usePostComments = (postId: string, skip: boolean = false) => {
-  const { data, loading, error, refetch, fetchMore } = useQuery(GET_POST_COMMENTS, {
+  const { data, loading, error, refetch, fetchMore } = useQuery<any>(GET_POST_COMMENTS, {
     variables: { postId, limit: 5, offset: 0 },
     skip: !postId || skip,
   });
@@ -47,7 +47,7 @@ export const usePostComments = (postId: string, skip: boolean = false) => {
 };
 
 export const useFeedMutations = () => {
-  const [createPost, { loading: isCreatingPost }] = useMutation(CREATE_POST, {
+  const [createPost, { loading: isCreatingPost }] = useMutation<any>(CREATE_POST, {
     update(cache, { data: { createPost } }) {
       cache.modify({
         fields: {
@@ -70,8 +70,8 @@ export const useFeedMutations = () => {
     }
   });
 
-  const [deletePost, { loading: isDeletingPost }] = useMutation(DELETE_POST, {
-    update(cache, { data: { deletePost } }, { variables }) {
+  const [deletePost, { loading: isDeletingPost }] = useMutation<any>(DELETE_POST, {
+    update(cache, { data: { deletePost } }, { variables }: any) {
       if (deletePost) {
         cache.modify({
           fields: {
@@ -89,8 +89,8 @@ export const useFeedMutations = () => {
     }
   });
 
-  const [togglePostLike] = useMutation(TOGGLE_POST_LIKE, {
-    update(cache, { data: { togglePostLike } }, { variables }) {
+  const [togglePostLike] = useMutation<any>(TOGGLE_POST_LIKE, {
+    update(cache, { data: { togglePostLike } }, { variables }: any) {
       if (variables?.postId) {
         cache.modify({
           id: cache.identify({ __typename: 'PostType', id: variables.postId }),
@@ -107,12 +107,12 @@ export const useFeedMutations = () => {
     }
   });
 
-  const [createComment, { loading: isCreatingComment }] = useMutation(CREATE_COMMENT);
+  const [createComment, { loading: isCreatingComment }] = useMutation<any>(CREATE_COMMENT);
 
-  const [deleteComment] = useMutation(DELETE_COMMENT);
+  const [deleteComment] = useMutation<any>(DELETE_COMMENT);
 
-  const [toggleCommentLike] = useMutation(TOGGLE_COMMENT_LIKE, {
-    update(cache, { data: { toggleCommentLike } }, { variables }) {
+  const [toggleCommentLike] = useMutation<any>(TOGGLE_COMMENT_LIKE, {
+    update(cache, { data: { toggleCommentLike } }, { variables }: any) {
       if (variables?.commentId) {
         cache.modify({
           id: cache.identify({ __typename: 'CommentType', id: variables.commentId }),
@@ -129,8 +129,8 @@ export const useFeedMutations = () => {
     }
   });
 
-  const [updatePost] = useMutation(UPDATE_POST);
-  const [updateComment] = useMutation(UPDATE_COMMENT);
+  const [updatePost] = useMutation<any>(UPDATE_POST);
+  const [updateComment] = useMutation<any>(UPDATE_COMMENT);
 
   return {
     createPost,
