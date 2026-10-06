@@ -89,8 +89,8 @@ export function useNotifications(
         onMessage: (event) => {
             const data = JSON.parse(event.data);
             // Process both personal and admin notifications
-            if (data.level === 'personal' || data.level === 'admin') {
-                if (!options.silent) {
+            if (data.level === 'personal' || data.level === 'admin' || data.level === 'feed_update') {
+                if (data.level !== 'feed_update' && !options.silent) {
                     const displayVerb = data.verb?.replace(/_self$/, "").replace(/_/g, " ");
                     const description = data.verb?.endsWith('_self') ? "Action confirmed" : `${data.actor?.firstName} ${displayVerb}`;
 

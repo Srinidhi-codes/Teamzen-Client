@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@apollo/client/react";
-import { GET_ME } from "./queries";
+import { GET_ME, GET_DIRECTORY_USERS } from "./queries";
 import { UPDATE_PROFILE, CHANGE_PASSWORD } from "./mutations";
 import { GraphQLUser } from "./types";
 
@@ -70,4 +70,17 @@ export function useGraphQLChangePassword() {
   };
 
   return { changePasswordAsync, isLoading: loading, error };
+}
+
+export function useDirectoryUsers(search?: string) {
+  const { data, loading, error } = useQuery(GET_DIRECTORY_USERS, {
+    variables: { search },
+    fetchPolicy: 'cache-first'
+  });
+
+  return {
+    users: data?.directoryUsers || [],
+    loading,
+    error
+  };
 }

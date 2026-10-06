@@ -149,3 +149,15 @@ export const GET_MY_LOGIN_HISTORY = gql`
     }
   }
 `;
+
+export const GET_DIRECTORY_USERS = gql`
+  query GetDirectoryUsers($search: String) {
+    directoryUsers(search: $search) {
+      id
+      firstName
+      lastName
+      profilePictureUrl
+      email
+    }
+  }
+`;

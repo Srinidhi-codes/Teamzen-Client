@@ -19,6 +19,7 @@ import {
   FileText,
   LogOut,
   X,
+  Network,
 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -40,6 +41,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, hideWhenInactive: true },
+  { name: "Feed", href: "/feed", icon: Network, hideWhenInactive: true },
   { name: "Team", href: "/team", icon: Users, hideWhenInactive: true },
   { name: "Leaves", href: "/leaves", icon: Calendar, hideWhenInactive: true },
   { name: "Attendance", href: "/attendance", icon: Clock, hideWhenInactive: true },
