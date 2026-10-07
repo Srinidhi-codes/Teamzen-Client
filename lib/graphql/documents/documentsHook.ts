@@ -10,19 +10,19 @@ import {
 
 export function useMyDocuments() {
   const issued = useQuery(MY_ISSUED_DOCUMENTS, {
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "cache-first",
   }) as any;
   const requests = useQuery(MY_DOCUMENT_REQUESTS, {
     variables: { status: null },
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "cache-first",
   }) as any;
   const uploads = useQuery(MY_VAULT_UPLOADS, {
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "cache-first",
   }) as any;
 
   const employeeRequests = useQuery(MY_EMPLOYEE_DOCUMENT_REQUESTS, {
     variables: { status: null },
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "cache-first",
   }) as any;
 
   return {

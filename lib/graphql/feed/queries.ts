@@ -10,6 +10,7 @@ export const GET_POSTS = gql`
         mediaUrls
         likesCount
         commentsCount
+        viewsCount
         createdAt
         hasLiked
         likers {

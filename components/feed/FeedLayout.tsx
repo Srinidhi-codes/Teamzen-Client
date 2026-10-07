@@ -4,6 +4,7 @@ import { PostCard } from './PostCard';
 import { useFeedPosts } from '@/lib/graphql/feed/feedHooks';
 import { Loader2, Plus } from 'lucide-react';
 import { EmptyState } from '@/components/common/EmptyState';
+import { PageSkeleton } from '@/components/common/PageSkeleton';
 import { useNotifications } from '@/lib/hooks/useNotifications';
 
 export const FeedLayout = () => {
@@ -78,7 +79,7 @@ export const FeedLayout = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-6">
+    <div className="mx-auto py-6">
       <CreatePost />
       
       {posts.length === 0 && !loading ? (
@@ -98,12 +99,17 @@ export const FeedLayout = () => {
         </div>
       )}
 
-      {loading && (
-        <div className="flex justify-center py-8">
-          <Loader2 className="w-8 h-8 animate-spin text-primary/60" />
+      {loading && posts.length === 0 && (
+        <div className="py-4">
+          <PageSkeleton variant="list" />
         </div>
       )}
 
+      {loading && posts.length > 0 && posts.length < total && (
+        <div className="py-4 flex justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        </div>
+      )}
       {/* Invisible div for Intersection Observer to detect scroll */}
       <div ref={observerTarget} className="h-4 w-full" />
 

@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { useNotifications } from "@/lib/hooks/useNotifications";
 import { Card } from "@/components/common/Card";
 import moment from "moment";
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/common/Badge";
 import { LeaveCalendar } from "@/components/leaves/LeaveCalendar";
@@ -545,8 +544,10 @@ export default function LeavesPage() {
             </div>
             <div className="rounded-xl border border-border bg-card overflow-hidden">
               {teamLeavesLoading ? (
-                <div className="p-8 flex justify-center">
-                  <LoadingSpinner />
+                <div className="flex gap-4 p-4 overflow-hidden">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="w-64 h-32 border border-border rounded-xl bg-muted/50 animate-pulse shrink-0" />
+                  ))}
                 </div>
               ) : teamLeavesData.length === 0 ? (
                 <EmptyState

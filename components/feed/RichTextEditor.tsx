@@ -1,22 +1,15 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { 
-  Bold, 
-  Italic, 
-  Strikethrough, 
-  Heading3, 
-  List, 
-  ListOrdered, 
-  Quote, 
-  Code, 
-  Link2, 
-  Smile, 
-  Eye, 
-  PenLine 
-} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useEditor, EditorContent, ReactRenderer } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
+import Mention from '@tiptap/extension-mention';
+import Image from '@tiptap/extension-image';
+import { Bold, Italic, Strikethrough, List, ListOrdered, Quote, Code, SquareTerminal, Smile, Image as ImageIcon, AtSign } from 'lucide-react';
+import tippy from 'tippy.js';
+import { MentionList } from './MentionList';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { RichContentRenderer } from './RichContentRenderer';
 
 interface RichTextEditorProps {
   value: string;
@@ -24,6 +17,7 @@ interface RichTextEditorProps {
   placeholder?: string;
   minHeight?: string;
   className?: string;
+  fetchMentions?: any;
 }
 
 const QUICK_EMOJIS = ['👍', '🎉', '🚀', '❤️', '👏', '🔥', '✨', '💡', '🙌', '🎯', '📢', '😊'];
@@ -32,247 +26,303 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
   onChange,
   placeholder = 'Write something...',
-  minHeight = '110px',
+  minHeight = '44px',
   className = '',
+  fetchMentions,
 }) => {
-  const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write');
   const [isEmojiOpen, setIsEmojiOpen] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const applyFormat = (prefix: string, suffix: string = '', defaultPlaceholder: string = '') => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
+  const editor = useEditor({
+    immediatelyRender: false,
+    extensions: [
+      StarterKit,
+      Placeholder.configure({
+        placeholder,
+      }),
+      Image.configure({
+        inline: true,
+        allowBase64: true,
+        HTMLAttributes: {
+          class: 'rounded-xl max-w-full my-4 border border-border/50 shadow-sm max-h-[500px] object-contain w-auto h-auto',
+        },
+      }),
+      Mention.configure({
+        HTMLAttributes: {
+          class: 'text-primary font-semibold',
+        },
+        suggestion: {
+          items: ({ query }) => {
+            return new Promise((resolve) => {
+              if (!fetchMentions) {
+                resolve([]);
+                return;
+              }
+              fetchMentions(query, (results: any) => resolve(results));
+            });
+          },
+          render: () => {
+            let component: ReactRenderer<any>;
+            let popup: any;
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = value.substring(start, end);
+            return {
+              onStart: (props) => {
+                component = new ReactRenderer(MentionList, {
+                  props,
+                  editor: props.editor,
+                });
+                if (!props.clientRect) return;
+                popup = tippy('body', {
+                  getReferenceClientRect: props.clientRect as any,
+                  appendTo: () => document.body,
+                  content: component.element,
+                  showOnCreate: true,
+                  interactive: true,
+                  trigger: 'manual',
+                  placement: 'bottom-start',
+                });
+              },
+              onUpdate(props) {
+                component.updateProps(props);
+                if (!props.clientRect) return;
+                popup[0].setProps({
+                  getReferenceClientRect: props.clientRect as any,
+                });
+              },
+              onKeyDown(props) {
+                if (props.event.key === 'Escape') {
+                  popup[0].hide();
+                  return true;
+                }
+                return component.ref?.onKeyDown(props) || false;
+              },
+              onExit() {
+                popup[0].destroy();
+                component.destroy();
+              },
+            };
+          },
+        },
+      }),
+    ],
+    content: value || '',
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+    },
+    editorProps: {
+      attributes: {
+        class: `prose prose-sm dark:prose-invert focus:outline-none w-full max-w-none ${className}`,
+        style: `min-height: ${minHeight}; padding: 12px;`,
+      },
+    },
+  });
 
-    const textToInsert = selectedText || defaultPlaceholder;
-    const replacement = `${prefix}${textToInsert}${suffix}`;
-    const newValue = value.substring(0, start) + replacement + value.substring(end);
-
-    onChange(newValue);
-
-    requestAnimationFrame(() => {
-      textarea.focus();
-      if (selectedText) {
-        textarea.setSelectionRange(start + prefix.length, start + prefix.length + selectedText.length);
-      } else {
-        textarea.setSelectionRange(start + prefix.length, start + prefix.length + defaultPlaceholder.length);
-      }
-    });
-  };
-
-  const applyLinePrefix = (prefix: string) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const lastNewline = value.lastIndexOf('\n', start - 1);
-    const lineStart = lastNewline === -1 ? 0 : lastNewline + 1;
-
-    const newValue = value.substring(0, lineStart) + prefix + value.substring(lineStart);
-    onChange(newValue);
-
-    requestAnimationFrame(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + prefix.length, start + prefix.length);
-    });
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.ctrlKey || e.metaKey) {
-      if (e.key.toLowerCase() === 'b') {
-        e.preventDefault();
-        applyFormat('**', '**', 'bold text');
-      } else if (e.key.toLowerCase() === 'i') {
-        e.preventDefault();
-        applyFormat('*', '*', 'italic text');
-      } else if (e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        applyFormat('[', '](https://)', 'link title');
+  useEffect(() => {
+    if (editor) {
+      if (!value && editor.getHTML() !== '<p></p>') {
+        editor.commands.setContent('');
       }
     }
-  };
+  }, [value, editor]);
+
+  if (!editor) {
+    return null;
+  }
 
   const insertEmoji = (emoji: string) => {
-    applyFormat(emoji, '', '');
+    editor.chain().focus().insertContent(emoji).run();
     setIsEmojiOpen(false);
   };
 
   return (
-    <div className={`rich-text-editor rounded-xl border border-border/80 bg-background overflow-hidden focus-within:ring-1 focus-within:ring-primary/40 focus-within:border-primary/50 transition-all ${className}`}>
-      {/* Top Header Toolbar */}
-      <div className="flex items-center justify-between border-b border-border/60 bg-muted/30 px-2 py-1.5 gap-2 flex-wrap text-muted-foreground">
-        {/* Formatting Actions (Only visible in 'write' mode) */}
-        {activeTab === 'write' ? (
-          <div className="flex items-center gap-0.5 flex-wrap">
-            <button
-              type="button"
-              onClick={() => applyFormat('**', '**', 'bold text')}
-              title="Bold (Ctrl+B)"
-              className="p-1.5 hover:bg-muted hover:text-foreground rounded-md transition-colors"
-            >
-              <Bold className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => applyFormat('*', '*', 'italic text')}
-              title="Italic (Ctrl+I)"
-              className="p-1.5 hover:bg-muted hover:text-foreground rounded-md transition-colors"
-            >
-              <Italic className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => applyFormat('~~', '~~', 'strikethrough')}
-              title="Strikethrough"
-              className="p-1.5 hover:bg-muted hover:text-foreground rounded-md transition-colors"
-            >
-              <Strikethrough className="w-4 h-4" />
-            </button>
-            <span className="w-px h-4 bg-border/80 mx-1" />
-            <button
-              type="button"
-              onClick={() => applyLinePrefix('### ')}
-              title="Heading 3"
-              className="p-1.5 hover:bg-muted hover:text-foreground rounded-md transition-colors"
-            >
-              <Heading3 className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => applyLinePrefix('- ')}
-              title="Bulleted List"
-              className="p-1.5 hover:bg-muted hover:text-foreground rounded-md transition-colors"
-            >
-              <List className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => applyLinePrefix('1. ')}
-              title="Numbered List"
-              className="p-1.5 hover:bg-muted hover:text-foreground rounded-md transition-colors"
-            >
-              <ListOrdered className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => applyLinePrefix('> ')}
-              title="Quote"
-              className="p-1.5 hover:bg-muted hover:text-foreground rounded-md transition-colors"
-            >
-              <Quote className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => applyFormat('`', '`', 'code')}
-              title="Inline Code"
-              className="p-1.5 hover:bg-muted hover:text-foreground rounded-md transition-colors"
-            >
-              <Code className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => applyFormat('[', '](https://)', 'link title')}
-              title="Link (Ctrl+K)"
-              className="p-1.5 hover:bg-muted hover:text-foreground rounded-md transition-colors"
-            >
-              <Link2 className="w-4 h-4" />
-            </button>
-
-            {/* Quick Emoji Picker */}
-            <Popover open={isEmojiOpen} onOpenChange={setIsEmojiOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  title="Insert Emoji"
-                  className="p-1.5 hover:bg-muted hover:text-foreground rounded-md transition-colors"
-                >
-                  <Smile className="w-4 h-4" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-56 p-2 shadow-lg" align="start">
-                <div className="grid grid-cols-6 gap-1 text-center">
-                  {QUICK_EMOJIS.map((emoji) => (
-                    <button
-                      key={emoji}
-                      type="button"
-                      onClick={() => insertEmoji(emoji)}
-                      className="p-1.5 text-base hover:bg-muted rounded-md transition-colors"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-        ) : (
-          <div className="text-xs text-muted-foreground font-medium px-2 py-0.5">
-            Rendered Preview
-          </div>
-        )}
-
-        {/* Edit / Preview Tabs Switcher */}
-        <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/40 ml-auto">
-          <button
-            type="button"
-            onClick={() => setActiveTab('write')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
-              activeTab === 'write'
-                ? 'bg-background text-foreground shadow-xs'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <PenLine className="w-3.5 h-3.5" />
-            <span>Write</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('preview')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
-              activeTab === 'preview'
-                ? 'bg-background text-foreground shadow-xs'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Eye className="w-3.5 h-3.5" />
-            <span>Preview</span>
-          </button>
-        </div>
+    <div className="w-full border rounded-xl overflow-hidden bg-background focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-all flex flex-col">
+      <style jsx global>{`
+        .tiptap p.is-editor-empty:first-child::before {
+          content: attr(data-placeholder);
+          float: left;
+          color: #adb5bd;
+          pointer-events: none;
+          height: 0;
+        }
+        .tiptap {
+           outline: none !important;
+        }
+        .tiptap p {
+           margin-top: 0.25em;
+           margin-bottom: 0.25em;
+        }
+        .tiptap p:first-child { margin-top: 0; }
+        .tiptap p:last-child { margin-bottom: 0; }
+        .tiptap ul {
+           list-style-type: disc;
+           padding-left: 1.5rem;
+           margin-top: 0.5rem;
+           margin-bottom: 0.5rem;
+        }
+        .tiptap ol {
+           list-style-type: decimal;
+           padding-left: 1.5rem;
+           margin-top: 0.5rem;
+           margin-bottom: 0.5rem;
+        }
+        .tiptap pre {
+           background-color: var(--color-muted);
+           padding: 0.75rem;
+           border-radius: 0.5rem;
+           font-family: monospace;
+           margin-top: 0.5rem;
+           margin-bottom: 0.5rem;
+           overflow-x: auto;
+        }
+        .tiptap code {
+           background-color: var(--color-muted);
+           padding: 0.125rem 0.25rem;
+           border-radius: 0.25rem;
+           font-family: monospace;
+           font-size: 0.875em;
+        }
+        .tiptap pre code {
+           background-color: transparent;
+           padding: 0;
+        }
+        .tiptap blockquote {
+           border-left: 3px solid var(--color-primary);
+           padding-left: 1rem;
+           margin-left: 0;
+           margin-right: 0;
+           font-style: italic;
+           color: var(--color-muted-foreground);
+        }
+      `}</style>
+      <div className="max-h-[300px] overflow-y-auto">
+        <EditorContent editor={editor} className="w-full h-full" />
       </div>
-
-      {/* Editor Body */}
-      {activeTab === 'write' ? (
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          style={{ minHeight }}
-          className="w-full resize-none border-0 focus:outline-none p-3 text-sm bg-transparent text-foreground placeholder:text-muted-foreground/60 leading-relaxed font-sans"
-        />
-      ) : (
-        <div 
-          style={{ minHeight }} 
-          className="p-3.5 overflow-y-auto bg-muted/10 border-t-0"
+      
+      {/* Sleek Toolbar pinned to the bottom */}
+      <div className="p-2 border-t bg-muted/20 flex items-center gap-1 flex-wrap shrink-0">
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleBold().run()}
+          className={`p-1.5 rounded-md transition-colors ${editor.isActive('bold') ? 'bg-primary/10 text-primary' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+          title="Bold"
         >
-          {value.trim() ? (
-            <RichContentRenderer content={value} />
-          ) : (
-            <p className="text-xs text-muted-foreground italic">
-              Nothing to preview yet. Type something in the Write tab to see it formatted here.
-            </p>
-          )}
-        </div>
-      )}
+          <Bold className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          className={`p-1.5 rounded-md transition-colors ${editor.isActive('italic') ? 'bg-primary/10 text-primary' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+          title="Italic"
+        >
+          <Italic className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleStrike().run()}
+          className={`p-1.5 rounded-md transition-colors ${editor.isActive('strike') ? 'bg-primary/10 text-primary' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+          title="Strikethrough"
+        >
+          <Strikethrough className="w-4 h-4" />
+        </button>
+        <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1" />
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          className={`p-1.5 rounded-md transition-colors ${editor.isActive('bulletList') ? 'bg-primary/10 text-primary' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+          title="Bullet List"
+        >
+          <List className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          className={`p-1.5 rounded-md transition-colors ${editor.isActive('orderedList') ? 'bg-primary/10 text-primary' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+          title="Numbered List"
+        >
+          <ListOrdered className="w-4 h-4" />
+        </button>
+        <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1" />
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          className={`p-1.5 rounded-md transition-colors ${editor.isActive('blockquote') ? 'bg-primary/10 text-primary' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+          title="Quote"
+        >
+          <Quote className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleCode().run()}
+          className={`p-1.5 rounded-md transition-colors ${editor.isActive('code') ? 'bg-primary/10 text-primary' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+          title="Code"
+        >
+          <Code className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+          className={`p-1.5 rounded-md transition-colors ${editor.isActive('codeBlock') ? 'bg-primary/10 text-primary' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+          title="Code Block"
+        >
+          <SquareTerminal className="w-4 h-4" />
+        </button>
+        <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1" />
+        
+        <button
+          type="button"
+          onClick={() => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = () => {
+              if (input.files?.length) {
+                const file = input.files[0];
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                  editor.chain().focus().setImage({ src: reader.result as string }).run();
+                };
+              }
+            };
+            input.click();
+          }}
+          className="p-1.5 rounded-md transition-colors text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+          title="Insert Image"
+        >
+          <ImageIcon className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().insertContent('@').run()}
+          className="p-1.5 rounded-md transition-colors text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+          title="Mention someone"
+        >
+          <AtSign className="w-4 h-4" />
+        </button>
 
-      {/* Footer hint */}
-      <div className="flex items-center justify-between px-3 py-1 bg-muted/20 border-t border-border/40 text-[11px] text-muted-foreground/70">
-        <span>Styling supported: **bold**, *italic*, # headings, - lists, `code`, &gt; quotes</span>
-        <span>{value.length} chars</span>
+        <Popover open={isEmojiOpen} onOpenChange={setIsEmojiOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="p-1.5 rounded-md transition-colors text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+              title="Insert Emoji"
+            >
+              <Smile className="w-4 h-4" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[280px] p-2" align="start">
+            <div className="grid grid-cols-6 gap-1">
+              {QUICK_EMOJIS.map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => insertEmoji(emoji)}
+                  className="p-2 text-xl hover:bg-muted rounded-md transition-colors"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );

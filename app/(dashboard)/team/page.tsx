@@ -521,21 +521,21 @@ export default function TeamPage() {
         actions={
           <div className="flex w-full items-center justify-between gap-4 rounded-xl border border-border bg-background/70 px-4 py-3 sm:w-auto">
             <div className="flex flex-1 flex-col items-center justify-center text-center">
-              <p className="text-[11px] font-medium text-muted-foreground">Present</p>
+              <p className="text-[11px] text-nowrap font-medium text-muted-foreground">Present</p>
               <p className="text-xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
                 {presentToday.length}
               </p>
             </div>
             <div className="h-8 w-px bg-border" />
             <div className="flex flex-1 flex-col items-center justify-center text-center">
-              <p className="text-[11px] font-medium text-muted-foreground">On leave</p>
+              <p className="text-[11px] text-nowrap font-medium text-muted-foreground">On leave</p>
               <p className="text-xl font-semibold tabular-nums text-red-600 dark:text-red-400">
                 {absentToday.length}
               </p>
             </div>
             <div className="h-8 w-px bg-border" />
             <div className="flex flex-1 flex-col items-center justify-center text-center">
-              <p className="text-[11px] font-medium text-muted-foreground">Out today</p>
+              <p className="text-[11px] text-nowrap font-medium text-muted-foreground">Out today</p>
               <p className="text-xl font-semibold tabular-nums">{awayToday.length}</p>
             </div>
           </div>

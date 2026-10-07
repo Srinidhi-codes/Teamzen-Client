@@ -8,6 +8,8 @@ import { useUser } from '@/lib/api/hooks';
 import { toast } from 'sonner';
 import ConfirmationModal from '@/components/common/ConfirmationModal';
 import { RichTextEditor } from './RichTextEditor';
+import { useApolloClient } from '@apollo/client/react';
+import { GET_DIRECTORY_USERS } from '@/lib/graphql/users/queries';
 
 export const CreatePost = () => {
   const [title, setTitle] = useState('');
@@ -20,6 +22,25 @@ export const CreatePost = () => {
   });
   const { user } = useUser();
   const { createPost, isCreatingPost } = useFeedMutations();
+  const client = useApolloClient();
+
+  const fetchMentions = async (query: string, callback: any) => {
+    try {
+      const { data } = await client.query({
+        query: GET_DIRECTORY_USERS,
+        variables: { search: query }
+      });
+      const results = ((data as any)?.directoryUsers || []).map((u: any) => ({
+        id: u?.id || Math.random().toString(),
+        display: `${u?.firstName || ''} ${u?.lastName || ''}`.trim() || 'User',
+        avatar: u?.profilePictureUrl,
+        email: u?.email
+      }));
+      callback(results);
+    } catch (e) {
+      callback([]);
+    }
+  };
 
   const handlePost = async () => {
     if (!title.trim() && !content.trim()) {
@@ -40,17 +61,19 @@ export const CreatePost = () => {
       return;
     }
 
-    if (!content.trim()) {
+    const strippedContent = content.replace(/<[^>]*>?/gm, '').trim();
+    const hasImage = content.includes('<img');
+
+    if ((!content.trim() || !strippedContent) && !hasImage) {
       setErrorModal({
         isOpen: true,
         title: 'Body Required',
-        description: 'Please enter body text for your post before publishing.',
+        description: 'Please enter body text or an image for your post before publishing.',
       });
       return;
     }
 
     try {
-      // Convert files to base64
       const mediaB64 = await Promise.all(
         selectedFiles.map((file) => {
           return new Promise<string>((resolve, reject) => {
@@ -89,36 +112,35 @@ export const CreatePost = () => {
     <>
       <Card className="mb-6 shadow-sm border-gray-200/60 dark:border-gray-800">
         <CardContent className="pt-6">
-          <div className="flex gap-4">
+          <div className="flex gap-4 mb-4">
             <Avatar className="h-10 w-10">
               <AvatarImage src={user?.profilePictureUrl || (user as any)?.profilePicture} alt={user?.firstName} />
               <AvatarFallback>{user?.firstName?.[0] || '?'}</AvatarFallback>
             </Avatar>
-            <div className="flex-1 space-y-2">
-              <input
-                type="text"
-                placeholder="Post Title..."
-                className="w-full bg-transparent text-lg font-semibold focus:outline-none placeholder:text-gray-400 pb-2 border-b border-gray-100 dark:border-gray-800"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-              <RichTextEditor
-                placeholder="Share an update, milestone, or announcement..."
-                minHeight="120px"
-                value={content}
-                onChange={setContent}
-              />
-              {selectedFiles.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedFiles.map((f, i) => (
-                    <span key={i} className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
-                      {f.name}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
+            <input
+              type="text"
+              placeholder="Post Title..."
+              className="flex-1 bg-transparent text-lg font-semibold focus:outline-none placeholder:text-gray-400 pb-2 border-b border-gray-100 dark:border-gray-800"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
           </div>
+          <RichTextEditor
+            placeholder="Share an update, milestone, or announcement..."
+            value={content}
+            onChange={setContent}
+            fetchMentions={fetchMentions}
+            minHeight="120px"
+          />
+          {selectedFiles.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-4">
+              {selectedFiles.map((f, i) => (
+                <span key={i} className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
+                  {f.name}
+                </span>
+              ))}
+            </div>
+          )}
         </CardContent>
         <CardFooter className="flex justify-between border-t py-3 border-gray-100 dark:border-gray-800">
           <div>

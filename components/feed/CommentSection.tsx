@@ -16,9 +16,16 @@ import { useDirectoryUsers } from '@/lib/graphql/users/usersHooks';
 
 const MentionsInputWrapper = dynamic(() => import('./MentionsInputWrapper'), { ssr: false }) as any;
 
+const flattenReplies = (replies: any[] = []): any[] => {
+  return replies.reduce((acc: any[], reply: any) => {
+    return [...acc, reply, ...flattenReplies(reply.replies || [])];
+  }, []);
+};
+
 const CommentItem = ({ comment, postId, depth = 0, fetchMentions }: any) => {
   const { user } = useUser();
   const [isReplying, setIsReplying] = useState(false);
+  const [showAllReplies, setShowAllReplies] = useState(false);
   const [replyContent, setReplyContent] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
@@ -92,6 +99,18 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions }: any) => {
   // Format mentions to be bolded or colored
   const renderContent = (contentStr: string) => {
     if (!contentStr) return null;
+    
+    // Tiptap outputs HTML, so if it looks like HTML, render it directly
+    if (contentStr.includes('<p>') || contentStr.includes('data-type="mention"')) {
+      return (
+        <div 
+          className="tiptap tiptap-content text-sm"
+          dangerouslySetInnerHTML={{ __html: contentStr }}
+        />
+      );
+    }
+
+    // Fallback for old react-mentions style @[Name](ID)
     const parts = contentStr.split(/(@\[[^\]]+\]\([^)]+\))/g);
     return parts.map((part, i) => {
       const match = part.match(/@\[([^\]]+)\]\(([^)]+)\)/);
@@ -102,35 +121,36 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions }: any) => {
     });
   };
 
-  const indentClass = depth === 0 
-    ? '' 
-    : depth === 1 
-      ? 'ml-8 border-l-2 border-gray-200 dark:border-gray-700 pl-3' 
-      : depth === 2 
-        ? 'ml-6 border-l-2 border-gray-200 dark:border-gray-700 pl-3' 
-        : 'ml-4 border-l-2 border-gray-200 dark:border-gray-700 pl-2';
+  const isTopLevel = depth === 0;
+  const avatarSize = isTopLevel ? "h-8 w-8 sm:h-10 sm:w-10 mt-1" : "h-6 w-6 sm:h-8 sm:w-8 mt-1";
+  const allReplies = isTopLevel ? flattenReplies(comment.replies || []) : [];
 
   return (
-    <div className={`flex gap-3 mt-4 ${indentClass}`}>
-      <Avatar className="h-8 w-8 mt-1">
+    <div className={`flex gap-2 sm:gap-3 mt-3 sm:mt-4 relative w-full`}>
+      {/* Thread line connecting avatar to replies */}
+      {isTopLevel && allReplies.length > 0 && (
+        <div className="absolute left-4 sm:left-5 top-10 sm:top-12 bottom-0 w-px bg-gray-200 dark:bg-gray-700" />
+      )}
+      
+      <Avatar className={`shrink-0 ${avatarSize}`}>
         <AvatarImage src={comment.author.profilePictureUrl} className="object-cover" />
         <AvatarFallback>{comment.author.firstName?.[0]}</AvatarFallback>
       </Avatar>
       
-      <div className="flex-1">
-        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl px-4 py-2.5 inline-block w-full">
+      <div className="flex-1 min-w-0">
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 inline-block max-w-full">
           <div className="flex items-center justify-between gap-2">
-            <span className="font-semibold text-sm">
+            <span className="font-semibold text-xs sm:text-sm truncate">
               {comment.author.firstName} {comment.author.lastName}
             </span>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[10px] sm:text-xs text-gray-500 whitespace-nowrap">
                 {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
               </span>
               {isOwner && (
                 <DropdownMenu>
                   <DropdownMenuTrigger className="text-gray-400 hover:text-gray-600 focus:outline-none">
-                    <MoreHorizontal className="w-4 h-4" />
+                    <MoreHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => setIsEditing(!isEditing)}>
@@ -150,7 +170,7 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions }: any) => {
                 value={editContent}
                 onChange={(e: any) => setEditContent(e.target.value)}
                 placeholder="Edit your comment..."
-                className="w-full bg-white dark:bg-gray-900 border rounded-xl min-h-[40px] pt-1"
+                className="w-full bg-white dark:bg-gray-900 border rounded-xl min-h-[40px] pt-1 text-sm"
                 fetchMentions={fetchMentions}
               />
               <div className="flex gap-2 mt-2 justify-end">
@@ -159,13 +179,13 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions }: any) => {
               </div>
             </div>
           ) : (
-            <p className="text-sm mt-1 text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+            <div className="text-xs sm:text-sm mt-1 text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words">
               {renderContent(comment.content)}
-            </p>
+            </div>
           )}
         </div>
         
-        <div className="flex items-center gap-4 mt-1 ml-2 text-xs font-medium text-gray-500">
+        <div className="flex items-center gap-4 mt-1 ml-1 sm:ml-2 text-xs font-medium text-gray-500">
           <button 
             onClick={handleLike}
             className={`flex items-center gap-1 hover:text-red-500 transition-colors ${comment.hasLiked ? 'text-red-500' : ''}`}
@@ -183,33 +203,52 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions }: any) => {
         </div>
 
         {isReplying && (
-          <div className="flex gap-2 mt-3 items-start relative">
-            <Avatar className="h-8 w-8">
+          <div className="flex gap-2 mt-2 items-start relative w-full">
+            <Avatar className="h-6 w-6 sm:h-8 sm:w-8 mt-1 shrink-0">
               <AvatarImage src={user?.profilePictureUrl || (user as any)?.profilePicture} className="object-cover" />
               <AvatarFallback>{user?.firstName?.[0]}</AvatarFallback>
             </Avatar>
-            <div className="flex-1 border rounded-2xl px-3 py-1 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 min-h-[40px] pt-2">
+            <div className="flex-1 border rounded-2xl px-2 sm:px-3 py-1 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 min-h-[36px] sm:min-h-[40px] pt-1.5 sm:pt-2">
               <MentionsInputWrapper
                 value={replyContent}
                 onChange={(e: any) => setReplyContent(e.target.value)}
-                placeholder="Write a reply... Use @ to tag someone"
-                className="w-full h-full"
+                placeholder="Write a reply..."
+                className="w-full h-full text-xs sm:text-sm"
                 fetchMentions={fetchMentions}
               />
             </div>
             <button 
               onClick={handleReply}
-              className="text-primary hover:text-primary/80 mt-2 p-1 bg-primary/10 rounded-full"
+              className="text-primary hover:text-primary/80 mt-1 sm:mt-2 p-1.5 bg-primary/10 rounded-full shrink-0"
               disabled={!replyContent.trim()}
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           </div>
         )}
 
-        {comment.replies?.map((reply: any) => (
-          <CommentItem key={reply.id} comment={reply} postId={postId} depth={depth + 1} fetchMentions={fetchMentions} />
-        ))}
+        {isTopLevel && allReplies.length > 0 && (
+          <div className="mt-2 flex flex-col gap-1 w-full">
+            {(showAllReplies ? allReplies : allReplies.slice(0, 2)).map((reply: any) => (
+              <CommentItem 
+                key={reply.id} 
+                comment={reply} 
+                postId={postId} 
+                depth={1} 
+                fetchMentions={fetchMentions} 
+              />
+            ))}
+            {!showAllReplies && allReplies.length > 2 && (
+              <button 
+                onClick={() => setShowAllReplies(true)}
+                className="text-[11px] sm:text-xs text-primary font-medium hover:underline text-left mt-1 ml-1 sm:ml-2 flex items-center gap-1"
+              >
+                <div className="w-6 h-px bg-border inline-block mr-1"></div>
+                View {allReplies.length - 2} more {allReplies.length - 2 === 1 ? 'reply' : 'replies'}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -325,26 +364,26 @@ export const CommentSection = ({ postId, isExpanded, commentsCount = 0 }: { post
     <div className="border-t border-gray-100 dark:border-gray-800 pt-4 mt-4 animate-in fade-in slide-in-from-top-4 duration-300">
       
       {/* New Comment Input */}
-      <div className="flex gap-3 mb-6 items-start relative">
-        <Avatar className="h-8 w-8 mt-1">
+      <div className="flex gap-2 sm:gap-3 mb-4 sm:mb-6 items-start relative w-full">
+        <Avatar className="h-8 w-8 sm:h-10 sm:w-10 mt-1 shrink-0">
           <AvatarImage src={user?.profilePictureUrl || (user as any)?.profilePicture} className="object-cover" />
           <AvatarFallback>{user?.firstName?.[0] || 'U'}</AvatarFallback>
         </Avatar>
-        <div className="flex-1 border rounded-2xl px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 min-h-[44px] relative group pr-16">
+        <div className="flex-1 border rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 min-h-[40px] sm:min-h-[44px] relative group pr-12 sm:pr-14">
           <MentionsInputWrapper
             value={content}
             onChange={(e: any) => setContent(e.target.value)}
-            placeholder="Write a comment... Use @ to tag someone"
-            className="w-full h-full"
+            placeholder="Write a comment..."
+            className="w-full h-full text-xs sm:text-sm pt-0.5 sm:pt-0"
             fetchMentions={fetchMentions}
           />
           
           <button 
             disabled={!content.trim() || isCreatingComment}
             onClick={handleComment}
-            className="absolute right-4 top-2 text-primary hover:text-primary/80 disabled:opacity-50 p-1.5 bg-primary/10 rounded-full"
+            className="absolute right-2 sm:right-3 top-1.5 sm:top-2 text-primary hover:text-primary/80 disabled:opacity-50 p-1.5 sm:p-2 bg-primary/10 rounded-full shrink-0"
           >
-            {isCreatingComment ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            {isCreatingComment ? <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
           </button>
         </div>
       </div>

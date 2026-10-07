@@ -1,118 +1,122 @@
 'use client';
 
-import React from 'react';
-import { MentionsInput, Mention } from 'react-mentions';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
-const defaultMentionStyle: any = {
-  control: {
-    backgroundColor: 'transparent',
-    fontSize: 14,
-    fontWeight: 'normal',
-  },
-  '&multiLine': {
-    control: {
-      fontFamily: 'inherit',
-    },
-    highlighter: {
-      padding: 0,
-      margin: 0,
-      border: 'none',
-      boxSizing: 'border-box',
-      lineHeight: '1.5',
-    },
-    input: {
-      padding: 0,
-      margin: 0,
-      border: 'none',
-      outline: 'none',
-      boxSizing: 'border-box',
-      lineHeight: '1.5',
-    },
-  },
-  '&singleLine': {
-    display: 'inline-block',
-    width: 180,
-    highlighter: {
-      padding: 1,
-      border: '2px inset transparent',
-    },
-    input: {
-      padding: 1,
-      border: '2px inset',
-    },
-  },
-  suggestions: {
-    list: {
-      backgroundColor: 'var(--popover)',
-      color: 'var(--popover-foreground)',
-      border: '1px solid var(--border)',
-      fontSize: 14,
-      borderRadius: '8px',
-      overflow: 'auto',
-      maxHeight: '200px',
-      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
-    },
-    item: {
-      padding: '8px 12px',
-      borderBottom: '1px solid var(--border)',
-      '&focused': {
-        backgroundColor: 'var(--accent)',
-        color: 'var(--accent-foreground)',
-      },
-    },
-  },
-};
-
-const renderSuggestion = (suggestion: any) => (
-  <div className="flex items-center gap-3">
-    <Avatar className="h-8 w-8">
-      <AvatarImage src={suggestion.avatar} className="object-cover" />
-      <AvatarFallback>{suggestion.display[0]}</AvatarFallback>
-    </Avatar>
-    <div className="flex flex-col">
-      <span className="text-sm font-medium">{suggestion.display}</span>
-      {suggestion.email && (
-        <span className="text-xs text-muted-foreground">{suggestion.email}</span>
-      )}
-    </div>
-  </div>
-);
+import React, { useEffect } from 'react';
+import { useEditor, EditorContent, ReactRenderer } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
+import Mention from '@tiptap/extension-mention';
+import tippy from 'tippy.js';
+import { MentionList } from './MentionList';
 
 export default function MentionsInputWrapper({ value, onChange, placeholder, className, fetchMentions }: any) {
+  const editor = useEditor({
+    immediatelyRender: false,
+    extensions: [
+      StarterKit,
+      Placeholder.configure({
+        placeholder: placeholder || 'Write something...',
+      }),
+      Mention.configure({
+        HTMLAttributes: {
+          class: 'text-primary font-semibold',
+        },
+        suggestion: {
+          items: ({ query }) => {
+            return new Promise((resolve) => {
+              if (!fetchMentions) {
+                resolve([]);
+                return;
+              }
+              fetchMentions(query, (results: any) => resolve(results));
+            });
+          },
+          render: () => {
+            let component: ReactRenderer<any>;
+            let popup: any;
+
+            return {
+              onStart: (props) => {
+                component = new ReactRenderer(MentionList, {
+                  props,
+                  editor: props.editor,
+                });
+
+                if (!props.clientRect) {
+                  return;
+                }
+
+                popup = tippy('body', {
+                  getReferenceClientRect: props.clientRect as any,
+                  appendTo: () => document.body,
+                  content: component.element,
+                  showOnCreate: true,
+                  interactive: true,
+                  trigger: 'manual',
+                  placement: 'bottom-start',
+                });
+              },
+              onUpdate(props) {
+                component.updateProps(props);
+                if (!props.clientRect) {
+                  return;
+                }
+                popup[0].setProps({
+                  getReferenceClientRect: props.clientRect as any,
+                });
+              },
+              onKeyDown(props) {
+                if (props.event.key === 'Escape') {
+                  popup[0].hide();
+                  return true;
+                }
+                return component.ref?.onKeyDown(props) || false;
+              },
+              onExit() {
+                popup[0].destroy();
+                component.destroy();
+              },
+            };
+          },
+        },
+      }),
+    ],
+    content: value || '',
+    onUpdate: ({ editor }) => {
+      onChange({ target: { value: editor.getHTML() } });
+    },
+    editorProps: {
+      attributes: {
+        class: `prose prose-sm dark:prose-invert focus:outline-none min-h-[40px] max-h-[300px] overflow-y-auto ${className || ''}`,
+      },
+    },
+  });
+
+  useEffect(() => {
+    if (editor) {
+      if (!value && editor.getHTML() !== '<p></p>') {
+        editor.commands.setContent('');
+      }
+    }
+  }, [value, editor]);
+
   return (
-    <>
+    <div className="tiptap-wrapper w-full h-full relative">
       <style jsx global>{`
-        .mentions-wrapper textarea,
-        .mentions-wrapper .react-mentions__highlighter {
-          margin: 0 !important;
-          padding: 0 !important;
-          line-height: 1.5 !important;
-          font-family: inherit !important;
-          font-size: 14px !important;
-          letter-spacing: normal !important;
-          box-sizing: border-box !important;
-          border: none !important;
+        .tiptap p.is-editor-empty:first-child::before {
+          content: attr(data-placeholder);
+          float: left;
+          color: #adb5bd;
+          pointer-events: none;
+          height: 0;
+        }
+        .tiptap {
+           outline: none !important;
+        }
+        .tiptap p {
+           margin: 0;
         }
       `}</style>
-      <MentionsInput
-        value={value || ''}
-        onChange={onChange}
-        style={defaultMentionStyle}
-        placeholder={placeholder}
-        className={`mentions-wrapper ${className}`}
-        allowSuggestionsAboveCursor
-      >
-        <Mention
-          trigger="@"
-          data={fetchMentions}
-          markup="@[__display__](__id__)"
-          appendSpaceOnAdd={true}
-          renderSuggestion={renderSuggestion}
-          displayTransform={(id: string, display: string) => `@${display}`}
-          style={{ backgroundColor: 'rgba(59, 130, 246, 0.25)', borderRadius: '4px', color: 'transparent' }}
-        />
-      </MentionsInput>
-    </>
+      <EditorContent editor={editor} className="w-full h-full" />
+    </div>
   );
 }

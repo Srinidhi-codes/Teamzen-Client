@@ -68,7 +68,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
       console.error("Logout failed:", error);
     } finally {
       logoutUser();
-      localStorage.clear();
+      localStorage.removeItem('payroll-app-storage');
       window.location.href = "/login";
     }
   };
@@ -203,7 +203,12 @@ export function Navbar({ onMenuClick }: NavbarProps) {
                 {(user.role === "admin" || user.role === "manager" || user.role === "hr") && (
                   <DropdownMenuItem asChild>
                     <a
-                      href={process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001/dashboard"}
+                      href={
+                        process.env.NEXT_PUBLIC_ADMIN_URL ||
+                        (typeof window !== "undefined"
+                          ? `${window.location.origin.replace("3000", "3001")}/dashboard`
+                          : "http://localhost:3001/dashboard")
+                      }
                       className="flex cursor-pointer items-center gap-2"
                     >
                       <ExternalLink className="h-4 w-4" />

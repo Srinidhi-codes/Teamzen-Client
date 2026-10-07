@@ -1,6 +1,7 @@
 import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Pagination } from "@/components/common/Pagination";
+import { PageSkeleton } from "@/components/common/PageSkeleton";
 
 export interface Column<T = any> {
   key: string;
@@ -48,9 +49,8 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center space-y-4 py-32">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
-        <p className="text-sm text-muted-foreground">Loading…</p>
+      <div className="flex flex-col items-center justify-center space-y-4 py-8 w-full">
+        <PageSkeleton variant="list" />
       </div>
     );
   }

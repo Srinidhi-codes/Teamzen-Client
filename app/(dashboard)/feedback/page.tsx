@@ -6,6 +6,7 @@ import { FEEDBACK_LIST } from "@/lib/graphql/feedback/queries";
 import { CREATE_FEEDBACK } from "@/lib/graphql/feedback/mutations";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { PageHeader } from "@/components/common/PageHeader";
+import { PageSkeleton } from "@/components/common/PageSkeleton";
 import { FormInput } from "@/components/common/FormInput";
 import { FormTextarea } from "@/components/common/FormTextArea";
 import { FormSelect } from "@/components/common/FormSelect";
@@ -262,17 +263,22 @@ export default function FeedbackPage() {
       )}
 
       {(tab === "mine" || tab === "org") && (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+        <div className={cn("grid gap-4", items.length > 0 || loading ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]" : "lg:grid-cols-1")}>
           <div className="overflow-hidden rounded-xl border border-border bg-card">
             <div className="border-b border-border px-4 py-3">
               <h3 className="text-sm font-semibold">
                 {tab === "org" ? "Admin updates" : "Your submissions"}
               </h3>
-              <p className="text-xs text-muted-foreground">
-                {loading ? "Loading…" : `${items.length} items`}
+              <p className="text-xs text-muted-foreground min-h-[16px]">
+                {!loading && `${items.length} ${items.length === 1 ? 'item' : 'items'}`}
               </p>
             </div>
             <div className="max-h-[65vh] divide-y divide-border overflow-y-auto">
+              {loading && (
+                <div className="p-4">
+                  <PageSkeleton variant="list" />
+                </div>
+              )}
               {!loading && items.length === 0 && (
                 <EmptyState
                   src={EmptyImages.feedback}
@@ -310,8 +316,9 @@ export default function FeedbackPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-5">
-            {!selected ? (
+          {(items.length > 0 || loading) && (
+            <div className="rounded-xl border border-border bg-card p-5">
+              {!selected ? (
               <p className="py-16 text-center text-sm text-muted-foreground">Select an item</p>
             ) : (
               <div className="space-y-4">
@@ -372,6 +379,7 @@ export default function FeedbackPage() {
               </div>
             )}
           </div>
+          )}
         </div>
       )}
       <PhotoOverlay

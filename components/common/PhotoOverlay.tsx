@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { ExternalLink } from "lucide-react";
+import { ZoomIn, ZoomOut, Maximize2, X } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 interface PhotoOverlayProps {
   open: boolean;
@@ -19,40 +20,74 @@ export function PhotoOverlay({
 }: PhotoOverlayProps) {
   const title = name || "Photo preview";
 
-  const openExternal = () => {
-    if (!src) return;
-    window.open(src, "_blank", "noopener,noreferrer");
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="fixed top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 bottom-auto w-[min(92vw,28rem)] max-w-[min(92vw,28rem)] max-h-[88dvh] overflow-hidden rounded-2xl border-0 bg-black/90 p-0 text-white shadow-2xl">
+      <DialogContent showCloseButton={false} className="fixed !top-0 !left-0 !translate-x-0 !translate-y-0 w-screen max-w-[100vw] sm:max-w-[100vw] h-screen max-h-[100dvh] sm:max-h-[100dvh] overflow-hidden rounded-none border-0 bg-black/95 p-0 text-white shadow-none sm:rounded-none !max-w-full !w-screen !h-screen !max-h-screen">
         <DialogTitle className="sr-only">{title}</DialogTitle>
-        <div className="relative overflow-hidden rounded-xl">
-          <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 pr-12">
+        <div className="flex flex-col h-full w-full relative overflow-hidden">
+          <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 shrink-0 z-50 relative bg-black/50">
             <p className="truncate text-sm font-medium">{title}</p>
-            {src && (
-              <button
-                type="button"
-                onClick={openExternal}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-white/15 bg-white/10 px-2.5 py-1.5 text-xs font-medium text-white/90 transition hover:bg-white/20"
-                title="Open in new tab"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-                Open
-              </button>
-            )}
+            <button
+              onClick={() => onOpenChange(false)}
+              className="p-1.5 rounded-full hover:bg-white/10 transition-colors text-white/80 hover:text-white shrink-0"
+              title="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <div className="relative flex min-h-80 items-center justify-center bg-black/70 p-3">
+          <div className="relative flex-1 flex items-center justify-center overflow-hidden">
             {src ? (
-              <Image
-                src={src}
-                alt={title}
-                width={800}
-                height={800}
-                className="max-h-[70vh] w-auto max-w-full rounded-lg object-contain"
-                unoptimized
-              />
+              <TransformWrapper
+                initialScale={1}
+                minScale={0.5}
+                maxScale={8}
+                centerOnInit
+                wheel={{ step: 0.1, disabled: true }}
+                pinch={{ step: 5 }}
+              >
+                {({ zoomIn, zoomOut, resetTransform }) => (
+                  <>
+                    <TransformComponent wrapperClass="!w-full !h-full flex items-center justify-center" contentClass="!w-full !h-full flex items-center justify-center p-4">
+                      <Image
+                        src={src}
+                        alt={title}
+                        width={1920}
+                        height={1080}
+                        className="max-h-full max-w-full w-auto h-auto object-contain cursor-grab active:cursor-grabbing"
+                        unoptimized
+                        draggable={false}
+                      />
+                    </TransformComponent>
+                    
+                    {/* Zoom Controls */}
+                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-2 rounded-full border border-white/10 shadow-xl">
+                      <button 
+                        onClick={() => zoomOut()}
+                        className="p-2 rounded-full hover:bg-white/20 transition-colors text-white"
+                        title="Zoom Out"
+                      >
+                        <ZoomOut className="w-5 h-5" />
+                      </button>
+                      <div className="w-px h-5 bg-white/20 mx-1" />
+                      <button 
+                        onClick={() => zoomIn()}
+                        className="p-2 rounded-full hover:bg-white/20 transition-colors text-white"
+                        title="Zoom In"
+                      >
+                        <ZoomIn className="w-5 h-5" />
+                      </button>
+                      <div className="w-px h-5 bg-white/20 mx-1" />
+                      <button 
+                        onClick={() => resetTransform()}
+                        className="p-2 rounded-full hover:bg-white/20 transition-colors text-white"
+                        title="Reset Zoom"
+                      >
+                        <Maximize2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </TransformWrapper>
             ) : (
               <p className="text-sm text-white/80">No photo available</p>
             )}

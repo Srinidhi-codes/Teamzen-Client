@@ -11,6 +11,7 @@ import { EmploymentTab } from "./EmploymentTab";
 import { FinancialTab } from "./FinancialTab";
 import { SecurityTab } from "./SecurityTab";
 import { IntegrationsTab } from "./IntegrationsTab";
+import { PageSkeleton } from "@/components/common/PageSkeleton";
 import { UserFormData } from "./types";
 import { userProfileSchema } from "@/lib/schemas";
 import { z } from "zod";
@@ -211,9 +212,8 @@ export default function ProfilePage() {
 
   if (!user && isUserLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 space-y-3">
-        <div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-        <p className="text-sm text-muted-foreground">Loading…</p>
+      <div className="py-8">
+        <PageSkeleton variant="split" />
       </div>
     );
   }

@@ -44,6 +44,12 @@ export const TOGGLE_POST_LIKE = gql`
   }
 `;
 
+export const VIEW_POST = gql`
+  mutation ViewPost($postId: String!) {
+    viewPost(postId: $postId)
+  }
+`;
+
 export const CREATE_COMMENT = gql`
   mutation CreateComment($postId: String!, $content: String!, $parentId: String) {
     createComment(postId: $postId, content: $content, parentId: $parentId) {

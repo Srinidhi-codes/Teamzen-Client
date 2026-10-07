@@ -9,8 +9,7 @@ import {
 
 export function useMyOnboarding() {
   const { data, loading, error, refetch } = useQuery<any>(MY_ONBOARDING, {
-    fetchPolicy: "network-only",
-    nextFetchPolicy: "cache-and-network",
+    fetchPolicy: "cache-first",
   });
   return {
     onboarding: data?.myOnboarding ?? null,
@@ -22,7 +21,7 @@ export function useMyOnboarding() {
 
 export function useMyAssignedOnboardingTasks() {
   const { data, loading, error, refetch } = useQuery<any>(MY_ASSIGNED_ONBOARDING_TASKS, {
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "cache-first",
   });
   return {
     tasks: data?.myAssignedOnboardingTasks ?? [],

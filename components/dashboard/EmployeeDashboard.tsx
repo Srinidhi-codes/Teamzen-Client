@@ -41,8 +41,10 @@ const AttendanceTrendChart = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
+      <div className="flex h-full w-full items-center justify-center p-6">
+        <div className="w-full space-y-4">
+          <div className="h-64 w-full rounded-xl bg-muted/50 animate-pulse border border-border" />
+        </div>
       </div>
     ),
   }
@@ -235,6 +237,7 @@ export function EmployeeDashboard() {
   const period = periodForHour(now.hour());
   const heroMeta = periodHero[period];
   const dark = resolvedTheme === "dark";
+  const isDarkBg = dark || heroMeta.dark;
   const heroSrc = heroSrcForDay(period, now.date());
 
   return (
@@ -270,13 +273,14 @@ export function EmployeeDashboard() {
               <p
                 className={cn(
                   "text-xs font-medium tracking-wide sm:text-sm",
+                  isDarkBg ? "text-slate-200/90" : "text-slate-500"
                 )}
               >
                 {now.format("dddd, MMMM D")}
               </p>
               <h1
                 className={cn(
-                  "text-2xl font-semibold tracking-tight text-balance sm:text-4xl lg:text-5xl", dark ? "text-white" : "text-black"
+                  "text-2xl font-semibold tracking-tight text-balance sm:text-4xl lg:text-5xl", isDarkBg ? "text-white" : "text-black"
                 )}
               >
                 {greetingForHour(now.hour())},{" "}
@@ -287,7 +291,8 @@ export function EmployeeDashboard() {
               </h1>
               <p
                 className={cn(
-                  "line-clamp-2 text-xs sm:text-base text-slate-600"
+                  "line-clamp-2 text-xs sm:text-base",
+                  isDarkBg ? "text-slate-200/90" : "text-slate-600"
                 )}
               >
                 {[user?.designation?.name, user?.department?.name, user?.organization?.name]
@@ -299,12 +304,12 @@ export function EmployeeDashboard() {
             <div
               className={cn(
                 "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 backdrop-blur-sm sm:gap-2.5 sm:px-3.5",
-                dark
+                isDarkBg
                   ? "border-white/20 bg-white/10 text-white"
                   : "border-slate-200/80 bg-white/80 text-slate-800"
               )}
             >
-              <TodayIcon className="h-3.5 w-3.5 text-slate-600" />
+              <TodayIcon className={cn("h-3.5 w-3.5", isDarkBg ? "text-white" : "text-slate-600")} />
               <span className="text-xs font-medium sm:text-sm">Today · {todayMeta.label}</span>
             </div>
 
@@ -313,7 +318,7 @@ export function EmployeeDashboard() {
                 href="/attendance"
                 className={cn(
                   "inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold shadow-sm transition-opacity hover:opacity-95 sm:h-11 sm:w-auto sm:px-5",
-                  dark ? "bg-white text-slate-900" : "bg-slate-900 text-white"
+                  isDarkBg ? "bg-white text-slate-900" : "bg-slate-900 text-white"
                 )}
               >
                 <MapPin className="h-4 w-4" />
@@ -323,7 +328,7 @@ export function EmployeeDashboard() {
                 href="/leaves"
                 className={cn(
                   "inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border px-4 text-sm font-medium backdrop-blur-sm transition-colors sm:h-11 sm:w-auto sm:px-5",
-                  dark
+                  isDarkBg
                     ? "border-white/30 bg-white/10 text-white hover:bg-white/16"
                     : "border-slate-300 bg-white/85 text-slate-800 hover:bg-white"
                 )}

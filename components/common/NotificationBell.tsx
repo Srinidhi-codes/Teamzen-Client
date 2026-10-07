@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import moment from "moment";
 import { AnnouncementModal, AnnouncementItem } from "./AnnouncementModal";
+import React from "react";
 
 export function NotificationBell() {
     const router = useRouter();
@@ -86,11 +87,8 @@ export function NotificationBell() {
     };
 
     const getBgColor = (notif: any) => {
-        if (notif.verb === 'announcement') return "bg-indigo-500/10 hover:bg-indigo-500/20";
-        if (notif.verb === 'approved') return "bg-emerald-500/10 hover:bg-emerald-500/20";
-        if (notif.verb === 'rejected') return "bg-destructive/10 hover:bg-destructive/20";
-        if (notif.verb === 'cancelled') return "bg-blue-500/10 hover:bg-blue-500/20";
-        return !notif.isRead ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/30";
+        if (!notif.isRead) return "bg-primary/5 hover:bg-primary/10";
+        return "hover:bg-muted/30";
     };
 
     const handleRedirect = (notif: any) => {
@@ -165,55 +163,59 @@ export function NotificationBell() {
 
                 <div className="max-h-[55dvh] sm:max-h-[420px] overflow-y-auto no-scrollbar py-1">
                     {notifications.length > 0 ? (
-                        notifications.map((notif: any) => (
-                            <DropdownMenuItem
-                                key={notif.id}
-                                className={cn(
-                                    "px-3.5 sm:px-5 py-3 sm:py-4 transition-colors cursor-pointer relative group flex items-start gap-3 sm:gap-4 mb-1 sm:mb-2 mx-1 rounded-xl sm:rounded-2xl",
-                                    getBgColor(notif)
-                                )}
-                                onClick={() => handleRedirect(notif)}
-                            >
-                                <div className="shrink-0 relative">
-                                    <div className="w-10 h-10 rounded-xl bg-linear-to-br from-primary/10 to-primary/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                                        {getIcon(notif)}
-                                    </div>
-                                    {!notif.isRead && (
-                                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background shadow-sm" />
+                        notifications.map((notif: any, index: number) => (
+                            <React.Fragment key={notif.id}>
+                                <DropdownMenuItem
+                                    className={cn(
+                                        "px-4 py-3 sm:py-4 transition-colors cursor-pointer relative group flex items-start gap-3 sm:gap-4 rounded-none m-0",
+                                        getBgColor(notif)
                                     )}
-                                </div>
+                                    onClick={() => handleRedirect(notif)}
+                                >
+                                    <div className="shrink-0 relative">
+                                        <div className="w-10 h-10 rounded-xl bg-linear-to-br from-primary/10 to-primary/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                            {getIcon(notif)}
+                                        </div>
+                                        {!notif.isRead && (
+                                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background shadow-sm" />
+                                        )}
+                                    </div>
 
-                                <div className="flex-1 min-w-0">
-                                    <p className={cn(
-                                        "text-sm leading-snug mb-1 line-clamp-2",
-                                        notif.isRead ? "text-muted-foreground font-medium" : "text-foreground font-bold"
-                                    )}>
-                                        {notif.targetType === "Announcement" || notif.verb === "announcement" ? (
-                                            (() => {
-                                                try {
-                                                    const parsed = JSON.parse(notif.message);
-                                                    return parsed.title || parsed.body;
-                                                } catch (e) {
-                                                    return notif.message;
-                                                }
-                                            })()
-                                        ) : notif.message}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {moment(notif.createdAt).format("MMM DD, YYYY HH:mm A")}
-                                    </p>
-                                </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className={cn(
+                                            "text-sm leading-snug mb-1 line-clamp-2",
+                                            notif.isRead ? "text-muted-foreground font-medium" : "text-foreground font-bold"
+                                        )}>
+                                            {notif.targetType === "Announcement" || notif.verb === "announcement" ? (
+                                                (() => {
+                                                    try {
+                                                        const parsed = JSON.parse(notif.message);
+                                                        return parsed.title || parsed.body;
+                                                    } catch (e) {
+                                                        return notif.message;
+                                                    }
+                                                })()
+                                            ) : notif.message}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {moment(notif.createdAt).format("MMM DD, YYYY HH:mm A")}
+                                        </p>
+                                    </div>
 
-                                <div className="shrink-0 flex items-center h-10">
-                                    <button
-                                        onClick={(e) => handleDelete(e, notif.id)}
-                                        className="p-2 rounded-xl hover:bg-destructive/10 text-muted-foreground/40 hover:text-destructive transition-all opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100"
-                                        title="Delete notification"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </DropdownMenuItem>
+                                    <div className="shrink-0 flex items-center h-10">
+                                        <button
+                                            onClick={(e) => handleDelete(e, notif.id)}
+                                            className="p-2 rounded-xl hover:bg-destructive/10 text-muted-foreground/40 hover:text-destructive transition-all opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100"
+                                            title="Delete notification"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </DropdownMenuItem>
+                                {index < notifications.length - 1 && (
+                                    <div className="mx-4 h-px bg-border/50" />
+                                )}
+                            </React.Fragment>
                         ))
                     ) : (
                         <div className="px-5 py-12 text-center">

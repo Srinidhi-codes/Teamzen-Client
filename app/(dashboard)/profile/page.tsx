@@ -1,12 +1,13 @@
 import ProfilePage from "@/components/profile/ProfilePage";
+import { PageSkeleton } from "@/components/common/PageSkeleton";
 import React, { Suspense } from "react";
 
 const Profile = () => {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center h-96 text-sm text-muted-foreground">
-          Loading profile…
+        <div className="py-8">
+          <PageSkeleton variant="split" />
         </div>
       }
     >

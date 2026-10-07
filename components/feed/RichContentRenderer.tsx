@@ -12,10 +12,22 @@ interface RichContentRendererProps {
 export const RichContentRenderer: React.FC<RichContentRendererProps> = ({ content, className = '' }) => {
   if (!content) return null;
 
-  // Pre-process mentions format: @[Name](id) -> **@Name** so markdown can render as styled mentions
+  // Check if it's HTML from Tiptap
+  const isHtml = /^(<p>|<ul>|<ol>|<blockquote>|<h[1-6]>|<pre>)/.test(content.trim());
+  
+  if (isHtml) {
+    return (
+      <div 
+        className={`tiptap rich-post-content prose dark:prose-invert prose-sm max-w-none break-words ${className}`}
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+    );
+  }
+
+  // Pre-process mentions format: @[Name](id) -> [@Name](mention:id)
   const processedContent = content.replace(
     /@\[([^\]]+)\]\(([^)]+)\)/g,
-    '**@$1**'
+    '[@$1](mention:$2)'
   );
 
   return (
@@ -45,26 +57,32 @@ export const RichContentRenderer: React.FC<RichContentRendererProps> = ({ conten
               </pre>
             );
           },
-          a: ({ node, href, children, ...props }) => (
-            <a
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline font-medium inline-flex items-center gap-0.5"
-              {...props}
-            >
-              {children}
-            </a>
-          ),
-          strong: ({ node, children, ...props }) => {
-            const text = String(children);
-            if (text.startsWith('@')) {
+          a: ({ node, href, children, ...props }) => {
+            if (href?.startsWith('mention:')) {
+              const id = href.split(':')[1];
               return (
-                <span className="text-primary font-semibold hover:underline cursor-pointer bg-primary/10 px-1 py-0.5 rounded inline-block text-xs mx-0.5">
+                <span 
+                  data-type="mention" 
+                  data-id={id}
+                  className="text-primary font-semibold hover:underline cursor-pointer bg-primary/10 px-1 py-0.5 rounded inline-block text-xs mx-0.5"
+                >
                   {children}
                 </span>
               );
             }
+            return (
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline font-medium inline-flex items-center gap-0.5"
+                {...props}
+              >
+                {children}
+              </a>
+            );
+          },
+          strong: ({ node, children, ...props }) => {
             return <strong className="font-bold text-foreground" {...props}>{children}</strong>;
           },
         }}

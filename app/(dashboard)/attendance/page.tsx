@@ -499,8 +499,8 @@ export default function AttendancePage() {
           </div>
         </div>
 
-                {/* Right Column: Status & Telemetry */}
-        <div className="lg:col-span-4 space-y-6 lg:space-y-10 order-2">
+        {/* Right Column: Status & Telemetry & Policy */}
+        <div className="lg:col-span-4 lg:row-span-2 space-y-6 order-2">
           <Card title="Attendance Status">
             <div className="space-y-8">
               {statusConfig && (
@@ -569,10 +569,27 @@ export default function AttendancePage() {
               </div>
             </div>
           </Card>
+
+          <div className="premium-card p-8 border border-primary/20 bg-primary/5 rounded-xl">
+            <div className="space-y-4 text-center">
+              <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto">
+                <NotebookText className="w-6 h-6" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-base font-semibold text-primary">Location-based attendance</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Keep location services enabled so your check-in distance can be calculated accurately.
+                </p>
+              </div>
+              <Link href={'/policies'} className="text-sm font-medium text-primary hover:underline transition-all">
+                View policies
+              </Link>
+            </div>
+          </div>
         </div>
 
         {/* Bottom Left Column: Map */}
-        <div className="lg:col-span-8 order-3">
+        <div className="lg:col-span-12 order-3">
           <div className="premium-card p-6 sm:p-8 space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
@@ -813,25 +830,6 @@ export default function AttendancePage() {
           </div>
         </div>
 
-        {/* Bottom Right Column: Policy */}
-        <div className="lg:col-span-4 order-4">
-          <div className="premium-card p-8 border border-primary/20 bg-primary/5 rounded-xl">
-            <div className="space-y-4 text-center">
-              <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto">
-                <NotebookText className="w-6 h-6" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-base font-semibold text-primary">Location-based attendance</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Keep location services enabled so your check-in distance can be calculated accurately.
-                </p>
-              </div>
-              <Link href={'/policies'} className="text-sm font-medium text-primary hover:underline transition-all">
-                View policies
-              </Link>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

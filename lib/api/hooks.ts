@@ -90,6 +90,18 @@ export const useAuth = () => {
 
   return { login, register, requestOtp, verifyOtp, verifyTotp, googleLogin };
 };
+export const useUserDetails = (userId?: string) => {
+  return useQuery({
+    queryKey: ['user-details', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      const res = await client.get(`/users/${userId}/`);
+      return res.data;
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+  });
+};
 
 // hooks/useTokenRefresh.ts
 

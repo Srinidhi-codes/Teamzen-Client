@@ -10,6 +10,7 @@ import { useUser } from '@/lib/api/hooks';
 import { toast } from 'sonner';
 import { CommentSection } from './CommentSection';
 import { PhotoOverlay } from '@/components/common/PhotoOverlay';
+import { UserProfileModal } from '@/components/common/UserProfileModal';
 import { RichContentRenderer } from './RichContentRenderer';
 import { RichTextEditor } from './RichTextEditor';
 
@@ -20,7 +21,40 @@ export const PostCard = ({ post }: { post: any }) => {
   const [editContent, setEditContent] = useState(post.content);
   const [editTitle, setEditTitle] = useState(post.title || '');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const { togglePostLike, deletePost, updatePost } = useFeedMutations();
+  
+  // Profile Modal State
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  
+  const { togglePostLike, deletePost, updatePost, viewPost } = useFeedMutations();
+  const observerRef = React.useRef<HTMLDivElement>(null);
+  const [hasViewed, setHasViewed] = useState(false);
+
+  React.useEffect(() => {
+    if (!observerRef.current || hasViewed) return;
+
+    let timeoutId: NodeJS.Timeout;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          timeoutId = setTimeout(() => {
+            viewPost({ variables: { postId: post.id } }).catch(() => {});
+            setHasViewed(true);
+            observer.disconnect();
+          }, 1500);
+        } else {
+          clearTimeout(timeoutId);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(observerRef.current);
+    return () => {
+      clearTimeout(timeoutId);
+      observer.disconnect();
+    };
+  }, [hasViewed, post.id, viewPost]);
 
   const isOwner = user?.id?.toString() === post.author?.id?.toString();
 
@@ -52,7 +86,16 @@ export const PostCard = ({ post }: { post: any }) => {
   };
 
   const handleEdit = async () => {
-    if (!editContent.trim()) return;
+    if (!editTitle.trim()) {
+      toast.error('Title cannot be empty');
+      return;
+    }
+    const strippedContent = editContent.replace(/<[^>]*>?/gm, '').trim();
+    const hasImage = editContent.includes('<img');
+    if ((!editContent.trim() || !strippedContent) && !hasImage) {
+      toast.error('Post content cannot be empty');
+      return;
+    }
     try {
       await updatePost({ variables: { id: post.id, content: editContent, title: editTitle } });
       setIsEditing(false);
@@ -63,18 +106,21 @@ export const PostCard = ({ post }: { post: any }) => {
   };
 
   return (
-    <Card className="mb-6 shadow-sm border-gray-200/60 dark:border-gray-800 transition-all hover:shadow-md">
+    <Card ref={observerRef} className="mb-6 shadow-sm border-gray-200/60 dark:border-gray-800 transition-all hover:shadow-md">
       <CardContent className="pt-6">
         
         {/* Header */}
         <div className="flex justify-between items-start mb-4">
-          <div className="flex gap-3">
-            <Avatar className="h-10 w-10">
+          <div 
+            className="flex gap-3 cursor-pointer hover:opacity-80 transition-opacity group"
+            onClick={() => setSelectedUserId(post.author.id.toString())}
+          >
+            <Avatar className="h-10 w-10 ring-2 ring-transparent group-hover:ring-primary/20 transition-all">
               <AvatarImage src={post.author.profilePictureUrl} />
               <AvatarFallback>{post.author.firstName?.[0]}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-semibold text-sm">
+              <p className="font-semibold text-sm group-hover:text-primary transition-colors">
                 {post.author.firstName} {post.author.lastName}
               </p>
               <p className="text-xs text-gray-500">
@@ -133,7 +179,17 @@ export const PostCard = ({ post }: { post: any }) => {
                 </h3>
               </div>
             )}
-            <div className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">
+            <div 
+              className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed"
+              onClick={(e) => {
+                const target = e.target as HTMLElement;
+                const mention = target.closest('[data-type="mention"]');
+                if (mention) {
+                  const id = mention.getAttribute('data-id');
+                  if (id) setSelectedUserId(id);
+                }
+              }}
+            >
               <RichContentRenderer content={post.content} />
             </div>
           </>
@@ -159,7 +215,7 @@ export const PostCard = ({ post }: { post: any }) => {
                 <img 
                   src={url} 
                   alt={post.title || "Post attachment"} 
-                  className="rounded-xl object-cover max-h-96 w-full transition-transform duration-200 group-hover:scale-[1.01]"
+                  className="rounded-xl object-contain bg-muted/5 max-h-[500px] w-full h-auto transition-transform duration-200 group-hover:scale-[1.01]"
                 />
                 <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
                   <div className="bg-black/60 text-white rounded-full p-2 backdrop-blur-sm flex items-center gap-1.5 text-xs font-medium px-3 shadow-md">
@@ -220,6 +276,12 @@ export const PostCard = ({ post }: { post: any }) => {
               <MessageCircle className="w-5 h-5" />
               <span>{post.commentsCount || 0}</span>
             </button>
+            {isOwner && (
+              <div className="flex items-center gap-2 text-sm font-medium" title="Views">
+                <Eye className="w-5 h-5 text-gray-400" />
+                <span>{post.viewsCount || 0}</span>
+              </div>
+            )}
           </div>
           
           <button onClick={handleShare} className="hover:text-primary transition-colors text-sm font-medium">
@@ -238,6 +300,12 @@ export const PostCard = ({ post }: { post: any }) => {
           name={post.title || `${post.author?.firstName || 'User'}'s post attachment`}
         />
 
+        {/* User Profile Modal (ID Card) */}
+        <UserProfileModal
+          userId={selectedUserId}
+          open={!!selectedUserId}
+          onOpenChange={(open) => !open && setSelectedUserId(null)}
+        />
       </CardContent>
     </Card>
   );

@@ -16,6 +16,7 @@ import { FormSelect } from "@/components/common/FormSelect";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { PageSkeleton } from "@/components/common/PageSkeleton";
 
 type Tab = "issued" | "requests" | "employeeRequests" | "uploads";
 
@@ -90,7 +91,7 @@ export default function DocumentsVault() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 sm:p-6 space-y-8 animate-fade-in relative min-h-screen">
       <PageHeader
         eyebrow="Vault"
         title="Documents"
@@ -174,7 +175,9 @@ export default function DocumentsVault() {
       </div>
 
       {loading && (
-        <p className="text-sm text-muted-foreground">Loading documents…</p>
+        <div className="py-4">
+          <PageSkeleton variant="inline" />
+        </div>
       )}
 
       {tab === "issued" && (

@@ -9,13 +9,14 @@ import {
   CREATE_COMMENT, 
   DELETE_COMMENT, 
   UPDATE_COMMENT,
-  TOGGLE_COMMENT_LIKE 
+  TOGGLE_COMMENT_LIKE,
+  VIEW_POST
 } from "./mutations";
 
 export const useFeedPosts = (page = 1, pageSize = 10, authorId?: string) => {
   const { data, loading, error, refetch, fetchMore } = useQuery<any>(GET_POSTS, {
     variables: { page, pageSize, authorId },
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "cache-first",
   });
 
   return {
@@ -131,12 +132,14 @@ export const useFeedMutations = () => {
 
   const [updatePost] = useMutation<any>(UPDATE_POST);
   const [updateComment] = useMutation<any>(UPDATE_COMMENT);
+  const [viewPost] = useMutation<any>(VIEW_POST);
 
   return {
     createPost,
     isCreatingPost,
     deletePost,
     updatePost,
+    viewPost,
     isDeletingPost,
     togglePostLike,
     createComment,

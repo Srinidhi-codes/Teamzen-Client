@@ -22,15 +22,6 @@ export default function PoliciesPage() {
                 eyebrow="Company"
                 title="Policies"
                 description="Company policies and reference documents."
-                actions={
-                    <button
-                        onClick={() => refetch()}
-                        className="inline-flex items-center gap-2 h-9 px-3 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-md text-sm font-medium transition-colors"
-                        title="Refresh"
-                    >
-                        <RotateCcw className="w-4 h-4" />
-                    </button>
-                }
             />
 
             {isLoading && !policies ? (

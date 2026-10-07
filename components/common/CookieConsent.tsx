@@ -86,10 +86,10 @@ export function CookieConsent() {
             Teamzen uses essential HTTP-only cookies to keep your account session secure, and
             optional cookies to remember your theme preferences. Learn more in our{" "}
             <Link
-              href="/privacy"
+              href="/cookies"
               className="text-primary underline underline-offset-2 hover:text-primary/80"
             >
-              Privacy Policy
+              Cookie Policy
             </Link>
             .
           </p>
