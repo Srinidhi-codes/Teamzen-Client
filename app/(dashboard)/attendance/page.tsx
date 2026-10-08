@@ -29,7 +29,7 @@ import { useStore } from "@/lib/store/useStore";
 import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
 import { GET_MY_FACE } from "@/lib/graphql/users/queries";
-import { cn } from "@/lib/utils";
+import { cn, isMobileDevice } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -208,14 +208,6 @@ export default function AttendancePage() {
     } catch {
       // Non-blocking — punch already succeeded
     }
-  };
-
-  const isMobileDevice = () => {
-    if (typeof window === "undefined" || typeof navigator === "undefined") return false;
-    return (
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-      (navigator.maxTouchPoints && navigator.maxTouchPoints > 2)
-    );
   };
 
   const handleDirectCameraCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {

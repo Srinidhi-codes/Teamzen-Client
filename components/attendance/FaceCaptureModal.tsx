@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, isMobileDevice } from "@/lib/utils";
 import {
   compressPhoto,
   captureJpegFromVideo,
@@ -54,9 +54,11 @@ export function FaceCaptureModal({
   const [hint, setHint] = useState("Align your face and tap capture");
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    setIsMobile(isMobileDevice());
   }, []);
 
   const stopCamera = useCallback(() => {
@@ -408,15 +410,17 @@ export function FaceCaptureModal({
             <div className="mt-3 w-full rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-center text-xs text-destructive animate-in fade-in slide-in-from-top-1">
               <p className="font-medium">{error}</p>
               <div className="mt-2.5 flex items-center justify-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs border-destructive/40 text-destructive hover:bg-destructive/15"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Smartphone className="mr-1 h-3 w-3" /> Built-in Camera App
-                </Button>
+                {isMobile && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs border-destructive/40 text-destructive hover:bg-destructive/15"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Smartphone className="mr-1 h-3 w-3" /> Built-in Camera App
+                  </Button>
+                )}
                 <Button
                   type="button"
                   variant="outline"
@@ -434,18 +438,20 @@ export function FaceCaptureModal({
         {/* Footer Actions — Big Shutter Button + Native Camera Option */}
         <div className="border-t border-border/80 bg-background/95 px-4 py-3 sm:px-5 sm:py-4 backdrop-blur-sm shrink-0">
           <div className="flex items-center justify-between gap-2.5 sm:gap-3">
-            {/* Built-in Device Camera Trigger (Native phone camera app) */}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="gap-1.5 text-xs font-medium px-2.5 sm:px-3"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={busy || verifiedSuccess}
-            >
-              <Smartphone className="h-3.5 w-3.5" />
-              <span>Native Camera</span>
-            </Button>
+            {/* Built-in Device Camera Trigger (Native phone camera app only) */}
+            {isMobile && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-xs font-medium px-2.5 sm:px-3"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={busy || verifiedSuccess}
+              >
+                <Smartphone className="h-3.5 w-3.5" />
+                <span>Native Camera</span>
+              </Button>
+            )}
 
             {/* Primary Shutter Button */}
             <Button

@@ -25,3 +25,25 @@ export function resolveAvatarUrl(url?: any): string | undefined {
   const cleanPath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
   return `${backendBase}${cleanPath}`;
 }
+
+export function isMobileDevice(): boolean {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+
+  // macOS desktops/laptops (MacBook Pro, MacBook Air, iMac, Mac mini)
+  // Real Macs do not have ontouchend in document, whereas iPads running iPadOS do.
+  if (/Macintosh/i.test(ua)) {
+    const isIPad = typeof document !== "undefined" && "ontouchend" in document && navigator.maxTouchPoints > 1;
+    if (!isIPad) {
+      return false;
+    }
+  }
+
+  // Windows and Linux desktops
+  if (/Windows NT|Linux x86_64/i.test(ua)) {
+    return false;
+  }
+
+  // Mobile phones and tablets
+  return /Android|iPhone|iPod|iPad|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+}
