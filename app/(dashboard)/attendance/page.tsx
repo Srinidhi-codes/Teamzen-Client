@@ -163,6 +163,32 @@ export default function AttendancePage() {
   const loginDistance = todayAttendance?.loginDistance ? (todayAttendance.loginDistance / 1000).toFixed(2) : "0";
   const logoutDistance = todayAttendance?.logoutDistance ? (todayAttendance.logoutDistance / 1000).toFixed(2) : "0";
 
+  // Periodic geolocation breadcrumb ping while shift is active
+  useEffect(() => {
+    const isShiftActive = !!todayAttendance?.loginTime && !todayAttendance?.logoutTime;
+    if (!isShiftActive) return;
+
+    const sendHeartbeatPing = async () => {
+      try {
+        const coords = await getLocationAsync();
+        await axios.post(
+          "/api/attendance/heartbeat/",
+          {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+          },
+          { withCredentials: true }
+        );
+      } catch {
+        // Non-blocking background ping
+      }
+    };
+
+    // Ping every 5 minutes while employee is working
+    const pingTimer = window.setInterval(sendHeartbeatPing, 5 * 60 * 1000);
+    return () => window.clearInterval(pingTimer);
+  }, [todayAttendance?.loginTime, todayAttendance?.logoutTime]);
+
   const STATUS_CONFIG: Record<string, { label: string; variant: "success" | "warning" | "danger" | "info"; icon: any }> = {
     late_login: { label: "Late Entry", variant: "warning", icon: AlertCircle },
     early_logout: { label: "Early Exit", variant: "warning", icon: AlertCircle },
