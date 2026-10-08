@@ -14,6 +14,7 @@ import { FormTextarea } from "../common/FormTextArea";
 import { FormInput } from "../common/FormInput";
 import { PremiumModal } from "../common/PremiumModal";
 import { PhotoOverlay } from "../common/PhotoOverlay";
+import { resolveAvatarUrl } from "@/lib/utils";
 
 export type AttendanceRow = {
     id: string;
@@ -87,11 +88,9 @@ export function CorrectionModal({ record, onClose, onSubmit }: Props) {
 
     const formatTime = (timeStr?: string | null) =>
         timeStr ? moment(timeStr, "HH:mm:ss").format("hh:mm A") : "—";
-    const hasSelfies = !!(
-        record.checkInSelfieUrl ||
-        record.checkOutSelfieUrl ||
-        record.faceVerified
-    );
+    const inUrl = resolveAvatarUrl(record.checkInSelfieUrl);
+    const outUrl = resolveAvatarUrl(record.checkOutSelfieUrl);
+    const hasSelfies = Boolean(inUrl || outUrl || record.faceVerified);
 
     return (
         <>
@@ -163,19 +162,19 @@ export function CorrectionModal({ record, onClose, onSubmit }: Props) {
                                 )}
                             </div>
                             <div className="flex flex-wrap gap-3">
-                                {record.checkInSelfieUrl ? (
+                                {inUrl ? (
                                     <button
                                         type="button"
                                         className="block cursor-zoom-in overflow-hidden rounded-md border border-border"
                                         onClick={() =>
                                             setPreview({
-                                                src: record.checkInSelfieUrl!,
+                                                src: inUrl,
                                                 name: "Check-in selfie",
                                             })
                                         }
                                     >
                                         <img
-                                            src={record.checkInSelfieUrl}
+                                            src={inUrl}
                                             alt="Check-in selfie"
                                             className="h-20 w-20 object-cover"
                                         />
@@ -188,19 +187,19 @@ export function CorrectionModal({ record, onClose, onSubmit }: Props) {
                                         No in selfie
                                     </div>
                                 )}
-                                {record.checkOutSelfieUrl ? (
+                                {outUrl ? (
                                     <button
                                         type="button"
                                         className="block cursor-zoom-in overflow-hidden rounded-md border border-border"
                                         onClick={() =>
                                             setPreview({
-                                                src: record.checkOutSelfieUrl!,
+                                                src: outUrl,
                                                 name: "Check-out selfie",
                                             })
                                         }
                                     >
                                         <img
-                                            src={record.checkOutSelfieUrl}
+                                            src={outUrl}
                                             alt="Check-out selfie"
                                             className="h-20 w-20 object-cover"
                                         />

@@ -35,6 +35,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/common/PageHeader";
 import { FaceCaptureModal } from "@/components/attendance/FaceCaptureModal";
 import axios from "axios";
+import client from "@/lib/api/client";
 import { ScanFace } from "lucide-react";
 import Image from "next/image";
 import { LandingImages } from "@/lib/brand-images";
@@ -220,14 +221,10 @@ export default function AttendancePage() {
 
   const uploadSelfie = async (recordId: string, kind: "check_in" | "check_out", imageBase64: string) => {
     try {
-      const blob = await (await fetch(imageBase64)).blob();
-      const form = new FormData();
-      form.append("attendance_record_id", recordId);
-      form.append("kind", kind);
-      form.append("selfie", blob, `${kind}.jpg`);
-      await axios.post("/api/attendance/selfie/", form, {
-        headers: { "Content-Type": "multipart/form-data" },
-        withCredentials: true,
+      await client.post("/attendance/selfie/", {
+        attendance_record_id: recordId,
+        kind,
+        selfie_base64: imageBase64,
       });
     } catch {
       // Non-blocking — punch already succeeded
@@ -327,9 +324,10 @@ export default function AttendancePage() {
           faceVerified: result.verified,
           faceMatchScore: result.matchScore,
           faceDescriptor: result.descriptor,
+          selfieBase64: result.imageBase64,
         });
         const id = data?.checkIn?.id;
-        // Selfie upload should not block the success toast / UI
+        // Also persist as fallback via selfie API
         if (id) void uploadSelfie(String(id), "check_in", result.imageBase64);
         toast.success("Checked in with face verification.", { id: toastId });
       } else {
@@ -340,6 +338,7 @@ export default function AttendancePage() {
           faceVerified: result.verified,
           faceMatchScore: result.matchScore,
           faceDescriptor: result.descriptor,
+          selfieBase64: result.imageBase64,
         });
         const id = data?.checkOut?.id;
         if (id) void uploadSelfie(String(id), "check_out", result.imageBase64);

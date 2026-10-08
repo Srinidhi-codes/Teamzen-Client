@@ -9,6 +9,7 @@ export const CHECK_IN = gql`
       faceVerified
       faceMatchScore
       isWithinGeofence
+      checkInSelfieUrl
     }
   }
 `;
@@ -22,6 +23,7 @@ export const CHECK_OUT = gql`
       faceVerified
       faceMatchScore
       isWithinGeofence
+      checkOutSelfieUrl
     }
   }
 `;
