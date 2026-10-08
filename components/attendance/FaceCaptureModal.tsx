@@ -4,18 +4,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Camera,
+  CameraOff,
   CheckCircle2,
   FlipHorizontal,
   Loader2,
   RefreshCw,
   ScanFace,
-  Smartphone,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn, isMobileDevice } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import {
-  compressPhoto,
   captureJpegFromVideo,
   extractAndVerifyFace,
 } from "@/lib/face/descriptor";
@@ -45,7 +44,6 @@ export function FaceCaptureModal({
 }: FaceCaptureModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -54,11 +52,9 @@ export function FaceCaptureModal({
   const [hint, setHint] = useState("Align your face and tap capture");
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [mounted, setMounted] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    setIsMobile(isMobileDevice());
   }, []);
 
   const stopCamera = useCallback(() => {
@@ -83,15 +79,29 @@ export function FaceCaptureModal({
     onClose();
   }, [stopCamera, onClose]);
 
-  // Start instant 60fps video feed (NO TensorFlow, NO model downloads)
+  // Start instant 60fps video feed
   const initCamera = useCallback(async (desiredFacing: "user" | "environment" = "user") => {
     stopCamera();
     setError(null);
     setCameraReady(false);
 
-    if (!navigator?.mediaDevices?.getUserMedia) {
-      setError("Webcam stream is not supported on this browser. Use the device camera button below.");
+    if (typeof navigator === "undefined" || !navigator?.mediaDevices?.getUserMedia) {
+      setError("Webcam stream is not supported on this browser or connection (HTTPS required).");
       return;
+    }
+
+    // Proactively check connected devices if mediaDevices.enumerateDevices is available
+    if (navigator?.mediaDevices?.enumerateDevices) {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoInputs = devices.filter((d) => d.kind === "videoinput");
+        if (devices.length > 0 && videoInputs.length === 0) {
+          setError("No camera device detected. Please connect a webcam or enable your camera.");
+          return;
+        }
+      } catch {
+        // Enumerate error, proceed to getUserMedia test
+      }
     }
 
     try {
@@ -133,15 +143,33 @@ export function FaceCaptureModal({
         }
       }
     } catch (e: any) {
-      const msg = e?.message || "";
+      const errName = e?.name || "";
+      const errMsg = String(e?.message || "");
+
       if (
-        msg.includes("Permission") ||
-        msg.includes("denied") ||
-        msg.includes("NotAllowedError")
+        errName === "NotFoundError" ||
+        errName === "DevicesNotFoundError" ||
+        errMsg.toLowerCase().includes("not found") ||
+        errMsg.toLowerCase().includes("no device") ||
+        errMsg.toLowerCase().includes("device not found")
       ) {
-        setError("Camera permission denied. Please allow camera access in browser settings or use the device camera button below.");
+        setError("No camera device detected. Please connect a webcam or enable your camera.");
+      } else if (
+        errName === "NotAllowedError" ||
+        errName === "PermissionDeniedError" ||
+        errMsg.toLowerCase().includes("permission") ||
+        errMsg.toLowerCase().includes("denied")
+      ) {
+        setError("Camera permission denied. Please allow camera access in your browser settings.");
+      } else if (
+        errName === "NotReadableError" ||
+        errName === "TrackStartError"
+      ) {
+        setError("Camera is currently in use by another application or could not be started.");
+      } else if (errName === "OverconstrainedError") {
+        setError("Requested camera resolution not supported. Please retry.");
       } else {
-        setError("Could not start live webcam. You can use your device's built-in camera below.");
+        setError(errMsg || "Could not access camera. Please check your camera settings and retry.");
       }
     }
   }, [stopCamera]);
@@ -157,28 +185,6 @@ export function FaceCaptureModal({
 
     setVerifiedSuccess(false);
     setHint("Align your face and tap capture");
-
-    // Check if on a mobile touchscreen device:
-    const isMobile =
-      typeof navigator !== "undefined" &&
-      (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-        navigator.userAgent
-      ) ||
-        (navigator.maxTouchPoints && navigator.maxTouchPoints > 2));
-
-    // If mobile, automatically prompt native built-in camera app
-    if (isMobile && fileInputRef.current) {
-      const timer = setTimeout(() => {
-        try {
-          fileInputRef.current?.click();
-        } catch {
-          // ignore
-        }
-      }, 150);
-      void initCamera(facingMode);
-      return () => clearTimeout(timer);
-    }
-
     void initCamera(facingMode);
 
     return () => {
@@ -242,27 +248,6 @@ export function FaceCaptureModal({
     }
   };
 
-  // Handle photo from built-in device camera input
-  const handleNativeFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setBusy(true);
-      setHint("Processing photo…");
-      const compressed = await compressPhoto(file, 480, 0.82);
-      await processPhoto(compressed);
-    } catch (err: any) {
-      setError(err?.message || "Failed to read camera photo.");
-      setBusy(false);
-    } finally {
-      // Clear input so same file can be captured again if needed
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
-  };
-
   const toggleFacingMode = () => {
     const next = facingMode === "user" ? "environment" : "user";
     setFacingMode(next);
@@ -278,17 +263,6 @@ export function FaceCaptureModal({
       aria-labelledby="face-capture-title"
       className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
     >
-      {/* Hidden native built-in camera input for mobile hardware shutter */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        capture="user"
-        onChange={handleNativeFile}
-        className="hidden"
-        aria-hidden="true"
-      />
-
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
@@ -310,7 +284,7 @@ export function FaceCaptureModal({
               <p className="text-[11px] sm:text-xs text-muted-foreground line-clamp-1">
                 {mode === "enroll"
                   ? "Take a clear selfie to register your biometric profile"
-                  : "Quick selfie verification for attendance punch"}
+                  : "Live camera verification for attendance punch"}
               </p>
             </div>
           </div>
@@ -326,7 +300,7 @@ export function FaceCaptureModal({
         {/* Viewfinder Content */}
         <div className="flex flex-col items-center p-3 sm:p-5 overflow-y-auto">
           <div className="relative aspect-4/3 w-full max-w-[280px] sm:max-w-sm max-h-[40vh] overflow-hidden rounded-2xl border-2 border-primary/20 bg-black shadow-inner">
-            {/* Live Video Feed (60 FPS, Mirrored) */}
+            {/* Live Video Feed (Mirrored for user camera) */}
             <video
               ref={videoRef}
               playsInline
@@ -351,7 +325,20 @@ export function FaceCaptureModal({
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 px-4 text-center text-white">
                 <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
                 <p className="text-xs font-medium">Opening camera…</p>
-                <p className="text-[11px] text-white/60 mt-1">Ensure good lighting</p>
+                <p className="text-[11px] text-white/60 mt-1">Ensure camera access is granted</p>
+              </div>
+            )}
+
+            {/* Error Overlay in Viewfinder */}
+            {error && !cameraReady && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 px-4 text-center text-white animate-in fade-in duration-200">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/20 text-destructive mb-2">
+                  <CameraOff className="h-6 w-6" />
+                </div>
+                <p className="text-xs font-semibold text-destructive">Camera Unavailable</p>
+                <p className="text-[11px] text-white/80 max-w-[220px] mt-1 line-clamp-3">
+                  {error}
+                </p>
               </div>
             )}
 
@@ -392,17 +379,17 @@ export function FaceCaptureModal({
               <span
                 className={cn(
                   "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75",
-                  verifiedSuccess ? "bg-emerald-400" : cameraReady ? "bg-emerald-400" : "bg-amber-400"
+                  verifiedSuccess ? "bg-emerald-400" : error ? "bg-destructive" : cameraReady ? "bg-emerald-400" : "bg-amber-400"
                 )}
               />
               <span
                 className={cn(
                   "relative inline-flex rounded-full h-2 w-2",
-                  verifiedSuccess ? "bg-emerald-500" : cameraReady ? "bg-emerald-500" : "bg-amber-500"
+                  verifiedSuccess ? "bg-emerald-500" : error ? "bg-destructive" : cameraReady ? "bg-emerald-500" : "bg-amber-500"
                 )}
               />
             </span>
-            <span>{hint}</span>
+            <span>{error ? "Camera error" : hint}</span>
           </div>
 
           {/* Error Message with Quick Retry */}
@@ -410,17 +397,6 @@ export function FaceCaptureModal({
             <div className="mt-3 w-full rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-center text-xs text-destructive animate-in fade-in slide-in-from-top-1">
               <p className="font-medium">{error}</p>
               <div className="mt-2.5 flex items-center justify-center gap-2">
-                {isMobile && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs border-destructive/40 text-destructive hover:bg-destructive/15"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Smartphone className="mr-1 h-3 w-3" /> Built-in Camera App
-                  </Button>
-                )}
                 <Button
                   type="button"
                   variant="outline"
@@ -428,37 +404,22 @@ export function FaceCaptureModal({
                   className="h-7 text-xs border-destructive/40 text-destructive hover:bg-destructive/15"
                   onClick={() => initCamera(facingMode)}
                 >
-                  <RefreshCw className="mr-1 h-3 w-3" /> Retry Stream
+                  <RefreshCw className="mr-1.5 h-3 w-3" /> Retry Camera
                 </Button>
               </div>
             </div>
           )}
         </div>
 
-        {/* Footer Actions — Big Shutter Button + Native Camera Option */}
+        {/* Footer Actions — Shutter Button + Cancel */}
         <div className="border-t border-border/80 bg-background/95 px-4 py-3 sm:px-5 sm:py-4 backdrop-blur-sm shrink-0">
           <div className="flex items-center justify-between gap-2.5 sm:gap-3">
-            {/* Built-in Device Camera Trigger (Native phone camera app only) */}
-            {isMobile && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-1.5 text-xs font-medium px-2.5 sm:px-3"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={busy || verifiedSuccess}
-              >
-                <Smartphone className="h-3.5 w-3.5" />
-                <span>Native Camera</span>
-              </Button>
-            )}
-
             {/* Primary Shutter Button */}
             <Button
               type="button"
               className="flex-1 gap-2 h-10 sm:h-11 text-xs sm:text-sm font-semibold shadow-md shadow-primary/25"
               onClick={captureFromVideo}
-              disabled={busy || !cameraReady || verifiedSuccess}
+              disabled={busy || !cameraReady || !!error || verifiedSuccess}
             >
               {busy ? (
                 <>
@@ -478,7 +439,7 @@ export function FaceCaptureModal({
               type="button"
               variant="ghost"
               size="sm"
-              className="text-xs px-2 sm:px-3"
+              className="text-xs px-3 sm:px-4"
               onClick={handleClose}
               disabled={busy && verifiedSuccess}
             >

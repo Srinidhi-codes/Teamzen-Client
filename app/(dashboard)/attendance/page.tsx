@@ -29,12 +29,11 @@ import { useStore } from "@/lib/store/useStore";
 import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
 import { GET_MY_FACE } from "@/lib/graphql/users/queries";
-import { cn, isMobileDevice } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { PageHeader } from "@/components/common/PageHeader";
 import { FaceCaptureModal } from "@/components/attendance/FaceCaptureModal";
-import { compressPhoto, extractAndVerifyFace } from "@/lib/face/descriptor";
 import axios from "axios";
 import { ScanFace } from "lucide-react";
 import Image from "next/image";
@@ -86,7 +85,6 @@ export default function AttendancePage() {
   const [showMap, setShowMap] = useState(false);
   const [faceModal, setFaceModal] = useState<"enroll" | "verify-in" | "verify-out" | null>(null);
   const activeFaceModeRef = useRef<"enroll" | "verify-in" | "verify-out" | null>(null);
-  const directCameraInputRef = useRef<HTMLInputElement>(null);
   const pendingActionTypeRef = useRef<"in" | "out">("in");
   const [pendingCoords, setPendingCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [now, setNow] = useState(() => new Date());
@@ -210,31 +208,24 @@ export default function AttendancePage() {
     }
   };
 
-  const handleDirectCameraCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const punchType = pendingActionTypeRef.current;
-    const toastId = toast.loading("Verifying face with AI…");
-
-    try {
-      const compressed = await compressPhoto(file, 480, 0.82);
-      const result = await extractAndVerifyFace(compressed, { verify: true });
-
-      toast.dismiss(toastId);
-      await completePunchWithFace(punchType, {
-        descriptor: result.descriptor,
-        matchScore: result.matchScore ?? 1.0,
-        verified: result.verified ?? true,
-        imageBase64: result.imageBase64,
-      });
-    } catch (err: any) {
-      toast.error(err?.message || "Face verification failed. Please try again.", { id: toastId });
-    } finally {
-      if (directCameraInputRef.current) {
-        directCameraInputRef.current.value = "";
+  const checkCameraDeviceAvailable = async (): Promise<boolean> => {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      toast.error("Camera is not supported on this browser or connection (HTTPS required).");
+      return false;
+    }
+    if (navigator.mediaDevices.enumerateDevices) {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoInputs = devices.filter((d) => d.kind === "videoinput");
+        if (devices.length > 0 && videoInputs.length === 0) {
+          toast.error("No camera device detected. Please connect a webcam or enable your camera.");
+          return false;
+        }
+      } catch {
+        // Enumerate error, proceed
       }
     }
+    return true;
   };
 
   const handleAction = async (type: "in" | "out") => {
@@ -251,19 +242,17 @@ export default function AttendancePage() {
               onClick: () => router.push("/profile?tab=security&face=enroll"),
             },
           });
+          const hasCamera = await checkCameraDeviceAvailable();
+          if (!hasCamera) return;
           activeFaceModeRef.current = "enroll";
           setFaceModal("enroll");
           return;
         }
+
+        const hasCamera = await checkCameraDeviceAvailable();
+        if (!hasCamera) return;
+
         setPendingCoords(coords);
-
-        // On mobile devices: directly open the phone's native built-in camera app!
-        if (isMobileDevice() && directCameraInputRef.current) {
-          directCameraInputRef.current.click();
-          return;
-        }
-
-        // On desktop/laptop: open the smooth 60fps video shutter modal
         const nextMode = type === "in" ? "verify-in" : "verify-out";
         activeFaceModeRef.current = nextMode;
         setFaceModal(nextMode);
@@ -394,7 +383,9 @@ export default function AttendancePage() {
               variant="default"
               className="h-9 w-full sm:w-auto"
               disabled={enrollFaceLoading}
-              onClick={() => {
+              onClick={async () => {
+                const hasCamera = await checkCameraDeviceAvailable();
+                if (!hasCamera) return;
                 activeFaceModeRef.current = "enroll";
                 setFaceModal("enroll");
               }}
@@ -404,17 +395,6 @@ export default function AttendancePage() {
           )}
         </div>
       )}
-
-      {/* Native built-in camera capture input for instant mobile hardware camera opening */}
-      <input
-        ref={directCameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="user"
-        onChange={handleDirectCameraCapture}
-        className="hidden"
-        aria-hidden="true"
-      />
 
       <FaceCaptureModal
         open={faceModal !== null}

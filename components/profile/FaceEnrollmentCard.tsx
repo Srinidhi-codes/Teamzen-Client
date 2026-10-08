@@ -90,7 +90,21 @@ export function FaceEnrollmentCard({
         size="sm"
         className="shrink-0"
         disabled={enrollFaceLoading}
-        onClick={() => setOpen(true)}
+        onClick={async () => {
+          if (typeof navigator !== "undefined" && navigator.mediaDevices?.enumerateDevices) {
+            try {
+              const devices = await navigator.mediaDevices.enumerateDevices();
+              const videoInputs = devices.filter((d) => d.kind === "videoinput");
+              if (devices.length > 0 && videoInputs.length === 0) {
+                toast.error("No camera device detected. Please connect a webcam or enable your camera.");
+                return;
+              }
+            } catch {
+              // proceed
+            }
+          }
+          setOpen(true);
+        }}
       >
         {faceEnrolled ? "Re-enroll" : "Enroll"}
       </Button>
