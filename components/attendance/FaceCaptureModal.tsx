@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Camera,
   CheckCircle2,
@@ -52,6 +53,11 @@ export function FaceCaptureModal({
   const [verifiedSuccess, setVerifiedSuccess] = useState(false);
   const [hint, setHint] = useState("Align your face and tap capture");
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -261,14 +267,14 @@ export function FaceCaptureModal({
     void initCamera(next);
   };
 
-  if (!open) return null;
+  if (!open || !mounted || typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="face-capture-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
     >
       {/* Hidden native built-in camera input for mobile hardware shutter */}
       <input
@@ -287,19 +293,19 @@ export function FaceCaptureModal({
         onClick={handleClose}
       />
 
-      {/* Modal Dialog */}
-      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-border/80 bg-card text-card-foreground shadow-2xl animate-in zoom-in-95 duration-200">
+      {/* Modal Dialog Card */}
+      <div className="relative z-10 w-full max-w-sm sm:max-w-md max-h-[92dvh] flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-card text-card-foreground shadow-2xl animate-in zoom-in-95 duration-200 my-auto">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border/60 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-border/60 px-4 py-3 sm:px-5 sm:py-3.5 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <ScanFace className="h-5 w-5" />
+            <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <ScanFace className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
             <div>
-              <h2 id="face-capture-title" className="text-sm font-semibold tracking-tight">
+              <h2 id="face-capture-title" className="text-xs sm:text-sm font-semibold tracking-tight">
                 {title || (mode === "enroll" ? "Enroll Your Face" : "Face Verification")}
               </h2>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[11px] sm:text-xs text-muted-foreground line-clamp-1">
                 {mode === "enroll"
                   ? "Take a clear selfie to register your biometric profile"
                   : "Quick selfie verification for attendance punch"}
@@ -316,8 +322,8 @@ export function FaceCaptureModal({
         </div>
 
         {/* Viewfinder Content */}
-        <div className="flex flex-col items-center p-5">
-          <div className="relative aspect-4/3 w-full max-w-sm overflow-hidden rounded-2xl border-2 border-primary/20 bg-black shadow-inner">
+        <div className="flex flex-col items-center p-3 sm:p-5 overflow-y-auto">
+          <div className="relative aspect-4/3 w-full max-w-[280px] sm:max-w-sm max-h-[40vh] overflow-hidden rounded-2xl border-2 border-primary/20 bg-black shadow-inner">
             {/* Live Video Feed (60 FPS, Mirrored) */}
             <video
               ref={videoRef}
@@ -334,7 +340,7 @@ export function FaceCaptureModal({
             {/* Face Alignment Oval Guide */}
             {cameraReady && !verifiedSuccess && !busy && (
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <div className="h-44 w-36 sm:h-52 sm:w-40 rounded-full border-2 border-dashed border-white/60 shadow-[0_0_0_9999px_rgba(0,0,0,0.25)] transition-all animate-pulse" />
+                <div className="h-40 w-32 sm:h-52 sm:w-40 rounded-full border-2 border-dashed border-white/60 shadow-[0_0_0_9999px_rgba(0,0,0,0.25)] transition-all animate-pulse" />
               </div>
             )}
 
@@ -379,7 +385,7 @@ export function FaceCaptureModal({
           </div>
 
           {/* Status / Guidance Pill */}
-          <div className="mt-3.5 inline-flex items-center gap-2 rounded-full bg-muted/80 px-3.5 py-1 text-center text-xs font-medium text-muted-foreground border border-border/60">
+          <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-muted/80 px-3 py-1 text-center text-xs font-medium text-muted-foreground border border-border/60">
             <span className="relative flex h-2 w-2">
               <span
                 className={cn(
@@ -426,14 +432,14 @@ export function FaceCaptureModal({
         </div>
 
         {/* Footer Actions — Big Shutter Button + Native Camera Option */}
-        <div className="border-t border-border/80 bg-background/95 px-5 py-4 backdrop-blur-sm">
-          <div className="flex items-center justify-between gap-3">
+        <div className="border-t border-border/80 bg-background/95 px-4 py-3 sm:px-5 sm:py-4 backdrop-blur-sm shrink-0">
+          <div className="flex items-center justify-between gap-2.5 sm:gap-3">
             {/* Built-in Device Camera Trigger (Native phone camera app) */}
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="gap-1.5 text-xs font-medium"
+              className="gap-1.5 text-xs font-medium px-2.5 sm:px-3"
               onClick={() => fileInputRef.current?.click()}
               disabled={busy || verifiedSuccess}
             >
@@ -444,7 +450,7 @@ export function FaceCaptureModal({
             {/* Primary Shutter Button */}
             <Button
               type="button"
-              className="flex-1 gap-2 h-11 text-sm font-semibold shadow-md shadow-primary/25"
+              className="flex-1 gap-2 h-10 sm:h-11 text-xs sm:text-sm font-semibold shadow-md shadow-primary/25"
               onClick={captureFromVideo}
               disabled={busy || !cameraReady || verifiedSuccess}
             >
@@ -466,7 +472,7 @@ export function FaceCaptureModal({
               type="button"
               variant="ghost"
               size="sm"
-              className="text-xs"
+              className="text-xs px-2 sm:px-3"
               onClick={handleClose}
               disabled={busy && verifiedSuccess}
             >
@@ -475,6 +481,7 @@ export function FaceCaptureModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
