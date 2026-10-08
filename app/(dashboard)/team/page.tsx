@@ -410,6 +410,7 @@ export default function TeamPage() {
   const [view, setView] = useState<ViewMode>("directory");
   const [query, setQuery] = useState("");
   const [selectedPhoto, setSelectedPhoto] = useState<{ src: string; name: string } | null>(null);
+  const [selectedProfileUser, setSelectedProfileUser] = useState<any | null>(null);
 
   const { data, loading, error } = useQuery(GET_TEAM_HIERARCHY, {
     variables: { userId: focusedUserId },
@@ -521,8 +522,6 @@ export default function TeamPage() {
   const pendingCount = pendingApprovals?.filter(
     (r: any) => (r.status || "").toLowerCase() === "pending"
   ).length;
-
-  const [selectedProfileUser, setSelectedProfileUser] = useState<any | null>(null);
 
   const handleViewProfile = (member: any) => {
     if (!member) return;
