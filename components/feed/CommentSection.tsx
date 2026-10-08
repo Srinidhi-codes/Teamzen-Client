@@ -13,6 +13,7 @@ import { GET_POST_COMMENTS } from '@/lib/graphql/feed/queries';
 import { useNotifications } from '@/lib/hooks/useNotifications';
 import dynamic from 'next/dynamic';
 import { useDirectoryUsers } from '@/lib/graphql/users/usersHooks';
+import { resolveAvatarUrl } from '@/lib/utils';
 
 const MentionsInputWrapper = dynamic(() => import('./MentionsInputWrapper'), { ssr: false }) as any;
 
@@ -22,7 +23,7 @@ const flattenReplies = (replies: any[] = []): any[] => {
   }, []);
 };
 
-const CommentItem = ({ comment, postId, depth = 0, fetchMentions }: any) => {
+const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser }: any) => {
   const { user } = useUser();
   const [isReplying, setIsReplying] = useState(false);
   const [showAllReplies, setShowAllReplies] = useState(false);
@@ -132,15 +133,22 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions }: any) => {
         <div className="absolute left-4 sm:left-5 top-10 sm:top-12 bottom-0 w-px bg-gray-200 dark:bg-gray-700" />
       )}
       
-      <Avatar className={`shrink-0 ${avatarSize}`}>
-        <AvatarImage src={comment.author.profilePictureUrl} className="object-cover" />
+      <Avatar 
+        className={`shrink-0 ${avatarSize} cursor-pointer hover:opacity-85 transition-opacity`}
+        onClick={() => comment.author?.id && onViewUser?.(comment.author.id.toString(), comment.author)}
+        title="View profile card"
+      >
+        <AvatarImage src={resolveAvatarUrl(comment.author.profilePictureUrl)} className="object-cover" />
         <AvatarFallback>{comment.author.firstName?.[0]}</AvatarFallback>
       </Avatar>
       
       <div className="flex-1 min-w-0">
         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 inline-block max-w-full">
           <div className="flex items-center justify-between gap-2">
-            <span className="font-semibold text-xs sm:text-sm truncate">
+            <span 
+              className="font-semibold text-xs sm:text-sm truncate cursor-pointer hover:underline"
+              onClick={() => comment.author?.id && onViewUser?.(comment.author.id.toString(), comment.author)}
+            >
               {comment.author.firstName} {comment.author.lastName}
             </span>
             <div className="flex items-center gap-2 shrink-0">
@@ -205,7 +213,7 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions }: any) => {
         {isReplying && (
           <div className="flex gap-2 mt-2 items-start relative w-full">
             <Avatar className="h-6 w-6 sm:h-8 sm:w-8 mt-1 shrink-0">
-              <AvatarImage src={user?.profilePictureUrl || (user as any)?.profilePicture} className="object-cover" />
+              <AvatarImage src={resolveAvatarUrl(user?.profilePictureUrl || (user as any)?.profilePicture)} className="object-cover" />
               <AvatarFallback>{user?.firstName?.[0]}</AvatarFallback>
             </Avatar>
             <div className="flex-1 border rounded-2xl px-2 sm:px-3 py-1 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 min-h-[36px] sm:min-h-[40px] pt-1.5 sm:pt-2">
@@ -236,6 +244,7 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions }: any) => {
                 postId={postId} 
                 depth={1} 
                 fetchMentions={fetchMentions} 
+                onViewUser={onViewUser}
               />
             ))}
             {!showAllReplies && allReplies.length > 2 && (
@@ -254,7 +263,17 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions }: any) => {
   );
 };
 
-export const CommentSection = ({ postId, isExpanded, commentsCount = 0 }: { postId: string, isExpanded: boolean, commentsCount?: number }) => {
+export const CommentSection = ({ 
+  postId, 
+  isExpanded, 
+  commentsCount = 0,
+  onViewUser
+}: { 
+  postId: string; 
+  isExpanded: boolean; 
+  commentsCount?: number;
+  onViewUser?: (userId: string, author?: any) => void;
+}) => {
   const { comments: initialComments, loading, refetch, topLevelCommentsCount } = usePostComments(postId, !isExpanded);
   const [allComments, setAllComments] = useState<any[]>([]);
   const [content, setContent] = useState('');
@@ -366,7 +385,7 @@ export const CommentSection = ({ postId, isExpanded, commentsCount = 0 }: { post
       {/* New Comment Input */}
       <div className="flex gap-2 sm:gap-3 mb-4 sm:mb-6 items-start relative w-full">
         <Avatar className="h-8 w-8 sm:h-10 sm:w-10 mt-1 shrink-0">
-          <AvatarImage src={user?.profilePictureUrl || (user as any)?.profilePicture} className="object-cover" />
+          <AvatarImage src={resolveAvatarUrl(user?.profilePictureUrl || (user as any)?.profilePicture)} className="object-cover" />
           <AvatarFallback>{user?.firstName?.[0] || 'U'}</AvatarFallback>
         </Avatar>
         <div className="flex-1 border rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 min-h-[40px] sm:min-h-[44px] relative group pr-12 sm:pr-14">
@@ -395,7 +414,13 @@ export const CommentSection = ({ postId, isExpanded, commentsCount = 0 }: { post
       ) : (
         <div className="space-y-2">
           {allComments.map((comment: any) => (
-            <CommentItem key={comment.id} comment={comment} postId={postId} fetchMentions={fetchMentions} />
+            <CommentItem 
+              key={comment.id} 
+              comment={comment} 
+              postId={postId} 
+              fetchMentions={fetchMentions} 
+              onViewUser={onViewUser}
+            />
           ))}
           
           {hasMoreComments && (

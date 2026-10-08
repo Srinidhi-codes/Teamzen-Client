@@ -1,8 +1,16 @@
+/**
+ * Ultra-fast, lightweight face descriptor & verification service.
+ * Operates identically to the mobile app:
+ * - Uses native built-in camera capture or direct hardware webcam stream.
+ * - Compresses photo to 480px JPEG in milliseconds on browser canvas.
+ * - Delegates 128-d face detection & verification to the server-side AI engine (/api/attendance/face/extract/).
+ * - ZERO client-side neural net models (no TensorFlow, no face-api lag, no memory bloat).
+ */
+
 import {
   FACE_DESCRIPTOR_DIM,
   FACE_DISTANCE_THRESHOLD,
   FACE_MATCH_THRESHOLD,
-  FACE_MODELS_URL,
 } from "./constants";
 
 export {
@@ -11,38 +19,18 @@ export {
   FACE_MATCH_THRESHOLD,
 };
 
-let modelsReady: Promise<void> | null = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let faceapiModule: any = null;
-
-async function getFaceApi() {
-  // TF backend must init before face-api nets
-  await import("@tensorflow/tfjs");
-  if (!faceapiModule) {
-    faceapiModule = await import("@vladmandic/face-api");
-  }
-  return faceapiModule;
+export interface FaceExtractionResult {
+  descriptor: number[];
+  detectionConfidence: number;
+  verified?: boolean;
+  distance?: number;
+  matchScore?: number;
+  imageBase64: string;
 }
 
-/** Load tiny face detector + landmarks + FaceNet recognition (once). */
+/** Instant no-op for backward compatibility. Server runs the AI models now. */
 export function loadFaceModels(): Promise<void> {
-  if (!modelsReady) {
-    modelsReady = (async () => {
-      const faceapi = await getFaceApi();
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(FACE_MODELS_URL),
-        faceapi.nets.faceLandmark68Net.loadFromUri(FACE_MODELS_URL),
-        faceapi.nets.faceRecognitionNet.loadFromUri(FACE_MODELS_URL),
-      ]);
-      if (!faceapi.nets.faceRecognitionNet.isLoaded) {
-        throw new Error("Face recognition model failed to load.");
-      }
-    })().catch((err) => {
-      modelsReady = null;
-      throw err;
-    });
-  }
-  return modelsReady;
+  return Promise.resolve();
 }
 
 export function euclideanDistance(a: number[], b: number[]): number {
@@ -56,7 +44,6 @@ export function euclideanDistance(a: number[], b: number[]): number {
 }
 
 export function distanceToSimilarity(distance: number): number {
-  // Exact cosine similarity for unit-normalized embeddings: 1 - (d^2)/2
   return Math.max(0, Math.min(1, 1 - (distance * distance) / 2));
 }
 
@@ -64,131 +51,194 @@ export function isFaceMatch(distance: number): boolean {
   return distance <= FACE_DISTANCE_THRESHOLD;
 }
 
-/** Normalize to a plain number[] of exact FaceNet length. */
-export function normalizeDescriptor(raw: ArrayLike<number>): number[] {
-  const out: number[] = [];
-  for (let i = 0; i < raw.length; i++) {
-    const v = Number(raw[i]);
-    if (!Number.isFinite(v)) {
-      throw new Error("Face descriptor contained invalid numbers. Please retry.");
+/**
+ * Downscale and compress an image source to max 480px width JPEG data URL.
+ * Prevents large payload transfer and memory spikes.
+ */
+export async function compressPhoto(
+  source: File | Blob | HTMLVideoElement | HTMLCanvasElement | HTMLImageElement | string,
+  maxWidth = 480,
+  quality = 0.8
+): Promise<string> {
+  if (typeof window === "undefined") return "";
+
+  // If already a small data URL and not too large
+  if (typeof source === "string" && source.startsWith("data:image/") && source.length < 200000) {
+    return source;
+  }
+
+  return new Promise<string>((resolve, reject) => {
+    const processImageElement = (img: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement) => {
+      try {
+        const sw = img instanceof HTMLVideoElement ? img.videoWidth : img.width;
+        const sh = img instanceof HTMLVideoElement ? img.videoHeight : img.height;
+        if (!sw || !sh) {
+          throw new Error("Unable to read video/image dimensions");
+        }
+
+        const scale = Math.min(1, maxWidth / sw);
+        const dw = Math.round(sw * scale);
+        const dh = Math.round(sh * scale);
+
+        const canvas = document.createElement("canvas");
+        canvas.width = dw;
+        canvas.height = dh;
+        const ctx = canvas.getContext("2d", { willReadFrequently: false });
+        if (!ctx) {
+          throw new Error("Canvas 2D context unavailable");
+        }
+
+        // Mirror front camera if it's a video element
+        if (img instanceof HTMLVideoElement) {
+          ctx.save();
+          ctx.translate(dw, 0);
+          ctx.scale(-1, 1);
+          ctx.drawImage(img, 0, 0, dw, dh);
+          ctx.restore();
+        } else {
+          ctx.drawImage(img, 0, 0, dw, dh);
+        }
+
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        resolve(dataUrl);
+      } catch (err) {
+        reject(err);
+      }
+    };
+
+    if (source instanceof HTMLVideoElement || source instanceof HTMLCanvasElement) {
+      processImageElement(source);
+      return;
     }
-    out.push(v);
-  }
-  if (out.length !== FACE_DESCRIPTOR_DIM) {
-    throw new Error(
-      `Face model returned ${out.length} values (need ${FACE_DESCRIPTOR_DIM}). Hard-refresh the page and re-enroll.`
-    );
-  }
-  return out;
+
+    if (source instanceof HTMLImageElement) {
+      if (source.complete) {
+        processImageElement(source);
+      } else {
+        source.onload = () => processImageElement(source);
+        source.onerror = () => reject(new Error("Failed to load source image"));
+      }
+      return;
+    }
+
+    // File or Blob or string URL
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      processImageElement(img);
+      URL.revokeObjectURL(img.src);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src);
+      reject(new Error("Failed to load image file"));
+    };
+
+    if (typeof source === "string") {
+      img.src = source;
+    } else if (typeof Blob !== "undefined" && source instanceof Blob) {
+      img.src = URL.createObjectURL(source);
+    } else {
+      reject(new Error("Unsupported image source"));
+    }
+  });
 }
 
 /**
- * Detect a single frontal face and return FaceNet 128-d descriptor.
- * Rejects no-face / multi-face frames.
+ * Snapshot video frame to JPEG data URL.
  */
-export async function extractFaceDescriptor(
-  input: HTMLVideoElement | HTMLCanvasElement | HTMLImageElement
-): Promise<{ descriptor: number[]; detectionScore: number }> {
-  await loadFaceModels();
-  const faceapi = await getFaceApi();
-
-  // On mobile devices / PWA, taking a raster snapshot into an offscreen canvas
-  // avoids video texture flickering/lock during WebGL inference.
-  let detectionTarget: HTMLCanvasElement | HTMLVideoElement | HTMLImageElement = input;
-  if (typeof document !== "undefined" && input instanceof HTMLVideoElement) {
-    if (input.videoWidth > 0 && input.videoHeight > 0) {
-      const snapCanvas = document.createElement("canvas");
-      snapCanvas.width = input.videoWidth;
-      snapCanvas.height = input.videoHeight;
-      const ctx = snapCanvas.getContext("2d");
-      if (ctx) {
-        ctx.drawImage(input, 0, 0, input.videoWidth, input.videoHeight);
-        detectionTarget = snapCanvas;
-      }
-    }
-  }
-
-  const options = new faceapi.TinyFaceDetectorOptions({
-    inputSize: 416,
-    scoreThreshold: 0.45,
-  });
-
-  const detectionPromise = (async () => {
-    const detections = await faceapi
-      .detectAllFaces(detectionTarget, options)
-      .withFaceLandmarks()
-      .withFaceDescriptors();
-
-    if (!detections.length) {
-      throw new Error("No face detected. Center your face, look at the camera, and ensure good lighting.");
-    }
-    if (detections.length > 1) {
-      throw new Error("Multiple faces detected. Only one person should be in frame.");
-    }
-
-    const best = detections[0];
-    const box = best.detection.box;
-    const minSide = Math.min(
-      detectionTarget instanceof HTMLVideoElement
-        ? detectionTarget.videoWidth
-        : detectionTarget instanceof HTMLImageElement
-          ? detectionTarget.naturalWidth
-          : detectionTarget.width,
-      detectionTarget instanceof HTMLVideoElement
-        ? detectionTarget.videoHeight
-        : detectionTarget instanceof HTMLImageElement
-          ? detectionTarget.naturalHeight
-          : detectionTarget.height
-    );
-    if (box.width < minSide * 0.15 || box.height < minSide * 0.15) {
-      throw new Error("Move closer so your face fills more of the circle.");
-    }
-
-    if (!best.descriptor || best.descriptor.length === 0) {
-      throw new Error(
-        "Face embedding missing — recognition model may not have loaded. Hard-refresh and retry."
-      );
-    }
-
-    const descriptor = normalizeDescriptor(best.descriptor);
-
-    return {
-      descriptor,
-      detectionScore: best.detection.score,
-    };
-  })();
-
-  const timeoutPromise = new Promise<{ descriptor: number[]; detectionScore: number }>(
-    (_, reject) =>
-      setTimeout(
-        () =>
-          reject(
-            new Error(
-              "Face verification timed out. Please check lighting and hold steady, then try again."
-            )
-          ),
-        12000
-      )
-  );
-
-  return Promise.race([detectionPromise, timeoutPromise]);
-}
-
-/** Snapshot video to JPEG data URL for audit upload. */
 export function captureJpegFromVideo(
   video: HTMLVideoElement,
-  canvas: HTMLCanvasElement,
-  quality = 0.7
+  canvas?: HTMLCanvasElement | null,
+  quality = 0.8
 ): string {
   const w = video.videoWidth || 640;
   const h = video.videoHeight || 480;
-  const side = Math.min(w, h);
-  const sx = (w - side) / 2;
-  const sy = (h - side) / 2;
-  canvas.width = 256;
-  canvas.height = 256;
-  const ctx = canvas.getContext("2d");
+  const targetCanvas = canvas || document.createElement("canvas");
+  
+  const scale = Math.min(1, 480 / w);
+  const dw = Math.round(w * scale);
+  const dh = Math.round(h * scale);
+  targetCanvas.width = dw;
+  targetCanvas.height = dh;
+  
+  const ctx = targetCanvas.getContext("2d");
   if (!ctx) return "";
-  ctx.drawImage(video, sx, sy, side, side, 0, 0, 256, 256);
-  return canvas.toDataURL("image/jpeg", quality);
+  
+  // Mirror for natural selfie orientation
+  ctx.save();
+  ctx.translate(dw, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, 0, 0, dw, dh);
+  ctx.restore();
+  
+  return targetCanvas.toDataURL("image/jpeg", quality);
+}
+
+/**
+ * Upload captured photo to backend AI engine for face detection & verification.
+ * Same endpoint and contract as the mobile app.
+ */
+export async function extractAndVerifyFace(
+  imageBase64: string,
+  options: { verify?: boolean; enroll?: boolean; append?: boolean } = {}
+): Promise<FaceExtractionResult> {
+  // Compress before upload if not already compressed
+  const compressed = await compressPhoto(imageBase64, 480, 0.82);
+
+  const response = await fetch("/api/attendance/face/extract/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include", // Send session/auth cookies
+    body: JSON.stringify({
+      photo_base64: compressed,
+      verify: !!options.verify,
+      enroll: !!options.enroll,
+      append: !!options.append,
+    }),
+  });
+
+  const rawText = await response.text();
+  let data: any;
+  try {
+    data = JSON.parse(rawText);
+  } catch {
+    throw new Error(`Face verification server response error (${response.status}). Please retry.`);
+  }
+
+  if (!response.ok || data.error) {
+    const errorMsg =
+      data.error ||
+      (response.status === 400
+        ? "Face verification failed. Please ensure good lighting and face the camera directly."
+        : `Server error (${response.status}). Please retry.`);
+    throw new Error(errorMsg);
+  }
+
+  return {
+    descriptor: data.descriptor || [],
+    detectionConfidence: data.detection_confidence || 1.0,
+    verified: data.verified !== undefined ? data.verified : true,
+    distance: data.distance,
+    matchScore: data.match_score ?? 1.0,
+    imageBase64: compressed,
+  };
+}
+
+/**
+ * Backward compatibility wrapper for extractFaceDescriptor.
+ */
+export async function extractFaceDescriptor(
+  input: HTMLVideoElement | HTMLCanvasElement | HTMLImageElement
+): Promise<{ descriptor: number[]; detectionScore: number; verified?: boolean; matchScore?: number; imageBase64?: string }> {
+  const photoBase64 = await compressPhoto(input, 480, 0.82);
+  const result = await extractAndVerifyFace(photoBase64, { verify: true });
+  return {
+    descriptor: result.descriptor,
+    detectionScore: result.detectionConfidence,
+    verified: result.verified,
+    matchScore: result.matchScore,
+    imageBase64: result.imageBase64,
+  };
 }

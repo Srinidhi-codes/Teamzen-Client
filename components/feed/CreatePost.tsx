@@ -10,6 +10,7 @@ import ConfirmationModal from '@/components/common/ConfirmationModal';
 import { RichTextEditor } from './RichTextEditor';
 import { useApolloClient } from '@apollo/client/react';
 import { GET_DIRECTORY_USERS } from '@/lib/graphql/users/queries';
+import { resolveAvatarUrl } from '@/lib/utils';
 
 export const CreatePost = () => {
   const [title, setTitle] = useState('');
@@ -114,7 +115,7 @@ export const CreatePost = () => {
         <CardContent className="pt-6">
           <div className="flex gap-4 mb-4">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={user?.profilePictureUrl || (user as any)?.profilePicture} alt={user?.firstName} />
+              <AvatarImage src={resolveAvatarUrl(user?.profilePictureUrl || (user as any)?.profilePicture)} alt={user?.firstName} />
               <AvatarFallback>{user?.firstName?.[0] || '?'}</AvatarFallback>
             </Avatar>
             <input

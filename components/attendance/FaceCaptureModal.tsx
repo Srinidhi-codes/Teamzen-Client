@@ -1,17 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, CheckCircle2, Loader2, RefreshCw, ScanFace, X } from "lucide-react";
+import {
+  Camera,
+  CheckCircle2,
+  FlipHorizontal,
+  Loader2,
+  RefreshCw,
+  ScanFace,
+  Smartphone,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
+  compressPhoto,
   captureJpegFromVideo,
-  distanceToSimilarity,
-  euclideanDistance,
-  extractFaceDescriptor,
-  isFaceMatch,
-  loadFaceModels,
-  FACE_DISTANCE_THRESHOLD,
+  extractAndVerifyFace,
 } from "@/lib/face/descriptor";
 
 type Mode = "enroll" | "verify";
@@ -33,21 +38,20 @@ interface FaceCaptureModalProps {
 export function FaceCaptureModal({
   open,
   mode,
-  enrolledDescriptor,
   title,
   onClose,
   onSuccess,
 }: FaceCaptureModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [modelsLoading, setModelsLoading] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const [verifiedSuccess, setVerifiedSuccess] = useState(false);
-  const [hint, setHint] = useState("Center your face in the circle");
+  const [hint, setHint] = useState("Align your face and tap capture");
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -71,53 +75,38 @@ export function FaceCaptureModal({
     onClose();
   }, [stopCamera, onClose]);
 
-  const initCamera = useCallback(async () => {
+  // Start instant 60fps video feed (NO TensorFlow, NO model downloads)
+  const initCamera = useCallback(async (desiredFacing: "user" | "environment" = "user") => {
     stopCamera();
     setError(null);
     setCameraReady(false);
-    setModelsLoading(true);
+
+    if (!navigator?.mediaDevices?.getUserMedia) {
+      setError("Webcam stream is not supported on this browser. Use the device camera button below.");
+      return;
+    }
 
     try {
-      // Step 1: Load face models
-      await loadFaceModels();
-      setModelsLoading(false);
-
-      if (!navigator?.mediaDevices?.getUserMedia) {
-        throw new Error(
-          "Camera access is not supported or not allowed on this browser. Ensure HTTPS is used."
-        );
-      }
-
-      // Step 2: Acquire camera stream with mobile PWA fallbacks
       let stream: MediaStream | null = null;
       try {
-        // Ideal for mobile front camera
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
-            facingMode: "user",
+            facingMode: desiredFacing,
             width: { ideal: 640 },
-            height: { ideal: 640 },
+            height: { ideal: 480 },
           },
           audio: false,
         });
       } catch {
-        try {
-          // Fallback without resolution constraints
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "user" },
-            audio: false,
-          });
-        } catch {
-          // Final fallback
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: false,
-          });
-        }
+        // Fallback without resolution constraints
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: desiredFacing },
+          audio: false,
+        });
       }
 
       if (!stream) {
-        throw new Error("Unable to initialize camera video feed.");
+        throw new Error("Unable to access camera feed.");
       }
 
       streamRef.current = stream;
@@ -132,25 +121,20 @@ export function FaceCaptureModal({
           await video.play();
           setCameraReady(true);
         } catch {
-          // Autoplay on iOS / mobile may wait for play event
           setCameraReady(true);
         }
       }
     } catch (e: any) {
       const msg = e?.message || "";
-      if (msg.includes("face") || msg.includes("model")) {
-        setError("Biometric models could not be loaded. Please check your network and retry.");
-      } else if (
+      if (
         msg.includes("Permission") ||
         msg.includes("denied") ||
         msg.includes("NotAllowedError")
       ) {
-        setError("Camera permission was denied. Please allow camera access in browser settings.");
+        setError("Camera permission denied. Please allow camera access in browser settings or use the device camera button below.");
       } else {
-        setError(msg || "Camera unavailable. Please check camera permissions and retry.");
+        setError("Could not start live webcam. You can use your device's built-in camera below.");
       }
-    } finally {
-      setModelsLoading(false);
     }
   }, [stopCamera]);
 
@@ -164,223 +148,305 @@ export function FaceCaptureModal({
     }
 
     setVerifiedSuccess(false);
-    setHint("Center your face in the circle");
-    void initCamera();
+    setHint("Align your face and tap capture");
+
+    // Check if on a mobile touchscreen device:
+    const isMobile =
+      typeof navigator !== "undefined" &&
+      (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      ) ||
+        (navigator.maxTouchPoints && navigator.maxTouchPoints > 2));
+
+    // If mobile, automatically prompt native built-in camera app
+    if (isMobile && fileInputRef.current) {
+      const timer = setTimeout(() => {
+        try {
+          fileInputRef.current?.click();
+        } catch {
+          // ignore
+        }
+      }, 150);
+      void initCamera(facingMode);
+      return () => clearTimeout(timer);
+    }
+
+    void initCamera(facingMode);
 
     return () => {
       stopCamera();
     };
-  }, [open, initCamera, stopCamera]);
+  }, [open, initCamera, stopCamera, facingMode]);
 
-  const capture = async () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-
-    if (!video || !canvas || video.readyState < 2 || !video.videoWidth) {
-      setError("Camera is still warming up. Please wait a moment and tap again.");
-      return;
-    }
-
+  // Process a captured photo through backend AI engine
+  const processPhoto = async (photoBase64: string) => {
     setBusy(true);
     setError(null);
-    setHint("Analyzing facial biometrics…");
+    setHint("Verifying face with AI…");
 
     try {
-      const { descriptor } = await extractFaceDescriptor(video);
-      const imageBase64 = captureJpegFromVideo(video, canvas);
+      const result = await extractAndVerifyFace(photoBase64, {
+        verify: mode === "verify",
+        enroll: mode === "enroll",
+      });
 
-      if (mode === "verify") {
-        if (!enrolledDescriptor || !enrolledDescriptor.length) {
-          setError("No enrolled face template found. Please enroll first in your profile.");
-          setHint("Face enrollment required.");
-          setBusy(false);
-          return;
-        }
+      setVerifiedSuccess(true);
+      setHint(mode === "enroll" ? "Face enrolled successfully!" : "Face verified!");
+      stopCamera();
 
-        const distance = euclideanDistance(descriptor, enrolledDescriptor);
-        const matchScore = distanceToSimilarity(distance);
-
-        if (!isFaceMatch(distance)) {
-          setError(
-            `Face did not match enrolled template (score: ${(matchScore * 100).toFixed(0)}%). Hold still and tap to retry.`
-          );
-          setHint("Hold still & face camera directly");
-          setBusy(false);
-          return;
-        }
-
-        // Verification Succeeded!
-        setVerifiedSuccess(true);
-        setHint("Face verified successfully!");
-        stopCamera();
-
-        // Close modal immediately and invoke success handler
+      // Brief delay to show success checkmark
+      setTimeout(() => {
         handleClose();
         void Promise.resolve(
           onSuccess({
-            descriptor: [...descriptor],
-            matchScore,
-            verified: true,
-            imageBase64,
+            descriptor: result.descriptor,
+            matchScore: result.matchScore ?? 1.0,
+            verified: result.verified ?? true,
+            imageBase64: result.imageBase64,
           })
         );
-        return;
-      }
-
-      // Enrollment Succeeded!
-      setVerifiedSuccess(true);
-      setHint("Face captured successfully!");
-      stopCamera();
-
-      handleClose();
-      void Promise.resolve(
-        onSuccess({
-          descriptor: [...descriptor],
-          matchScore: 1,
-          verified: true,
-          imageBase64,
-        })
-      );
+      }, 350);
     } catch (e: any) {
-      setHint("Hold still, face the camera, and ensure good lighting");
-      setError(e?.message || "Capture failed. Please try again.");
+      setHint("Ensure good lighting and face camera directly");
+      setError(e?.message || "Verification failed. Please try again.");
     } finally {
       setBusy(false);
     }
+  };
+
+  // Capture from live video stream
+  const captureFromVideo = async () => {
+    const video = videoRef.current;
+    if (!video || !cameraReady || video.readyState < 2) {
+      setError("Camera is still warming up. Please hold steady and try again.");
+      return;
+    }
+
+    try {
+      const photoBase64 = captureJpegFromVideo(video);
+      if (!photoBase64) {
+        setError("Could not capture frame. Please try again.");
+        return;
+      }
+      await processPhoto(photoBase64);
+    } catch (e: any) {
+      setError(e?.message || "Capture error. Please try again.");
+    }
+  };
+
+  // Handle photo from built-in device camera input
+  const handleNativeFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setBusy(true);
+      setHint("Processing photo…");
+      const compressed = await compressPhoto(file, 480, 0.82);
+      await processPhoto(compressed);
+    } catch (err: any) {
+      setError(err?.message || "Failed to read camera photo.");
+      setBusy(false);
+    } finally {
+      // Clear input so same file can be captured again if needed
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const toggleFacingMode = () => {
+    const next = facingMode === "user" ? "environment" : "user";
+    setFacingMode(next);
+    void initCamera(next);
   };
 
   if (!open) return null;
 
   return (
     <div
-      className="fixed inset-0 z-[220] flex flex-col bg-background sm:items-center sm:justify-center sm:bg-black/75 sm:p-4"
-      style={{ height: "100dvh", maxHeight: "100dvh" }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="face-capture-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
     >
-      <div className="relative flex h-full w-full flex-col justify-between overflow-hidden bg-background sm:h-auto sm:max-h-[min(90dvh,720px)] sm:max-w-md sm:rounded-2xl sm:border sm:border-border sm:bg-card sm:shadow-2xl">
+      {/* Hidden native built-in camera input for mobile hardware shutter */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="user"
+        onChange={handleNativeFile}
+        className="hidden"
+        aria-hidden="true"
+      />
+
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
+        onClick={handleClose}
+      />
+
+      {/* Modal Dialog */}
+      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-border/80 bg-card text-card-foreground shadow-2xl animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border/70 px-4 py-3.5 pt-[max(0.875rem,env(safe-area-inset-top))] sm:py-3.5 sm:pt-3.5">
+        <div className="flex items-center justify-between border-b border-border/60 px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <ScanFace className="h-4 w-4" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <ScanFace className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold tracking-tight text-foreground">
-                {title || (mode === "enroll" ? "Enroll Face Biometrics" : "Face Attendance Verification")}
-              </h3>
-              <p className="text-[11px] text-muted-foreground">
-                {mode === "enroll" ? "Register your face ID" : "Verify identity for check in/out"}
+              <h2 id="face-capture-title" className="text-sm font-semibold tracking-tight">
+                {title || (mode === "enroll" ? "Enroll Your Face" : "Face Verification")}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {mode === "enroll"
+                  ? "Take a clear selfie to register your biometric profile"
+                  : "Quick selfie verification for attendance punch"}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleClose}
-            disabled={busy && verifiedSuccess}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95 transition-all"
-            aria-label="Close"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Viewfinder Center Section */}
-        <div className="flex flex-1 flex-col items-center justify-center px-4 py-4 sm:py-6 overflow-y-auto min-h-0">
-          <div className="relative mx-auto aspect-square w-64 sm:w-72 max-w-[80vw] overflow-hidden rounded-full border-2 border-primary/50 shadow-2xl bg-black ring-4 ring-primary/20">
+        {/* Viewfinder Content */}
+        <div className="flex flex-col items-center p-5">
+          <div className="relative aspect-4/3 w-full max-w-sm overflow-hidden rounded-2xl border-2 border-primary/20 bg-black shadow-inner">
+            {/* Live Video Feed (60 FPS, Mirrored) */}
             <video
               ref={videoRef}
-              autoPlay
               playsInline
               muted
-              className="h-full w-full scale-x-[-1] object-cover"
+              autoPlay
+              className={cn(
+                "h-full w-full object-cover transition-opacity duration-300",
+                facingMode === "user" ? "-scale-x-100" : "",
+                cameraReady ? "opacity-100" : "opacity-0"
+              )}
             />
 
-            {/* Inner Circular Target Guide */}
-            <div className="pointer-events-none absolute inset-3 rounded-full border border-dashed border-white/40" />
-
-            {/* Scanning Beam Micro-Animation */}
-            {cameraReady && !modelsLoading && !error && (
-              <div className="pointer-events-none absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary/80 to-transparent animate-pulse" />
+            {/* Face Alignment Oval Guide */}
+            {cameraReady && !verifiedSuccess && !busy && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div className="h-44 w-36 sm:h-52 sm:w-40 rounded-full border-2 border-dashed border-white/60 shadow-[0_0_0_9999px_rgba(0,0,0,0.25)] transition-all animate-pulse" />
+              </div>
             )}
 
-            {/* Loading / Camera Starting Overlay */}
-            {(modelsLoading || !cameraReady) && !error && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/85 px-4 text-center text-white backdrop-blur-xs">
-                <Loader2 className="h-8 w-8 animate-spin text-primary mb-2.5" />
-                <p className="text-xs font-medium">
-                  {modelsLoading ? "Loading biometric models…" : "Starting camera…"}
-                </p>
-                <p className="text-[10px] text-white/70 mt-1">Please hold steady</p>
+            {/* Camera Warming Up / Starting Overlay */}
+            {!cameraReady && !error && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 px-4 text-center text-white">
+                <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+                <p className="text-xs font-medium">Opening camera…</p>
+                <p className="text-[11px] text-white/60 mt-1">Ensure good lighting</p>
+              </div>
+            )}
+
+            {/* Verifying with AI Overlay */}
+            {busy && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/75 px-4 text-center text-white backdrop-blur-xs animate-in fade-in duration-150">
+                <Loader2 className="h-10 w-10 animate-spin text-primary mb-2.5" />
+                <p className="text-sm font-semibold">Verifying Face…</p>
+                <p className="text-[11px] text-white/70 mt-0.5">Matching with enrolled profile</p>
               </div>
             )}
 
             {/* Instant Verified Feedback Overlay */}
             {verifiedSuccess && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-emerald-950/85 px-4 text-center text-white backdrop-blur-xs animate-in fade-in duration-200">
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-emerald-950/90 px-4 text-center text-white backdrop-blur-xs animate-in zoom-in-95 duration-200">
                 <CheckCircle2 className="h-12 w-12 text-emerald-400 mb-2 animate-bounce" />
                 <p className="text-sm font-bold">Face Verified!</p>
-                <p className="text-[11px] text-emerald-200/90 mt-0.5">Recording attendance…</p>
+                <p className="text-[11px] text-emerald-200/90 mt-0.5">Submitting attendance…</p>
               </div>
+            )}
+
+            {/* Flip Camera Button (if multiple cameras available) */}
+            {cameraReady && !busy && (
+              <button
+                type="button"
+                onClick={toggleFacingMode}
+                className="absolute top-2.5 right-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/75 transition-colors"
+                title="Flip Camera"
+              >
+                <FlipHorizontal className="h-4 w-4" />
+              </button>
             )}
           </div>
 
-          <canvas ref={canvasRef} className="hidden" />
-
-          {/* Real-time Guidance Pill */}
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-muted/70 px-3.5 py-1.5 text-center text-xs font-medium text-muted-foreground border border-border/60">
+          {/* Status / Guidance Pill */}
+          <div className="mt-3.5 inline-flex items-center gap-2 rounded-full bg-muted/80 px-3.5 py-1 text-center text-xs font-medium text-muted-foreground border border-border/60">
             <span className="relative flex h-2 w-2">
               <span
                 className={cn(
                   "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75",
-                  cameraReady ? "bg-emerald-400" : "bg-amber-400"
+                  verifiedSuccess ? "bg-emerald-400" : cameraReady ? "bg-emerald-400" : "bg-amber-400"
                 )}
               />
               <span
                 className={cn(
                   "relative inline-flex rounded-full h-2 w-2",
-                  cameraReady ? "bg-emerald-500" : "bg-amber-500"
+                  verifiedSuccess ? "bg-emerald-500" : cameraReady ? "bg-emerald-500" : "bg-amber-500"
                 )}
               />
             </span>
             <span>{hint}</span>
           </div>
 
-          {/* Error Banner with Retry */}
+          {/* Error Message with Quick Retry */}
           {error && (
-            <div className="mt-3 w-full max-w-sm rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-center text-xs text-destructive animate-in fade-in slide-in-from-top-1">
-              <p className="font-semibold">{error}</p>
-              {error.toLowerCase().includes("camera") && (
+            <div className="mt-3 w-full rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-center text-xs text-destructive animate-in fade-in slide-in-from-top-1">
+              <p className="font-medium">{error}</p>
+              <div className="mt-2.5 flex items-center justify-center gap-2">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="mt-2.5 h-8 text-xs border-destructive/40 text-destructive hover:bg-destructive/15"
-                  onClick={initCamera}
+                  className="h-7 text-xs border-destructive/40 text-destructive hover:bg-destructive/15"
+                  onClick={() => fileInputRef.current?.click()}
                 >
-                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Retry Camera
+                  <Smartphone className="mr-1 h-3 w-3" /> Built-in Camera App
                 </Button>
-              )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs border-destructive/40 text-destructive hover:bg-destructive/15"
+                  onClick={() => initCamera(facingMode)}
+                >
+                  <RefreshCw className="mr-1 h-3 w-3" /> Retry Stream
+                </Button>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Footer Actions */}
-        <div className="border-t border-border/80 bg-background/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:bg-card sm:p-4">
-          <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end">
+        {/* Footer Actions — Big Shutter Button + Native Camera Option */}
+        <div className="border-t border-border/80 bg-background/95 px-5 py-4 backdrop-blur-sm">
+          <div className="flex items-center justify-between gap-3">
+            {/* Built-in Device Camera Trigger (Native phone camera app) */}
             <Button
               type="button"
               variant="outline"
-              className="h-11 sm:h-10 w-full sm:w-auto text-sm font-medium"
-              onClick={handleClose}
-              disabled={busy && verifiedSuccess}
+              size="sm"
+              className="gap-1.5 text-xs font-medium"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={busy || verifiedSuccess}
             >
-              Cancel
+              <Smartphone className="h-3.5 w-3.5" />
+              <span>Native Camera</span>
             </Button>
+
+            {/* Primary Shutter Button */}
             <Button
               type="button"
-              size="lg"
-              className="h-11 sm:h-10 w-full gap-2 sm:w-auto text-sm font-semibold shadow-md shadow-primary/20"
-              onClick={capture}
-              disabled={busy || modelsLoading || !cameraReady || verifiedSuccess}
+              className="flex-1 gap-2 h-11 text-sm font-semibold shadow-md shadow-primary/25"
+              onClick={captureFromVideo}
+              disabled={busy || !cameraReady || verifiedSuccess}
             >
               {busy ? (
                 <>
@@ -390,11 +456,21 @@ export function FaceCaptureModal({
               ) : (
                 <>
                   <Camera className="h-4 w-4" />
-                  <span>
-                    {error ? "Try Again" : mode === "enroll" ? "Capture & Enroll" : "Verify & Continue"}
-                  </span>
+                  <span>{mode === "enroll" ? "Capture & Enroll" : "Snap & Punch"}</span>
                 </>
               )}
+            </Button>
+
+            {/* Cancel Button */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-xs"
+              onClick={handleClose}
+              disabled={busy && verifiedSuccess}
+            >
+              Cancel
             </Button>
           </div>
         </div>

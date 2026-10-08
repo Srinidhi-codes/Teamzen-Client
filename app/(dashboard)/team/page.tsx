@@ -9,9 +9,10 @@ import { useGraphQLTeamLeaves, useGraphQLLeaveRequests } from "@/lib/graphql/lea
 import { useGraphQLTeamAttendanceToday } from "@/lib/graphql/attendance/attendanceHooks";
 import { PageHeader } from "@/components/common/PageHeader";
 import { PhotoOverlay } from "@/components/common/PhotoOverlay";
+import { UserProfileModal } from "@/components/common/UserProfileModal";
 import { PageSkeleton } from "@/components/common/PageSkeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
+import { cn, resolveAvatarUrl } from "@/lib/utils";
 import { EmptyState } from "@/components/common/EmptyState";
 import { EmptyImages } from "@/lib/brand-images";
 import {
@@ -70,26 +71,32 @@ function MemberRow({
   highlight,
   onClick,
   onViewPhoto,
+  onViewProfile,
 }: {
   member: Member;
   label?: string;
   highlight?: boolean;
   onClick?: () => void;
   onViewPhoto?: (member: Member) => void;
+  onViewProfile?: (member: Member) => void;
 }) {
   const interactive = Boolean(onClick);
 
   const content = (
     <>
       <Avatar
-        className={cn("h-10 w-10 rounded-lg", member.profilePictureUrl && "cursor-zoom-in")}
+        className="h-10 w-10 rounded-lg cursor-pointer transition-transform hover:scale-105 active:scale-95"
         onClick={(e) => {
-          if (!member.profilePictureUrl || !onViewPhoto) return;
           e.stopPropagation();
-          onViewPhoto(member);
+          if (onViewProfile) {
+            onViewProfile(member);
+          } else if (onViewPhoto && member.profilePictureUrl) {
+            onViewPhoto(member);
+          }
         }}
+        title="View profile card"
       >
-        <AvatarImage src={member.profilePictureUrl || undefined} className="object-cover" />
+        <AvatarImage src={resolveAvatarUrl(member.profilePictureUrl) || undefined} className="object-cover" />
         <AvatarFallback className="rounded-lg bg-primary/10 text-sm font-semibold text-primary">
           {initials(member)}
         </AvatarFallback>
@@ -164,6 +171,7 @@ function TreeNode({
   expanded,
   onClick,
   onViewPhoto,
+  onViewProfile,
 }: {
   member: Member;
   label?: string;
@@ -171,6 +179,7 @@ function TreeNode({
   expanded?: boolean;
   onClick?: () => void;
   onViewPhoto?: (member: Member) => void;
+  onViewProfile?: (member: Member) => void;
 }) {
   const className = cn(
     "flex shrink-0 flex-col items-center rounded-xl border bg-card text-center transition-all duration-500 ease-out",
@@ -185,17 +194,20 @@ function TreeNode({
     <>
       <Avatar
         className={cn(
-          "rounded-xl transition-all duration-500",
-          expanded ? "h-14 w-14 sm:h-16 sm:w-16" : "h-12 w-12",
-          member.profilePictureUrl && "cursor-zoom-in"
+          "rounded-xl transition-all duration-300 cursor-pointer hover:scale-105 active:scale-95",
+          expanded ? "h-14 w-14 sm:h-16 sm:w-16" : "h-12 w-12"
         )}
         onClick={(e) => {
-          if (!member.profilePictureUrl || !onViewPhoto) return;
           e.stopPropagation();
-          onViewPhoto(member);
+          if (onViewProfile) {
+            onViewProfile(member);
+          } else if (onViewPhoto && member.profilePictureUrl) {
+            onViewPhoto(member);
+          }
         }}
+        title="View profile card"
       >
-        <AvatarImage src={member.profilePictureUrl || undefined} className="object-cover" />
+        <AvatarImage src={resolveAvatarUrl(member.profilePictureUrl) || undefined} className="object-cover" />
         <AvatarFallback className="rounded-xl bg-primary/10 text-sm font-semibold text-primary">
           {initials(member)}
         </AvatarFallback>
@@ -240,6 +252,7 @@ function HierarchyTree({
   expanded,
   onFocus,
   onViewPhoto,
+  onViewProfile,
 }: {
   manager: Member | null;
   user: Member | null;
@@ -250,6 +263,7 @@ function HierarchyTree({
   expanded?: boolean;
   onFocus: (id: string) => void;
   onViewPhoto?: (member: Member) => void;
+  onViewProfile?: (member: Member) => void;
 }) {
   const managerVisible = manager && matchesQuery(manager, query);
   const userVisible = user && matchesQuery(user, query);
@@ -296,6 +310,7 @@ function HierarchyTree({
               expanded={expanded}
               onClick={() => onFocus(manager.id)}
               onViewPhoto={onViewPhoto}
+              onViewProfile={onViewProfile}
             />
             {(midRow.length > 0 || visibleSubs.length > 0) && (
               <div
@@ -325,6 +340,7 @@ function HierarchyTree({
                 expanded={expanded}
                 onClick={highlight ? undefined : () => onFocus(member.id)}
                 onViewPhoto={onViewPhoto}
+                onViewProfile={onViewProfile}
               />
             ))}
           </div>
@@ -371,6 +387,7 @@ function HierarchyTree({
                     expanded={expanded}
                     onClick={() => onFocus(sub.id)}
                     onViewPhoto={onViewPhoto}
+                    onViewProfile={onViewProfile}
                   />
                 </div>
               ))}
@@ -504,6 +521,14 @@ export default function TeamPage() {
   const pendingCount = pendingApprovals?.filter(
     (r: any) => (r.status || "").toLowerCase() === "pending"
   ).length;
+
+  const [selectedProfileUser, setSelectedProfileUser] = useState<any | null>(null);
+
+  const handleViewProfile = (member: any) => {
+    if (!member) return;
+    setSelectedProfileUser(member);
+  };
+
   const handleViewMemberPhoto = (member: Member) => {
     if (!member.profilePictureUrl) return;
     setSelectedPhoto({
@@ -645,6 +670,7 @@ export default function TeamPage() {
                 name: `${item.user.firstName} ${item.user.lastName}`.trim(),
               })
             }
+            onViewProfile={(itemUser) => handleViewProfile(itemUser)}
           />
           <AttendanceTodayColumn
             title="On leave"
@@ -659,6 +685,7 @@ export default function TeamPage() {
                 name: `${item.user.firstName} ${item.user.lastName}`.trim(),
               })
             }
+            onViewProfile={(itemUser) => handleViewProfile(itemUser)}
           />
         </div>
       </section>
@@ -767,6 +794,7 @@ export default function TeamPage() {
                       label={label}
                       highlight={highlight}
                       onViewPhoto={handleViewMemberPhoto}
+                      onViewProfile={handleViewProfile}
                       onClick={
                         label === "You" || (focusedUserId && member.id === user?.id)
                           ? undefined
@@ -789,6 +817,7 @@ export default function TeamPage() {
                 expanded
                 onFocus={setFocusedUserId}
                 onViewPhoto={handleViewMemberPhoto}
+                onViewProfile={handleViewProfile}
               />
             ) : (
               <div className="space-y-5">
@@ -799,6 +828,7 @@ export default function TeamPage() {
                       member={manager}
                       label="Manager"
                       onViewPhoto={handleViewMemberPhoto}
+                      onViewProfile={handleViewProfile}
                       onClick={() => setFocusedUserId(manager.id)}
                     />
                   </div>
@@ -814,6 +844,7 @@ export default function TeamPage() {
                           label={focusedUserId ? "Selected" : "You"}
                           highlight
                           onViewPhoto={handleViewMemberPhoto}
+                          onViewProfile={handleViewProfile}
                         />
                       )}
                       {filteredPeers.map((peer) => (
@@ -822,6 +853,7 @@ export default function TeamPage() {
                           member={peer}
                           label="Peer"
                           onViewPhoto={handleViewMemberPhoto}
+                          onViewProfile={handleViewProfile}
                           onClick={() => setFocusedUserId(peer.id)}
                         />
                       ))}
@@ -839,6 +871,7 @@ export default function TeamPage() {
                           member={sub}
                           label="Report"
                           onViewPhoto={handleViewMemberPhoto}
+                          onViewProfile={handleViewProfile}
                           onClick={() => setFocusedUserId(sub.id)}
                         />
                       ))}
@@ -912,16 +945,18 @@ export default function TeamPage() {
                       className="flex items-center gap-3 rounded-xl border border-border px-3 py-3"
                     >
                       <Avatar
-                        className={cn("h-10 w-10 rounded-lg", pic && "cursor-zoom-in")}
+                        className="h-10 w-10 rounded-lg cursor-pointer transition-transform hover:scale-105 active:scale-95"
                         onClick={() => {
-                          if (!pic) return;
-                          setSelectedPhoto({
-                            src: pic,
-                            name: `${leave.user?.firstName || ""} ${leave.user?.lastName || ""}`.trim(),
-                          });
+                          if (leave.user) {
+                            handleViewProfile({
+                              ...leave.user,
+                              profilePictureUrl: leave.user?.profilePicture?.url || leave.user?.profilePictureUrl,
+                            });
+                          }
                         }}
+                        title="View profile card"
                       >
-                        <AvatarImage src={pic} className="object-cover" />
+                        <AvatarImage src={resolveAvatarUrl(pic) || undefined} className="object-cover" />
                         <AvatarFallback className="rounded-lg bg-muted text-xs font-semibold">
                           {leave.user?.firstName?.[0]}
                           {leave.user?.lastName?.[0]}
@@ -1002,6 +1037,12 @@ export default function TeamPage() {
         src={selectedPhoto?.src}
         name={selectedPhoto?.name}
       />
+      <UserProfileModal
+        userId={selectedProfileUser?.id ? String(selectedProfileUser.id) : null}
+        open={Boolean(selectedProfileUser)}
+        onOpenChange={(open) => !open && setSelectedProfileUser(null)}
+        initialData={selectedProfileUser}
+      />
     </div>
   );
 }
@@ -1027,6 +1068,7 @@ function AttendanceTodayColumn({
   tone,
   items,
   onViewPhoto,
+  onViewProfile,
 }: {
   title: string;
   empty: string;
@@ -1056,6 +1098,7 @@ function AttendanceTodayColumn({
       designation?: { name: string } | null;
     };
   }) => void;
+  onViewProfile?: (user: any) => void;
 }) {
   return (
     <div className="flex flex-col p-4 sm:p-5">
@@ -1089,11 +1132,18 @@ function AttendanceTodayColumn({
                 className="flex items-center gap-3 rounded-xl border border-border px-3 py-2.5"
               >
                 <Avatar
-                  className={cn("h-9 w-9 rounded-lg", item.user.profilePictureUrl && "cursor-zoom-in")}
-                  onClick={() => onViewPhoto?.(item)}
+                  className="h-9 w-9 rounded-lg cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                  onClick={() => {
+                    if (onViewProfile) {
+                      onViewProfile(item.user);
+                    } else {
+                      onViewPhoto?.(item);
+                    }
+                  }}
+                  title="View profile card"
                 >
                   <AvatarImage
-                    src={item.user.profilePictureUrl || undefined}
+                    src={resolveAvatarUrl(item.user.profilePictureUrl) || undefined}
                     className="object-cover"
                   />
                   <AvatarFallback className="rounded-lg bg-muted text-xs font-semibold">

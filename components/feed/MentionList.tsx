@@ -1,5 +1,6 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { resolveAvatarUrl } from '@/lib/utils';
 
 export const MentionList = forwardRef((props: any, ref) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -58,7 +59,7 @@ export const MentionList = forwardRef((props: any, ref) => {
           onClick={() => selectItem(index)}
         >
           <Avatar className="h-6 w-6">
-            <AvatarImage src={item.avatar} className="object-cover" />
+            <AvatarImage src={resolveAvatarUrl(item.avatar)} className="object-cover" />
             <AvatarFallback>{item.display[0]}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col">

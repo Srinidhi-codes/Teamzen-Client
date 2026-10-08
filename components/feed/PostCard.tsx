@@ -13,6 +13,7 @@ import { PhotoOverlay } from '@/components/common/PhotoOverlay';
 import { UserProfileModal } from '@/components/common/UserProfileModal';
 import { RichContentRenderer } from './RichContentRenderer';
 import { RichTextEditor } from './RichTextEditor';
+import { resolveAvatarUrl } from '@/lib/utils';
 
 export const PostCard = ({ post }: { post: any }) => {
   const { user } = useUser();
@@ -24,6 +25,7 @@ export const PostCard = ({ post }: { post: any }) => {
   
   // Profile Modal State
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserData, setSelectedUserData] = useState<any | null>(null);
   
   const { togglePostLike, deletePost, updatePost, viewPost } = useFeedMutations();
   const observerRef = React.useRef<HTMLDivElement>(null);
@@ -113,10 +115,13 @@ export const PostCard = ({ post }: { post: any }) => {
         <div className="flex justify-between items-start mb-4">
           <div 
             className="flex gap-3 cursor-pointer hover:opacity-80 transition-opacity group"
-            onClick={() => setSelectedUserId(post.author.id.toString())}
+            onClick={() => {
+              setSelectedUserId(post.author.id.toString());
+              setSelectedUserData(post.author);
+            }}
           >
             <Avatar className="h-10 w-10 ring-2 ring-transparent group-hover:ring-primary/20 transition-all">
-              <AvatarImage src={post.author.profilePictureUrl} />
+              <AvatarImage src={resolveAvatarUrl(post.author.profilePictureUrl)} />
               <AvatarFallback>{post.author.firstName?.[0]}</AvatarFallback>
             </Avatar>
             <div>
@@ -251,9 +256,17 @@ export const PostCard = ({ post }: { post: any }) => {
                   {post.likers?.length > 0 ? (
                     <div className="max-h-48 overflow-y-auto space-y-2">
                       {post.likers.map((liker: any) => (
-                        <div key={liker.id} className="flex items-center gap-2 px-1">
+                        <div 
+                          key={liker.id} 
+                          className="flex items-center gap-2 px-1 cursor-pointer hover:bg-muted/50 p-1 rounded-md transition-colors"
+                          onClick={() => {
+                            setSelectedUserId(liker.id.toString());
+                            setSelectedUserData(liker);
+                          }}
+                          title="View profile card"
+                        >
                           <Avatar className="h-6 w-6">
-                            <AvatarImage src={liker.profilePictureUrl} />
+                            <AvatarImage src={resolveAvatarUrl(liker.profilePictureUrl)} />
                             <AvatarFallback className="text-[10px]">{liker.firstName?.[0] || '?'}</AvatarFallback>
                           </Avatar>
                           <span className="text-sm font-medium truncate">
@@ -290,7 +303,15 @@ export const PostCard = ({ post }: { post: any }) => {
         </div>
 
         {/* Threaded Comments */}
-        <CommentSection postId={post.id} isExpanded={showComments} commentsCount={post.commentsCount || 0} />
+        <CommentSection 
+          postId={post.id} 
+          isExpanded={showComments} 
+          commentsCount={post.commentsCount || 0} 
+          onViewUser={(userId, author) => {
+            setSelectedUserId(userId);
+            setSelectedUserData(author);
+          }}
+        />
 
         {/* Photo Preview Overlay */}
         <PhotoOverlay
@@ -304,7 +325,13 @@ export const PostCard = ({ post }: { post: any }) => {
         <UserProfileModal
           userId={selectedUserId}
           open={!!selectedUserId}
-          onOpenChange={(open) => !open && setSelectedUserId(null)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedUserId(null);
+              setSelectedUserData(null);
+            }
+          }}
+          initialData={selectedUserData}
         />
       </CardContent>
     </Card>
