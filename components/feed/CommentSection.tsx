@@ -30,10 +30,12 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser }: 
   const [replyContent, setReplyContent] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
   const { createComment, deleteComment, updateComment, toggleCommentLike } = useFeedMutations();
 
   const handleReply = async () => {
-    if (!replyContent.trim()) return;
+    if (!replyContent.trim() || isSubmittingReply) return;
+    setIsSubmittingReply(true);
     try {
       await createComment({
         variables: { postId, content: replyContent, parentId: comment.id },
@@ -44,6 +46,8 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser }: 
       toast.success('Reply posted');
     } catch (e) {
       toast.error('Failed to post reply');
+    } finally {
+      setIsSubmittingReply(false);
     }
   };
 
@@ -89,7 +93,7 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser }: 
     if (!isReplying && comment.author) {
       const authorName = `${comment.author.firstName || ''} ${comment.author.lastName || ''}`.trim();
       if (authorName && comment.author.id && !replyContent) {
-        setReplyContent(`@[${authorName}](${comment.author.id}) `);
+        setReplyContent(`<p><span data-type="mention" data-id="${comment.author.id}" data-label="${authorName}">@${authorName}</span>&nbsp;</p>`);
       }
     }
     setIsReplying(!isReplying);
@@ -227,10 +231,10 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser }: 
             </div>
             <button 
               onClick={handleReply}
-              className="text-primary hover:text-primary/80 mt-1 sm:mt-2 p-1.5 bg-primary/10 rounded-full shrink-0"
-              disabled={!replyContent.trim()}
+              className="text-primary hover:text-primary/80 mt-1 sm:mt-2 p-1.5 bg-primary/10 rounded-full shrink-0 disabled:opacity-50"
+              disabled={!replyContent.trim() || isSubmittingReply}
             >
-              <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              {isSubmittingReply ? <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
             </button>
           </div>
         )}
