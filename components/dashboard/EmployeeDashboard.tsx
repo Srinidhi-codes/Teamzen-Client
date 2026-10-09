@@ -280,12 +280,12 @@ export function EmployeeDashboard() {
               </p>
               <h1
                 className={cn(
-                  "text-2xl font-semibold tracking-tight text-balance sm:text-4xl lg:text-5xl", isDarkBg ? "text-white" : "text-black"
+                  "text-2xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-balance break-words max-w-[85%] sm:max-w-full", isDarkBg ? "text-white" : "text-black"
                 )}
               >
                 {greetingForHour(now.hour())},{" "}
-                <br className="sm:visible lg:hidden"/>
-                <span className="text-teal-600">
+                <br className="block sm:hidden" />
+                <span className="text-teal-600 sm:ml-0">
                   {user?.firstName || "there"}
                 </span>
               </h1>

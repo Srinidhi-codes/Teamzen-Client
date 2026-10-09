@@ -3,6 +3,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2, Eye } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useFeedMutations } from '@/lib/graphql/feed/feedHooks';
@@ -26,6 +28,9 @@ export const PostCard = ({ post }: { post: any }) => {
   // Profile Modal State
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUserData, setSelectedUserData] = useState<any | null>(null);
+  
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteReason, setDeleteReason] = useState('');
   
   const { togglePostLike, deletePost, updatePost, viewPost } = useFeedMutations();
   const observerRef = React.useRef<HTMLDivElement>(null);
@@ -59,6 +64,8 @@ export const PostCard = ({ post }: { post: any }) => {
   }, [hasViewed, post.id, viewPost]);
 
   const isOwner = user?.id?.toString() === post.author?.id?.toString();
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPERADMIN';
+  const canDelete = isOwner || isAdmin;
 
   const handleLike = async () => {
     try {
@@ -76,7 +83,13 @@ export const PostCard = ({ post }: { post: any }) => {
   const handleDelete = async () => {
     try {
       await deletePost({ variables: { id: post.id } });
-      toast.success('Post deleted');
+      if (deleteReason && !isOwner) {
+        toast.success('Post deleted and feedback sent to user');
+      } else {
+        toast.success('Post deleted');
+      }
+      setShowDeleteDialog(false);
+      setDeleteReason('');
     } catch (e) {
       toast.error('Failed to delete post');
     }
@@ -141,14 +154,14 @@ export const PostCard = ({ post }: { post: any }) => {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={handleShare}>Copy Link</DropdownMenuItem>
               {isOwner && (
-                <>
-                  <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleDelete} className="text-red-600">
-                    Delete
-                  </DropdownMenuItem>
-                </>
+                <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                  Edit
+                </DropdownMenuItem>
+              )}
+              {canDelete && (
+                <DropdownMenuItem onClick={() => setShowDeleteDialog(true)} className="text-red-600">
+                  Delete
+                </DropdownMenuItem>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -333,6 +346,34 @@ export const PostCard = ({ post }: { post: any }) => {
           }}
           initialData={selectedUserData}
         />
+
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Post</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this post? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            
+            {!isOwner && isAdmin && (
+              <div className="mt-2">
+                <label className="text-sm font-medium mb-1.5 block">Reason for deletion (Feedback to user)</label>
+                <textarea
+                  className="w-full min-h-[80px] p-3 border rounded-md text-sm bg-muted/20 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                  placeholder="Explain why this post is being removed..."
+                  value={deleteReason}
+                  onChange={(e) => setDeleteReason(e.target.value)}
+                />
+              </div>
+            )}
+
+            <DialogFooter className="mt-2">
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Cancel</Button>
+              <Button variant="destructive" onClick={handleDelete}>Delete Post</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

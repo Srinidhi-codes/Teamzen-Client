@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { FormSelect } from "@/components/common/FormSelect";
 import {
-  useMyAssignedOnboardingTasks,
   useMyOnboarding,
   useOnboardingEmployeeMutations,
 } from "@/lib/graphql/onboarding/onboardingHook";
@@ -52,7 +51,6 @@ const DOC_CATEGORIES = [
 
 export default function MyOnboardingPage() {
   const { onboarding, isLoading, error, refetch } = useMyOnboarding();
-  const { tasks: assigned } = useMyAssignedOnboardingTasks();
   const { completeTask, acceptOffer, loading } = useOnboardingEmployeeMutations();
   useMyOnboardingTour(!!onboarding);
   const [acceptedName, setAcceptedName] = useState("");
@@ -185,25 +183,36 @@ export default function MyOnboardingPage() {
           title="My Onboarding"
           description="Your checklist will appear here when HR starts your onboarding."
         />
-        <Card className="overflow-hidden p-0">
+        <Card className="overflow-hidden p-6 flex flex-col items-center relative">
           <EmptyState
             src={EmptyImages.team}
             title="No active onboarding"
             description="Your checklist will appear here when HR starts your onboarding."
             size="wide"
           />
+          {user && !user.isVerified && (
+            <div className="mt-6 border-t border-border/50 pt-6 w-full max-w-md text-center">
+              <p className="text-sm text-muted-foreground mb-4">
+                Since you have no pending onboarding tasks, you can verify your account now.
+              </p>
+              <Button
+                disabled={isUpdatingGraphQL}
+                onClick={async () => {
+                  try {
+                    // Try to update verification status. The backend must support is_verified in UpdateProfileInput or a dedicated mutation.
+                    await updateUserAsync({ is_verified: true } as any);
+                    setMsg("Account verified successfully! Please refresh.");
+                    refetchUser();
+                  } catch (e: any) {
+                    setMsg("Backend verification error: " + e.message + ". Please ensure the backend supports verifying users.");
+                  }
+                }}
+              >
+                {isUpdatingGraphQL ? "Verifying..." : "Verify My Account"}
+              </Button>
+            </div>
+          )}
         </Card>
-        {assigned.length > 0 && (
-          <Card className="p-4 space-y-2">
-            <h3 className="font-semibold">Assigned tasks for others</h3>
-            {assigned.map((t: { id: string; title: string; status: string; dueAt?: string }) => (
-              <div key={t.id} className="flex justify-between text-sm border-b border-border py-2">
-                <span>{t.title}</span>
-                <span className="text-muted-foreground">{t.status}</span>
-              </div>
-            ))}
-          </Card>
-        )}
       </div>
     );
   }
@@ -588,56 +597,6 @@ export default function MyOnboardingPage() {
         </div>
       </Card>
       </div>
-
-      {assigned.length > 0 && (
-        <Card className="p-4 mt-6">
-          <h3 className="font-semibold pb-2 border-b border-border/50 mb-3">Tasks assigned</h3>
-          <div className="flex flex-col gap-3">
-          {assigned?.map(
-            (t: { id: string; title: string; status: string; dueAt?: string }) => (
-              <div
-                key={t.id}
-                className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div>
-                  <p className="text-sm font-medium flex items-center gap-2">
-                    {t.status === "completed" && (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                    )}
-                    {t.title}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={cn(
-                      "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                      t.status === "completed" ? "bg-emerald-500/10 text-emerald-700 border border-emerald-500/20" :
-                      "bg-amber-500/10 text-amber-700 border border-amber-500/20"
-                    )}>
-                      {t.status}
-                    </span>
-                    {t.dueAt && (
-                      <span className="text-xs text-muted-foreground font-medium">
-                        due {formatJoinDate(t.dueAt)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={loading || t.status === "completed"}
-                  onClick={async () => {
-                    await completeTask({ variables: { taskId: t.id } });
-                    refetch();
-                  }}
-                >
-                  Mark Done
-                </Button>
-              </div>
-            )
-          )}
-          </div>
-        </Card>
-      )}
       <ConfirmationModal
         isOpen={!!docToDelete}
         onClose={() => setDocToDelete(null)}
