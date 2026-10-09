@@ -89,3 +89,9 @@ export const TOGGLE_COMMENT_LIKE = gql`
     toggleCommentLike(commentId: $commentId)
   }
 `;
+
+export const REPORT_POST = gql`
+  mutation ReportPost($postId: String!, $reason: String!) {
+    reportPost(postId: $postId, reason: $reason)
+  }
+`;

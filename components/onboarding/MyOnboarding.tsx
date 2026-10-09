@@ -183,35 +183,13 @@ export default function MyOnboardingPage() {
           title="My Onboarding"
           description="Your checklist will appear here when HR starts your onboarding."
         />
-        <Card className="overflow-hidden p-6 flex flex-col items-center relative">
+        <Card className="overflow-hidden p-0">
           <EmptyState
             src={EmptyImages.team}
             title="No active onboarding"
             description="Your checklist will appear here when HR starts your onboarding."
             size="wide"
           />
-          {user && !user.isVerified && (
-            <div className="mt-6 border-t border-border/50 pt-6 w-full max-w-md text-center">
-              <p className="text-sm text-muted-foreground mb-4">
-                Since you have no pending onboarding tasks, you can verify your account now.
-              </p>
-              <Button
-                disabled={isUpdatingGraphQL}
-                onClick={async () => {
-                  try {
-                    // Try to update verification status. The backend must support is_verified in UpdateProfileInput or a dedicated mutation.
-                    await updateUserAsync({ is_verified: true } as any);
-                    setMsg("Account verified successfully! Please refresh.");
-                    refetchUser();
-                  } catch (e: any) {
-                    setMsg("Backend verification error: " + e.message + ". Please ensure the backend supports verifying users.");
-                  }
-                }}
-              >
-                {isUpdatingGraphQL ? "Verifying..." : "Verify My Account"}
-              </Button>
-            </div>
-          )}
         </Card>
       </div>
     );

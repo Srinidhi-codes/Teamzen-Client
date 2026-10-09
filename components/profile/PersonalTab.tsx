@@ -139,29 +139,47 @@ export function PersonalTab({
                         )}
                     </ProfileMetaRow>
                     <ProfileMetaRow label="Verified">
-                        {user.is_verified ? (
-                            <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                                <CheckCircle2 className="h-4 w-4" />
-                                Verified
-                            </span>
-                        ) : (
-                            <div className="space-y-1">
-                                <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                                    <XCircle className="h-4 w-4" />
-                                    Not verified
+                        <div className="flex flex-col gap-3">
+                            {user.is_verified ? (
+                                <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                                    <CheckCircle2 className="h-4 w-4" />
+                                    Verified
                                 </span>
-                                <p className="text-xs text-muted-foreground leading-snug">
-                                    Completes when all required{" "}
-                                    <Link
-                                        href="/onboarding"
-                                        className="underline underline-offset-2 hover:text-foreground"
-                                    >
-                                        onboarding
-                                    </Link>{" "}
-                                    tasks and documents are done.
-                                </p>
-                            </div>
-                        )}
+                            ) : (
+                                <div className="space-y-1">
+                                    <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                                        <XCircle className="h-4 w-4" />
+                                        Not verified
+                                    </span>
+                                    <p className="text-xs text-muted-foreground leading-snug">
+                                        Completes when all required{" "}
+                                        <Link
+                                            href="/onboarding"
+                                            className="underline underline-offset-2 hover:text-foreground"
+                                        >
+                                            onboarding
+                                        </Link>{" "}
+                                        tasks and documents are done.
+                                    </p>
+                                </div>
+                            )}
+                            
+                            {isEditing && (
+                                <div className="mt-2 border-t border-border/50 pt-3">
+                                    <EditableSelectField
+                                        label="Manual Verification"
+                                        value={String(formData.is_verified ?? user.is_verified ?? false)}
+                                        icon={<CheckCircle2 />}
+                                        editable={true}
+                                        onChange={(val) => handleInputChange("is_verified", val)}
+                                        options={[
+                                            { value: "false", label: "Not Verified" },
+                                            { value: "true", label: "Verified" },
+                                        ]}
+                                    />
+                                </div>
+                            )}
+                        </div>
                     </ProfileMetaRow>
                     <ProfileMetaRow label="Member since">
                         {user.dateOfJoining ? moment(user.dateOfJoining).format("ll") : "—"}

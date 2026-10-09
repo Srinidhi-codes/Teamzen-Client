@@ -32,7 +32,10 @@ export const PostCard = ({ post }: { post: any }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteReason, setDeleteReason] = useState('');
   
-  const { togglePostLike, deletePost, updatePost, viewPost } = useFeedMutations();
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  
+  const { togglePostLike, deletePost, updatePost, viewPost, reportPost } = useFeedMutations();
   const observerRef = React.useRef<HTMLDivElement>(null);
   const [hasViewed, setHasViewed] = useState(false);
 
@@ -64,7 +67,7 @@ export const PostCard = ({ post }: { post: any }) => {
   }, [hasViewed, post.id, viewPost]);
 
   const isOwner = user?.id?.toString() === post.author?.id?.toString();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = (user?.role as string) === 'admin' || (user?.role as string) === 'superadmin' || user?.role === 'hr';
   const canDelete = isOwner || isAdmin;
 
   const handleLike = async () => {
@@ -92,6 +95,21 @@ export const PostCard = ({ post }: { post: any }) => {
       setDeleteReason('');
     } catch (e) {
       toast.error('Failed to delete post');
+    }
+  };
+
+  const handleReport = async () => {
+    if (!reportReason.trim()) {
+      toast.error('Please provide a reason for reporting');
+      return;
+    }
+    try {
+      await reportPost({ variables: { postId: post.id, reason: reportReason } });
+      toast.success('Post reported to admins');
+      setShowReportDialog(false);
+      setReportReason('');
+    } catch (e) {
+      toast.error('Failed to report post');
     }
   };
 
@@ -156,6 +174,11 @@ export const PostCard = ({ post }: { post: any }) => {
               {isOwner && (
                 <DropdownMenuItem onClick={() => setIsEditing(true)}>
                   Edit
+                </DropdownMenuItem>
+              )}
+              {!isOwner && (
+                <DropdownMenuItem onClick={() => setShowReportDialog(true)} className="text-red-600">
+                  Report Post
                 </DropdownMenuItem>
               )}
               {canDelete && (
@@ -347,8 +370,34 @@ export const PostCard = ({ post }: { post: any }) => {
           initialData={selectedUserData}
         />
 
+        <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+          <DialogContent className="p-6">
+            <DialogHeader>
+              <DialogTitle>Report Post</DialogTitle>
+              <DialogDescription>
+                Help us understand why you are reporting this post. Admins will review your report.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="mt-2">
+              <label className="text-sm font-medium mb-1.5 block">Reason for reporting</label>
+              <textarea
+                className="w-full min-h-[80px] p-3 border rounded-md text-sm bg-muted/20 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                placeholder="Spam, inappropriate content, harassment..."
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+              />
+            </div>
+
+            <DialogFooter className="mt-2">
+              <Button variant="outline" onClick={() => setShowReportDialog(false)}>Cancel</Button>
+              <Button onClick={handleReport}>Submit Report</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <DialogContent>
+          <DialogContent className="p-6">
             <DialogHeader>
               <DialogTitle>Delete Post</DialogTitle>
               <DialogDescription>

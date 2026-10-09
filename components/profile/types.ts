@@ -19,4 +19,5 @@ export interface UserFormData {
   pan_number: string;
   aadhar_number: string;
   uan_number: string;
+  is_verified?: boolean | string;
 }
