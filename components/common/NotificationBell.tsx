@@ -31,6 +31,18 @@ import moment from "moment";
 import { AnnouncementModal, AnnouncementItem } from "./AnnouncementModal";
 import React from "react";
 
+/**
+ * Utility function to strip any HTML tags from a string.
+ * This ensures that notification messages that contain raw HTML (e.g., "<p>text</p>")
+ * are displayed as plain text in the UI.
+ */
+const stripHtmlTags = (input: string): string => {
+    if (!input) return "";
+    // Remove any HTML tags using a simple regex.
+    // This also removes closing tags and self‑closing tags.
+    return input.replace(/<\/?[^>]+(>|$)/g, "");
+};
+
 export function NotificationBell() {
     const router = useRouter();
     const [menuOpen, setMenuOpen] = useState(false);
@@ -190,12 +202,15 @@ export function NotificationBell() {
                                                 (() => {
                                                     try {
                                                         const parsed = JSON.parse(notif.message);
-                                                        return parsed.title || parsed.body;
+                                                        // Strip HTML tags from title/body if they exist
+                                                        const title = parsed.title ? stripHtmlTags(parsed.title) : "";
+                                                        const body = parsed.body ? stripHtmlTags(parsed.body) : "";
+                                                        return title || body;
                                                     } catch (e) {
-                                                        return notif.message;
+                                                        return stripHtmlTags(notif.message);
                                                     }
                                                 })()
-                                            ) : notif.message}
+                                            ) : stripHtmlTags(notif.message)}
                                         </p>
                                         <p className="text-xs text-muted-foreground">
                                             {moment(notif.createdAt).format("MMM DD, YYYY HH:mm A")}
