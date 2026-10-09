@@ -55,7 +55,7 @@ jobs:
           EOF
           
           # Aider automatically commits changes when it successfully edits files
-          aider --yes --message-file aider-prompt.txt --model groq/llama-3.3-70b-versatile
+          aider --yes --message-file aider-prompt.txt --model groq/llama3-70b-8192
 
       - name: Push branch and Create PR
         env:
