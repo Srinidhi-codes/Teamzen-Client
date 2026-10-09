@@ -64,7 +64,7 @@ export const PostCard = ({ post }: { post: any }) => {
   }, [hasViewed, post.id, viewPost]);
 
   const isOwner = user?.id?.toString() === post.author?.id?.toString();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPERADMIN';
+  const isAdmin = user?.role === 'admin';
   const canDelete = isOwner || isAdmin;
 
   const handleLike = async () => {
