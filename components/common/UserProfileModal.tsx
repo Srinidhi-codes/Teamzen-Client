@@ -1,10 +1,11 @@
 "use client";
 
 import React from 'react';
+import Link from 'next/link';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUserDetails } from '@/lib/api/hooks';
-import { Loader2, Mail, Phone, MapPin, Briefcase, Building2 } from 'lucide-react';
+import { Loader2, Mail, Phone, MapPin, Briefcase, Building2, ExternalLink } from 'lucide-react';
 import { resolveAvatarUrl } from '@/lib/utils';
 
 interface UserProfileModalProps {
@@ -161,6 +162,20 @@ export function UserProfileModal({ userId, open, onOpenChange, initialData }: Us
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1.5 font-mono">
                 ID: {employeeId}
               </p>
+
+              {(user?.id || userId) && (
+                <div className="mt-4 pt-3 border-t border-border/40">
+                  <Link
+                    href={`/p/${user?.id || userId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1.5 w-full py-2.5 px-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-all hover:scale-[1.01] active:scale-[0.99] border border-primary/20"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Open Full Digital Visiting Card</span>
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         ) : (

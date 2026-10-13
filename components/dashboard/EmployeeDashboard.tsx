@@ -124,6 +124,24 @@ const dayTone: Record<
     dot: "bg-emerald-500",
     Icon: CheckCircle2,
   },
+  late_login: {
+    label: "Late entry",
+    bar: "bg-amber-500",
+    dot: "bg-amber-500",
+    Icon: AlertCircle,
+  },
+  early_logout: {
+    label: "Early exit",
+    bar: "bg-amber-500",
+    dot: "bg-amber-500",
+    Icon: AlertCircle,
+  },
+  half_day: {
+    label: "Half day",
+    bar: "bg-amber-500",
+    dot: "bg-amber-500",
+    Icon: Clock,
+  },
   leave: {
     label: "On leave",
     bar: "bg-orange-400",
@@ -131,7 +149,7 @@ const dayTone: Record<
     Icon: Plane,
   },
   absent: {
-    label: "On leave",
+    label: "Absent",
     bar: "bg-red-500",
     dot: "bg-red-500",
     Icon: XCircle,
@@ -228,7 +246,9 @@ export function EmployeeDashboard() {
 
   const todayMeta = dayTone[todayEntry?.status] || dayTone.not_started;
   const TodayIcon = todayMeta.Icon || Clock;
-  const presentDays = last7Days.filter((d: any) => d.status === "present").length;
+  const presentDays = last7Days.filter((d: any) =>
+    ["present", "late_login", "early_logout", "half_day"].includes(d.status)
+  ).length;
   const totalLeaveLeft = leaveBalances.reduce(
     (sum: number, b: any) => sum + (Number(b.balance) || 0),
     0
@@ -246,7 +266,7 @@ export function EmployeeDashboard() {
       <section
         className={cn(
           "relative overflow-hidden rounded-b-[34px] shadow-sm -mx-4 -mt-6 sm:-mx-6 lg:-mx-8 mb-6",
-          dark ? "bg-[#16122a]" : "bg-[#e8eef4]"
+          isDarkBg ? "bg-[#16122a]" : "bg-[#e8eef4]"
         )}
       >
         <Image
@@ -258,41 +278,54 @@ export function EmployeeDashboard() {
           sizes="(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1280px"
           className="hero-art"
         />
-        {/* Glass Overlay */}
+        {/* Responsive Gradient Scrim & Legibility Shield */}
         <div
           className={cn(
-            "pointer-events-none absolute inset-0",
-            dark
-              ? "bg-black/20 backdrop-blur-[0.5px]"
-              : "bg-black/20 backdrop-blur-[0.5px]"
+            "pointer-events-none absolute inset-0 z-[1]",
+            isDarkBg
+              ? "bg-gradient-to-r from-[#16122a] via-[#16122a]/95 via-70% to-[#16122a]/40 sm:via-[#16122a]/95 sm:via-60% sm:to-[#16122a]/20 md:via-55% lg:via-[#16122a]/85 lg:via-48% lg:to-transparent"
+              : "bg-gradient-to-r from-[#e8eef4] via-[#e8eef4]/95 via-70% to-[#e8eef4]/40 sm:via-[#e8eef4]/95 sm:via-60% sm:to-[#e8eef4]/20 md:via-55% lg:via-[#e8eef4]/85 lg:via-48% lg:to-transparent"
+          )}
+        />
+        {/* Subtle vertical vignette on smaller screens for buttons and top text */}
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-0 z-[2] lg:hidden",
+            isDarkBg
+              ? "bg-gradient-to-b from-[#16122a]/60 via-transparent to-[#16122a]/70"
+              : "bg-gradient-to-b from-[#e8eef4]/60 via-transparent to-[#e8eef4]/70"
           )}
         />
         <div className="relative z-10 flex min-h-[300px] flex-col justify-between gap-5 px-6 py-8 sm:min-h-[300px] sm:px-10 sm:py-10 lg:min-h-[340px] lg:px-12 lg:py-12">
-          <div className="max-w-xl space-y-4 sm:space-y-5">
+          <div className="max-w-full sm:max-w-md md:max-w-lg lg:max-w-xl space-y-4 sm:space-y-5">
             <div className="space-y-1.5 sm:space-y-2">
               <p
                 className={cn(
-                  "text-xs font-medium tracking-wide sm:text-sm",
-                  isDarkBg ? "text-slate-200/90" : "text-slate-500"
+                  "text-xs font-semibold tracking-wide uppercase sm:text-sm",
+                  isDarkBg ? "text-slate-200/90" : "text-slate-600"
                 )}
               >
                 {now.format("dddd, MMMM D")}
               </p>
               <h1
                 className={cn(
-                  "text-2xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-balance break-words max-w-[85%] sm:max-w-full", isDarkBg ? "text-white" : "text-black"
+                  "text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-balance break-words",
+                  isDarkBg ? "text-white" : "text-slate-900"
                 )}
               >
                 {greetingForHour(now.hour())},{" "}
                 <br className="block sm:hidden" />
-                <span className="text-teal-600 sm:ml-0">
+                <span className={cn(
+                  "sm:ml-0 font-extrabold",
+                  isDarkBg ? "text-teal-400" : "text-teal-700"
+                )}>
                   {user?.firstName || "there"}
                 </span>
               </h1>
               <p
                 className={cn(
-                  "line-clamp-2 text-xs sm:text-base",
-                  isDarkBg ? "text-slate-200/90" : "text-slate-600"
+                  "line-clamp-2 text-xs sm:text-base font-medium",
+                  isDarkBg ? "text-slate-300" : "text-slate-700"
                 )}
               >
                 {[user?.designation?.name, user?.department?.name, user?.organization?.name]
@@ -303,34 +336,34 @@ export function EmployeeDashboard() {
 
             <div
               className={cn(
-                "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 backdrop-blur-sm sm:gap-2.5 sm:px-3.5",
+                "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 shadow-xs backdrop-blur-md sm:gap-2.5 sm:px-3.5",
                 isDarkBg
                   ? "border-white/20 bg-white/10 text-white"
-                  : "border-slate-200/80 bg-white/80 text-slate-800"
+                  : "border-slate-300/80 bg-white/90 text-slate-800"
               )}
             >
-              <TodayIcon className={cn("h-3.5 w-3.5", isDarkBg ? "text-white" : "text-slate-600")} />
-              <span className="text-xs font-medium sm:text-sm">Today · {todayMeta.label}</span>
+              <TodayIcon className={cn("h-3.5 w-3.5", isDarkBg ? "text-white" : "text-slate-700")} />
+              <span className="text-xs font-semibold sm:text-sm">Today · {todayMeta.label}</span>
             </div>
 
             <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:gap-3">
               <Link
                 href="/attendance"
                 className={cn(
-                  "inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold shadow-sm transition-opacity hover:opacity-95 sm:h-11 sm:w-auto sm:px-5",
+                  "inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold shadow-md transition-opacity hover:opacity-95 sm:h-11 sm:w-auto sm:px-5",
                   isDarkBg ? "bg-white text-slate-900" : "bg-slate-900 text-white"
                 )}
               >
                 <MapPin className="h-4 w-4" />
-                {todayEntry?.status === "present" ? "Open attendance" : "Check in"}
+                {["present", "late_login", "early_logout", "half_day"].includes(todayEntry?.status) ? "Open attendance" : "Check in"}
               </Link>
               <Link
                 href="/leaves"
                 className={cn(
-                  "inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border px-4 text-sm font-medium backdrop-blur-sm transition-colors sm:h-11 sm:w-auto sm:px-5",
+                  "inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border px-4 text-sm font-medium shadow-xs backdrop-blur-md transition-colors sm:h-11 sm:w-auto sm:px-5",
                   isDarkBg
                     ? "border-white/30 bg-white/10 text-white hover:bg-white/16"
-                    : "border-slate-300 bg-white/85 text-slate-800 hover:bg-white"
+                    : "border-slate-300 bg-white/90 text-slate-800 hover:bg-white"
                 )}
               >
                 <Plus className="h-4 w-4" />

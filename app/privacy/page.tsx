@@ -3,9 +3,12 @@ import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Teamzen",
+  title: "Privacy Policy",
   description:
     "How Teamzen collects, uses, and protects personal and workplace data, including Google Calendar integration.",
+  alternates: {
+    canonical: "/privacy",
+  },
 };
 
 const LAST_UPDATED = "30 July 2026";

@@ -80,12 +80,13 @@ function MemberRow({
   onViewPhoto?: (member: Member) => void;
   onViewProfile?: (member: Member) => void;
 }) {
-  const interactive = Boolean(onClick);
+  const handleClick = onClick || (onViewProfile ? () => onViewProfile(member) : undefined);
+  const interactive = Boolean(handleClick);
 
   const content = (
     <>
       <Avatar
-        className="h-10 w-10 rounded-lg cursor-pointer transition-transform hover:scale-105 active:scale-95"
+        className="h-10 w-10 rounded-lg cursor-pointer transition-transform hover:scale-105 active:scale-95 shrink-0"
         onClick={(e) => {
           e.stopPropagation();
           if (onViewProfile) {
@@ -103,7 +104,7 @@ function MemberRow({
       </Avatar>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-foreground">{memberName(member)}</p>
+        <p className="truncate text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{memberName(member)}</p>
         <p className="mt-0.5 truncate text-xs text-muted-foreground">
           {member.designation?.name || "Team member"}
           {member.department?.name ? ` · ${member.department.name}` : ""}
@@ -122,7 +123,7 @@ function MemberRow({
         </span>
       )}
 
-      {interactive && <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50" />}
+      {interactive && <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />}
     </>
   );
 
@@ -130,12 +131,13 @@ function MemberRow({
     return (
       <button
         type="button"
-        onClick={onClick}
+        onClick={handleClick}
+        title={`View ${memberName(member)}'s details`}
         className={cn(
-          "flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors",
+          "group flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-all cursor-pointer",
           highlight
-            ? "border-primary/25 bg-primary/5"
-            : "border-border bg-card hover:bg-muted/40"
+            ? "border-primary/25 bg-primary/5 hover:bg-primary/10 hover:border-primary/40"
+            : "border-border bg-card hover:bg-muted/40 hover:border-border/80"
         )}
       >
         {content}
@@ -794,11 +796,7 @@ export default function TeamPage() {
                       highlight={highlight}
                       onViewPhoto={handleViewMemberPhoto}
                       onViewProfile={handleViewProfile}
-                      onClick={
-                        label === "You" || (focusedUserId && member.id === user?.id)
-                          ? undefined
-                          : () => setFocusedUserId(member.id)
-                      }
+                      onClick={() => handleViewProfile(member)}
                     />
                   ))}
                 </div>
@@ -828,7 +826,7 @@ export default function TeamPage() {
                       label="Manager"
                       onViewPhoto={handleViewMemberPhoto}
                       onViewProfile={handleViewProfile}
-                      onClick={() => setFocusedUserId(manager.id)}
+                      onClick={() => handleViewProfile(manager)}
                     />
                   </div>
                 )}
@@ -844,6 +842,7 @@ export default function TeamPage() {
                           highlight
                           onViewPhoto={handleViewMemberPhoto}
                           onViewProfile={handleViewProfile}
+                          onClick={() => handleViewProfile(user)}
                         />
                       )}
                       {filteredPeers.map((peer) => (
@@ -853,7 +852,7 @@ export default function TeamPage() {
                           label="Peer"
                           onViewPhoto={handleViewMemberPhoto}
                           onViewProfile={handleViewProfile}
-                          onClick={() => setFocusedUserId(peer.id)}
+                          onClick={() => handleViewProfile(peer)}
                         />
                       ))}
                     </div>
@@ -871,7 +870,7 @@ export default function TeamPage() {
                           label="Report"
                           onViewPhoto={handleViewMemberPhoto}
                           onViewProfile={handleViewProfile}
-                          onClick={() => setFocusedUserId(sub.id)}
+                          onClick={() => handleViewProfile(sub)}
                         />
                       ))}
                     </div>
@@ -941,7 +940,16 @@ export default function TeamPage() {
                   return (
                     <li
                       key={leave.id}
-                      className="flex items-center gap-3 rounded-xl border border-border px-3 py-3"
+                      onClick={() => {
+                        if (leave.user) {
+                          handleViewProfile({
+                            ...leave.user,
+                            profilePictureUrl: leave.user?.profilePicture?.url || leave.user?.profilePictureUrl,
+                          });
+                        }
+                      }}
+                      title="View employee profile"
+                      className="group flex items-center gap-3 rounded-xl border border-border px-3 py-3 cursor-pointer hover:bg-muted/40 transition-colors"
                     >
                       <Avatar
                         className="h-10 w-10 rounded-lg cursor-pointer transition-transform hover:scale-105 active:scale-95"
@@ -1128,7 +1136,15 @@ function AttendanceTodayColumn({
             return (
               <li
                 key={`${item.status}-${item.user.id}`}
-                className="flex items-center gap-3 rounded-xl border border-border px-3 py-2.5"
+                onClick={() => {
+                  if (onViewProfile) {
+                    onViewProfile(item.user);
+                  } else {
+                    onViewPhoto?.(item);
+                  }
+                }}
+                title="View employee profile"
+                className="group flex items-center gap-3 rounded-xl border border-border px-3 py-2.5 cursor-pointer hover:bg-muted/40 transition-colors"
               >
                 <Avatar
                   className="h-9 w-9 rounded-lg cursor-pointer transition-transform hover:scale-105 active:scale-95"

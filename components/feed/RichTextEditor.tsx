@@ -40,10 +40,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         placeholder,
       }),
       Image.configure({
-        inline: true,
+        inline: false,
         allowBase64: true,
         HTMLAttributes: {
-          class: 'rounded-xl max-w-full my-4 border border-border/50 shadow-sm max-h-[500px] object-contain w-auto h-auto',
+          class: 'rounded-xl w-full my-3 border border-border/50 shadow-sm block h-auto object-contain',
         },
       }),
       Mention.configure({
@@ -113,6 +113,51 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         class: `prose prose-sm dark:prose-invert focus:outline-none w-full max-w-none ${className}`,
         style: `min-height: ${minHeight}; padding: 12px;`,
       },
+      handlePaste: (view, event) => {
+        const items = event.clipboardData?.items;
+        if (items) {
+          for (const item of Array.from(items)) {
+            if (item.type.startsWith('image/')) {
+              const file = item.getAsFile();
+              if (file) {
+                event.preventDefault();
+                const reader = new FileReader();
+                reader.onload = () => {
+                  const src = reader.result as string;
+                  const node = view.state.schema.nodes.image?.create({ src });
+                  if (node) {
+                    const tr = view.state.tr.replaceSelectionWith(node);
+                    view.dispatch(tr);
+                  }
+                };
+                reader.readAsDataURL(file);
+                return true;
+              }
+            }
+          }
+        }
+        return false;
+      },
+      handleDrop: (view, event, _slice, moved) => {
+        if (!moved && event.dataTransfer?.files?.length) {
+          const file = event.dataTransfer.files[0];
+          if (file && file.type.startsWith('image/')) {
+            event.preventDefault();
+            const reader = new FileReader();
+            reader.onload = () => {
+              const src = reader.result as string;
+              const node = view.state.schema.nodes.image?.create({ src });
+              if (node) {
+                const tr = view.state.tr.replaceSelectionWith(node);
+                view.dispatch(tr);
+              }
+            };
+            reader.readAsDataURL(file);
+            return true;
+          }
+        }
+        return false;
+      },
     },
   });
 
@@ -145,6 +190,21 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         }
         .tiptap {
            outline: none !important;
+        }
+        .tiptap img {
+           width: 100% !important;
+           max-width: 100% !important;
+           height: auto !important;
+           max-height: none !important;
+           display: block !important;
+           border-radius: 0.75rem !important;
+           margin: 0.75rem 0 !important;
+           object-fit: contain !important;
+           border: 1px solid var(--color-border);
+           box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        }
+        .tiptap p:has(> img) {
+           width: 100% !important;
         }
         .tiptap p {
            margin-top: 0.25em;
@@ -193,7 +253,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
            color: var(--color-muted-foreground);
         }
       `}</style>
-      <div className="max-h-[300px] overflow-y-auto">
+      <div className="max-h-[500px] overflow-y-auto">
         <EditorContent editor={editor} className="w-full h-full" />
       </div>
       

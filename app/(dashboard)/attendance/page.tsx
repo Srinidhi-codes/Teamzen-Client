@@ -193,6 +193,7 @@ export default function AttendancePage() {
   const STATUS_CONFIG: Record<string, { label: string; variant: "success" | "warning" | "danger" | "info"; icon: any }> = {
     late_login: { label: "Late Entry", variant: "warning", icon: AlertCircle },
     early_logout: { label: "Early Exit", variant: "warning", icon: AlertCircle },
+    half_day: { label: "Half Day", variant: "warning", icon: AlertCircle },
     absent: { label: "Absent", variant: "danger", icon: X },
     present: { label: "Active", variant: "success", icon: Check },
   };

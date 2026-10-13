@@ -215,7 +215,7 @@ export const PostCard = ({ post }: { post: any }) => {
           <>
             {post.title && (
               <div className="mb-3 border-b border-gray-100 dark:border-gray-800 pb-3">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                <h3 className="text-2xl font-bold font-serif text-gray-900 dark:text-gray-100">
                   {post.title}
                 </h3>
               </div>
@@ -227,7 +227,14 @@ export const PostCard = ({ post }: { post: any }) => {
                 const mention = target.closest('[data-type="mention"]');
                 if (mention) {
                   const id = mention.getAttribute('data-id');
-                  if (id) setSelectedUserId(id);
+                  if (id) {
+                    setSelectedUserId(id);
+                    return;
+                  }
+                }
+                const img = target.closest('img') as HTMLImageElement;
+                if (img && img.src) {
+                  setPreviewImage(img.src);
                 }
               }}
             >
@@ -256,7 +263,7 @@ export const PostCard = ({ post }: { post: any }) => {
                 <img 
                   src={url} 
                   alt={post.title || "Post attachment"} 
-                  className="rounded-xl object-contain bg-muted/5 max-h-[500px] w-full h-auto transition-transform duration-200 group-hover:scale-[1.01]"
+                  className={`rounded-xl bg-muted/5 w-full h-auto transition-transform duration-200 group-hover:scale-[1.01] ${post.mediaUrls.length > 1 ? 'max-h-[350px] object-cover' : 'max-h-none object-contain'}`}
                 />
                 <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
                   <div className="bg-black/60 text-white rounded-full p-2 backdrop-blur-sm flex items-center gap-1.5 text-xs font-medium px-3 shadow-md">

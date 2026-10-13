@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { 
   Mail, 
@@ -14,9 +15,11 @@ import {
   RotateCcw, 
   Check, 
   Copy,
-  ExternalLink
+  ExternalLink,
+  ArrowLeft
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { cn } from "@/lib/utils";
 
 export interface PublicProfileUser {
   id: string;
@@ -124,8 +127,15 @@ END:VCARD`;
 
       {/* Header bar / Title indicator */}
       <div className="w-full max-w-xl flex items-center justify-between mb-5 z-10 px-2">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        <Link
+          href="/team"
+          className="text-xs font-medium text-zinc-400 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-900/80 border border-zinc-800 backdrop-blur hover:border-zinc-700 transition-all shadow-sm cursor-pointer"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to Team</span>
+        </Link>
+        
+        <div className="hidden sm:flex items-center gap-2">
           <span className="text-[11px] font-semibold tracking-wider uppercase text-zinc-400">
             Official Digital Visiting Card
           </span>
@@ -143,13 +153,15 @@ END:VCARD`;
       {/* 3D Visiting Card Container */}
       <div 
         className="w-full max-w-[620px] z-10" 
-        style={{ perspective: "1200px" }}
+        style={{ perspective: "1200px", WebkitPerspective: "1200px" }}
       >
         <div 
-          className="relative transition-transform duration-700 ease-out preserve-3d cursor-pointer"
+          className="relative transition-transform duration-700 ease-out cursor-pointer"
           style={{ 
             transformStyle: "preserve-3d",
+            WebkitTransformStyle: "preserve-3d",
             transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+            WebkitTransform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
           }}
           onClick={() => setIsFlipped(!isFlipped)}
         >
@@ -157,22 +169,28 @@ END:VCARD`;
           {/* FRONT OF VISITING CARD                                    */}
           {/* ======================================================== */}
           <div 
-            className="w-full rounded-2xl md:rounded-3xl p-6 sm:p-7 md:p-8 bg-gradient-to-br from-[#12161f] via-[#0d1017] to-[#0a0d13] border border-white/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)] ring-1 ring-white/5 relative overflow-hidden flex flex-col justify-between min-h-[350px] sm:min-h-[360px]"
+            className={cn(
+              "w-full rounded-2xl md:rounded-3xl p-5 sm:p-7 md:p-8 bg-gradient-to-br from-[#12161f] via-[#0d1017] to-[#0a0d13] border border-white/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)] ring-1 ring-white/5 relative flex flex-col justify-between min-h-[350px] sm:min-h-[360px] transition-opacity duration-300",
+              isFlipped ? "opacity-0 pointer-events-none delay-150" : "opacity-100 pointer-events-auto delay-150"
+            )}
             style={{ 
               backfaceVisibility: "hidden",
               WebkitBackfaceVisibility: "hidden",
+              transform: "rotateY(0deg) translateZ(1px)",
+              WebkitTransform: "rotateY(0deg) translateZ(1px)",
+              zIndex: isFlipped ? 1 : 2,
             }}
           >
             {/* Subtle Metallic/Foil Accent Top Line */}
             <div 
-              className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-teal-400 to-transparent opacity-80"
+              className="absolute top-0 inset-x-0 h-1 rounded-t-2xl md:rounded-t-3xl opacity-80 pointer-events-none"
               style={{
                 background: `linear-gradient(90deg, transparent 0%, ${theme.text.includes('teal') ? '#14b8a6' : '#3b82f6'} 50%, transparent 100%)`
               }}
             />
 
             {/* Subtle Holographic Watermark Pattern */}
-            <div className="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none opacity-60" />
+            <div className="absolute inset-0 rounded-2xl md:rounded-3xl bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none opacity-60" />
 
             {/* TOP ROW: Company Logo + Smart Chip & Contactless Symbol */}
             <div className="flex items-center justify-between relative z-10 mb-5">
@@ -350,26 +368,31 @@ END:VCARD`;
           {/* BACK OF VISITING CARD                                     */}
           {/* ======================================================== */}
           <div 
-            className="w-full rounded-2xl md:rounded-3xl p-6 sm:p-7 md:p-8 bg-gradient-to-br from-[#12161f] via-[#0d1017] to-[#0a0d13] border border-white/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)] ring-1 ring-white/5 absolute inset-0 overflow-hidden flex flex-col justify-between items-center text-center"
+            className={cn(
+              "w-full rounded-2xl md:rounded-3xl p-5 sm:p-7 md:p-8 bg-gradient-to-br from-[#12161f] via-[#0d1017] to-[#0a0d13] border border-white/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)] ring-1 ring-white/5 absolute inset-0 flex flex-col justify-between items-center text-center transition-opacity duration-300",
+              isFlipped ? "opacity-100 pointer-events-auto delay-150" : "opacity-0 pointer-events-none delay-150"
+            )}
             style={{ 
               backfaceVisibility: "hidden",
               WebkitBackfaceVisibility: "hidden",
-              transform: "rotateY(180deg)",
+              transform: "rotateY(180deg) translateZ(1px)",
+              WebkitTransform: "rotateY(180deg) translateZ(1px)",
+              zIndex: isFlipped ? 2 : 1,
             }}
           >
             {/* Top Foil Line */}
             <div 
-              className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-teal-400 to-transparent opacity-80"
+              className="absolute top-0 inset-x-0 h-1 rounded-t-2xl md:rounded-t-3xl opacity-80 pointer-events-none"
               style={{
                 background: `linear-gradient(90deg, transparent 0%, ${theme.text.includes('teal') ? '#14b8a6' : '#3b82f6'} 50%, transparent 100%)`
               }}
             />
 
             {/* Subtle Watermark Pattern */}
-            <div className="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none opacity-60" />
+            <div className="absolute inset-0 rounded-2xl md:rounded-3xl bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none opacity-60" />
 
             {/* Header: Company Name & Logo */}
-            <div className="relative z-10 flex flex-col items-center gap-1.5 pt-1">
+            <div className="relative z-10 flex flex-col items-center gap-1 pt-0.5">
               {user.organization?.logo?.url && (
                 <div className="bg-white/95 rounded-xl p-1.5 shadow-md border border-white/20 mb-1 inline-block">
                   <Image
@@ -382,33 +405,31 @@ END:VCARD`;
                   />
                 </div>
               )}
-              <h3 className="text-sm font-bold tracking-widest uppercase text-white">
+              <h3 className="text-xs sm:text-sm font-bold tracking-widest uppercase text-white">
                 {user.organization?.name || "Corporate Directory"}
               </h3>
-              <p className="text-[11px] text-zinc-400">
-                Official Digital Identity & Contact Gateway
-              </p>
+         
             </div>
 
             {/* Center: High-Definition Scannable QR Code */}
-            <div className="relative z-10 flex flex-col items-center my-3">
-              <div className="p-3.5 bg-white rounded-2xl shadow-xl border-4 border-white/90">
+            <div className="relative z-10 flex flex-col items-center my-auto py-1.5">
+              <div className="p-3 bg-white rounded-2xl shadow-xl border-4 border-white/90">
                 <QRCodeSVG 
                   value={currentUrl} 
-                  size={150} 
+                  size={135} 
                   level="H" 
                   includeMargin={false}
                 />
               </div>
-              <p className="text-[11px] font-semibold text-teal-400 mt-2.5 flex items-center gap-1">
+              <p className="text-[11px] font-semibold text-teal-400 mt-2 flex items-center gap-1">
                 <span>Scan camera to open or save contact</span>
               </p>
             </div>
 
             {/* Bottom details */}
-            <div className="relative z-10 w-full pt-3 border-t border-white/10 flex items-center justify-between text-[10px] text-zinc-400 font-medium">
+            <div className="relative z-10 w-full pt-2.5 border-t border-white/10 flex items-center justify-between text-[10px] text-zinc-400 font-medium">
               <span className="font-mono">ID: #{displayId}</span>
-              <span>{user.officeLocation?.name || "Corporate Headquarters"}</span>
+              <span className="truncate max-w-[150px]">{user.officeLocation?.name || "Corporate HQ"}</span>
               <span className="text-teal-400">Tap to flip</span>
             </div>
           </div>
@@ -416,54 +437,57 @@ END:VCARD`;
       </div>
 
       {/* Action Toolbar Dock below the Visiting Card */}
-      <div className="w-full max-w-[620px] mt-6 z-10 flex flex-col sm:flex-row items-center gap-3">
+      <div className="w-full max-w-[620px] mt-5 sm:mt-6 z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
         {/* Primary Action: Save to Contacts (.vcf download) */}
         <button
           onClick={handleDownloadVCard}
-          className="w-full sm:flex-1 flex items-center justify-center gap-2.5 py-3.5 px-6 rounded-2xl bg-teal-500 hover:bg-teal-400 text-black font-bold text-sm shadow-[0_10px_25px_-5px_rgba(20,184,166,0.4)] transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+          className="w-full sm:flex-1 flex items-center justify-center gap-2 py-3 px-5 sm:py-3.5 sm:px-6 rounded-2xl bg-teal-500 hover:bg-teal-400 text-black font-bold text-sm shadow-[0_10px_25px_-5px_rgba(20,184,166,0.4)] transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
         >
           <Download className="w-4 h-4" />
           <span>Save to Contacts</span>
         </button>
 
-        {/* Call Button */}
-        {user.phoneNumber && (
+        {/* Secondary Actions: Compact grid row on small screens, inline flex on desktop */}
+        <div className={cn("grid gap-2 w-full sm:flex sm:w-auto", user.phoneNumber ? "grid-cols-3" : "grid-cols-2")}>
+          {/* Call Button */}
+          {user.phoneNumber ? (
+            <a
+              href={`tel:${user.phoneNumber}`}
+              className="flex items-center justify-center gap-1.5 sm:gap-2 py-3 px-3 sm:py-3.5 sm:px-5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-white font-semibold text-xs sm:text-sm transition-all shadow-sm hover:border-zinc-700 cursor-pointer"
+            >
+              <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teal-400" />
+              <span>Call</span>
+            </a>
+          ) : null}
+
+          {/* Email Button */}
           <a
-            href={`tel:${user.phoneNumber}`}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 py-3.5 px-5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-white font-semibold text-sm transition-all shadow-sm hover:border-zinc-700 cursor-pointer"
+            href={`mailto:${user.email}`}
+            className="flex items-center justify-center gap-1.5 sm:gap-2 py-3 px-3 sm:py-3.5 sm:px-5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-white font-semibold text-xs sm:text-sm transition-all shadow-sm hover:border-zinc-700 cursor-pointer"
           >
-            <Phone className="w-4 h-4 text-teal-400" />
-            <span>Call</span>
+            <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teal-400" />
+            <span>Email</span>
           </a>
-        )}
 
-        {/* Email Button */}
-        <a
-          href={`mailto:${user.email}`}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 py-3.5 px-5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-white font-semibold text-sm transition-all shadow-sm hover:border-zinc-700 cursor-pointer"
-        >
-          <Mail className="w-4 h-4 text-teal-400" />
-          <span>Email</span>
-        </a>
-
-        {/* Share / Copy Link Button */}
-        <button
-          onClick={handleShare}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 py-3.5 px-5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-white font-semibold text-sm transition-all shadow-sm hover:border-zinc-700 cursor-pointer"
-          title="Share profile link"
-        >
-          {copied ? (
-            <>
-              <Check className="w-4 h-4 text-emerald-400" />
-              <span className="text-emerald-400">Copied!</span>
-            </>
-          ) : (
-            <>
-              <Share2 className="w-4 h-4 text-zinc-400" />
-              <span>Share</span>
-            </>
-          )}
-        </button>
+          {/* Share / Copy Link Button */}
+          <button
+            onClick={handleShare}
+            className="flex items-center justify-center gap-1.5 sm:gap-2 py-3 px-3 sm:py-3.5 sm:px-5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-white font-semibold text-xs sm:text-sm transition-all shadow-sm hover:border-zinc-700 cursor-pointer"
+            title="Share profile link"
+          >
+            {copied ? (
+              <>
+                <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
+                <span className="text-emerald-400">Copied!</span>
+              </>
+            ) : (
+              <>
+                <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-zinc-400" />
+                <span>Share</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Footer Branding */}

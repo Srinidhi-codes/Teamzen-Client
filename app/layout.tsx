@@ -21,44 +21,86 @@ const landingDisplay = Sora({
   weight: ["500", "600", "700"],
 });
 
+const siteUrl = (
+  process.env.NEXT_PUBLIC_APP_URL ||
+  process.env.NEXT_PUBLIC_FRONTEND_URL ||
+  "https://teamzen-client-v2-beta.vercel.app"
+).replace(/\/$/, "");
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
-    default: "Teamzen — HRMS for modern teams",
-    template: "%s · Teamzen",
+    default: "Teamzen — Modern HRMS, Attendance & Payroll Platform",
+    template: "%s · Teamzen HRMS",
   },
   description:
-    "Attendance, leave, and payroll in one calm workforce workspace.",
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-  ),
+    "Teamzen is an all-in-one modern HRMS platform for automated payroll processing, geofenced & face attendance tracking, leave management, and AI workforce intelligence.",
+  keywords: [
+    "Teamzen",
+    "Teamzen HRMS",
+    "Teamzen payroll",
+    "Teamzen software",
+    "HRMS",
+    "HRMS software",
+    "Human Resource Management System",
+    "Payroll software",
+    "Attendance management system",
+    "Face attendance HRMS",
+    "Leave management system",
+    "Employee self service portal",
+    "Workforce management platform",
+    "Indian payroll software",
+    "Cloud HRMS",
+    "Teamzen app",
+  ],
+  authors: [{ name: "Teamzen", url: siteUrl }],
+  creator: "Teamzen",
+  publisher: "Teamzen",
+  alternates: {
+    canonical: "/",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Teamzen",
+    title: "Teamzen HRMS",
   },
   formatDetection: {
     telephone: false,
   },
   openGraph: {
-    title: "Teamzen — HRMS for modern teams",
+    title: "Teamzen — Modern HRMS, Attendance & Payroll Platform",
     description:
-      "Attendance, leave, and payroll in one calm workforce workspace.",
+      "All-in-one HRMS platform for automated payroll processing, geofenced & face attendance, leave management, and workforce intelligence.",
+    url: siteUrl,
+    siteName: "Teamzen HRMS",
+    locale: "en_US",
+    type: "website",
     images: [
       {
         url: "/images/landing/general.webp",
         width: 1920,
         height: 1080,
-        alt: "Teamzen workforce platform",
+        alt: "Teamzen HRMS Platform Overview",
       },
     ],
-    type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Teamzen — HRMS for modern teams",
+    title: "Teamzen — Modern HRMS, Attendance & Payroll Platform",
     description:
-      "Attendance, leave, and payroll in one calm workforce workspace.",
+      "All-in-one HRMS platform for automated payroll, geofenced & face attendance, and workforce clarity.",
     images: ["/images/landing/general.webp"],
   },
   icons: {
@@ -71,6 +113,62 @@ export const metadata: Metadata = {
       { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
   },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",
+  },
+};
+
+const JSON_LD_SCHEMA = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${siteUrl}/#organization`,
+      "name": "Teamzen",
+      "alternateName": ["Teamzen HRMS", "Teamzen Platform"],
+      "url": siteUrl,
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${siteUrl}/images/teamzen_zoomed.webp`,
+        "caption": "Teamzen HRMS Logo",
+      },
+      "description":
+        "Teamzen is a modern Human Resource Management System (HRMS) providing automated payroll, face attendance, and leave management.",
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${siteUrl}/#website`,
+      "url": siteUrl,
+      "name": "Teamzen HRMS",
+      "description": "Modern HRMS, Attendance & Payroll Platform for Growing Teams",
+      "publisher": {
+        "@id": `${siteUrl}/#organization`,
+      },
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": `${siteUrl}/#software`,
+      "name": "Teamzen HRMS",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web, iOS, Android (PWA)",
+      "url": siteUrl,
+      "description":
+        "Comprehensive cloud HRMS software with geofenced & face attendance, automated payroll processing, leave requests, and AI copilot.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "INR",
+      },
+      "featureList": [
+        "Automated Payroll Processing & Payslip Generation",
+        "Geofenced & Face Attendance Punch-In",
+        "Leave Management & Leave Approval Workflows",
+        "AI Workplace Copilot & Assistant",
+        "Employee Self-Service Dashboard",
+        "Company Announcements & Employee Social Feed",
+      ],
+    },
+  ],
 };
 
 export const viewport: Viewport = {
@@ -133,9 +231,13 @@ export default function RootLayout({
     <html lang="en" style={{ scrollbarGutter: "stable" }} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD_SCHEMA) }}
+        />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Teamzen" />
+        <meta name="apple-mobile-web-app-title" content="Teamzen HRMS" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </head>
       <body

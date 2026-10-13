@@ -12,15 +12,36 @@ interface RichContentRendererProps {
 export const RichContentRenderer: React.FC<RichContentRendererProps> = ({ content, className = '' }) => {
   if (!content) return null;
 
-  // Check if it's HTML from Tiptap
-  const isHtml = /^(<p>|<ul>|<ol>|<blockquote>|<h[1-6]>|<pre>)/.test(content.trim());
+  // Check if it's HTML from Tiptap (contains any HTML tags)
+  const isHtml = /<[a-z][\s\S]*>/i.test(content.trim());
   
   if (isHtml) {
     return (
-      <div 
-        className={`tiptap rich-post-content prose dark:prose-invert prose-sm max-w-none break-words ${className}`}
-        dangerouslySetInnerHTML={{ __html: content }}
-      />
+      <>
+        <style jsx global>{`
+          .rich-post-content img,
+          .tiptap.rich-post-content img {
+            width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
+            max-height: none !important;
+            display: block !important;
+            border-radius: 0.75rem !important;
+            margin: 1rem 0 !important;
+            object-fit: contain !important;
+            border: 1px solid var(--color-border);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+          }
+          .rich-post-content p:has(> img),
+          .tiptap.rich-post-content p:has(> img) {
+            width: 100% !important;
+          }
+        `}</style>
+        <div 
+          className={`tiptap rich-post-content prose dark:prose-invert prose-sm max-w-none break-words ${className}`}
+          dangerouslySetInnerHTML={{ __html: content }}
+        />
+      </>
     );
   }
 
@@ -35,6 +56,12 @@ export const RichContentRenderer: React.FC<RichContentRendererProps> = ({ conten
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
+          img: ({ node, ...props }) => (
+            <img 
+              className="rounded-xl w-full my-4 border border-border/50 shadow-sm block h-auto object-contain" 
+              {...props} 
+            />
+          ),
           h1: ({ node, ...props }) => <h1 className="text-xl font-bold mt-3 mb-2 text-foreground" {...props} />,
           h2: ({ node, ...props }) => <h2 className="text-lg font-bold mt-2.5 mb-1.5 text-foreground" {...props} />,
           h3: ({ node, ...props }) => <h3 className="text-base font-semibold mt-2 mb-1 text-foreground" {...props} />,

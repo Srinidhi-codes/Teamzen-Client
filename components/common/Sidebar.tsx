@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -31,6 +32,7 @@ interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  section?: string;
   roles?: string[];
   feature?: PlanFeature;
   /** Only show for inactive (exited) employees */
@@ -40,32 +42,43 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, hideWhenInactive: true },
-  { name: "Feed", href: "/feed", icon: Network, hideWhenInactive: true },
-  { name: "Team", href: "/team", icon: Users, hideWhenInactive: true },
-  { name: "Leaves", href: "/leaves", icon: Calendar, hideWhenInactive: true },
-  { name: "Attendance", href: "/attendance", icon: Clock, hideWhenInactive: true },
+  // ── 1. Overview ────────────────────────────────
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, section: "Overview", hideWhenInactive: true },
+  { name: "Feed", href: "/feed", icon: Network, section: "Overview", hideWhenInactive: true },
+  
+  // ── 2. People & Organization ───────────────────
+  { name: "Attendance", href: "/attendance", icon: Clock, section: "Organization", hideWhenInactive: true },
+  { name: "Leaves", href: "/leaves", icon: Calendar, section: "Organization", hideWhenInactive: true },
+  { name: "Team", href: "/team", icon: Users, section: "Organization", hideWhenInactive: true },
+  { name: "Onboarding", href: "/onboarding", icon: ClipboardList, section: "Organization", hideWhenInactive: true },
+
+  // ── 3. Finance & Records ───────────────────────
   {
     name: "Payroll",
     href: "/payroll",
     icon: DollarSign,
+    section: "Finance & Records",
     feature: "payroll_basic",
     hideWhenInactive: true,
   },
-  { name: "Documents", href: "/documents", icon: FileText },
-  { name: "Onboarding", href: "/onboarding", icon: ClipboardList, hideWhenInactive: true },
-  { name: "Exit / F&F", href: "/exit", icon: LogOut, exitOnly: true },
+  { name: "Documents", href: "/documents", icon: FileText, section: "Finance & Records" },
+
+  // ── 4. Company & Workspace ─────────────────────
   {
     name: "Performance",
     href: "/performance",
     icon: TrendingUp,
+    section: "Workspace",
     feature: "advanced_analytics",
     hideWhenInactive: true,
   },
-  { name: "Profile", href: "/profile", icon: UserCircle, hideWhenInactive: true },
-  { name: "Policies", href: "/policies", icon: BookCheck, feature: "policies", hideWhenInactive: true },
-  { name: "Feedback", href: "/feedback", icon: MessageSquare, hideWhenInactive: true },
-  { name: "Notifications", href: "/notifications", icon: Bell },
+  { name: "Policies", href: "/policies", icon: BookCheck, section: "Workspace", feature: "policies", hideWhenInactive: true },
+  { name: "Feedback", href: "/feedback", icon: MessageSquare, section: "Workspace", hideWhenInactive: true },
+
+  // ── 5. Account & Preferences ───────────────────
+  { name: "Notifications", href: "/notifications", icon: Bell, section: "General" },
+  { name: "Profile", href: "/profile", icon: UserCircle, section: "General", hideWhenInactive: true },
+  { name: "Exit / F&F", href: "/exit", icon: LogOut, section: "General", exitOnly: true },
 ];
 
 export interface SidebarProps {
@@ -162,8 +175,8 @@ export function Sidebar({
           </button>
         </div>
 
-        <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3">
-          {visibleNavItems.map((item) => {
+        <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3 custom-scrollbar">
+          {visibleNavItems.map((item, index) => {
             const isActive =
               pathname === item.href ||
               (pathname.startsWith(item.href + "/") &&
@@ -175,25 +188,38 @@ export function Sidebar({
                 ));
             const Icon = item.icon;
             const showLabel = !isCollapsed || isMobileOpen;
+            const prevItem = index > 0 ? visibleNavItems[index - 1] : null;
+            const isNewSection = !prevItem || prevItem.section !== item.section;
 
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                id={`nav-${item.name.toLowerCase()}`}
-                onClick={() => isMobileOpen && closeMobile()}
-                title={!showLabel ? item.name : undefined}
-                className={cn(
-                  "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors",
-                  showLabel ? "" : "justify-center px-0",
-                  isActive
-                    ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground hover:bg-muted hover:text-foreground"
+              <Fragment key={item.href}>
+                {isNewSection && item.section && showLabel && (
+                  <div className={cn("px-2.5 pb-1 select-none", index > 0 ? "pt-4" : "pt-0.5")}>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                      {item.section}
+                    </p>
+                  </div>
                 )}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                {showLabel && <span className="truncate">{item.name}</span>}
-              </Link>
+                {isNewSection && !showLabel && index > 0 && (
+                  <div className="my-2 h-px bg-sidebar-border/60 mx-1.5" aria-hidden="true" />
+                )}
+                <Link
+                  href={item.href}
+                  id={`nav-${item.name.toLowerCase()}`}
+                  onClick={() => isMobileOpen && closeMobile()}
+                  title={!showLabel ? item.name : undefined}
+                  className={cn(
+                    "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors",
+                    showLabel ? "" : "justify-center px-0",
+                    isActive
+                      ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {showLabel && <span className="truncate">{item.name}</span>}
+                </Link>
+              </Fragment>
             );
           })}
         </nav>

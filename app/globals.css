@@ -1664,9 +1664,9 @@
 
 .hero-art {
   object-fit: cover !important;
-  object-position: 72% center !important;
+  object-position: 85% center !important;
   animation: hero-art-drift 28s ease-in-out infinite;
-  transform-origin: 72% center;
+  transform-origin: right center;
   will-change: transform;
 }
 
@@ -2169,4 +2169,26 @@
     padding-top: 0.75rem;
     padding-bottom: 1.25rem;
   }
+}
+
+/* ── Feed & Rich Text Editor Full-Width Images ────────── */
+.tiptap img,
+.rich-post-content img,
+.prose.rich-post-content img,
+.tiptap p img,
+.rich-post-content p img {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  max-height: none !important;
+  display: block !important;
+  border-radius: 0.75rem !important;
+  margin-top: 1rem !important;
+  margin-bottom: 1rem !important;
+  object-fit: contain !important;
+}
+
+.tiptap p:has(> img),
+.rich-post-content p:has(> img) {
+  width: 100% !important;
 }
