@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_MY_NOTIFICATIONS, GET_UNREAD_COUNT } from "@/lib/graphql/notifications/queries";
 import {
@@ -66,10 +66,18 @@ export default function NotificationsPage() {
     const [deleteNotif] = useMutation(DELETE_NOTIFICATION);
     const [deleteAllRead] = useMutation(DELETE_ALL_READ_NOTIFICATIONS);
 
-    useNotifications(() => {
-        refetch();
-        refetchCount();
-        refetchActivity();
+    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    useNotifications((msg) => {
+        if (!msg) return;
+        if (msg.level === 'personal' || msg.level === 'admin' || msg.verb === 'announcement') {
+            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+            debounceTimerRef.current = setTimeout(() => {
+                refetch();
+                refetchCount();
+                refetchActivity();
+            }, 400);
+        }
     }, { silent: true });
 
     const handleFilterChange = (val: string) => {

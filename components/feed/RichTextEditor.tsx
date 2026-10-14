@@ -6,10 +6,11 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Mention from '@tiptap/extension-mention';
 import Image from '@tiptap/extension-image';
-import { Bold, Italic, Strikethrough, List, ListOrdered, Quote, Code, SquareTerminal, Smile, Image as ImageIcon, AtSign } from 'lucide-react';
+import { Bold, Italic, Strikethrough, List, ListOrdered, Quote, Code, SquareTerminal, Smile, Image as ImageIcon, AtSign, Tag, Hash } from 'lucide-react';
 import tippy from 'tippy.js';
 import { MentionList } from './MentionList';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { EmojiPicker } from './EmojiPicker';
 
 interface RichTextEditorProps {
   value: string;
@@ -18,9 +19,10 @@ interface RichTextEditorProps {
   minHeight?: string;
   className?: string;
   fetchMentions?: any;
+  onToggleTags?: () => void;
+  isTagsOpen?: boolean;
+  selectedTagsCount?: number;
 }
-
-const QUICK_EMOJIS = ['👍', '🎉', '🚀', '❤️', '👏', '🔥', '✨', '💡', '🙌', '🎯', '📢', '😊'];
 
 export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
@@ -29,6 +31,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   minHeight = '44px',
   className = '',
   fetchMentions,
+  onToggleTags,
+  isTagsOpen = false,
+  selectedTagsCount = 0,
 }) => {
   const [isEmojiOpen, setIsEmojiOpen] = useState(false);
 
@@ -354,33 +359,52 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           type="button"
           onClick={() => editor.chain().focus().insertContent('@').run()}
           className="p-1.5 rounded-md transition-colors text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
-          title="Mention someone"
+          title="Mention someone (@)"
         >
           <AtSign className="w-4 h-4" />
         </button>
+
+        {onToggleTags && (
+          <button
+            type="button"
+            onClick={onToggleTags}
+            className={`relative p-1.5 rounded-md transition-all ${
+              isTagsOpen
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : selectedTagsCount > 0
+                ? 'bg-primary/10 text-primary font-semibold'
+                : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+            title={isTagsOpen ? "Hide Tags & Badges" : "Tags & Badges (#)"}
+          >
+            <Tag className="w-4 h-4" />
+            {selectedTagsCount > 0 && !isTagsOpen && (
+              <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] flex items-center justify-center text-[9px] font-bold bg-primary text-primary-foreground rounded-full px-0.5 shadow-sm">
+                {selectedTagsCount}
+              </span>
+            )}
+          </button>
+        )}
 
         <Popover open={isEmojiOpen} onOpenChange={setIsEmojiOpen}>
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="p-1.5 rounded-md transition-colors text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+              className={`p-1.5 rounded-md transition-colors ${
+                isEmojiOpen
+                  ? "bg-primary/10 text-primary"
+                  : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+              }`}
               title="Insert Emoji"
             >
               <Smile className="w-4 h-4" />
             </button>
           </PopoverTrigger>
-          <PopoverContent className="w-[280px] p-2" align="start">
-            <div className="grid grid-cols-6 gap-1">
-              {QUICK_EMOJIS.map((emoji) => (
-                <button
-                  key={emoji}
-                  onClick={() => insertEmoji(emoji)}
-                  className="p-2 text-xl hover:bg-muted rounded-md transition-colors"
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
+          <PopoverContent className="w-auto p-0 border-0 shadow-none bg-transparent" align="start" sideOffset={6}>
+            <EmojiPicker
+              onSelectEmoji={insertEmoji}
+              onClose={() => setIsEmojiOpen(false)}
+            />
           </PopoverContent>
         </Popover>
       </div>

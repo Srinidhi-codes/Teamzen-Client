@@ -12,12 +12,19 @@ export function LocationSyncBanner() {
   const [isVisible, setIsVisible] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [canQuery, setCanQuery] = useState(false);
   const askedRef = useRef(false);
   const [updateLocation] = useMutation(UPDATE_LOGIN_LOCATION);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setCanQuery(true), 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
   const { data, refetch } = useQuery<SecurityLogResponse>(GET_MY_LOGIN_HISTORY, {
     variables: { page: 1, pageSize: 1 },
-    fetchPolicy: "network-only",
+    skip: !canQuery,
+    fetchPolicy: "cache-first",
   });
 
   const handleSync = useCallback(() => {

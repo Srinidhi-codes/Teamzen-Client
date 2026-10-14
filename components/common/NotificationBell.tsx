@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_MY_NOTIFICATIONS, GET_UNREAD_COUNT } from "@/lib/graphql/notifications/queries";
 import { MARK_NOTIFICATION_READ, MARK_ALL_READ, DELETE_NOTIFICATION } from "@/lib/graphql/notifications/mutations";
@@ -46,7 +46,14 @@ const stripHtmlTags = (input: string): string => {
 export function NotificationBell() {
     const router = useRouter();
     const [menuOpen, setMenuOpen] = useState(false);
+    const [readyToCount, setReadyToCount] = useState(false);
     const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementItem | null>(null);
+
+    useEffect(() => {
+        // Defer notification badge count slightly (800ms) so primary page stats load first
+        const t = setTimeout(() => setReadyToCount(true), 800);
+        return () => clearTimeout(t);
+    }, []);
 
     const { data: notificationsData, refetch: refetchNotifications } = useQuery(GET_MY_NOTIFICATIONS, {
         variables: { level: 'personal' },
@@ -55,14 +62,28 @@ export function NotificationBell() {
     }) as any;
     const { data: countData, refetch: refetchCount } = useQuery(GET_UNREAD_COUNT, {
         variables: { level: 'personal' },
+        skip: !readyToCount,
         fetchPolicy: "cache-first",
     }) as any;
 
-    // Connect to WebSocket for real-time updates
-    useNotifications(() => {
-        refetchNotifications();
-        refetchCount();
-    });
+    const refetchTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+    // Connect to WebSocket for real-time updates (debounced and filtered)
+    const handleWsNotification = React.useCallback((msg: any) => {
+        if (!msg) return;
+        // Ignore feed updates, only react to personal/admin notifications or announcements
+        if (msg.level === 'personal' || msg.level === 'admin' || msg.verb === 'announcement') {
+            if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
+            refetchTimerRef.current = setTimeout(() => {
+                if (menuOpen) {
+                    refetchNotifications();
+                }
+                refetchCount();
+            }, 400);
+        }
+    }, [menuOpen, refetchNotifications, refetchCount]);
+
+    useNotifications(handleWsNotification);
 
     const [markRead] = useMutation(MARK_NOTIFICATION_READ);
     const [markAllRead] = useMutation(MARK_ALL_READ);

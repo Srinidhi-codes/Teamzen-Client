@@ -68,16 +68,31 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const canUseAssistant = can("ai_assistant") && !inactive;
 
   const [wizardOpen, setWizardOpen] = useState(false);
-  const { wizard, isLoading, refetch } = useFirstDayWizard(!!user && canUseAssistant);
+  const [deferredReady, setDeferredReady] = useState(false);
+
+  useEffect(() => {
+    // Delay non-critical background checks (announcements, first-day wizard)
+    // so critical dashboard queries resolve first without network congestion
+    const timer = setTimeout(() => setDeferredReady(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const shouldSkipWizard =
+    !user ||
+    !canUseAssistant ||
+    user?.hasSeenAiOnboarding === true ||
+    wasFirstDayWizardDismissed(user?.id);
+
+  const { wizard, isLoading, refetch } = useFirstDayWizard(deferredReady && !shouldSkipWizard);
 
   // Announcement state
   const [activeAnnouncements, setActiveAnnouncements] = useState<AnnouncementItem[]>([]);
 
-  // Query recent unread notifications to check for unread announcements
+  // Query recent unread notifications to check for unread announcements (deferred)
   const { data: notifData } = useQuery(GET_MY_NOTIFICATIONS, {
     variables: { level: "personal", isRead: false, page: 1, pageSize: 20 },
-    skip: !user || inactive,
-    fetchPolicy: "cache-and-network",
+    skip: !deferredReady || !user || inactive,
+    fetchPolicy: "cache-first",
   });
 
   // Check unread announcements from query

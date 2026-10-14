@@ -4,6 +4,44 @@ import useWebSocket, { ReadyState } from "react-use-websocket";
 import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
 
+let cachedToken: string | null = null;
+let tokenFetchPromise: Promise<string | null> | null = null;
+let lastTokenTime = 0;
+
+async function getSharedWsToken(): Promise<string | null> {
+    const now = Date.now();
+    // Cache token for 5 minutes
+    if (cachedToken && now - lastTokenTime < 300000) {
+        return cachedToken;
+    }
+    if (tokenFetchPromise) {
+        return tokenFetchPromise;
+    }
+
+    tokenFetchPromise = (async () => {
+        try {
+            const tokenResponse = await fetch("/api/auth/ws-token", {
+                credentials: "include",
+            });
+            if (!tokenResponse.ok) return null;
+            const { token } = (await tokenResponse.json()) as { token?: string };
+            if (token) {
+                cachedToken = token;
+                lastTokenTime = Date.now();
+                return token;
+            }
+            return null;
+        } catch (error) {
+            console.error("Failed to fetch ws-token:", error);
+            return null;
+        } finally {
+            tokenFetchPromise = null;
+        }
+    })();
+
+    return tokenFetchPromise;
+}
+
 export function useNotifications(
     onMessageReceived?: (msg: any) => void,
     options: { silent?: boolean } = { silent: false }
@@ -32,40 +70,18 @@ export function useNotifications(
                 console.error("Invalid NEXT_PUBLIC_API_URL for WebSocket:", e);
             }
 
-            try {
-                const tokenResponse = await fetch("/api/auth/ws-token", {
-                    credentials: "include",
-                });
+            const token = await getSharedWsToken();
+            if (cancelled) return;
 
-                if (!tokenResponse.ok) {
-                    if (!cancelled) {
-                        setSocketUrl(null);
-                        setShouldConnect(false);
-                    }
-                    return;
-                }
-
-                const { token } = (await tokenResponse.json()) as { token?: string };
-                if (!token) {
-                    if (!cancelled) {
-                        setSocketUrl(null);
-                        setShouldConnect(false);
-                    }
-                    return;
-                }
-
-                const url = `${protocol}//${host}/ws/notifications/?token=${encodeURIComponent(token)}`;
-                if (!cancelled) {
-                    setSocketUrl(url);
-                    setShouldConnect(true);
-                }
-            } catch (error) {
-                console.error("Failed to initialize notifications socket:", error);
-                if (!cancelled) {
-                    setSocketUrl(null);
-                    setShouldConnect(false);
-                }
+            if (!token) {
+                setSocketUrl(null);
+                setShouldConnect(false);
+                return;
             }
+
+            const url = `${protocol}//${host}/ws/notifications/?token=${encodeURIComponent(token)}`;
+            setSocketUrl(url);
+            setShouldConnect(true);
         };
 
         connect();

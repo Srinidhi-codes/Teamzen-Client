@@ -6,8 +6,12 @@ import { GraphQLUser } from "./types";
 import { useEffect } from "react";
 import { useStore } from "@/lib/store/useStore";
 
-export function useGraphQLUser() {
-  const { data, loading, error, refetch } = useQuery(GET_ME) as any;
+export function useGraphQLUser(options?: any) {
+  const { data, loading, error, refetch } = useQuery(GET_ME, {
+    fetchPolicy: "cache-first",
+    nextFetchPolicy: "cache-first",
+    ...options,
+  }) as any;
   const { setAuthenticatedUser, user: storedUser } = useStore();
 
   useEffect(() => {

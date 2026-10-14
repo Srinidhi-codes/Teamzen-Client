@@ -53,7 +53,7 @@ async function gqlMutate(query: string, variables: Record<string, unknown>) {
 
 export default function MyExitPage() {
   const { data, loading, refetch } = useQuery(MY_OFFBOARDING, {
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "cache-first",
   }) as any;
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");

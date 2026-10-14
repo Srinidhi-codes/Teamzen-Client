@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@apollo/client/react";
@@ -53,8 +54,10 @@ function roleLabel(role?: string) {
 
 export function Navbar({ onMenuClick }: NavbarProps) {
   const { logoutUser, user } = useStore();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { data } = useQuery<SecurityLogResponse>(GET_MY_LOGIN_HISTORY, {
     variables: { page: 1, pageSize: 1 },
+    skip: !userMenuOpen,
     fetchPolicy: "cache-first",
   });
   const { startTour } = useOnboardingTour();
@@ -150,7 +153,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
           <NotificationBell />
 
           {user && (
-            <DropdownMenu modal={false}>
+            <DropdownMenu modal={false} onOpenChange={setUserMenuOpen}>
               <DropdownMenuTrigger asChild>
                 <button
                   id="user-menu-trigger"

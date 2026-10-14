@@ -29,11 +29,12 @@ export const DELETE_POST = gql`
 `;
 
 export const UPDATE_POST = gql`
-  mutation UpdatePost($id: String!, $content: String!, $title: String) {
-    updatePost(id: $id, content: $content, title: $title) {
+  mutation UpdatePost($id: String!, $content: String!, $title: String, $mediaUrls: [String!]) {
+    updatePost(id: $id, content: $content, title: $title, mediaUrls: $mediaUrls) {
       id
       title
       content
+      mediaUrls
     }
   }
 `;

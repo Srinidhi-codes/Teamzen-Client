@@ -73,20 +73,10 @@ export const useFeedMutations = () => {
   });
 
   const [deletePost, { loading: isDeletingPost }] = useMutation<any>(DELETE_POST, {
-    update(cache, { data: { deletePost } }, { variables }: any) {
-      if (deletePost) {
-        cache.modify({
-          fields: {
-            posts(existingPosts = {}, { readField }) {
-              return {
-                ...existingPosts,
-                results: existingPosts.results.filter(
-                  (postRef: any) => readField('id', postRef) !== variables?.id
-                )
-              };
-            }
-          }
-        });
+    update(cache, _, { variables }: any) {
+      if (variables?.id) {
+        cache.evict({ id: cache.identify({ __typename: 'PostType', id: variables.id }) });
+        cache.gc();
       }
     }
   });
@@ -111,7 +101,14 @@ export const useFeedMutations = () => {
 
   const [createComment, { loading: isCreatingComment }] = useMutation<any>(CREATE_COMMENT);
 
-  const [deleteComment] = useMutation<any>(DELETE_COMMENT);
+  const [deleteComment] = useMutation<any>(DELETE_COMMENT, {
+    update(cache, _, { variables }: any) {
+      if (variables?.id) {
+        cache.evict({ id: cache.identify({ __typename: 'CommentType', id: variables.id }) });
+        cache.gc();
+      }
+    }
+  });
 
   const [toggleCommentLike] = useMutation<any>(TOGGLE_COMMENT_LIKE, {
     update(cache, { data: { toggleCommentLike } }, { variables }: any) {
@@ -131,8 +128,35 @@ export const useFeedMutations = () => {
     }
   });
 
-  const [updatePost] = useMutation<any>(UPDATE_POST);
-  const [updateComment] = useMutation<any>(UPDATE_COMMENT);
+  const [updatePost] = useMutation<any>(UPDATE_POST, {
+    update(cache, _, { variables }: any) {
+      if (variables?.id) {
+        cache.modify({
+          id: cache.identify({ __typename: 'PostType', id: variables.id }),
+          fields: {
+            title() { return variables.title; },
+            content() { return variables.content; },
+            mediaUrls() { return variables.mediaUrls ?? []; },
+            updatedAt() { return new Date().toISOString(); }
+          }
+        });
+      }
+    }
+  });
+
+  const [updateComment] = useMutation<any>(UPDATE_COMMENT, {
+    update(cache, _, { variables }: any) {
+      if (variables?.id) {
+        cache.modify({
+          id: cache.identify({ __typename: 'CommentType', id: variables.id }),
+          fields: {
+            content() { return variables.content; },
+            updatedAt() { return new Date().toISOString(); }
+          }
+        });
+      }
+    }
+  });
   const [viewPost] = useMutation<any>(VIEW_POST);
   const [reportPost] = useMutation<any>(REPORT_POST);
 

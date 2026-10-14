@@ -5,6 +5,7 @@ import { GET_USER_DASHBOARD_STATS } from "../dashboard/queries"
 import { GET_ME } from "../users/queries"
 import {
   AttendanceInput,
+  AttendanceRecord,
   GetAttendanceResponse,
   GetAttendanceVars,
   GetTeamAttendanceTodayResponse,
@@ -16,14 +17,18 @@ const ATTENDANCE_MUTATION_REFETCH = [
   { query: GET_USER_DASHBOARD_STATS },
 ];
 
-export function useGraphQlAttendance() {
+export function useGraphQlAttendance(options?: any) {
   const { data, loading, error, refetch } = useQuery<
     GetAttendanceResponse,
     GetAttendanceVars
-  >(GET_ATTENDANCE);
+  >(GET_ATTENDANCE, {
+    fetchPolicy: "cache-first",
+    nextFetchPolicy: "cache-first",
+    ...options,
+  }) as any;
 
   return {
-    attendance: data?.myAttendance ?? [],
+    attendance: (data?.myAttendance ?? []) as AttendanceRecord[],
     isLoading: loading && !data,
     isRefetching: loading && !!data,
     error,

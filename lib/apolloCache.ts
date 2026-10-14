@@ -4,6 +4,9 @@ export const apolloCacheConfig: InMemoryCacheConfig = {
   typePolicies: {
     Query: {
       fields: {
+        me: {
+          keyArgs: false,
+        },
         getLeaveRequests: {
           keyArgs: ["approvalsOnly", "search"],
         },
@@ -31,6 +34,39 @@ export const apolloCacheConfig: InMemoryCacheConfig = {
         unreadNotificationCount: {
           keyArgs: ["level"],
         },
+        companyHolidays: {
+          keyArgs: false,
+        },
+        myPayslips: {
+          keyArgs: false,
+        },
+        myOffboarding: {
+          keyArgs: false,
+        },
+        performanceGoals: {
+          keyArgs: ["cycleId", "search"],
+        },
+        performanceReviews: {
+          keyArgs: ["cycleId", "status"],
+        },
+        myIssuedDocuments: {
+          keyArgs: false,
+        },
+        myDocumentRequests: {
+          keyArgs: false,
+        },
+        myVaultUploads: {
+          keyArgs: false,
+        },
+        myEmployeeDocumentRequests: {
+          keyArgs: false,
+        },
+        myOnboarding: {
+          keyArgs: false,
+        },
+        myAssignedOnboardingTasks: {
+          keyArgs: false,
+        },
       },
     },
     User: {
@@ -45,8 +81,11 @@ export const apolloCacheConfig: InMemoryCacheConfig = {
 
 export const apolloDefaultOptions = {
   watchQuery: {
-    fetchPolicy: "cache-and-network" as const,
+    fetchPolicy: "cache-first" as const,
     nextFetchPolicy: "cache-first" as const,
+  },
+  query: {
+    fetchPolicy: "cache-first" as const,
   },
   mutate: {
     awaitRefetchQueries: true,

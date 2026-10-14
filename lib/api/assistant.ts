@@ -26,10 +26,10 @@ export type AssistantResponse = {
     history: ChatMessage[];
 };
 
-export const useAssistant = () => {
+export const useAssistant = (enabled = true) => {
     const queryClient = useQueryClient();
 
-    // 1. Fetch persistent history & config on mount
+    // 1. Fetch persistent history & config only when assistant is active/open
     const { data, isLoading: isHistoryLoading } = useQuery({
         queryKey: ['assistant-history'],
         queryFn: async () => {
@@ -39,6 +39,7 @@ export const useAssistant = () => {
             }>(`${API_ENDPOINTS.CHAT}?context=user`);
             return response.data;
         },
+        enabled,
     });
 
     const [history, setHistory] = useState<ChatMessage[]>([]);

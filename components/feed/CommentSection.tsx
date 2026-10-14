@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -29,13 +29,29 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser }: 
   const [showAllReplies, setShowAllReplies] = useState(false);
   const [replyContent, setReplyContent] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [displayContent, setDisplayContent] = useState(comment.content);
   const [editContent, setEditContent] = useState(comment.content);
+  const [isOptimisticallyDeleted, setIsOptimisticallyDeleted] = useState(false);
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const isDeletingRef = useRef(false);
+  const isEditingRef = useRef(false);
+  const isSubmittingReplyRef = useRef(false);
+
   const { createComment, deleteComment, updateComment, toggleCommentLike } = useFeedMutations();
 
+  useEffect(() => {
+    setDisplayContent(comment.content);
+    setEditContent(comment.content);
+  }, [comment.content]);
+
   const handleReply = async () => {
-    if (!replyContent.trim() || isSubmittingReply) return;
+    if (!replyContent.trim() || isSubmittingReplyRef.current || isSubmittingReply) return;
+    isSubmittingReplyRef.current = true;
     setIsSubmittingReply(true);
+
     try {
       await createComment({
         variables: { postId, content: replyContent, parentId: comment.id },
@@ -47,7 +63,10 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser }: 
     } catch (e) {
       toast.error('Failed to post reply');
     } finally {
-      setIsSubmittingReply(false);
+      setTimeout(() => {
+        isSubmittingReplyRef.current = false;
+        setIsSubmittingReply(false);
+      }, 500);
     }
   };
 
@@ -65,29 +84,60 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser }: 
   };
 
   const handleDelete = async () => {
+    if (isDeletingRef.current || isDeleting) return;
+    isDeletingRef.current = true;
+    setIsDeleting(true);
+
+    // INSTANT OPTIMISTIC UI: hide comment immediately
+    setIsOptimisticallyDeleted(true);
+    toast.success('Comment deleted');
+
     try {
       await deleteComment({
         variables: { id: comment.id },
-        refetchQueries: ['GetPostComments']
+        optimisticResponse: { deleteComment: true }
       });
-      toast.success('Comment deleted');
     } catch (e) {
+      setIsOptimisticallyDeleted(false);
       toast.error('Failed to delete comment');
+    } finally {
+      setTimeout(() => {
+        isDeletingRef.current = false;
+        setIsDeleting(false);
+      }, 500);
     }
   };
 
   const handleEdit = async () => {
-    if (!editContent.trim()) return;
+    if (isEditingRef.current || isSubmittingEdit || !editContent.trim()) return;
+    isEditingRef.current = true;
+    setIsSubmittingEdit(true);
+
+    const prevContent = displayContent;
+    // INSTANT OPTIMISTIC UI: update display immediately and close edit mode
+    setDisplayContent(editContent);
+    setIsEditing(false);
+    toast.success('Comment updated');
+
     try {
       await updateComment({
         variables: { id: comment.id, content: editContent }
       });
-      setIsEditing(false);
-      toast.success('Comment updated');
     } catch (e) {
+      setDisplayContent(prevContent);
+      setIsEditing(true);
       toast.error('Failed to update comment');
+    } finally {
+      setTimeout(() => {
+        isEditingRef.current = false;
+        setIsSubmittingEdit(false);
+      }, 500);
     }
   };
+
+  if (isOptimisticallyDeleted) {
+    return null;
+  }
 
   const toggleReplying = () => {
     if (!isReplying && comment.author) {
@@ -186,13 +236,28 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser }: 
                 fetchMentions={fetchMentions}
               />
               <div className="flex gap-2 mt-2 justify-end">
-                <button onClick={() => setIsEditing(false)} className="text-xs text-gray-500 hover:text-gray-700">Cancel</button>
-                <button onClick={handleEdit} className="text-xs bg-primary text-white px-2 py-1 rounded">Save</button>
+                <button 
+                  onClick={() => {
+                    setEditContent(displayContent);
+                    setIsEditing(false);
+                  }} 
+                  disabled={isSubmittingEdit}
+                  className="text-xs text-gray-500 hover:text-gray-700"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleEdit} 
+                  disabled={isSubmittingEdit}
+                  className="text-xs bg-primary text-white px-2 py-1 rounded disabled:opacity-50"
+                >
+                  {isSubmittingEdit ? 'Saving...' : 'Save'}
+                </button>
               </div>
             </div>
           ) : (
             <div className="text-xs sm:text-sm mt-1 text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words">
-              {renderContent(comment.content)}
+              {renderContent(displayContent)}
             </div>
           )}
         </div>
@@ -311,10 +376,13 @@ export const CommentSection = ({
   }, [initialComments, loading, isExpanded]);
 
   useNotifications((msg) => {
-    if (msg?.level === 'feed_update' && msg?.target_id === postId) {
+    if (isExpanded && msg?.level === 'feed_update' && msg?.target_id === postId) {
       refetch();
     }
   }, { silent: true });
+
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const isSubmittingCommentRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
@@ -341,15 +409,27 @@ export const CommentSection = ({
   if (!isExpanded || !mounted) return null;
 
   const handleComment = async () => {
-    if (!content.trim()) return;
+    if (!content.trim() || isSubmittingCommentRef.current || isSubmittingComment || isCreatingComment) return;
+    isSubmittingCommentRef.current = true;
+    setIsSubmittingComment(true);
+
+    const commentText = content;
+    setContent('');
+
     try {
       await createComment({
-        variables: { postId, content },
+        variables: { postId, content: commentText },
         refetchQueries: ['GetPostComments']
       });
-      setContent('');
+      toast.success('Comment posted');
     } catch (e) {
+      setContent(commentText);
       toast.error('Failed to post comment');
+    } finally {
+      setTimeout(() => {
+        isSubmittingCommentRef.current = false;
+        setIsSubmittingComment(false);
+      }, 500);
     }
   };
 
@@ -402,11 +482,11 @@ export const CommentSection = ({
           />
           
           <button 
-            disabled={!content.trim() || isCreatingComment}
+            disabled={!content.trim() || isSubmittingComment || isCreatingComment}
             onClick={handleComment}
             className="absolute right-2 sm:right-3 top-1.5 sm:top-2 text-primary hover:text-primary/80 disabled:opacity-50 p-1.5 sm:p-2 bg-primary/10 rounded-full shrink-0"
           >
-            {isCreatingComment ? <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+            {(isSubmittingComment || isCreatingComment) ? <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
           </button>
         </div>
       </div>

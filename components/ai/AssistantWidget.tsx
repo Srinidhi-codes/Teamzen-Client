@@ -88,7 +88,7 @@ export function AssistantWidget() {
     activeTool,
     clearHistory,
     config,
-  } = useAssistant();
+  } = useAssistant(isOpen);
   const [isMicErrorModalOpen, setIsMicErrorModalOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);

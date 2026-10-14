@@ -189,7 +189,7 @@ export function EmployeeDashboard() {
   });
   const { resolvedTheme } = useTheme();
 
-  const isInitialLoading = !user && isUserLoading && !dashboardData;
+  const isInitialLoading = (!user && isUserLoading) || (!dashboardData && isDashboardLoading);
   const now = useMemo(() => moment(), []);
 
   useEffect(() => {
