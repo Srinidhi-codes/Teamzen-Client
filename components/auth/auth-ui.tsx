@@ -85,9 +85,15 @@ export function PasswordChecklist({
   ];
 
   return (
-    <div className="space-y-3 rounded-xl border border-border bg-muted/40 p-4">
-      <p className="text-sm font-medium text-foreground">Password requirements</p>
-      <div className="grid grid-cols-2 gap-2.5 text-sm">
+    <div
+      className="space-y-3 rounded-xl p-4"
+      style={{
+        backgroundColor: "rgba(7, 24, 26, 0.75)",
+        border: "1px solid rgba(56, 171, 177, 0.25)",
+      }}
+    >
+      <p className="text-xs font-semibold text-zinc-200">Password requirements</p>
+      <div className="grid grid-cols-2 gap-2.5 text-xs">
         {items.map((item) => {
           const ok = criteria[item.key];
           return (
@@ -95,18 +101,20 @@ export function PasswordChecklist({
               key={item.key}
               className={cn(
                 "flex items-center gap-2 transition-colors",
-                ok ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"
+                ok ? "text-[#38ABB1] font-medium" : "text-zinc-400"
               )}
             >
               <span
                 className={cn(
-                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border",
-                  ok ? "border-emerald-500/30 bg-emerald-500/10" : "border-border bg-background"
+                  "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors",
+                  ok
+                    ? "border-[#38ABB1]/50 bg-[#38ABB1]/20 text-[#38ABB1]"
+                    : "border-zinc-700 bg-black/30 text-transparent"
                 )}
               >
                 <svg
                   viewBox="0 0 24 24"
-                  className={cn("h-3 w-3", ok ? "opacity-100" : "opacity-0")}
+                  className={cn("h-2.5 w-2.5", ok ? "opacity-100" : "opacity-0")}
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="3"
@@ -114,7 +122,7 @@ export function PasswordChecklist({
                   <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </span>
-              <span className="font-medium">{item.label}</span>
+              <span>{item.label}</span>
             </div>
           );
         })}

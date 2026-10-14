@@ -1,28 +1,19 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { useAuth } from "@/lib/api/hooks";
 import { useStore } from "@/lib/store/useStore";
-import Link from "next/link";
+import { BrandImages } from "@/lib/brand-images";
 import {
-  Mail,
-  Lock,
   Eye,
   EyeOff,
   KeyRound,
   ShieldCheck,
+  Loader2,
 } from "lucide-react";
-import { Input } from "../ui/input";
-import { AuthShell } from "./AuthShell";
-import { cn } from "@/lib/utils";
-import { AuthImages } from "@/lib/brand-images";
-import {
-  AUTH_INPUT_CLASS,
-  AuthDivider,
-  AuthFooterLink,
-  AuthSubmitButton,
-  GoogleMark,
-} from "./auth-ui";
+import { GoogleMark } from "./auth-ui";
 import ConfirmationModal from "../common/ConfirmationModal";
 
 function markLocationSyncNeeded() {
@@ -84,9 +75,9 @@ export default function LoginForm() {
           google.accounts.id.renderButton(btn, {
             theme: "outline",
             size: "large",
-            width: 400,
+            width: 240,
             text: "signin_with",
-            shape: "rectangular",
+            shape: "pill",
           });
         }
       } catch (err) {
@@ -109,9 +100,7 @@ export default function LoginForm() {
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  // Only sync auth state from session cookies on mount.
-  // If cookies are gone, clear stale localStorage (logoutUser).
-  // Never trigger automatic redirects on mount to prevent /login <-> /dashboard bounce loops.
+  // Sync auth state from session cookies on mount
   useEffect(() => {
     if (!hasHydrated || !isAuthenticated || isRedirectingRef.current) return;
 
@@ -251,281 +240,421 @@ export default function LoginForm() {
     }
   };
 
-  const submitLabel = () => {
-    if (isRedirecting) {
-      return "Redirecting…";
-    }
-    if (login.isPending || verifyOtp.isPending || requestOtp.isPending || verifyTotp.isPending) {
-      return "Signing in…";
-    }
-    if (authType === "otp") return step === "login" ? "Send code" : "Verify and sign in";
-    return "Sign in";
-  };
+  const isPending =
+    isRedirecting ||
+    login.isPending ||
+    verifyOtp.isPending ||
+    requestOtp.isPending ||
+    verifyTotp.isPending;
 
   return (
-    <>
-    <AuthShell
-      title={step === "totp" ? "Two-factor authentication" : "Sign in"}
-      description={
-        step === "totp"
-          ? "Enter the 6-digit code from your authenticator app."
-          : "Use your work email to continue."
-      }
-      sideImage={step === "totp" ? AuthImages.security : AuthImages.employee}
-      sideImageAlt={
-        step === "totp"
-          ? "Secure authentication illustration"
-          : "Teamzen employee workspace illustration"
-      }
+    <div
+      className="relative min-h-screen w-full flex items-center justify-center p-4 sm:p-6 md:p-8 lg:p-12 font-sans selection:bg-[#38ABB1]/30 selection:text-[#38ABB1] overflow-hidden"
+      style={{
+        backgroundColor: "#03090a",
+        backgroundImage:
+          "radial-gradient(ellipse 90% 65% at 50% -15%, rgba(56, 171, 177, 0.35), transparent 70%), radial-gradient(ellipse 60% 50% at 100% 40%, rgba(56, 171, 177, 0.2), transparent 65%), radial-gradient(ellipse 55% 45% at 0% 70%, rgba(43, 138, 143, 0.18), transparent 60%)",
+      }}
     >
-      {step === "totp" ? (
-        <form onSubmit={handleVerifyTotp} className="space-y-5">
-          <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/40 p-3">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-            <p className="text-sm text-muted-foreground">
-              Open your authenticator app and enter the current code for Teamzen.
+      {/* Subtle landing grid pattern */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-20"
+        style={{
+          maskImage: "linear-gradient(180deg, black 0%, transparent 85%)",
+          WebkitMaskImage: "linear-gradient(180deg, black 0%, transparent 85%)",
+          backgroundImage:
+            "linear-gradient(to right, rgba(56, 171, 177, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(56, 171, 177, 0.08) 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
+        }}
+        aria-hidden
+      />
+
+      {/* Centered Floating Card Matching Landing Page Black & Teal Palette */}
+      <div
+        className="relative z-10 w-full max-w-[960px] min-h-[520px] md:min-h-[560px] rounded-3xl overflow-hidden flex flex-col md:flex-row"
+        style={{
+          backgroundColor: "#061315",
+          border: "1px solid rgba(56, 171, 177, 0.28)",
+          boxShadow:
+            "0 25px 70px -15px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(56, 171, 177, 0.22), 0 0 45px -10px rgba(56, 171, 177, 0.18)",
+        }}
+      >
+        {/* Mobile Header Banner (Visible on < md screens) */}
+        <div className="relative w-full h-44 overflow-hidden md:hidden">
+          <Image
+            src="/images/auth/login-geometric-teal.webp"
+            alt="Welcome pattern"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-right"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-[#061315]/60 to-transparent" />
+          <div className="relative z-10 p-6 flex flex-col justify-end h-full text-white">
+            <h2 className="text-3xl font-extrabold tracking-tight drop-shadow-sm">
+              {step === "totp" ? "Security Check" : "Welcome Back."}
+            </h2>
+            <p className="text-xs text-white/85 line-clamp-2 mt-1">
+              Sign in to access your attendance, leaves, and payroll.
+            </p>
+          </div>
+        </div>
+
+        {/* Left Section: Login Form */}
+        <div className="relative z-20 w-full md:w-[48%] lg:w-[45%] p-7 sm:p-9 md:p-10 lg:p-12 flex flex-col justify-center">
+          
+          {/* Prominent Teamzen Brand Header */}
+          <div className="mb-6 flex items-center justify-between">
+            <Link href="/" className="inline-flex items-center gap-3 group">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-[#38ABB1]/40 p-1.5 transition-transform group-hover:scale-105">
+                <Image
+                  src={BrandImages.mark}
+                  alt="Teamzen logo"
+                  width={36}
+                  height={36}
+                  priority
+                  className="h-full w-full object-contain"
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-lg font-bold tracking-tight text-white leading-tight group-hover:text-[#38ABB1] transition-colors">
+                  Teamzen
+                </span>
+                <span className="text-[11px] font-medium text-[#38ABB1]/90">
+                  Workforce Portal
+                </span>
+              </div>
+            </Link>
+
+            {step === "login" && (
+              <button
+                type="button"
+                onClick={() => setAuthType(authType === "password" ? "otp" : "password")}
+                className="text-xs font-semibold text-[#38ABB1] hover:text-[#58d2d8] hover:underline transition-colors cursor-pointer"
+              >
+                {authType === "password" ? "Use OTP Login" : "Use Password"}
+              </button>
+            )}
+          </div>
+
+          {/* Form Titles */}
+          <div className="mb-6 space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight text-white">
+              {step === "totp" ? "Security code" : "Login"}
+            </h1>
+            <p className="text-xs sm:text-sm text-zinc-400">
+              {step === "totp" ? (
+                "Enter code from your authenticator app"
+              ) : (
+                <>
+                  Don&apos;t have an account?{" "}
+                  <Link
+                    href="/register"
+                    className="font-medium text-[#38ABB1] hover:text-[#58d2d8] hover:underline transition-colors"
+                  >
+                    Create your account
+                  </Link>
+                </>
+              )}
             </p>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground" htmlFor="totp-code">
-              Security code
-            </label>
-            <Input
-              id="totp-code"
-              name="code"
-              type="text"
-              required
-              maxLength={6}
-              icon={<KeyRound className="h-4 w-4" />}
-              placeholder="000000"
-              value={totpCode}
-              onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
-              className={cn(AUTH_INPUT_CLASS, "text-center font-mono tracking-widest")}
-            />
-          </div>
-
-          <AuthSubmitButton
-            type="submit"
-            disabled={isRedirecting || verifyTotp.isPending}
-            loading={isRedirecting || verifyTotp.isPending}
-          >
-            {isRedirecting ? "Redirecting…" : "Verify and sign in"}
-          </AuthSubmitButton>
-
-          <button
-            type="button"
-            onClick={() => {
-              setStep("login");
-              setTotpCode("");
-            }}
-            className="w-full text-center text-sm text-muted-foreground hover:text-foreground"
-          >
-            Back to sign in
-          </button>
-        </form>
-      ) : (
-        <>
-          {step === "login" && (
-            <div className="mb-6 grid grid-cols-2 gap-1 rounded-lg border border-border bg-muted/40 p-1">
-              <button
-                type="button"
-                onClick={() => setAuthType("password")}
-                className={cn(
-                  "rounded-md px-3 py-2.5 text-sm transition-colors",
-                  authType === "password"
-                    ? "bg-card font-medium text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
+          {/* Step: TOTP Verification */}
+          {step === "totp" ? (
+            <form onSubmit={handleVerifyTotp} className="space-y-4">
+              <div
+                className="flex items-start gap-2.5 rounded-lg p-3"
+                style={{
+                  backgroundColor: "rgba(56, 171, 177, 0.12)",
+                  border: "1px solid rgba(56, 171, 177, 0.35)",
+                }}
               >
-                Password
-              </button>
-              <button
-                type="button"
-                onClick={() => setAuthType("otp")}
-                className={cn(
-                  "rounded-md px-3 py-2.5 text-sm transition-colors",
-                  authType === "otp"
-                    ? "bg-card font-medium text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Email OTP
-              </button>
-            </div>
-          )}
-
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            {step === "login" ? (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground" htmlFor="email-address">
-                    Email
-                  </label>
-                  <Input
-                    id="email-address"
-                    name="email"
-                    type="email"
-                    required
-                    icon={<Mail className="h-4 w-4" />}
-                    placeholder="you@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={AUTH_INPUT_CLASS}
-                  />
-                </div>
-
-                {authType === "password" && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <label className="text-sm font-medium text-foreground" htmlFor="password">
-                        Password
-                      </label>
-                      <Link
-                        href="/forgot-password"
-                        prefetch={false}
-                        className="text-sm font-medium text-primary hover:underline"
-                      >
-                        Forgot password?
-                      </Link>
-                    </div>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        required
-                        icon={<Lock className="h-4 w-4" />}
-                        placeholder="Enter your password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className={cn(AUTH_INPUT_CLASS, "pr-10")}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  We sent a 6-digit code to <span className="font-medium text-foreground">{email}</span>
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#38ABB1]" />
+                <p className="text-xs text-zinc-300">
+                  Open your authenticator app and enter the 6-digit code for Teamzen.
                 </p>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground" htmlFor="otp-code">
-                    Verification code
-                  </label>
-                  <Input
-                    id="otp-code"
-                    name="otp"
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-zinc-300" htmlFor="totp-code">
+                  6-Digit Authenticator Code
+                </label>
+                <div className="relative">
+                  <input
+                    id="totp-code"
+                    name="code"
                     type="text"
                     required
                     maxLength={6}
-                    icon={<KeyRound className="h-4 w-4" />}
                     placeholder="000000"
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                    className={cn(AUTH_INPUT_CLASS, "text-center font-mono tracking-widest")}
+                    value={totpCode}
+                    onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
+                    className="w-full h-11 px-4 text-center font-mono text-base tracking-widest rounded-lg text-white placeholder:text-[#589ea3] focus:outline-none focus:border-[#38ABB1] focus:ring-2 focus:ring-[#38ABB1]/30 transition-all shadow-sm"
+                    style={{
+                      backgroundColor: "#07181a",
+                      border: "1px solid #164649",
+                    }}
                   />
+                  <KeyRound className="absolute right-3.5 top-3.5 h-4 w-4 text-[#38ABB1] pointer-events-none" />
                 </div>
-                <div className="text-center text-sm">
-                  {countdown > 0 ? (
-                    <span className="text-muted-foreground">Resend code in {countdown}s</span>
-                  ) : (
+              </div>
+
+              <div className="pt-2 flex items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={isPending || totpCode.length < 6}
+                  className="h-10 px-8 rounded-full bg-gradient-to-r from-[#38ABB1] via-[#339fa5] to-[#267c82] hover:from-[#42bec4] hover:to-[#2c8d93] active:scale-[0.99] text-white font-bold text-xs tracking-wider uppercase shadow-md shadow-[#38ABB1]/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  {isRedirecting ? "REDIRECTING…" : "VERIFY & LOGIN"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep("login");
+                    setOtpCode("");
+                  }}
+                  className="text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  Back
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {step === "login" ? (
+                <>
+                  {/* Username / Email field */}
+                  <div className="space-y-1">
+                    <div className="relative">
+                      <input
+                        id="username-email"
+                        name="email"
+                        type="text"
+                        required
+                        autoComplete="username"
+                        placeholder={authType === "otp" ? "Work email address" : "Username"}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full h-11 px-4 rounded-lg text-sm text-white placeholder:text-[#589ea3] focus:outline-none focus:border-[#38ABB1] focus:ring-2 focus:ring-[#38ABB1]/30 transition-all shadow-sm"
+                        style={{
+                          backgroundColor: "#07181a",
+                          border: "1px solid #164649",
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Password field */}
+                  {authType === "password" && (
+                    <div className="space-y-1">
+                      <div className="relative">
+                        <input
+                          id="password"
+                          name="password"
+                          type={showPassword ? "text" : "password"}
+                          required
+                          autoComplete="current-password"
+                          placeholder="Password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="w-full h-11 pl-4 pr-11 rounded-lg text-sm text-white placeholder:text-[#589ea3] focus:outline-none focus:border-[#38ABB1] focus:ring-2 focus:ring-[#38ABB1]/30 transition-all shadow-sm"
+                          style={{
+                            backgroundColor: "#07181a",
+                            border: "1px solid #164649",
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4 text-zinc-400" />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Options row: Remember Me & Forgot Password */}
+                  <div className="flex items-center justify-between text-xs text-zinc-400 pt-0.5">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="h-4 w-4 rounded accent-[#38ABB1] cursor-pointer"
+                        style={{
+                          backgroundColor: "#07181a",
+                          borderColor: "#164649",
+                        }}
+                      />
+                      <span className="text-zinc-300">Remember Me</span>
+                    </label>
+
+                    {authType === "password" && (
+                      <Link
+                        href="/forgot-password"
+                        prefetch={false}
+                        className="text-xs text-zinc-400 hover:text-[#38ABB1] transition-colors"
+                      >
+                        Forgot password?
+                      </Link>
+                    )}
+                  </div>
+                </>
+              ) : (
+                /* Step: OTP Code verification */
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-zinc-400">
+                      Code sent to <span className="font-semibold text-white">{email}</span>
+                    </p>
                     <button
                       type="button"
-                      onClick={handleResendOtp}
-                      className="font-medium text-primary hover:underline"
+                      onClick={() => {
+                        setStep("login");
+                        setOtpCode("");
+                      }}
+                      className="text-xs text-[#38ABB1] hover:underline cursor-pointer"
                     >
-                      Resend code
+                      Change
                     </button>
-                  )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <input
+                      id="otp-code"
+                      name="otp"
+                      type="text"
+                      required
+                      maxLength={6}
+                      placeholder="000000"
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                      className="w-full h-11 px-4 text-center font-mono text-base tracking-widest rounded-lg text-white placeholder:text-[#589ea3] focus:outline-none focus:border-[#38ABB1] focus:ring-2 focus:ring-[#38ABB1]/30 transition-all shadow-sm"
+                      style={{
+                        backgroundColor: "#07181a",
+                        border: "1px solid #164649",
+                      }}
+                    />
+                  </div>
+
+                  <div className="text-xs text-zinc-400">
+                    {countdown > 0 ? (
+                      <span>Resend code in {countdown}s</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleResendOtp}
+                        className="font-medium text-[#38ABB1] hover:underline cursor-pointer"
+                      >
+                        Resend code
+                      </button>
+                    )}
+                  </div>
                 </div>
+              )}
+
+              {/* Action Button: Pill shape in Teamzen Teal #38ABB1 & Black palette */}
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="h-10 px-9 rounded-full bg-gradient-to-r from-[#38ABB1] via-[#339fa5] to-[#267c82] hover:from-[#42bec4] hover:to-[#2c8d93] active:scale-[0.99] text-white font-bold text-xs tracking-wider uppercase shadow-md shadow-[#38ABB1]/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  {isRedirecting
+                    ? "REDIRECTING…"
+                    : login.isPending || requestOtp.isPending || verifyOtp.isPending
+                    ? "SIGNING IN…"
+                    : authType === "otp"
+                    ? step === "login"
+                      ? "SEND CODE"
+                      : "VERIFY & LOGIN"
+                    : "LOGIN"}
+                </button>
               </div>
-            )}
 
-            {step === "login" && (
-              <label className="flex cursor-pointer items-center gap-2.5">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 rounded border-border text-primary accent-primary"
-                />
-                <span className="text-sm text-muted-foreground">Remember me</span>
-              </label>
-            )}
+              {/* Social / Alternate Login Row */}
+              {step === "login" && (
+                <div className="mt-8 pt-2 flex items-center gap-3">
+                  <span className="text-xs text-zinc-400 font-medium whitespace-nowrap">
+                    Or login with
+                  </span>
 
-            <AuthSubmitButton
-              type="submit"
-              disabled={
-                isRedirecting ||
-                login.isPending ||
-                requestOtp.isPending ||
-                verifyOtp.isPending
-              }
-              loading={
-                isRedirecting ||
-                login.isPending ||
-                requestOtp.isPending ||
-                verifyOtp.isPending
-              }
-            >
-              {submitLabel()}
-            </AuthSubmitButton>
-
-            {step === "otp_code" && (
-              <button
-                type="button"
-                onClick={() => {
-                  setStep("login");
-                  setOtpCode("");
-                }}
-                className="w-full text-center text-sm text-muted-foreground hover:text-foreground"
-              >
-                Change email
-              </button>
-            )}
-          </form>
-
-          {step === "login" && (
-            <div className="mt-6 space-y-4">
-              <AuthDivider />
-              <div className="relative h-11 w-full overflow-hidden rounded-lg border border-border bg-white">
-                <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center gap-2.5 text-sm font-medium text-slate-800">
-                  <GoogleMark />
-                  Sign in with Google
+                  {/* Google SSO Button */}
+                  <div className="relative group cursor-pointer">
+                    <div
+                      className="h-7 px-2.5 rounded-md flex items-center gap-1.5 shadow-sm transition-colors"
+                      style={{
+                        backgroundColor: "#07181a",
+                        border: "1px solid #164649",
+                      }}
+                    >
+                      <GoogleMark />
+                      <span className="text-[11px] font-semibold text-zinc-200">
+                        Google
+                      </span>
+                    </div>
+                    {/* Google GSI hidden overlay target */}
+                    <div
+                      id="google-signin-btn"
+                      className="absolute inset-0 opacity-[0.01] overflow-hidden rounded-md cursor-pointer z-10"
+                      title="Sign in with Google"
+                    />
+                  </div>
                 </div>
-                <div
-                  id="google-signin-btn"
-                  className="absolute inset-0 z-10 flex items-center justify-center opacity-[0.02]"
-                />
-              </div>
-            </div>
+              )}
+            </form>
           )}
+        </div>
 
-          <AuthFooterLink prompt="New here?" href="/register" label="Create an account" />
-        </>
-      )}
-    </AuthShell>
+        {/* Right Section: Low-Poly Diagonal Polygonal Panel (Desktop) in Landing Page Teal */}
+        <div
+          className="hidden md:block absolute inset-0 pointer-events-none select-none overflow-hidden rounded-3xl"
+          style={{ clipPath: "polygon(34% 0%, 100% 0%, 100% 100%, 90% 100%)" }}
+        >
+          <Image
+            src="/images/auth/login-geometric-teal.webp"
+            alt="Geometric teal crystal pattern"
+            fill
+            priority
+            sizes="65vw"
+            className="object-cover object-right"
+          />
+          {/* Subtle gradient overlay to guarantee text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#061315]/40 via-transparent to-[#03090a]/65" />
 
-    <ConfirmationModal
-      isOpen={errorModal.isOpen}
-      title="Authentication Error"
-      description={errorModal.message || "Please try again or contact support if the issue persists."}
-      onClose={() => setErrorModal({ isOpen: false, message: "" })}
-      onConfirm={() => setErrorModal({ isOpen: false, message: "" })}
-      confirmText="Close"
-      variant="error"
-      hideCancel={true}
-    />
-    </>
+          {/* Welcome Text Content: Positioned in top-right with text-right, staying completely away from the diagonal split */}
+          <div className="absolute top-12 lg:top-16 right-8 lg:right-14 z-10 flex flex-col items-end text-right max-w-[280px] lg:max-w-[320px]">
+            <h2 className="text-4xl lg:text-[48px] font-extrabold tracking-tight text-white drop-shadow-lg leading-[1.08]">
+              Welcome
+              <br />
+              Back.
+            </h2>
+            <p className="mt-4 text-xs lg:text-sm text-white/90 leading-relaxed font-normal max-w-[260px] lg:max-w-[290px] drop-shadow-md">
+              {step === "totp"
+                ? "Enter the code from your authenticator app to verify your identity and protect your account."
+                : "Sign in to access your workforce portal, track attendance, manage leaves, and view payroll seamlessly."}
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Confirmation / Error Modal */}
+      <ConfirmationModal
+        isOpen={errorModal.isOpen}
+        title="Authentication Error"
+        description={errorModal.message || "Please try again or contact support if the issue persists."}
+        onClose={() => setErrorModal({ isOpen: false, message: "" })}
+        onConfirm={() => setErrorModal({ isOpen: false, message: "" })}
+        confirmText="Close"
+        variant="error"
+        hideCancel={true}
+      />
+    </div>
   );
 }

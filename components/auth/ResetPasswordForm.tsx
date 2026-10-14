@@ -148,7 +148,7 @@ function ResetPasswordFormInner() {
       ) : (
         <div className="space-y-5">
           <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/40 p-3">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#38ABB1]" />
             <p className="text-sm text-muted-foreground">
               Your password has been updated. You can now sign in.
             </p>
