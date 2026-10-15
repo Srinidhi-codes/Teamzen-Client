@@ -44,6 +44,43 @@ export const GET_USER_DASHBOARD_STATS = gql`
         label
       }
       wishMessage
+      hourlyAttendance {
+        time
+        value
+        activeCount
+        label
+        isPeak
+      }
+      workforceSummary {
+        totalEmployees
+        newHiresMonth
+        turnoverRate
+        activeEmployees
+        attendanceRate
+      }
+      departmentMetrics {
+        name
+        code
+        rate
+        presentCount
+        totalCount
+      }
+      payrollSummary {
+        quarterLabel
+        totalAmount
+        items {
+          month
+          amount
+          label
+        }
+      }
+      pendingLeavesSummary {
+        id
+        name
+        leaveType
+        dateRange
+        avatar
+      }
     }
   }
 `;

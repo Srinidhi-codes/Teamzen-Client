@@ -12,6 +12,10 @@ type EmptyStateProps = {
   size?: EmptyStateSize;
   children?: React.ReactNode;
   action?: { label: string; onClick: () => void };
+  contentClassName?: string;
+  headingClassName?: string;
+  descriptionClassName?: string;
+  imageClassName?: string;
 };
 
 const minH: Record<EmptyStateSize, string> = {
@@ -30,6 +34,10 @@ export function EmptyState({
   size = "default",
   children,
   action,
+  contentClassName,
+  headingClassName,
+  descriptionClassName,
+  imageClassName,
 }: EmptyStateProps) {
   if (src) {
     return (
@@ -41,14 +49,29 @@ export function EmptyState({
           loading="lazy"
           decoding="async"
           sizes="100vw"
-          className="object-cover object-bottom"
+          className={cn("object-cover object-bottom", imageClassName)}
         />
-        <div className="absolute inset-y-0 left-0 z-10 flex w-[58%] max-w-lg flex-col justify-center px-5 py-6 text-left sm:w-[46%] sm:px-8">
-          <h3 className="text-base font-semibold tracking-tight text-slate-900 sm:text-lg">
+        <div
+          className={cn(
+            "absolute inset-y-0 left-0 z-10 flex w-[60%] max-w-lg flex-col justify-center px-5 py-6 text-left sm:w-[46%] sm:px-8",
+            contentClassName
+          )}
+        >
+          <h3
+            className={cn(
+              "text-base font-semibold tracking-tight text-slate-900 sm:text-lg",
+              headingClassName
+            )}
+          >
             {title}
           </h3>
           {description ? (
-            <p className="mt-1.5 max-w-xs text-sm leading-relaxed text-slate-600">
+            <p
+              className={cn(
+                "mt-1.5 max-w-xs text-sm leading-relaxed text-slate-600",
+                descriptionClassName
+              )}
+            >
               {description}
             </p>
           ) : null}

@@ -6,7 +6,25 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Mention from '@tiptap/extension-mention';
 import Image from '@tiptap/extension-image';
-import { Bold, Italic, Strikethrough, List, ListOrdered, Quote, Code, SquareTerminal, Smile, Image as ImageIcon, AtSign, Tag, Hash } from 'lucide-react';
+import { 
+  Bold, 
+  Italic, 
+  Underline as UnderlineIcon, 
+  Strikethrough, 
+  List, 
+  ListOrdered, 
+  Quote, 
+  Code, 
+  SquareTerminal, 
+  Smile, 
+  Image as ImageIcon, 
+  AtSign, 
+  Tag, 
+  Hash,
+  Link as LinkIcon,
+  Unlink,
+  Type
+} from 'lucide-react';
 import tippy from 'tippy.js';
 import { MentionList } from './MentionList';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -36,11 +54,24 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   selectedTagsCount = 0,
 }) => {
   const [isEmojiOpen, setIsEmojiOpen] = useState(false);
+  const [isLinkOpen, setIsLinkOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [isHeadingOpen, setIsHeadingOpen] = useState(false);
 
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        link: {
+          openOnClick: false,
+          autolink: true,
+          HTMLAttributes: {
+            class: 'text-primary underline font-medium hover:opacity-80',
+            rel: 'noopener noreferrer',
+            target: '_blank',
+          },
+        },
+      }),
       Placeholder.configure({
         placeholder,
       }),
@@ -84,6 +115,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                   interactive: true,
                   trigger: 'manual',
                   placement: 'bottom-start',
+                  zIndex: 99999,
                 });
               },
               onUpdate(props) {
@@ -183,6 +215,19 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     setIsEmojiOpen(false);
   };
 
+  const handleSetLink = () => {
+    if (!linkUrl.trim()) {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    } else {
+      const formatted = linkUrl.startsWith('http://') || linkUrl.startsWith('https://') 
+        ? linkUrl 
+        : `https://${linkUrl}`;
+      editor.chain().focus().extendMarkRange('link').setLink({ href: formatted }).run();
+    }
+    setIsLinkOpen(false);
+    setLinkUrl('');
+  };
+
   return (
     <div className="w-full border rounded-xl overflow-hidden bg-background focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-all flex flex-col">
       <style jsx global>{`
@@ -264,6 +309,74 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       
       {/* Sleek Toolbar pinned to the bottom */}
       <div className="p-2 border-t bg-muted/20 flex items-center gap-1 flex-wrap shrink-0">
+        {/* Aa Text Styles */}
+        <Popover open={isHeadingOpen} onOpenChange={setIsHeadingOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className={`p-1.5 rounded-md transition-colors flex items-center gap-0.5 text-xs font-semibold ${
+                editor.isActive('heading') ? 'bg-primary/10 text-primary' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+              title="Text Styles (Aa)"
+            >
+              <Type className="w-4 h-4" />
+              <span className="text-[11px]">Aa</span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-40 p-1.5 space-y-0.5 z-[9999]" align="start">
+            <button
+              type="button"
+              onClick={() => {
+                editor.chain().focus().setParagraph().run();
+                setIsHeadingOpen(false);
+              }}
+              className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-colors ${
+                !editor.isActive('heading') ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted text-foreground'
+              }`}
+            >
+              Normal Text
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                editor.chain().focus().toggleHeading({ level: 1 }).run();
+                setIsHeadingOpen(false);
+              }}
+              className={`w-full text-left px-2.5 py-1.5 text-sm font-bold rounded-md transition-colors ${
+                editor.isActive('heading', { level: 1 }) ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-foreground'
+              }`}
+            >
+              Large Title (H1)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                editor.chain().focus().toggleHeading({ level: 2 }).run();
+                setIsHeadingOpen(false);
+              }}
+              className={`w-full text-left px-2.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                editor.isActive('heading', { level: 2 }) ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-foreground'
+              }`}
+            >
+              Medium Title (H2)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                editor.chain().focus().toggleHeading({ level: 3 }).run();
+                setIsHeadingOpen(false);
+              }}
+              className={`w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                editor.isActive('heading', { level: 3 }) ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-foreground'
+              }`}
+            >
+              Small Title (H3)
+            </button>
+          </PopoverContent>
+        </Popover>
+
+        <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1" />
+
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -282,12 +395,79 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         </button>
         <button
           type="button"
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+          className={`p-1.5 rounded-md transition-colors ${editor.isActive('underline') ? 'bg-primary/10 text-primary' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+          title="Underline"
+        >
+          <UnderlineIcon className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
           onClick={() => editor.chain().focus().toggleStrike().run()}
           className={`p-1.5 rounded-md transition-colors ${editor.isActive('strike') ? 'bg-primary/10 text-primary' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
           title="Strikethrough"
         >
           <Strikethrough className="w-4 h-4" />
         </button>
+
+        {/* Link Attachment */}
+        <Popover open={isLinkOpen} onOpenChange={(open) => {
+          setIsLinkOpen(open);
+          if (open) {
+            setLinkUrl(editor.getAttributes('link').href || '');
+          }
+        }}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className={`p-1.5 rounded-md transition-colors ${
+                editor.isActive('link') ? 'bg-primary/10 text-primary' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+              title="Attach Link"
+            >
+              <LinkIcon className="w-4 h-4" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 p-3 space-y-2.5 z-[9999]" align="start">
+            <p className="text-xs font-semibold text-foreground">Attach a Link</p>
+            <div className="flex gap-1.5">
+              <input
+                type="url"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSetLink();
+                  }
+                }}
+                placeholder="https://example.com"
+                className="flex-1 px-2.5 py-1.5 text-xs border border-border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={handleSetLink}
+                className="px-2.5 py-1.5 text-xs bg-primary text-primary-foreground font-medium rounded-md hover:bg-primary/90"
+              >
+                Apply
+              </button>
+            </div>
+            {editor.isActive('link') && (
+              <button
+                type="button"
+                onClick={() => {
+                  editor.chain().focus().unsetLink().run();
+                  setIsLinkOpen(false);
+                  setLinkUrl('');
+                }}
+                className="text-[11px] text-destructive hover:underline flex items-center gap-1"
+              >
+                <Unlink className="w-3 h-3" /> Remove link
+              </button>
+            )}
+          </PopoverContent>
+        </Popover>
         <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1" />
         <button
           type="button"

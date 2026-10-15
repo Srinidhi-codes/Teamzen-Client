@@ -11,7 +11,8 @@ import {
   UPDATE_COMMENT,
   TOGGLE_COMMENT_LIKE,
   VIEW_POST,
-  REPORT_POST
+  REPORT_POST,
+  REPORT_COMMENT
 } from "./mutations";
 
 export const useFeedPosts = (page = 1, pageSize = 10, authorId?: string) => {
@@ -159,6 +160,7 @@ export const useFeedMutations = () => {
   });
   const [viewPost] = useMutation<any>(VIEW_POST);
   const [reportPost] = useMutation<any>(REPORT_POST);
+  const [reportComment] = useMutation<any>(REPORT_COMMENT);
 
   return {
     createPost,
@@ -167,6 +169,7 @@ export const useFeedMutations = () => {
     updatePost,
     viewPost,
     reportPost,
+    reportComment,
     isDeletingPost,
     togglePostLike,
     createComment,

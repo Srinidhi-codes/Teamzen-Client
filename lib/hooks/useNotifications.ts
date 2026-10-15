@@ -91,7 +91,7 @@ export function useNotifications(
         };
     }, []);
 
-    const { readyState } = useWebSocket(socketUrl, {
+    const { readyState, sendJsonMessage, sendMessage } = useWebSocket(socketUrl, {
         shouldReconnect: () => shouldConnect,
         reconnectInterval: 5000,
         share: true,
@@ -137,5 +137,5 @@ export function useNotifications(
         }
     }, shouldConnect && socketUrl !== null);
 
-    return { readyState, isConnected: readyState === ReadyState.OPEN };
+    return { readyState, isConnected: readyState === ReadyState.OPEN, sendJsonMessage, sendMessage };
 }

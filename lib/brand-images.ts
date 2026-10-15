@@ -19,6 +19,7 @@ export const ChannelImages = {
 } as const;
 
 export const AuthImages = {
+  dashboard: "/images/auth/dashboard-showcase.jpg",
   employee: "/images/auth/login-employee.webp",
   admin: "/images/auth/login-admin.webp",
   security: "/images/auth/auth-security.webp",

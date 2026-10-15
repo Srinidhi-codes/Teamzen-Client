@@ -54,6 +54,8 @@ export default function LeavesPage() {
     halfDayPeriod: "full_day",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewDetails, setViewDetails] = useState<any>(null);
   const [leaveToCancel, setLeaveToCancel] = useState<any>(null);
   const { user } = useStore();
@@ -72,6 +74,7 @@ export default function LeavesPage() {
     const tab = searchParams.get("tab");
     if (action === "apply") {
       setShowForm(true);
+      setSubmissionError(null);
     }
     if (tab === "calendar") {
       setActiveTab("calendar");
@@ -79,6 +82,18 @@ export default function LeavesPage() {
       setActiveTab("overview");
     }
   }, [searchParams]);
+
+  const handleFormDataChange = (newData: any) => {
+    setFormData(newData);
+    if (submissionError) setSubmissionError(null);
+    if (Object.keys(errors).length > 0) setErrors({});
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setSubmissionError(null);
+    setErrors({});
+  };
 
   // Socket-based Real-time Refresh
   useNotifications((msg) => {
@@ -126,34 +141,99 @@ export default function LeavesPage() {
       }
     }
 
+    // 1. Balance soft error & hard validation
+    const days = calculateDays();
+    const selectedBalance = leaveBalanceData?.find(
+      (b: any) => String(b.leaveType?.id) === String(formData.leaveTypeId)
+    );
+    const available = selectedBalance ? Number(selectedBalance.availableBalance ?? 0) : null;
+    if (selectedBalance && days > 0 && available !== null && days > available) {
+      newErrors.leaveTypeId = `Exceeds available balance (${available} days available)`;
+      setSubmissionError(
+        `Insufficient leave balance: You are requesting ${days} day(s), but only have ${available} day(s) available for ${selectedBalance.leaveType?.name || "this category"}.`
+      );
+    }
+
+    // 2. Check duplicate / overlapping existing requests by the current user
+    if (formData.fromDate && formData.toDate && leaveRequestData?.length) {
+      const start = moment(formData.fromDate).startOf("day");
+      const end = moment(formData.toDate).startOf("day");
+      const conflict = leaveRequestData.find((req: any) => {
+        const s = (req.status || "").toLowerCase();
+        if (s !== "pending" && s !== "approved") return false;
+        const reqStart = moment(req.fromDate).startOf("day");
+        const reqEnd = moment(req.toDate).startOf("day");
+        return reqStart.isSameOrBefore(end) && reqEnd.isSameOrAfter(start);
+      });
+
+      if (conflict) {
+        newErrors.fromDate = "Overlaps with existing leave";
+        newErrors.toDate = "Overlaps with existing leave";
+        setSubmissionError(
+          `You already have a ${conflict.status} request for ${conflict.leaveType?.name || "Leave"} from ${moment(conflict.fromDate).format("MMM DD, YYYY")} to ${moment(conflict.toDate).format("MMM DD, YYYY")}. Overlapping requests cannot be submitted.`
+        );
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmissionError(null);
     if (!validateForm()) return;
 
-    createLeaveRequest({
-      leave_type_id: formData.leaveTypeId,
-      start_date: formData.fromDate,
-      end_date: formData.toDate,
-      reason: formData.reason,
-      half_day_period: formData.halfDayPeriod,
-    });
+    try {
+      setIsSubmitting(true);
+      await createLeaveRequest({
+        leave_type_id: formData.leaveTypeId,
+        start_date: formData.fromDate,
+        end_date: formData.toDate,
+        reason: formData.reason.trim(),
+        half_day_period: formData.halfDayPeriod,
+      });
 
-    setShowForm(false);
-    setFormData({ leaveTypeId: "", fromDate: "", toDate: "", reason: "", halfDayPeriod: "full_day" });
+      toast.success("Leave request submitted successfully");
+      setShowForm(false);
+      setFormData({ leaveTypeId: "", fromDate: "", toDate: "", reason: "", halfDayPeriod: "full_day" });
+      setErrors({});
+      setSubmissionError(null);
+      refetchRequests();
+      refetchBalance();
+      refetchTeam();
+    } catch (err: any) {
+      console.error("Failed to submit leave request:", err);
+      const errorMsg =
+        err?.graphQLErrors?.[0]?.message ||
+        err?.networkError?.result?.errors?.[0]?.message ||
+        err?.message ||
+        "Failed to submit leave request";
+      setSubmissionError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const calculateDays = () => {
     if (formData.fromDate && formData.toDate) {
       const from = moment(formData.fromDate);
       const to = moment(formData.toDate);
+      if (to.isBefore(from)) return 0;
+
+      const holidayDates = new Set(
+        (companyHolidaysData || [])
+          .filter((h: any) => !h.isOptional)
+          .map((h: any) => moment(h.holidayDate).format("YYYY-MM-DD"))
+      );
+
       let count = 0;
       let curr = from.clone();
       while (curr.isSameOrBefore(to)) {
-        if (curr.day() !== 0) { // Only exclude Sundays
+        const dateStr = curr.format("YYYY-MM-DD");
+        // Exclude Sundays and company holidays from billable working duration
+        if (curr.day() !== 0 && !holidayDates.has(dateStr)) {
           if (from.isSame(to) && formData.halfDayPeriod !== "full_day") {
             count += 0.5;
           } else {
@@ -608,16 +688,18 @@ export default function LeavesPage() {
 
       <LeaveRequestModal
         isOpen={showForm}
-        onClose={() => setShowForm(false)}
+        onClose={handleCloseForm}
         formData={formData}
-        setFormData={setFormData}
+        setFormData={handleFormDataChange}
         onSubmit={handleSubmit}
         leaveBalanceData={leaveBalanceData}
-        isLoading={createLeaveRequestLoading}
+        isLoading={createLeaveRequestLoading || isSubmitting}
         calculateDays={calculateDays}
         errors={errors}
         teamLeavesData={teamLeavesData}
+        myLeavesData={leaveRequestData}
+        serverError={submissionError}
       />
-    </div >
+    </div>
   );
 }

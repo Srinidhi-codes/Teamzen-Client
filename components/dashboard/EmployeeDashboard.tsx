@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import moment from "moment";
 import {
@@ -20,6 +20,9 @@ import {
   UserPlus,
   PartyPopper,
   ArrowUpRight,
+  Coffee,
+  ChevronRight,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
@@ -32,6 +35,13 @@ import { useTheme } from "next-themes";
 import { useStore } from "@/lib/store/useStore";
 import { EmptyState } from "@/components/common/EmptyState";
 import { EmptyImages } from "@/lib/brand-images";
+
+import {
+  WorkforceAnalyticsRow,
+  AttendanceStatusPanel,
+  DepartmentMetricsWidget,
+  LeaveActivityWidgetsCard,
+} from "@/components/dashboard/WorkforcePortalWidgets";
 
 const AttendanceTrendChart = dynamic(
   () =>
@@ -46,6 +56,19 @@ const AttendanceTrendChart = dynamic(
           <div className="h-64 w-full rounded-xl bg-muted/50 animate-pulse border border-border" />
         </div>
       </div>
+    ),
+  }
+);
+
+const PayrollSalaryDisbursementWidget = dynamic(
+  () =>
+    import("@/components/dashboard/WorkforcePortalWidgets").then(
+      (m) => m.PayrollSalaryDisbursementWidget
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-44 w-full rounded-xl bg-muted/50 animate-pulse border border-border" />
     ),
   }
 );
@@ -116,59 +139,85 @@ function heroSrcForDay(period: DayPeriod, dayOfMonth: number) {
 
 const dayTone: Record<
   string,
-  { label: string; bar: string; dot: string; Icon?: typeof CheckCircle2 }
+  {
+    label: string;
+    sublabel: string;
+    bar: string;
+    dot: string;
+    badgeClass: string;
+    Icon: any;
+  }
 > = {
   present: {
     label: "Present",
+    sublabel: "Shift completed",
     bar: "bg-emerald-500",
     dot: "bg-emerald-500",
+    badgeClass: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25",
     Icon: CheckCircle2,
   },
   late_login: {
     label: "Late entry",
+    sublabel: "Checked in late",
     bar: "bg-amber-500",
     dot: "bg-amber-500",
+    badgeClass: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/25",
     Icon: AlertCircle,
   },
   early_logout: {
     label: "Early exit",
+    sublabel: "Left before shift end",
     bar: "bg-amber-500",
     dot: "bg-amber-500",
+    badgeClass: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/25",
     Icon: AlertCircle,
   },
   half_day: {
     label: "Half day",
+    sublabel: "Half shift logged",
     bar: "bg-amber-500",
     dot: "bg-amber-500",
+    badgeClass: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/25",
     Icon: Clock,
   },
   leave: {
     label: "On leave",
+    sublabel: "Approved time off",
     bar: "bg-orange-400",
     dot: "bg-orange-400",
+    badgeClass: "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/25",
     Icon: Plane,
   },
   absent: {
     label: "Absent",
-    bar: "bg-red-500",
-    dot: "bg-red-500",
+    sublabel: "No punch recorded",
+    bar: "bg-rose-500",
+    dot: "bg-rose-500",
+    badgeClass: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/25",
     Icon: XCircle,
   },
   pending: {
     label: "Pending",
+    sublabel: "Correction in review",
     bar: "bg-amber-400",
     dot: "bg-amber-400",
+    badgeClass: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/25",
     Icon: Clock,
   },
   weekend: {
     label: "Weekend",
+    sublabel: "Weekly off",
     bar: "bg-muted-foreground/25",
     dot: "bg-muted-foreground/30",
+    badgeClass: "bg-muted/80 text-muted-foreground border-border/50",
+    Icon: Coffee,
   },
   not_started: {
     label: "Pending check-in",
-    bar: "bg-border",
-    dot: "bg-muted-foreground/20",
+    sublabel: "Check-in required",
+    bar: "bg-[#38ABB1]",
+    dot: "bg-[#38ABB1]",
+    badgeClass: "bg-[#38ABB1]/10 text-[#38ABB1] dark:text-[#4cd1d7] border-[#38ABB1]/30",
     Icon: Clock,
   },
 };
@@ -186,6 +235,7 @@ export function EmployeeDashboard() {
   } = useQuery(GET_USER_DASHBOARD_STATS, {
     fetchPolicy: "cache-first",
     nextFetchPolicy: "cache-first",
+    pollInterval: 30000,
   });
   const { resolvedTheme } = useTheme();
 
@@ -253,7 +303,7 @@ export function EmployeeDashboard() {
     (sum: number, b: any) => sum + (Number(b.balance) || 0),
     0
   );
-  const primaryLeave = leaveBalances[0];
+  const primaryLeave = leaveBalances[1];
   const period = periodForHour(now.hour());
   const heroMeta = periodHero[period];
   const dark = resolvedTheme === "dark";
@@ -409,19 +459,99 @@ export function EmployeeDashboard() {
         </div>
       </section>
 
-      {/* ── Bento: leave + week + metrics ─────────────────────── */}
+      {/* ── Key Metrics & Attendance Chart ── */}
+      <div className="space-y-4">
+        {/* Metric cards flexed above chart: Attendance, Days present, Primary leave */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+          {[
+            {
+              label: "Attendance",
+              value: `${stats.attendanceRate ?? 0}%`,
+              href: "/attendance",
+              icon: TrendingUp,
+              hint: "Overall rate",
+              accentClass: "bg-muted",
+              hoverBorder: "hover:border-[#38ABB1]/50",
+            },
+            {
+              label: "Days present",
+              value: String(stats.daysPresent ?? 0),
+              href: "/attendance",
+              icon: CheckCircle2,
+              hint: "This cycle",
+              accentClass: "bg-muted",
+              hoverBorder: "hover:border-cyan-500/50",
+            },
+            {
+              label: "Primary leave",
+              value: String(primaryLeave?.balance ?? 0),
+              href: "/leaves",
+              icon: Calendar,
+              hint: primaryLeave?.name || "Available balance",
+              accentClass: "bg-muted",
+              hoverBorder: "hover:border-violet-500/50",
+            },
+          ].map((m) => (
+            <Link
+              key={m.label}
+              href={m.href}
+              className={cn(
+                "group flex flex-col justify-between rounded-2xl border border-border bg-card p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-5",
+                m.hoverBorder
+              )}
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <span className={cn("flex h-9 w-9 items-center justify-center rounded-xl transition-colors", m.accentClass)}>
+                  <m.icon className="h-4.5 w-4.5" />
+                </span>
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/60 text-muted-foreground/60 transition-colors group-hover:border-[#38ABB1]/40 group-hover:text-[#38ABB1]">
+                  <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </div>
+              </div>
+              <div>
+                <p className="text-2xl font-bold tracking-tight tabular-nums text-foreground sm:text-3xl">
+                  {m.value}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-foreground">{m.label}</p>
+                <p className="text-xs text-muted-foreground">{m.hint}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Today's Attendance Wave Chart */}
+        <section className="flex flex-col justify-between rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs">
+          <div className="flex items-center justify-between border-b border-border/60 pb-3 mb-2">
+            <div className="flex items-center gap-2">
+              <span className="h-4 w-1 shrink-0 rounded-full bg-[#38ABB1]" aria-hidden />
+              <h3 className="text-sm sm:text-base font-bold text-foreground">
+                Today&apos;s Attendance
+              </h3>
+            </div>
+          </div>
+          <div className="h-64 sm:h-72 w-full pt-1">
+            <AttendanceTrendChart
+              data={attendanceTrend}
+              hourlyData={stats.hourlyAttendance}
+              currentRate={stats.attendanceRate || 95}
+            />
+          </div>
+        </section>
+      </div>
+
+      {/* ── Bento: Leave Available + This Week + Team Moments ── */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        {/* Featured leave */}
+        {/* Featured leave with circular gauges */}
         <section className="flex flex-col rounded-2xl border border-border bg-card p-5 sm:p-6 lg:col-span-4">
-          <div className="mb-5 flex items-start justify-between gap-3">
+          <div className="mb-4 flex items-start justify-between gap-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2.5">
-                <span className="h-5 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
+                <span className="h-5 w-1 shrink-0 rounded-full bg-[#38ABB1]" aria-hidden />
                 <h2 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
                   Leave available
                 </h2>
               </div>
-              <p className="pl-3.5 pt-2 text-4xl font-semibold tracking-tight tabular-nums text-foreground sm:text-5xl">
+              <p className="pl-3.5 pt-1 text-4xl font-semibold tracking-tight tabular-nums text-foreground sm:text-5xl">
                 {totalLeaveLeft}
                 <span className="ml-1.5 text-base font-medium text-muted-foreground">days</span>
               </p>
@@ -435,27 +565,109 @@ export function EmployeeDashboard() {
             </Link>
           </div>
 
-          <div className="mt-auto space-y-3">
+          <div className="mt-auto space-y-2.5">
             {leaveBalances.length > 0 ? (
               leaveBalances.slice(0, 3).map((balance: any, i: number) => {
+                const total = balance.total || 0;
+                const current = balance.balance || 0;
                 const pct =
-                  balance.total > 0
-                    ? Math.min(100, Math.round((balance.balance / balance.total) * 100))
+                  total > 0
+                    ? Math.min(100, Math.round((current / total) * 100))
                     : 0;
+                const colorSchemes = [
+                  {
+                    stroke: "#38ABB1",
+                    badge: "border-[#38ABB1]/30 bg-[#38ABB1]/10 text-[#38ABB1]",
+                    dot: "bg-[#38ABB1]",
+                  },
+                  {
+                    stroke: "#38ABB1",
+                    badge: "border-[#38ABB1]/30 bg-[#38ABB1]/10 text-[#38ABB1]",
+                    dot: "bg-[#38ABB1]",
+                  },
+                  {
+                    stroke: "#38ABB1",
+                    badge: "border-[#38ABB1]/30 bg-[#38ABB1]/10 text-[#38ABB1]",
+                    dot: "bg-[#38ABB1]",
+                  },
+                ];
+                const scheme = colorSchemes[i % colorSchemes.length];
+                const radius = 17;
+                const circumference = 2 * Math.PI * radius;
+                const strokeDashoffset = circumference - (pct / 100) * circumference;
+
                 return (
-                  <div key={`${balance.name}-${i}`} className="space-y-1.5">
-                    <div className="flex items-center justify-between gap-2 text-sm">
-                      <span className="truncate text-muted-foreground">{balance.name}</span>
-                      <span className="shrink-0 tabular-nums text-foreground">
-                        {balance.balance}
-                        <span className="text-muted-foreground">/{balance.total}</span>
-                      </span>
+                  <div
+                    key={`${balance.name}-${i}`}
+                    className="group flex items-center gap-3 rounded-xl border border-border/60 bg-muted/20 p-2.5 transition-all duration-150 hover:border-border hover:bg-muted/40"
+                  >
+                    {/* Circular Balance Gauge */}
+                    <div className="relative flex h-14 w-14 shrink-0 items-center justify-center">
+                      <svg className="h-16 w-16 -rotate-90 transform" viewBox="0 0 44 44">
+                        <circle
+                          cx="22"
+                          cy="22"
+                          r={radius}
+                          stroke="currentColor"
+                          strokeWidth="3.5"
+                          fill="transparent"
+                          className="text-border/60 dark:text-muted/30"
+                        />
+                        {pct > 0 && (
+                          <circle
+                            cx="22"
+                            cy="22"
+                            r={radius}
+                            stroke={scheme.stroke}
+                            strokeWidth="3.5"
+                            strokeDasharray={circumference}
+                            strokeDashoffset={strokeDashoffset}
+                            strokeLinecap="round"
+                            fill="transparent"
+                            className="transition-all duration-500 ease-out"
+                          />
+                        )}
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-md font-bold tabular-nums text-foreground leading-none">
+                          {current}
+                        </span>
+                      </div>
                     </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-primary"
-                        style={{ width: `${pct}%` }}
-                      />
+
+                    {/* Balance Info & Status */}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="truncate text-xs sm:text-sm font-semibold text-foreground">
+                          {balance.name}
+                        </span>
+                        <span
+                          className={cn(
+                            "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums border",
+                            current === 0 && total === 0
+                              ? "border-border/60 bg-muted text-muted-foreground"
+                              : scheme.badge
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "h-1.5 w-1.5 rounded-full",
+                              current === 0 && total === 0 ? "bg-muted-foreground" : scheme.dot
+                            )}
+                          />
+                          {pct}%
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        {total > 0 ? (
+                          <>
+                            <span className="font-semibold text-foreground/80">{current}</span> of{" "}
+                            <span>{total} days remaining</span>
+                          </>
+                        ) : (
+                          "0 of 0 days allocated"
+                        )}
+                      </p>
                     </div>
                   </div>
                 );
@@ -475,15 +687,20 @@ export function EmployeeDashboard() {
           </div>
         </section>
 
-        {/* Week — compact day list (no tall empty bars) */}
-        <section className="flex flex-col rounded-2xl border border-border bg-card lg:col-span-5">
+        {/* Week — compact day list */}
+        <section className="flex flex-col rounded-2xl border border-border bg-card lg:col-span-4">
           <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
             <div className="space-y-1">
-              <div className="flex items-center gap-2.5">
-                <span className="h-5 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className="h-5 w-1 shrink-0 rounded-full bg-[#38ABB1]" aria-hidden />
                 <h2 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
                   This week
                 </h2>
+                {last7Days.length > 0 && (
+                  <span className="rounded-full border border-border/80 bg-muted/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground tabular-nums">
+                    {last7Days[0]?.dayStr} {last7Days[0]?.date} – {last7Days[last7Days.length - 1]?.dayStr} {last7Days[last7Days.length - 1]?.date}
+                  </span>
+                )}
               </div>
               <p className="pl-3.5 text-xs text-muted-foreground sm:text-sm">
                 <span className="font-semibold text-foreground">{presentDays}</span>
@@ -493,9 +710,10 @@ export function EmployeeDashboard() {
             </div>
             <Link
               href="/attendance"
-              className="text-sm font-medium text-primary hover:underline"
+              className="inline-flex items-center gap-1 text-sm font-medium text-[#38ABB1] hover:underline"
             >
-              Details
+              <span>Details</span>
+              <ArrowUpRight className="h-3.5 w-3.5" />
             </Link>
           </div>
 
@@ -509,74 +727,87 @@ export function EmployeeDashboard() {
               ))}
             </div>
           ) : last7Days.length > 0 ? (
-            <ul className="flex flex-1 flex-col justify-center divide-y divide-border">
-              {last7Days.map((d: any, i: number) => {
-                const meta = dayTone[d.status] || dayTone.not_started;
-                const Icon = meta.Icon;
-                const isToday = (d.dayStr || "")
-                  .toLowerCase()
-                  .startsWith(now.format("ddd").toLowerCase().slice(0, 2));
+            <div className="px-3.5 sm:px-4 py-1">
+              <ul className="divide-y divide-border/60">
+                {last7Days.map((d: any, i: number) => {
+                  const meta = dayTone[d.status] || dayTone.not_started;
+                  const Icon = meta.Icon || Clock;
+                  const isToday = (d.dayStr || "")
+                    .toLowerCase()
+                    .startsWith(now.format("ddd").toLowerCase().slice(0, 2));
 
-                return (
-                  <li key={`${d.date}-${i}`}>
-                    <Link
-                      href="/attendance"
-                      className={cn(
-                        "grid grid-cols-[4.5rem_1fr_auto] items-center gap-3 px-5 py-2.5 transition-colors hover:bg-muted/40 sm:px-6",
-                        isToday && "bg-primary/5"
-                      )}
-                    >
-                      <div className="min-w-0">
-                        <p
-                          className={cn(
-                            "text-sm font-semibold tabular-nums",
-                            isToday ? "text-primary" : "text-foreground"
-                          )}
-                        >
-                          {d.dayStr}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground">{d.date}</p>
-                      </div>
-
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span
-                          className={cn("h-2 w-2 shrink-0 rounded-full", meta.dot)}
-                          aria-hidden
-                        />
-                        <span className="truncate text-xs sm:text-sm text-muted-foreground">
-                          {meta.label}
-                        </span>
-                        {isToday && (
-                          <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
-                            Today
-                          </span>
-                        )}
-                      </div>
-
-                      <span
+                  return (
+                    <li key={`${d.date}-${i}`}>
+                      <Link
+                        href="/attendance"
                         className={cn(
-                          "flex h-8 w-8 items-center justify-center rounded-lg",
-                          d.status === "present" && "bg-emerald-500/10 text-emerald-600",
-                          d.status === "leave" && "bg-orange-500/10 text-orange-600",
-                          d.status === "absent" && "bg-red-500/10 text-red-600",
-                          d.status === "pending" && "bg-amber-500/10 text-amber-600",
-                          (d.status === "weekend" || d.status === "not_started") &&
-                            "bg-muted text-muted-foreground"
+                          "group flex items-center justify-between gap-3 rounded-xl px-2.5 py-2.5 sm:px-3 sm:py-2.5 transition-all duration-150",
+                          isToday
+                            ? "bg-[#38ABB1]/10 text-foreground hover:bg-[#38ABB1]/15"
+                            : "hover:bg-muted/40"
                         )}
                       >
-                        {Icon ? (
-                          <Icon className="h-3.5 w-3.5" />
-                        ) : d.status === "weekend" ? (
-                          <span className="text-[10px] font-semibold">W</span>
-                        ) : (
-                          <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
-                        )}
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+                        {/* Left: Date Badge + Name */}
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className={cn(
+                              "flex h-9 w-9 shrink-0 flex-col items-center justify-center rounded-lg border text-center transition-colors",
+                              isToday
+                                ? "border-[#38ABB1]/40 bg-[#38ABB1]/15 text-[#38ABB1]"
+                                : "border-border/60 bg-muted/30 text-muted-foreground group-hover:bg-muted/60"
+                            )}
+                          >
+                            <span className="text-[9px] font-bold uppercase tracking-wider leading-none">
+                              {d.dayStr}
+                            </span>
+                            <span
+                              className={cn(
+                                "text-xs font-black leading-none pt-0.5 tabular-nums",
+                                isToday ? "text-[#38ABB1] dark:text-[#4cd1d7]" : "text-foreground"
+                              )}
+                            >
+                              {d.date}
+                            </span>
+                          </div>
+
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p
+                                className={cn(
+                                  "text-xs sm:text-sm font-semibold truncate",
+                                  isToday ? "text-[#38ABB1] dark:text-[#4cd1d7]" : "text-foreground"
+                                )}
+                              >
+                                {isToday ? "Today" : d.dayStr}
+                              </p>
+                            </div>
+                            <p className="text-[11px] text-muted-foreground truncate">
+                              {isToday && d.status === "not_started"
+                                ? "Check-in required"
+                                : meta.sublabel}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Right: Status Pill */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border shadow-2xs transition-all",
+                              meta.badgeClass
+                            )}
+                          >
+                            <Icon className="h-3 w-3 shrink-0" />
+                            <span>{meta.label}</span>
+                          </span>
+                          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/30 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+                        </div>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center gap-1 px-5 py-8 text-center sm:px-6">
               <p className="text-sm font-medium text-foreground">No week data yet</p>
@@ -587,53 +818,113 @@ export function EmployeeDashboard() {
           )}
         </section>
 
-        {/* Compact metrics stack */}
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:col-span-3 lg:grid-cols-1">
-          {[
-            {
-              label: "Attendance",
-              value: `${stats.attendanceRate ?? 0}%`,
-              href: "/attendance",
-              icon: TrendingUp,
-              hint: "Overall rate",
-              className: "col-span-2 sm:col-span-1 lg:col-span-1",
-            },
-            {
-              label: "Days present",
-              value: String(stats.daysPresent ?? 0),
-              href: "/attendance",
-              icon: CheckCircle2,
-              hint: "This cycle",
-            },
-            {
-              label: "Primary leave",
-              value: String(primaryLeave?.balance ?? 0),
-              href: "/leaves",
-              icon: Calendar,
-              hint: primaryLeave?.name || "Balance",
-            },
-          ].map((m) => (
-            <Link
-              key={m.label}
-              href={m.href}
-              className={cn(
-                "flex flex-col justify-between rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-muted/30 sm:p-5",
-                m.className
-              )}
-            >
-              <div className="mb-3 flex items-center justify-between">
-                <m.icon className="h-4 w-4 text-muted-foreground" />
-                <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/50" />
+        {/* Team moments (Moved to Bento grid in place of metrics) */}
+        <section className="flex flex-col rounded-2xl border border-border bg-card overflow-hidden lg:col-span-4">
+          <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5">
+                <span className="h-5 w-1 shrink-0 rounded-full bg-[#38ABB1]" aria-hidden />
+                <h2 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
+                  Team moments
+                </h2>
               </div>
-              <div>
-                <p className="text-2xl font-semibold tracking-tight tabular-nums text-foreground sm:text-3xl">
-                  {m.value}
-                </p>
-                <p className="mt-1 text-sm font-medium text-foreground">{m.label}</p>
-                <p className="text-xs text-muted-foreground">{m.hint}</p>
-              </div>
-            </Link>
-          ))}
+            </div>
+            <span className="rounded-full border border-border/80 bg-muted/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground tabular-nums">
+              {moment().format("MMM YY")}
+            </span>
+          </div>
+
+          {upcomingEvents.length > 0 ? (
+            <ul className="divide-y divide-border/60">
+              {upcomingEvents.slice(0, 5).map((event: any) => {
+                const src = profileSrc(event.profilePicture);
+                return (
+                  <li
+                    key={event.id}
+                    className="grid grid-cols-[2.25rem_1fr_auto] items-center gap-3 px-4 py-3 sm:px-5 transition-colors hover:bg-muted/30"
+                  >
+                    <div
+                      className={cn(
+                        "flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-semibold",
+                        !src &&
+                          (event.type === "birthday"
+                            ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                            : event.type === "holiday" || event.type === "optional_holiday"
+                              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                              : event.type === "leave"
+                                ? "bg-orange-500/10 text-orange-700 dark:text-orange-400"
+                                : "bg-sky-500/10 text-sky-700 dark:text-sky-400")
+                      )}
+                    >
+                      {src ? (
+                        <Image
+                          src={src}
+                          alt={event.user}
+                          width={36}
+                          height={36}
+                          className="h-full w-full object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        initials(event.user || "?")
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs sm:text-sm font-semibold text-foreground">
+                        {event.user}
+                      </p>
+                      <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                        {event.type === "birthday" ? (
+                          <Gift className="h-3 w-3 text-amber-500 shrink-0" />
+                        ) : event.type === "holiday" || event.type === "optional_holiday" ? (
+                          <Calendar className="h-3 w-3 text-emerald-500 shrink-0" />
+                        ) : event.type === "leave" ? (
+                          <Plane className="h-3 w-3 text-orange-500 shrink-0" />
+                        ) : (
+                          <Award className="h-3 w-3 text-sky-500 shrink-0" />
+                        )}
+                        <span className="truncate">
+                          {event.type === "birthday"
+                            ? "Birthday"
+                            : event.type === "optional_holiday"
+                              ? "Optional holiday"
+                              : event.type === "holiday"
+                                ? "Holiday"
+                                : event.type === "leave"
+                                  ? "On Leave"
+                                  : "Anniversary"}
+                        </span>
+                        <span>·</span>
+                        <span className="shrink-0">{moment(event.date).format("MMM D")}</span>
+                      </p>
+                    </div>
+                    <span
+                      className={cn(
+                        "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums border",
+                        event.daysUntil === 0
+                          ? "border-destructive/30 bg-destructive/10 text-destructive"
+                          : "border-border/60 bg-muted/60 text-muted-foreground"
+                      )}
+                    >
+                      {event.daysUntil === 0 ? "Today" : `in ${event.daysUntil}d`}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <EmptyState
+              src={EmptyImages.events}
+              title="No celebrations"
+              description="Birthdays and anniversaries this month will show up here."
+              size="compact"
+              className="flex-1 h-full min-h-[340px] sm:min-h-[380px] w-full"
+              contentClassName="justify-start pt-7 sm:pt-9 pl-6 sm:pl-7 pr-2 w-[58%] max-w-[250px]"
+              headingClassName="text-lg sm:text-xl font-bold tracking-tight text-slate-900 leading-snug"
+              descriptionClassName="mt-2 text-xs sm:text-sm font-medium leading-relaxed text-slate-600/95 max-w-[190px]"
+              imageClassName="object-cover object-bottom"
+            />
+          )}
         </section>
       </div>
 
@@ -656,220 +947,99 @@ export function EmployeeDashboard() {
         ))}
       </nav>
 
-      {/* ── Activity + team moments ───────────────────────────── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        <section className="rounded-2xl border border-border bg-card lg:col-span-7">
-          <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2.5">
-                <span className="h-5 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
-                <h2 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
-                  Activity
-                </h2>
-              </div>
-            </div>
-            <Link
-              href="/notifications"
-              className="text-sm font-medium text-primary hover:underline"
-            >
-              All updates
-            </Link>
-          </div>
-
-          {recentActivities.length > 0 ? (
-            <ul className="divide-y divide-border">
-              {recentActivities.slice(0, 7).map((activity: any) => {
-                const action = (activity.action || "").toLowerCase();
-                const isLeave = action.includes("leave");
-                const isAnniv = action.includes("celebrates");
-                const isJoin = action.includes("joined");
-                const Icon = isLeave
-                  ? Calendar
-                  : isAnniv
-                    ? Award
-                    : isJoin
-                      ? UserPlus
-                      : Clock;
-                const category = isLeave
-                  ? "Leave"
-                  : isAnniv
-                    ? "Milestone"
-                    : isJoin
-                      ? "Team"
-                      : "Attendance";
-                const href = activity.id?.includes("notif")
-                  ? "/notifications"
-                  : isLeave || activity.id?.includes("leave")
-                    ? "/leaves"
-                    : "/attendance";
-
-                return (
-                  <li key={activity.id}>
-                    <Link
-                      href={href}
-                      className="grid grid-cols-[2.5rem_1fr_auto] items-start gap-3 px-5 py-3.5 transition-colors hover:bg-muted/40 sm:grid-cols-[2.75rem_1fr_7.5rem] sm:items-center sm:px-6"
-                    >
-                      <span
-                        className={cn(
-                          "mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg sm:mt-0",
-                          isLeave && "bg-sky-500/10 text-sky-600",
-                          isAnniv && "bg-amber-500/10 text-amber-600",
-                          isJoin && "bg-violet-500/10 text-violet-600",
-                          !isLeave && !isAnniv && !isJoin && "bg-emerald-500/10 text-emerald-600"
-                        )}
-                      >
-                        <Icon className="h-4 w-4" />
-                      </span>
-
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium leading-snug text-foreground">
-                          {activity.user ? `${activity.user} ` : ""}
-                          <span className="font-normal text-muted-foreground">
-                            {activity.action}
-                          </span>
-                        </p>
-                        <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/80">
-                          {category}
-                        </p>
-                      </div>
-
-                      <time className="text-right text-xs tabular-nums text-muted-foreground sm:self-center">
-                        {moment(activity.time).fromNow()}
-                      </time>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center">
-              <Clock className="h-8 w-8 text-muted-foreground/35" />
-              <p className="text-sm text-muted-foreground">Nothing new yet</p>
-            </div>
-          )}
-        </section>
-
-        <section className="rounded-2xl border border-border bg-card lg:col-span-5 flex flex-col overflow-hidden">
-          <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2.5">
-                <span className="h-5 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
-                <h2 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
-                  Team moments
-                </h2>
-              </div>
-            </div>
-            <span className="text-xs font-medium text-muted-foreground">{moment().format("MMM YY")}</span>
-          </div>
-
-          {upcomingEvents.length > 0 ? (
-            <ul className="divide-y divide-border">
-              {upcomingEvents.slice(0, 5).map((event: any) => {
-                const src = profileSrc(event.profilePicture);
-                return (
-                  <li
-                    key={event.id}
-                    className="grid grid-cols-[2.5rem_1fr_auto] items-center gap-3 px-5 py-3.5 sm:px-6"
-                  >
-                    <div
-                      className={cn(
-                        "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-medium",
-                        !src &&
-                          (event.type === "birthday"
-                            ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                            : event.type === "holiday" || event.type === "optional_holiday"
-                              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                              : event.type === "leave"
-                                ? "bg-orange-500/10 text-orange-700 dark:text-orange-400"
-                                : "bg-sky-500/10 text-sky-700 dark:text-sky-400")
-                      )}
-                    >
-                      {src ? (
-                        <Image
-                          src={src}
-                          alt={event.user}
-                          width={40}
-                          height={40}
-                          className="h-full w-full object-cover"
-                          unoptimized
-                        />
-                      ) : (
-                        initials(event.user || "?")
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {event.user}
-                      </p>
-                      <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                        {event.type === "birthday" ? (
-                          <Gift className="h-3 w-3 text-amber-500" />
-                        ) : event.type === "holiday" || event.type === "optional_holiday" ? (
-                          <Calendar className="h-3 w-3 text-emerald-500" />
-                        ) : event.type === "leave" ? (
-                          <Plane className="h-3 w-3 text-orange-500" />
-                        ) : (
-                          <Award className="h-3 w-3 text-sky-500" />
-                        )}
-                        {event.type === "birthday"
-                          ? "Birthday"
-                          : event.type === "optional_holiday"
-                            ? "Optional holiday"
-                            : event.type === "holiday"
-                              ? "Holiday"
-                              : event.type === "leave"
-                                ? "On Leave"
-                                : "Anniversary"}
-                        <span>·</span>
-                        {moment(event.date).format("MMM D")}
-                      </p>
-                    </div>
-                    <span
-                      className={cn(
-                        "shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium",
-                        event.daysUntil === 0
-                          ? "bg-destructive/10 text-destructive"
-                          : "bg-muted text-muted-foreground"
-                      )}
-                    >
-                      {event.daysUntil === 0 ? "Today" : `in ${event.daysUntil}d`}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <EmptyState
-              src={EmptyImages.events}
-              title="No celebrations yet"
-              description="Birthdays and anniversaries this month will show up here."
-              size="compact"
-              className="flex-1"
-            />
-          )}
-        </section>
-      </div>
-
-      {/* ── Attendance trend ─────────────────────────────────── */}
-      <section className="rounded-2xl border border-border bg-card">
-        <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      {/* ── Activity ─────────────────────────────────────────── */}
+      <section className="rounded-2xl border border-border bg-card overflow-hidden">
+        <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
           <div className="space-y-1">
             <div className="flex items-center gap-2.5">
-              <span className="h-5 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
+              <span className="h-5 w-1 shrink-0 rounded-full bg-[#38ABB1]" aria-hidden />
               <h2 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
-                Attendance trend
+                Activity
               </h2>
             </div>
           </div>
-          <p className="pl-3.5 text-sm tabular-nums text-muted-foreground sm:pl-0">
-            Current rate: {" "}
-            <span className="font-semibold text-foreground">{stats.attendanceRate ?? 0}%</span>
-          </p>
+          <Link
+            href="/notifications"
+            className="text-sm font-medium text-[#38ABB1] hover:underline"
+          >
+            All updates
+          </Link>
         </div>
-        <div className="h-56 px-2 pb-4 pt-2 sm:px-4">
-          <AttendanceTrendChart data={attendanceTrend} />
-        </div>
+
+        {recentActivities.length > 0 ? (
+          <ul className="divide-y divide-border">
+            {recentActivities.slice(0, 7).map((activity: any) => {
+              const action = (activity.action || "").toLowerCase();
+              const isLeave = action.includes("leave");
+              const isAnniv = action.includes("celebrates");
+              const isJoin = action.includes("joined");
+              const Icon = isLeave
+                ? Calendar
+                : isAnniv
+                  ? Award
+                  : isJoin
+                    ? UserPlus
+                    : Clock;
+              const category = isLeave
+                ? "Leave"
+                : isAnniv
+                  ? "Milestone"
+                  : isJoin
+                    ? "Team"
+                    : "Attendance";
+              const href = activity.id?.includes("notif")
+                ? "/notifications"
+                : isLeave || activity.id?.includes("leave")
+                  ? "/leaves"
+                  : "/attendance";
+
+              return (
+                <li key={activity.id}>
+                  <Link
+                    href={href}
+                    className="grid grid-cols-[2.5rem_1fr_auto] items-start gap-3 px-5 py-3.5 transition-colors hover:bg-muted/40 sm:grid-cols-[2.75rem_1fr_7.5rem] sm:items-center sm:px-6"
+                  >
+                    <span
+                      className={cn(
+                        "mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg sm:mt-0",
+                        isLeave && "bg-sky-500/10 text-sky-600",
+                        isAnniv && "bg-amber-500/10 text-amber-600",
+                        isJoin && "bg-violet-500/10 text-violet-600",
+                        !isLeave && !isAnniv && !isJoin && "bg-emerald-500/10 text-emerald-600"
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </span>
+
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium leading-snug text-foreground">
+                        {activity.user ? `${activity.user} ` : ""}
+                        <span className="font-normal text-muted-foreground">
+                          {activity.action}
+                        </span>
+                      </p>
+                      <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/80">
+                        {category}
+                      </p>
+                    </div>
+
+                    <time className="text-right text-xs tabular-nums text-muted-foreground sm:self-center">
+                      {moment(activity.time).fromNow()}
+                    </time>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center">
+            <Clock className="h-8 w-8 text-muted-foreground/35" />
+            <p className="text-sm text-muted-foreground">Nothing new yet</p>
+          </div>
+        )}
       </section>
+
+
 
       {/* ── Next best actions ───────────────────────────────── */}
       {aiInsights.length > 0 && (

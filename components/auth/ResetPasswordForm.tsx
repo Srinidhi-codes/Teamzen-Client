@@ -61,8 +61,8 @@ function ResetPasswordFormInner() {
       <AuthShell
         title="Invalid link"
         description="This password reset link is invalid or has expired."
-        sideImage={AuthImages.security}
-        sideImageAlt="Password reset security illustration"
+        sideImage={AuthImages.dashboard}
+        sideImageAlt="Teamzen workforce analytics and payroll dashboard"
       >
         <div className="space-y-5">
           <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/40 p-3">
@@ -90,8 +90,8 @@ function ResetPasswordFormInner() {
           ? "Your password has been updated."
           : "Choose a new password for your account."
       }
-      sideImage={AuthImages.security}
-      sideImageAlt="Password reset security illustration"
+      sideImage={AuthImages.dashboard}
+      sideImageAlt="Teamzen workforce analytics and payroll dashboard"
     >
       {!isSuccess ? (
         <form className="space-y-5" onSubmit={handleSubmit}>
@@ -172,8 +172,8 @@ export function ResetPasswordForm() {
         <AuthShell
           title="Reset password"
           description="Loading…"
-          sideImage={AuthImages.security}
-          sideImageAlt="Password reset security illustration"
+          sideImage={AuthImages.dashboard}
+          sideImageAlt="Teamzen workforce analytics and payroll dashboard"
         >
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

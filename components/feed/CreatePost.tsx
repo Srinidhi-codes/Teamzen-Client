@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ImagePlus, Loader2, Camera, FileText, Hash, Tag, Plus, X } from 'lucide-react';
+import { ImagePlus, Loader2, Camera, FileText, Hash, Tag, Plus, X, CalendarClock } from 'lucide-react';
 import { useFeedMutations } from '@/lib/graphql/feed/feedHooks';
 import { useUser } from '@/lib/api/hooks';
 import { toast } from 'sonner';
@@ -12,6 +12,8 @@ import { RichTextEditor } from './RichTextEditor';
 import { useApolloClient } from '@apollo/client/react';
 import { GET_DIRECTORY_USERS } from '@/lib/graphql/users/queries';
 import { resolveAvatarUrl } from '@/lib/utils';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const SUGGESTED_TAGS = ['#Announcement', '#Important', '#Update', '#Kudos', '#General'];
 
@@ -25,6 +27,8 @@ export const CreatePost = () => {
   const [showTags, setShowTags] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const isSubmittingRef = useRef(false);
 
   const [errorModal, setErrorModal] = useState({
@@ -142,6 +146,7 @@ export const CreatePost = () => {
           title,
           content: finalContent,
           mediaB64: mediaB64.length > 0 ? mediaB64 : null,
+          scheduledFor: scheduledDate ? new Date(scheduledDate).toISOString() : null,
         }
       });
       setTitle('');
@@ -150,7 +155,12 @@ export const CreatePost = () => {
       setSelectedTags([]);
       setShowTags(false);
       setShowTagInput(false);
-      toast.success('Post created successfully!');
+      if (scheduledDate) {
+        toast.success(`Post scheduled for ${new Date(scheduledDate).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}!`);
+      } else {
+        toast.success('Post created successfully!');
+      }
+      setScheduledDate('');
     } catch (err) {
       toast.error('Failed to create post');
       console.error(err);
@@ -376,9 +386,25 @@ export const CreatePost = () => {
               })}
             </div>
           )}
+
+          {/* Scheduled date indicator badge */}
+          {scheduledDate && (
+            <div className="flex items-center gap-2 mt-3 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-400 text-xs font-medium w-fit">
+              <CalendarClock className="w-3.5 h-3.5" />
+              <span>Will publish on: {new Date(scheduledDate).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span>
+              <button
+                type="button"
+                onClick={() => setScheduledDate('')}
+                className="ml-1 hover:text-amber-900 dark:hover:text-amber-200"
+                title="Cancel schedule"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </CardContent>
-        <CardFooter className="flex justify-between border-t py-3 border-gray-100 dark:border-gray-800">
-          <div className="flex gap-1 sm:gap-2">
+        <CardFooter className="flex justify-between items-center border-t py-3 border-gray-100 dark:border-gray-800">
+          <div className="flex items-center gap-1 sm:gap-2">
             <input 
               type="file" 
               multiple 
@@ -404,18 +430,97 @@ export const CreatePost = () => {
               onChange={handleFileChange}
             />
             
-            <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700 px-2 sm:px-3" onClick={() => document.getElementById('media-upload')?.click()}>
-              <ImagePlus className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-              <span className="hidden sm:inline">Add Media</span>
-            </Button>
-            <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700 px-2 sm:px-3" onClick={handleCameraClick}>
-              <Camera className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-              <span className="hidden sm:inline">Camera</span>
-            </Button>
-            <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700 px-2 sm:px-3" onClick={() => document.getElementById('pdf-upload')?.click()}>
-              <FileText className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-              <span className="hidden sm:inline">PDF</span>
-            </Button>
+            {/* Slack-style + Menu for Media, Camera, PDF */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="rounded-full h-8 w-8 sm:h-9 sm:w-9 p-0 text-muted-foreground hover:text-foreground border-border hover:bg-muted"
+                  title="Add attachments & media"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56 p-1.5 z-[9999]">
+                <DropdownMenuItem 
+                  onClick={() => document.getElementById('media-upload')?.click()}
+                  className="flex items-center gap-2.5 px-3 py-2 cursor-pointer text-sm"
+                >
+                  <ImagePlus className="w-4 h-4" />
+                  <span>Upload from device</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={handleCameraClick}
+                  className="flex items-center gap-2.5 px-3 py-2 cursor-pointer text-sm"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>Take photo</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => document.getElementById('pdf-upload')?.click()}
+                  className="flex items-center gap-2.5 px-3 py-2 cursor-pointer text-sm"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Attach document</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Schedule Post Popover */}
+            <Popover open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className={`text-xs gap-1.5 px-2.5 py-1.5 h-8 rounded-full ${
+                    scheduledDate ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold' : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  title="Schedule post"
+                >
+                  <CalendarClock className="w-4 h-4" />
+                  <span className="hidden sm:inline">{scheduledDate ? 'Scheduled' : 'Schedule'}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-3 space-y-3 z-[9999]" align="start">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-foreground">Schedule Post</p>
+                  <p className="text-[11px] text-muted-foreground">Choose when your team will see this post.</p>
+                </div>
+                <input
+                  type="datetime-local"
+                  value={scheduledDate}
+                  min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
+                  onChange={(e) => setScheduledDate(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs border border-border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <div className="flex justify-between items-center pt-1">
+                  {scheduledDate && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setScheduledDate('');
+                        setIsScheduleOpen(false);
+                      }}
+                      className="text-xs text-destructive hover:text-destructive h-7 px-2"
+                    >
+                      Clear
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setIsScheduleOpen(false)}
+                    className="text-xs h-7 px-3 ml-auto"
+                  >
+                    Set Schedule
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           <Button 
             onClick={handlePost} 
@@ -423,7 +528,7 @@ export const CreatePost = () => {
             className="rounded-full px-4 sm:px-6 shrink-0"
           >
             {(isSubmitting || isCreatingPost) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Post
+            {scheduledDate ? 'Schedule' : 'Post'}
           </Button>
         </CardFooter>
       </Card>

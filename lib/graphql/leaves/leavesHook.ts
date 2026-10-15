@@ -104,6 +104,13 @@ export function useGraphQLCreateLeaveRequest() {
             }
          },
       })
+      const res = response as any;
+      if (res.errors && res.errors.length > 0) {
+         throw new Error(res.errors.map((e: any) => e.message).join(", "));
+      }
+      if (res.error) {
+         throw res.error;
+      }
       return response.data
    }
 

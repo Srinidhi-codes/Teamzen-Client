@@ -5,7 +5,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2, Eye, Hash, FileText, X } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2, Eye, Hash, FileText, X, Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useFeedMutations } from '@/lib/graphql/feed/feedHooks';
 import { useUser } from '@/lib/api/hooks';
@@ -16,6 +16,9 @@ import { UserProfileModal } from '@/components/common/UserProfileModal';
 import { RichContentRenderer } from './RichContentRenderer';
 import { RichTextEditor } from './RichTextEditor';
 import { resolveAvatarUrl } from '@/lib/utils';
+import { useNotifications } from '@/lib/hooks/useNotifications';
+import { useApolloClient } from '@apollo/client/react';
+import { GET_DIRECTORY_USERS } from '@/lib/graphql/users/queries';
 
 export const PostCard = ({ post }: { post: any }) => {
   const { user } = useUser();
@@ -29,6 +32,7 @@ export const PostCard = ({ post }: { post: any }) => {
   const [editTitle, setEditTitle] = useState(post.title || '');
   const [editMediaUrls, setEditMediaUrls] = useState<string[]>(post.mediaUrls || []);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [viewsCount, setViewsCount] = useState<number>(post.viewsCount || 0);
 
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -45,9 +49,36 @@ export const PostCard = ({ post }: { post: any }) => {
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [reportReason, setReportReason] = useState('');
   
-  const { togglePostLike, deletePost, updatePost, viewPost, reportPost } = useFeedMutations();
+  const { togglePostLike, deletePost, updatePost, reportPost } = useFeedMutations();
   const observerRef = React.useRef<HTMLDivElement>(null);
   const [hasViewed, setHasViewed] = useState(false);
+  const client = useApolloClient();
+
+  const { sendJsonMessage } = useNotifications((msg) => {
+    if (msg?.level === 'feed_update' && msg?.action === 'post_viewed' && msg?.target_id === post.id) {
+      if (typeof msg?.views_count === 'number') {
+        setViewsCount(msg.views_count);
+      }
+    }
+  }, { silent: true });
+
+  const fetchMentions = async (query: string, callback: any) => {
+    try {
+      const { data } = await client.query({
+        query: GET_DIRECTORY_USERS,
+        variables: { search: query }
+      });
+      const results = ((data as any)?.directoryUsers || []).map((u: any) => ({
+        id: u?.id || Math.random().toString(),
+        display: `${u?.firstName || ''} ${u?.lastName || ''}`.trim() || 'User',
+        avatar: u?.profilePictureUrl,
+        email: u?.email
+      }));
+      callback(results);
+    } catch (e) {
+      callback([]);
+    }
+  };
 
   React.useEffect(() => {
     setDisplayTitle(post.title || '');
@@ -56,7 +87,10 @@ export const PostCard = ({ post }: { post: any }) => {
     setEditTitle(post.title || '');
     setEditContent(post.content || '');
     setEditMediaUrls(post.mediaUrls || []);
-  }, [post.title, post.content, post.mediaUrls]);
+    if (typeof post.viewsCount === 'number') {
+      setViewsCount(post.viewsCount);
+    }
+  }, [post.title, post.content, post.mediaUrls, post.viewsCount]);
 
   React.useEffect(() => {
     if (!observerRef.current || hasViewed) return;
@@ -67,7 +101,13 @@ export const PostCard = ({ post }: { post: any }) => {
       (entries) => {
         if (entries[0].isIntersecting) {
           timeoutId = setTimeout(() => {
-            viewPost({ variables: { postId: post.id } }).catch(() => {});
+            // View post via WebSocket instead of HTTP API call!
+            try {
+              sendJsonMessage?.({ action: 'view_post', post_id: post.id });
+              setViewsCount(prev => prev + 1);
+            } catch (err) {
+              console.error('Failed to send view_post over websocket:', err);
+            }
             setHasViewed(true);
             observer.disconnect();
           }, 1500);
@@ -83,7 +123,7 @@ export const PostCard = ({ post }: { post: any }) => {
       clearTimeout(timeoutId);
       observer.disconnect();
     };
-  }, [hasViewed, post.id, viewPost]);
+  }, [hasViewed, post.id, sendJsonMessage]);
 
   // Extract unique hashtags from post title and content
   const extractHashtags = () => {
@@ -248,34 +288,34 @@ export const PostCard = ({ post }: { post: any }) => {
   }
 
   return (
-    <Card ref={observerRef} className="mb-6 shadow-sm border-gray-200/60 dark:border-gray-800 transition-all hover:shadow-md">
-      <CardContent className="pt-6">
+    <Card ref={observerRef} className="mb-4 sm:mb-5 bg-card text-card-foreground border border-border/50 shadow-sm hover:shadow-md hover:border-border/80 rounded-2xl transition-all duration-200 overflow-hidden">
+      <CardContent className="p-4 sm:p-5">
         
         {/* Header */}
-        <div className="flex justify-between items-start mb-4">
+        <div className="flex justify-between items-start mb-3">
           <div 
-            className="flex gap-3 cursor-pointer hover:opacity-80 transition-opacity group"
+            className="flex items-center gap-3 cursor-pointer group"
             onClick={() => {
               setSelectedUserId(post.author.id.toString());
               setSelectedUserData(post.author);
             }}
           >
-            <Avatar className="h-10 w-10 ring-2 ring-transparent group-hover:ring-primary/20 transition-all">
-              <AvatarImage src={resolveAvatarUrl(post.author.profilePictureUrl)} />
-              <AvatarFallback>{post.author.firstName?.[0]}</AvatarFallback>
+            <Avatar className="h-10 w-10 ring-2 ring-transparent group-hover:ring-primary/25 transition-all">
+              <AvatarImage src={resolveAvatarUrl(post.author.profilePictureUrl)} className="object-cover" />
+              <AvatarFallback className="text-sm font-semibold">{post.author.firstName?.[0]}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-semibold text-sm group-hover:text-primary transition-colors">
+              <p className="font-semibold text-sm sm:text-[15px] text-foreground group-hover:text-primary transition-colors leading-tight">
                 {post.author.firstName} {post.author.lastName}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
               </p>
             </div>
           </div>
 
           <DropdownMenu>
-            <DropdownMenuTrigger className="text-gray-400 hover:text-gray-600 focus:outline-none">
+            <DropdownMenuTrigger className="text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-muted transition-colors focus:outline-none cursor-pointer">
               <MoreHorizontal className="w-5 h-5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -306,7 +346,7 @@ export const PostCard = ({ post }: { post: any }) => {
               type="text"
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
-              className="w-full p-2 border-b border-gray-200 dark:border-gray-800 bg-transparent text-lg font-bold focus:outline-none focus:border-primary"
+              className="w-full p-2 border-b border-border bg-transparent text-base sm:text-lg font-bold focus:outline-none focus:border-primary"
               placeholder="Post title (optional)"
             />
             <RichTextEditor
@@ -314,12 +354,13 @@ export const PostCard = ({ post }: { post: any }) => {
               onChange={setEditContent}
               placeholder="Edit your post..."
               minHeight="100px"
+              fetchMentions={fetchMentions}
             />
 
             {/* Attached Media Manager in Edit Mode */}
             {editMediaUrls.length > 0 && (
-              <div className="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-2">
-                <div className="flex items-center justify-between text-xs font-semibold text-gray-500">
+              <div className="pt-2 border-t border-border/50 space-y-2">
+                <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
                   <span>Attached Media ({editMediaUrls.length})</span>
                   <span className="text-[11px] font-normal text-muted-foreground">Click ✕ to delete attachment</span>
                 </div>
@@ -332,21 +373,21 @@ export const PostCard = ({ post }: { post: any }) => {
                       return (
                         <div
                           key={idx}
-                          className="flex items-center gap-2 p-2 pr-2.5 bg-gray-50 dark:bg-gray-800/80 rounded-lg border border-gray-200 dark:border-gray-700 max-w-xs group shadow-sm"
+                          className="flex items-center gap-2 p-2 pr-2.5 bg-muted/40 rounded-lg border border-border/60 max-w-xs group shadow-sm"
                         >
                           <div className="p-1.5 rounded bg-rose-500/10 text-rose-500 shrink-0">
                             <FileText className="w-4 h-4" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="text-xs font-medium truncate text-gray-800 dark:text-gray-200" title={fileName}>
+                            <p className="text-xs font-medium truncate text-foreground" title={fileName}>
                               {fileName}
                             </p>
-                            <p className="text-[10px] text-gray-400">PDF Document</p>
+                            <p className="text-[10px] text-muted-foreground">PDF Document</p>
                           </div>
                           <button
                             type="button"
                             onClick={() => handleRemoveMedia(idx)}
-                            className="p-1 rounded-full text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                            className="p-1 rounded-full text-muted-foreground hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                             title="Delete PDF attachment"
                           >
                             <X className="w-4 h-4" />
@@ -358,7 +399,7 @@ export const PostCard = ({ post }: { post: any }) => {
                     return (
                       <div
                         key={idx}
-                        className="relative group w-20 h-20 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-muted/20 shrink-0 shadow-sm"
+                        className="relative group w-20 h-20 rounded-lg overflow-hidden border border-border/60 bg-muted/20 shrink-0 shadow-sm"
                       >
                         <img
                           src={url}
@@ -389,14 +430,14 @@ export const PostCard = ({ post }: { post: any }) => {
                   setIsEditing(false);
                 }} 
                 disabled={isSubmittingEdit}
-                className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5"
+                className="text-sm text-muted-foreground hover:text-foreground px-3 py-1.5 cursor-pointer"
               >
                 Cancel
               </button>
               <button 
                 onClick={handleEdit} 
                 disabled={isSubmittingEdit}
-                className="text-sm bg-primary text-white px-4 py-1.5 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+                className="text-sm bg-primary text-white px-4 py-1.5 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer font-medium"
               >
                 {isSubmittingEdit ? 'Saving...' : 'Save'}
               </button>
@@ -404,15 +445,19 @@ export const PostCard = ({ post }: { post: any }) => {
           </div>
         ) : (
           <>
-            {displayTitle && (
-              <div className="mb-3 border-b border-gray-100 dark:border-gray-800 pb-3">
-                <h3 className="text-2xl font-bold font-serif text-gray-900 dark:text-gray-100">
-                  {displayTitle}
-                </h3>
+            {post.isScheduled && (
+              <div className="mb-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-400 text-xs font-medium">
+                <Clock className="w-3.5 h-3.5" />
+                <span>Scheduled for {post.scheduledFor ? new Date(post.scheduledFor).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Future date'}</span>
               </div>
             )}
+            {displayTitle && (
+              <h3 className="text-base sm:text-lg font-bold tracking-tight text-foreground mb-1.5 leading-snug">
+                {displayTitle}
+              </h3>
+            )}
             <div 
-              className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed"
+              className="text-sm sm:text-[15px] text-foreground/90 leading-relaxed font-normal"
               onClick={(e) => {
                 const target = e.target as HTMLElement;
                 const mention = target.closest('[data-type="mention"]');
@@ -434,68 +479,194 @@ export const PostCard = ({ post }: { post: any }) => {
           </>
         )}
 
-        {/* Media (If any) */}
-        {displayMediaUrls?.length > 0 && (
-          <div className={`mt-4 grid gap-2 ${displayMediaUrls.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            {displayMediaUrls.map((url: string, idx: number) => {
-              const isPdf = url.toLowerCase().includes('.pdf');
-              if (isPdf) {
-                return (
-                  <a
-                    key={idx}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3.5 bg-gray-50 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors rounded-xl border border-gray-200 dark:border-gray-700"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="p-2.5 rounded-lg bg-rose-500/10 text-rose-500 shrink-0">
-                      <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs sm:text-sm font-semibold truncate text-gray-900 dark:text-gray-100">
-                        {url.split('/').pop()?.split('?')[0] || 'Document.pdf'}
-                      </p>
-                      <p className="text-[10px] sm:text-xs text-gray-500">PDF Document • Click to view</p>
-                    </div>
-                  </a>
-                );
-              }
+        {/* Media (If any) - only shown when not editing to prevent duplicate photos */}
+        {!isEditing && displayMediaUrls?.length > 0 && (() => {
+          const pdfUrls = displayMediaUrls.filter((url: string) => url.toLowerCase().includes('.pdf'));
+          const imageUrls = displayMediaUrls.filter((url: string) => !url.toLowerCase().includes('.pdf'));
 
-              return (
+          return (
+            <div className="mt-3.5 space-y-2.5">
+              {/* PDF Documents */}
+              {pdfUrls.length > 0 && (
+                <div className={`grid gap-2 ${pdfUrls.length > 1 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+                  {pdfUrls.map((url: string, idx: number) => {
+                    const fileName = decodeURIComponent(url.split('/').pop()?.split('?')[0] || 'Document.pdf');
+                    return (
+                      <a
+                        key={idx}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 bg-muted/40 hover:bg-muted/70 transition-colors rounded-xl border border-border/50 group"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="p-2.5 rounded-lg bg-rose-500/10 text-rose-500 shrink-0">
+                          <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs sm:text-sm font-semibold truncate text-foreground group-hover:text-primary transition-colors">
+                            {fileName}
+                          </p>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground">PDF Document • Click to view</p>
+                        </div>
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Single Image (LinkedIn & Instagram feed style: clean edge-to-edge width, capped max height, no side bars) */}
+              {imageUrls.length === 1 && (
                 <div
-                  key={idx}
-                  className="relative group rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800 cursor-pointer"
-                  onClick={() => setPreviewImage(url)}
+                  className="relative group rounded-xl sm:rounded-2xl overflow-hidden border border-border/50 cursor-pointer bg-muted/10 w-full"
+                  onClick={() => setPreviewImage(imageUrls[0])}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      setPreviewImage(url);
+                      setPreviewImage(imageUrls[0]);
                     }
                   }}
                 >
                   <img 
-                    src={url} 
+                    src={imageUrls[0]} 
                     alt={displayTitle || "Post attachment"} 
-                    className={`rounded-xl bg-muted/5 w-full h-auto transition-transform duration-200 group-hover:scale-[1.01] ${displayMediaUrls.length > 1 ? 'max-h-[350px] object-cover' : 'max-h-none object-contain'}`}
+                    className="w-full h-auto max-h-[500px] sm:max-h-[540px] object-cover transition-transform duration-300 group-hover:scale-[1.01]"
+                    loading="lazy"
                   />
+
+                  {/* Hover Overlay */}
                   <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                    <div className="bg-black/60 text-white rounded-full p-2 backdrop-blur-sm flex items-center gap-1.5 text-xs font-medium px-3 shadow-md">
+                    <div className="bg-black/75 text-white rounded-full p-2 backdrop-blur-md flex items-center gap-1.5 text-xs font-medium px-3.5 shadow-lg">
                       <Eye className="w-4 h-4" />
-                      <span>View photo</span>
+                      <span>View full photo</span>
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              )}
+
+              {/* 2 Images (Side by Side 50/50 Grid) */}
+              {imageUrls.length === 2 && (
+                <div className="grid grid-cols-2 gap-2 rounded-2xl overflow-hidden">
+                  {imageUrls.map((url: string, idx: number) => (
+                    <div
+                      key={idx}
+                      className="relative group h-[240px] sm:h-[300px] overflow-hidden border border-border/50 cursor-pointer bg-muted/20 rounded-xl"
+                      onClick={() => setPreviewImage(url)}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <img 
+                        src={url} 
+                        alt={displayTitle || "Post attachment"} 
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                        <div className="bg-black/75 text-white rounded-full p-1.5 backdrop-blur-md flex items-center gap-1 text-xs font-medium px-2.5 shadow-lg">
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>View</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 3 Images (1 Dominant on Left, 2 Stacked on Right) */}
+              {imageUrls.length === 3 && (
+                <div className="grid grid-cols-2 gap-2 h-[280px] sm:h-[340px] rounded-2xl overflow-hidden">
+                  <div
+                    className="relative group row-span-2 h-full overflow-hidden border border-border/50 cursor-pointer bg-muted/20 rounded-xl"
+                    onClick={() => setPreviewImage(imageUrls[0])}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <img 
+                      src={imageUrls[0]} 
+                      alt={displayTitle || "Post attachment"} 
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                      <div className="bg-black/75 text-white rounded-full p-1.5 backdrop-blur-md flex items-center gap-1 text-xs font-medium px-2.5 shadow-lg">
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>View</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-rows-2 gap-2 h-full">
+                    {imageUrls.slice(1, 3).map((url: string, idx: number) => (
+                      <div
+                        key={idx}
+                        className="relative group h-full overflow-hidden border border-border/50 cursor-pointer bg-muted/20 rounded-xl"
+                        onClick={() => setPreviewImage(url)}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <img 
+                          src={url} 
+                          alt={displayTitle || "Post attachment"} 
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                          <div className="bg-black/75 text-white rounded-full p-1.5 backdrop-blur-md flex items-center gap-1 text-xs font-medium px-2.5 shadow-lg">
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>View</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 4 or more Images (2x2 Grid with +N Overlay) */}
+              {imageUrls.length >= 4 && (
+                <div className="grid grid-cols-2 gap-2 rounded-2xl overflow-hidden">
+                  {imageUrls.slice(0, 4).map((url: string, idx: number) => {
+                    const isFourth = idx === 3;
+                    const extraCount = imageUrls.length - 4;
+                    return (
+                      <div
+                        key={idx}
+                        className="relative group h-[150px] sm:h-[190px] overflow-hidden border border-border/50 cursor-pointer bg-muted/20 rounded-xl"
+                        onClick={() => setPreviewImage(url)}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <img 
+                          src={url} 
+                          alt={displayTitle || "Post attachment"} 
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                          loading="lazy"
+                        />
+                        {isFourth && extraCount > 0 ? (
+                          <div className="absolute inset-0 bg-black/65 backdrop-blur-[2px] flex items-center justify-center text-white font-bold text-lg sm:text-xl">
+                            +{extraCount} more
+                          </div>
+                        ) : (
+                          <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                            <div className="bg-black/75 text-white rounded-full p-1.5 backdrop-blur-md flex items-center gap-1 text-xs font-medium px-2.5 shadow-lg">
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>View</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Badges & Tags Section Below Content / Media */}
         {uniqueTags.length > 0 && (
-          <div className="mt-3.5 flex flex-wrap gap-1.5 items-center">
+          <div className="mt-3 flex flex-wrap gap-1.5 items-center">
             {uniqueTags.map((tag, i) => (
               <span
                 key={i}
@@ -508,32 +679,37 @@ export const PostCard = ({ post }: { post: any }) => {
           </div>
         )}
 
-        {/* Stats */}
-        <div className="flex justify-between items-center mt-4 pt-2 border-t border-gray-100 dark:border-gray-800 text-gray-500">
-          <div className="flex gap-6">
-            <div className="flex items-center gap-1 text-sm font-medium">
+        {/* Actions Bar */}
+        <div className="flex items-center justify-between mt-3.5 pt-3 border-t border-border/40 text-muted-foreground">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Like Pill */}
+            <div className={`inline-flex items-center rounded-full transition-all text-xs sm:text-sm font-medium ${
+              post.hasLiked 
+                ? 'bg-rose-500/10 text-rose-500 font-semibold' 
+                : 'hover:bg-muted text-muted-foreground hover:text-rose-500'
+            }`}>
               <button 
                 onClick={handleLike}
-                className={`flex items-center gap-2 transition-colors hover:text-red-500 p-1 -ml-1 rounded-md ${post.hasLiked ? 'text-red-500' : ''}`}
+                className="flex items-center gap-1.5 pl-2.5 pr-1.5 py-1.5 rounded-l-full cursor-pointer transition-transform active:scale-125"
                 title={post.hasLiked ? "Unlike" : "Like"}
               >
-                <Heart className={`w-5 h-5 ${post.hasLiked ? 'fill-current' : ''}`} />
+                <Heart className={`w-4 h-4 sm:w-4.5 sm:h-4.5 transition-all ${post.hasLiked ? 'fill-current scale-105' : ''}`} />
               </button>
               
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className="hover:underline text-gray-500 hover:text-gray-900 dark:hover:text-gray-300">
+                  <button className="pr-2.5 py-1.5 -ml-0.5 text-xs font-semibold hover:underline cursor-pointer">
                     {post.likesCount || 0}
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-56 p-2 shadow-xl" align="start">
                   <h4 className="font-semibold text-xs text-muted-foreground mb-2 px-1">Liked by</h4>
                   {post.likers?.length > 0 ? (
-                    <div className="max-h-48 overflow-y-auto space-y-2">
+                    <div className="max-h-48 overflow-y-auto space-y-1.5">
                       {post.likers.map((liker: any) => (
                         <div 
                           key={liker.id} 
-                          className="flex items-center gap-2 px-1 cursor-pointer hover:bg-muted/50 p-1 rounded-md transition-colors"
+                          className="flex items-center gap-2 px-1.5 py-1 cursor-pointer hover:bg-muted/70 rounded-lg transition-colors"
                           onClick={() => {
                             setSelectedUserId(liker.id.toString());
                             setSelectedUserData(liker);
@@ -544,36 +720,52 @@ export const PostCard = ({ post }: { post: any }) => {
                             <AvatarImage src={resolveAvatarUrl(liker.profilePictureUrl)} />
                             <AvatarFallback className="text-[10px]">{liker.firstName?.[0] || '?'}</AvatarFallback>
                           </Avatar>
-                          <span className="text-sm font-medium truncate">
+                          <span className="text-xs sm:text-sm font-medium truncate text-foreground">
                             {liker.firstName} {liker.lastName}
                           </span>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500 px-1 py-2">No likes yet</p>
+                    <p className="text-xs text-muted-foreground px-1 py-2">No likes yet</p>
                   )}
                 </PopoverContent>
               </Popover>
             </div>
             
+            {/* Comment Button */}
             <button 
               onClick={() => setShowComments(!showComments)}
-              className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary"
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+                showComments 
+                  ? 'bg-primary/10 text-primary font-semibold' 
+                  : 'hover:bg-muted text-muted-foreground hover:text-primary'
+              }`}
+              title="Comments"
             >
-              <MessageCircle className="w-5 h-5" />
+              <MessageCircle className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
               <span>{post.commentsCount || 0}</span>
             </button>
+
+            {/* Views counter (for owner) */}
             {isOwner && (
-              <div className="flex items-center gap-2 text-sm font-medium" title="Views">
-                <Eye className="w-5 h-5 text-gray-400" />
-                <span>{post.viewsCount || 0}</span>
+              <div 
+                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs text-muted-foreground/80 bg-muted/30" 
+                title="Post views"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>{viewsCount}</span>
               </div>
             )}
           </div>
           
-          <button onClick={handleShare} className="hover:text-primary transition-colors text-sm font-medium">
-            <Share2 className="w-5 h-5" />
+          {/* Share */}
+          <button 
+            onClick={handleShare} 
+            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-all cursor-pointer"
+            title="Share post"
+          >
+            <Share2 className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
           </button>
         </div>
 

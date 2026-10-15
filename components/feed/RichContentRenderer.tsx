@@ -21,20 +21,24 @@ export const RichContentRenderer: React.FC<RichContentRendererProps> = ({ conten
         <style jsx global>{`
           .rich-post-content img,
           .tiptap.rich-post-content img {
+            display: block !important;
             width: 100% !important;
             max-width: 100% !important;
             height: auto !important;
-            max-height: none !important;
-            display: block !important;
-            border-radius: 0.75rem !important;
-            margin: 1rem 0 !important;
-            object-fit: contain !important;
+            max-height: 500px !important;
+            border-radius: 0.875rem !important;
+            margin: 1.25rem 0 !important;
+            object-fit: cover !important;
+            clear: both !important;
             border: 1px solid var(--color-border);
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
           }
-          .rich-post-content p:has(> img),
-          .tiptap.rich-post-content p:has(> img) {
+          .rich-post-content p,
+          .tiptap.rich-post-content p {
+            display: block !important;
             width: 100% !important;
+            clear: both !important;
+            margin-bottom: 0.75rem !important;
           }
         `}</style>
         <div 
@@ -57,10 +61,12 @@ export const RichContentRenderer: React.FC<RichContentRendererProps> = ({ conten
         remarkPlugins={[remarkGfm]}
         components={{
           img: ({ node, ...props }) => (
-            <img 
-              className="rounded-xl w-full my-4 border border-border/50 shadow-sm block h-auto object-contain" 
-              {...props} 
-            />
+            <div className="my-3.5 w-full clear-both block">
+              <img 
+                className="rounded-xl w-full h-auto max-h-[500px] object-cover border border-border/50 shadow-sm block" 
+                {...props} 
+              />
+            </div>
           ),
           h1: ({ node, ...props }) => <h1 className="text-xl font-bold mt-3 mb-2 text-foreground" {...props} />,
           h2: ({ node, ...props }) => <h2 className="text-lg font-bold mt-2.5 mb-1.5 text-foreground" {...props} />,

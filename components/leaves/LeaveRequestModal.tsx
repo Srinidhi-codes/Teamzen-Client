@@ -7,7 +7,9 @@ import {
     CheckCircle2,
     Info,
     Loader2,
-    AlertTriangle
+    AlertTriangle,
+    AlertCircle,
+    XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FormSelect } from "@/components/common/FormSelect";
@@ -15,6 +17,7 @@ import { DatePickerSimple } from "@/components/ui/datePicker";
 import { Textarea } from "@/components/ui/textarea";
 
 import { PremiumModal } from "@/components/common/PremiumModal";
+import { cn } from "@/lib/utils";
 
 interface LeaveRequestModalProps {
     isOpen: boolean;
@@ -27,6 +30,8 @@ interface LeaveRequestModalProps {
     calculateDays: () => number;
     errors?: Record<string, string>;
     teamLeavesData?: any[];
+    myLeavesData?: any[];
+    serverError?: string | null;
 }
 
 export function LeaveRequestModal({
@@ -40,9 +45,49 @@ export function LeaveRequestModal({
     calculateDays,
     errors = {},
     teamLeavesData = [],
+    myLeavesData = [],
+    serverError,
 }: LeaveRequestModalProps) {
+    // 1. Balance calculations & soft error check
+    const selectedBalance = React.useMemo(() => {
+        if (!formData.leaveTypeId || !leaveBalanceData?.length) return null;
+        return leaveBalanceData.find(
+            (b: any) => String(b.leaveType?.id) === String(formData.leaveTypeId)
+        );
+    }, [formData.leaveTypeId, leaveBalanceData]);
+
+    const availableBalance = selectedBalance ? Number(selectedBalance.availableBalance ?? 0) : null;
+    const requestedDuration = calculateDays();
+
+    // Soft error: duration exceeds the remaining available balance
+    const isInsufficientBalance = Boolean(
+        selectedBalance &&
+        requestedDuration > 0 &&
+        availableBalance !== null &&
+        requestedDuration > availableBalance
+    );
+
+    // 2. Check if the user already applied for an active leave on these dates (duplicate / overlap)
+    const myOverlappingLeave = React.useMemo(() => {
+        if (!formData.fromDate || !formData.toDate || !myLeavesData?.length) return null;
+
+        const start = moment(formData.fromDate).startOf("day");
+        const end = moment(formData.toDate).startOf("day");
+
+        return myLeavesData.find((leave: any) => {
+            const status = (leave.status || "").toLowerCase();
+            // Active requests: pending or approved
+            if (status !== "pending" && status !== "approved") return false;
+
+            const leaveStart = moment(leave.fromDate).startOf("day");
+            const leaveEnd = moment(leave.toDate).startOf("day");
+            return leaveStart.isSameOrBefore(end) && leaveEnd.isSameOrAfter(start);
+        });
+    }, [formData.fromDate, formData.toDate, myLeavesData]);
+
+    // 3. Team overlap check (informational)
     const overlappingLeaves = React.useMemo(() => {
-        if (!formData.fromDate || !formData.toDate || !teamLeavesData.length) return [];
+        if (!formData.fromDate || !formData.toDate || !teamLeavesData?.length) return [];
 
         const start = moment(formData.fromDate);
         const end = moment(formData.toDate);
@@ -53,6 +98,7 @@ export function LeaveRequestModal({
             return leaveStart.isSameOrBefore(end) && leaveEnd.isSameOrAfter(start);
         });
     }, [formData.fromDate, formData.toDate, teamLeavesData]);
+
     return (
         <PremiumModal
             isOpen={isOpen}
@@ -61,6 +107,59 @@ export function LeaveRequestModal({
             subtitle="Submit a new leave request for approval"
         >
             <form onSubmit={onSubmit} className="space-y-6">
+                {/* Server Error Soft Banner (e.g., from GraphQL exception or network error) */}
+                {serverError && (
+                    <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/30 flex items-start gap-3 text-destructive animate-in fade-in slide-in-from-top-1 duration-200">
+                        <XCircle className="w-5 h-5 shrink-0 mt-0.5 text-destructive" />
+                        <div className="space-y-1 flex-1">
+                            <p className="text-sm font-semibold text-destructive">Submission Failed</p>
+                            <p className="text-xs text-destructive/90 leading-relaxed">{serverError}</p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Soft Error: User Already Applied For These Dates */}
+                {myOverlappingLeave && (
+                    <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 text-amber-900 dark:text-amber-200 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                        <div className="space-y-1 flex-1">
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                                    Already Applied For These Dates
+                                </p>
+                                <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300">
+                                    {myOverlappingLeave.status}
+                                </span>
+                            </div>
+                            <p className="text-xs text-amber-800/90 dark:text-amber-200/90 leading-relaxed">
+                                You already have a <strong>{myOverlappingLeave.status}</strong> request for <strong>{myOverlappingLeave.leaveType?.name || 'Leave'}</strong> from{" "}
+                                <strong>{moment(myOverlappingLeave.fromDate).format("MMM DD, YYYY")}</strong> to{" "}
+                                <strong>{moment(myOverlappingLeave.toDate).format("MMM DD, YYYY")}</strong>. Overlapping leave requests are not permitted.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Soft Error: Insufficient Leave Balance */}
+                {isInsufficientBalance && (
+                    <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/25 flex items-start gap-3 text-destructive animate-in fade-in slide-in-from-top-1 duration-200">
+                        <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-destructive" />
+                        <div className="space-y-1.5 flex-1">
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm font-semibold text-destructive">
+                                    Insufficient Leave Balance
+                                </p>
+                                <span className="text-[11px] font-mono font-medium px-2 py-0.5 rounded bg-destructive/15 text-destructive">
+                                    Shortfall: {(requestedDuration - (availableBalance ?? 0)).toFixed(1)} day{(requestedDuration - (availableBalance ?? 0)) !== 1 ? 's' : ''}
+                                </span>
+                            </div>
+                            <p className="text-xs text-destructive/90 leading-relaxed">
+                                You are requesting <strong>{requestedDuration} day{requestedDuration !== 1 ? 's' : ''}</strong>, but only have <strong>{availableBalance ?? 0} day{(availableBalance ?? 0) !== 1 ? 's' : ''}</strong> available for <strong>{selectedBalance?.leaveType?.name || 'this category'}</strong>. Please adjust your dates or choose another leave category.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <FormSelect
                         label="Leave Type"
@@ -68,10 +167,10 @@ export function LeaveRequestModal({
                         onValueChange={(value) => setFormData({ ...formData, leaveTypeId: value })}
                         placeholder="Select leave type"
                         options={leaveBalanceData?.map((b: any) => ({
-                            label: `${b.leaveType.name} (${Number(b.availableBalance || 0)} days)`,
+                            label: `${b.leaveType.name} (${Number(b.availableBalance || 0)} days available)`,
                             value: b.leaveType.id
                         })) || []}
-                        error={errors.leaveTypeId}
+                        error={errors.leaveTypeId || (isInsufficientBalance ? `Exceeds available balance (${availableBalance} days)` : undefined)}
                     />
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -124,16 +223,42 @@ export function LeaveRequestModal({
                     </div>
                 )}
 
-                {calculateDays() > 0 && (
-                    <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 flex items-center justify-between">
+                {/* Duration Display Box with Live Balance Context */}
+                {requestedDuration > 0 && (
+                    <div className={cn(
+                        "p-4 rounded-xl border flex items-center justify-between transition-colors",
+                        isInsufficientBalance
+                            ? "bg-destructive/5 border-destructive/30"
+                            : "bg-primary/5 border-primary/20"
+                    )}>
                         <div className="space-y-0.5">
-                            <p className="text-sm text-muted-foreground">Duration</p>
-                            <p className="text-xl font-semibold tabular-nums">{calculateDays()} day{calculateDays() !== 1 ? 's' : ''}</p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-sm text-muted-foreground">Requested Duration</p>
+                                {selectedBalance && (
+                                    <span className={cn(
+                                        "text-xs font-medium",
+                                        isInsufficientBalance ? "text-destructive" : "text-muted-foreground"
+                                    )}>
+                                        • {availableBalance} days available
+                                    </span>
+                                )}
+                            </div>
+                            <p className={cn(
+                                "text-xl font-semibold tabular-nums",
+                                isInsufficientBalance ? "text-destructive" : "text-foreground"
+                            )}>
+                                {requestedDuration} day{requestedDuration !== 1 ? 's' : ''}
+                            </p>
                         </div>
-                        <CheckCircle2 className="w-6 h-6 text-primary/30" />
+                        {isInsufficientBalance ? (
+                            <AlertCircle className="w-6 h-6 text-destructive/70" />
+                        ) : (
+                            <CheckCircle2 className="w-6 h-6 text-primary/40" />
+                        )}
                     </div>
                 )}
 
+                {/* Team Overlap (Warning only) */}
                 {overlappingLeaves.length > 0 && (
                     <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
                         <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
@@ -174,9 +299,17 @@ export function LeaveRequestModal({
                     <Button variant="outline" type="button" onClick={onClose} className="h-9 rounded-md px-6 text-sm font-medium order-2 sm:order-1">
                         Cancel
                     </Button>
-                    <Button type="submit" className="h-9 rounded-md btn-primary px-6 text-sm font-medium order-1 sm:order-2" disabled={isLoading}>
+                    <Button
+                        type="submit"
+                        className="h-9 rounded-md btn-primary px-6 text-sm font-medium order-1 sm:order-2"
+                        disabled={isLoading || isInsufficientBalance || !!myOverlappingLeave}
+                    >
                         {isLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                        Request leave
+                        {isInsufficientBalance
+                            ? "Insufficient balance"
+                            : myOverlappingLeave
+                            ? "Leave already applied"
+                            : "Request leave"}
                     </Button>
                 </div>
             </form>

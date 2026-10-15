@@ -2,8 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { usePostComments, useFeedMutations } from '@/lib/graphql/feed/feedHooks';
-import { Loader2, ThumbsUp, Reply, Trash2, Heart, Edit2, Send, MoreHorizontal } from 'lucide-react';
+import { Loader2, ThumbsUp, Reply, Trash2, Heart, Edit2, Send, MoreHorizontal, X, Flag } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useUser } from '@/lib/api/hooks';
 import { toast } from 'sonner';
@@ -23,52 +31,28 @@ const flattenReplies = (replies: any[] = []): any[] => {
   }, []);
 };
 
-const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser }: any) => {
+const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser, onReply }: any) => {
   const { user } = useUser();
-  const [isReplying, setIsReplying] = useState(false);
   const [showAllReplies, setShowAllReplies] = useState(false);
-  const [replyContent, setReplyContent] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [displayContent, setDisplayContent] = useState(comment.content);
   const [editContent, setEditContent] = useState(comment.content);
   const [isOptimisticallyDeleted, setIsOptimisticallyDeleted] = useState(false);
-  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
   const isDeletingRef = useRef(false);
   const isEditingRef = useRef(false);
-  const isSubmittingReplyRef = useRef(false);
 
-  const { createComment, deleteComment, updateComment, toggleCommentLike } = useFeedMutations();
+  const { deleteComment, updateComment, toggleCommentLike, reportComment } = useFeedMutations();
 
   useEffect(() => {
     setDisplayContent(comment.content);
     setEditContent(comment.content);
   }, [comment.content]);
-
-  const handleReply = async () => {
-    if (!replyContent.trim() || isSubmittingReplyRef.current || isSubmittingReply) return;
-    isSubmittingReplyRef.current = true;
-    setIsSubmittingReply(true);
-
-    try {
-      await createComment({
-        variables: { postId, content: replyContent, parentId: comment.id },
-        refetchQueries: ['GetPostComments']
-      });
-      setIsReplying(false);
-      setReplyContent('');
-      toast.success('Reply posted');
-    } catch (e) {
-      toast.error('Failed to post reply');
-    } finally {
-      setTimeout(() => {
-        isSubmittingReplyRef.current = false;
-        setIsSubmittingReply(false);
-      }, 500);
-    }
-  };
 
   const handleLike = async () => {
     try {
@@ -135,21 +119,33 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser }: 
     }
   };
 
+  const handleReport = async () => {
+    if (!reportReason.trim()) {
+      toast.error('Please provide a reason for reporting');
+      return;
+    }
+    setIsSubmittingReport(true);
+    try {
+      await reportComment({
+        variables: { commentId: comment.id, reason: reportReason }
+      });
+      toast.success('Comment reported to admins');
+      setShowReportDialog(false);
+      setReportReason('');
+    } catch (e) {
+      toast.error('Failed to report comment');
+    } finally {
+      setIsSubmittingReport(false);
+    }
+  };
+
   if (isOptimisticallyDeleted) {
     return null;
   }
 
-  const toggleReplying = () => {
-    if (!isReplying && comment.author) {
-      const authorName = `${comment.author.firstName || ''} ${comment.author.lastName || ''}`.trim();
-      if (authorName && comment.author.id && !replyContent) {
-        setReplyContent(`<p><span data-type="mention" data-id="${comment.author.id}" data-label="${authorName}">@${authorName}</span>&nbsp;</p>`);
-      }
-    }
-    setIsReplying(!isReplying);
-  };
-
   const isOwner = user?.id?.toString() === comment.author?.id?.toString();
+  const isAdmin = (user?.role as string) === 'admin' || (user?.role as string) === 'superadmin' || user?.role === 'hr';
+  const canDelete = isOwner || isAdmin;
 
   // Format mentions to be bolded or colored
   const renderContent = (contentStr: string) => {
@@ -181,49 +177,62 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser }: 
   const allReplies = isTopLevel ? flattenReplies(comment.replies || []) : [];
 
   return (
-    <div className={`flex gap-2 sm:gap-3 mt-3 sm:mt-4 relative w-full`}>
+    <div className={`flex gap-2 sm:gap-3 mt-3 relative w-full`}>
       {/* Thread line connecting avatar to replies */}
       {isTopLevel && allReplies.length > 0 && (
-        <div className="absolute left-4 sm:left-5 top-10 sm:top-12 bottom-0 w-px bg-gray-200 dark:bg-gray-700" />
+        <div className="absolute left-4 sm:left-5 top-10 sm:top-12 bottom-0 w-px bg-border/60" />
       )}
       
       <Avatar 
-        className={`shrink-0 ${avatarSize} cursor-pointer hover:opacity-85 transition-opacity`}
+        className={`shrink-0 ${avatarSize} cursor-pointer hover:opacity-85 transition-opacity ring-1 ring-border/40`}
         onClick={() => comment.author?.id && onViewUser?.(comment.author.id.toString(), comment.author)}
         title="View profile card"
       >
         <AvatarImage src={resolveAvatarUrl(comment.author.profilePictureUrl)} className="object-cover" />
-        <AvatarFallback>{comment.author.firstName?.[0]}</AvatarFallback>
+        <AvatarFallback className="text-xs font-semibold">{comment.author.firstName?.[0]}</AvatarFallback>
       </Avatar>
       
       <div className="flex-1 min-w-0">
-        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 inline-block max-w-full">
-          <div className="flex items-center justify-between gap-2">
+        <div className="bg-muted/40 hover:bg-muted/60 dark:bg-muted/20 dark:hover:bg-muted/30 border border-border/30 rounded-2xl px-3.5 py-2.5 inline-block max-w-full transition-colors">
+          <div className="flex items-center justify-between gap-2.5">
             <span 
-              className="font-semibold text-xs sm:text-sm truncate cursor-pointer hover:underline"
+              className="font-semibold text-xs sm:text-sm text-foreground truncate cursor-pointer hover:text-primary transition-colors"
               onClick={() => comment.author?.id && onViewUser?.(comment.author.id.toString(), comment.author)}
             >
               {comment.author.firstName} {comment.author.lastName}
             </span>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-[10px] sm:text-xs text-gray-500 whitespace-nowrap">
+              <span className="text-[11px] text-muted-foreground whitespace-nowrap">
                 {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
               </span>
-              {isOwner && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger className="text-gray-400 hover:text-gray-600 focus:outline-none">
-                    <MoreHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setIsEditing(!isEditing)}>
+              <DropdownMenu>
+                <DropdownMenuTrigger className="text-muted-foreground hover:text-foreground p-0.5 rounded-full hover:bg-muted/80 transition-colors focus:outline-none cursor-pointer">
+                  <MoreHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {isOwner && (
+                    <DropdownMenuItem onClick={() => setIsEditing(!isEditing)} className="cursor-pointer">
+                      <Edit2 className="w-3.5 h-3.5 mr-2" />
                       Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleDelete} className="text-red-600">
+                  )}
+                  {!isOwner && (
+                    <DropdownMenuItem 
+                      onClick={() => setShowReportDialog(true)} 
+                      className="text-amber-600 dark:text-amber-400 focus:text-amber-600 cursor-pointer"
+                    >
+                      <Flag className="w-3.5 h-3.5 mr-2" />
+                      Report Comment
+                    </DropdownMenuItem>
+                  )}
+                  {canDelete && (
+                    <DropdownMenuItem onClick={handleDelete} className="text-red-600 focus:text-red-600 cursor-pointer">
+                      <Trash2 className="w-3.5 h-3.5 mr-2" />
                       Delete
                     </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           {isEditing ? (
@@ -232,7 +241,7 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser }: 
                 value={editContent}
                 onChange={(e: any) => setEditContent(e.target.value)}
                 placeholder="Edit your comment..."
-                className="w-full bg-white dark:bg-gray-900 border rounded-xl min-h-[40px] pt-1 text-sm"
+                className="w-full bg-background border border-border rounded-xl min-h-[40px] pt-1 text-sm text-foreground"
                 fetchMentions={fetchMentions}
               />
               <div className="flex gap-2 mt-2 justify-end">
@@ -242,67 +251,42 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser }: 
                     setIsEditing(false);
                   }} 
                   disabled={isSubmittingEdit}
-                  className="text-xs text-gray-500 hover:text-gray-700"
+                  className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={handleEdit} 
                   disabled={isSubmittingEdit}
-                  className="text-xs bg-primary text-white px-2 py-1 rounded disabled:opacity-50"
+                  className="text-xs bg-primary text-white px-3 py-1 rounded-md disabled:opacity-50 font-medium cursor-pointer"
                 >
                   {isSubmittingEdit ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </div>
           ) : (
-            <div className="text-xs sm:text-sm mt-1 text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words">
+            <div className="text-xs sm:text-sm mt-1 text-foreground/90 whitespace-pre-wrap break-words leading-relaxed">
               {renderContent(displayContent)}
             </div>
           )}
         </div>
         
-        <div className="flex items-center gap-4 mt-1 ml-1 sm:ml-2 text-xs font-medium text-gray-500">
+        <div className="flex items-center gap-3.5 mt-1.5 ml-2 text-xs font-medium text-muted-foreground">
           <button 
             onClick={handleLike}
-            className={`flex items-center gap-1 hover:text-red-500 transition-colors ${comment.hasLiked ? 'text-red-500' : ''}`}
+            className={`flex items-center gap-1 hover:text-rose-500 transition-colors cursor-pointer ${comment.hasLiked ? 'text-rose-500 font-semibold' : ''}`}
           >
             <Heart className={`w-3.5 h-3.5 ${comment.hasLiked ? 'fill-current' : ''}`} />
             {comment.likesCount > 0 && comment.likesCount}
           </button>
           
           <button 
-            onClick={toggleReplying}
-            className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-gray-300"
+            onClick={() => onReply?.(comment)}
+            className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer"
           >
             <Reply className="w-3.5 h-3.5" /> Reply
           </button>
         </div>
-
-        {isReplying && (
-          <div className="flex gap-2 mt-2 items-start relative w-full">
-            <Avatar className="h-6 w-6 sm:h-8 sm:w-8 mt-1 shrink-0">
-              <AvatarImage src={resolveAvatarUrl(user?.profilePictureUrl || (user as any)?.profilePicture)} className="object-cover" />
-              <AvatarFallback>{user?.firstName?.[0]}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 border rounded-2xl px-2 sm:px-3 py-1 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 min-h-[36px] sm:min-h-[40px] pt-1.5 sm:pt-2">
-              <MentionsInputWrapper
-                value={replyContent}
-                onChange={(e: any) => setReplyContent(e.target.value)}
-                placeholder="Write a reply..."
-                className="w-full h-full text-xs sm:text-sm"
-                fetchMentions={fetchMentions}
-              />
-            </div>
-            <button 
-              onClick={handleReply}
-              className="text-primary hover:text-primary/80 mt-1 sm:mt-2 p-1.5 bg-primary/10 rounded-full shrink-0 disabled:opacity-50"
-              disabled={!replyContent.trim() || isSubmittingReply}
-            >
-              {isSubmittingReply ? <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-            </button>
-          </div>
-        )}
 
         {isTopLevel && allReplies.length > 0 && (
           <div className="mt-2 flex flex-col gap-1 w-full">
@@ -314,6 +298,7 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser }: 
                 depth={1} 
                 fetchMentions={fetchMentions} 
                 onViewUser={onViewUser}
+                onReply={onReply}
               />
             ))}
             {!showAllReplies && allReplies.length > 2 && (
@@ -327,6 +312,37 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser }: 
             )}
           </div>
         )}
+      {/* Report Comment Dialog */}
+      <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+        <DialogContent className="p-6">
+          <DialogHeader>
+            <DialogTitle>Report Comment</DialogTitle>
+            <DialogDescription>
+              Help us understand why you are reporting this comment. Admins will review your report.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-2">
+            <label className="text-sm font-medium mb-1.5 block">Reason for reporting</label>
+            <textarea
+              className="w-full min-h-[80px] p-3 border rounded-md text-sm bg-muted/20 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+              placeholder="Spam, inappropriate content, harassment..."
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+            />
+          </div>
+
+          <DialogFooter className="mt-2">
+            <Button variant="outline" onClick={() => setShowReportDialog(false)} disabled={isSubmittingReport}>
+              Cancel
+            </Button>
+            <Button onClick={handleReport} disabled={isSubmittingReport || !reportReason.trim()}>
+              {isSubmittingReport ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
+              Submit Report
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </div>
     </div>
   );
@@ -346,6 +362,7 @@ export const CommentSection = ({
   const { comments: initialComments, loading, refetch, topLevelCommentsCount } = usePostComments(postId, !isExpanded);
   const [allComments, setAllComments] = useState<any[]>([]);
   const [content, setContent] = useState('');
+  const [replyingTo, setReplyingTo] = useState<{ id: string; authorName: string } | null>(null);
   const { createComment, isCreatingComment } = useFeedMutations();
   const { user } = useUser();
   const client = useApolloClient();
@@ -406,7 +423,10 @@ export const CommentSection = ({
     }
   };
 
-  if (!isExpanded || !mounted) return null;
+  const handleReplyClick = (targetComment: any) => {
+    const authorName = `${targetComment.author?.firstName || ''} ${targetComment.author?.lastName || ''}`.trim() || 'User';
+    setReplyingTo({ id: targetComment.id, authorName });
+  };
 
   const handleComment = async () => {
     if (!content.trim() || isSubmittingCommentRef.current || isSubmittingComment || isCreatingComment) return;
@@ -414,14 +434,16 @@ export const CommentSection = ({
     setIsSubmittingComment(true);
 
     const commentText = content;
+    const parentId = replyingTo?.id || null;
     setContent('');
+    setReplyingTo(null);
 
     try {
       await createComment({
-        variables: { postId, content: commentText },
+        variables: { postId, content: commentText, parentId },
         refetchQueries: ['GetPostComments']
       });
-      toast.success('Comment posted');
+      toast.success(parentId ? 'Reply posted' : 'Comment posted');
     } catch (e) {
       setContent(commentText);
       toast.error('Failed to post comment');
@@ -463,40 +485,17 @@ export const CommentSection = ({
       : false
   );
 
-  return (
-    <div className="border-t border-gray-100 dark:border-gray-800 pt-4 mt-4 animate-in fade-in slide-in-from-top-4 duration-300">
-      
-      {/* New Comment Input */}
-      <div className="flex gap-2 sm:gap-3 mb-4 sm:mb-6 items-start relative w-full">
-        <Avatar className="h-8 w-8 sm:h-10 sm:w-10 mt-1 shrink-0">
-          <AvatarImage src={resolveAvatarUrl(user?.profilePictureUrl || (user as any)?.profilePicture)} className="object-cover" />
-          <AvatarFallback>{user?.firstName?.[0] || 'U'}</AvatarFallback>
-        </Avatar>
-        <div className="flex-1 border rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 min-h-[40px] sm:min-h-[44px] relative group pr-12 sm:pr-14">
-          <MentionsInputWrapper
-            value={content}
-            onChange={(e: any) => setContent(e.target.value)}
-            placeholder="Write a comment..."
-            className="w-full h-full text-xs sm:text-sm pt-0.5 sm:pt-0"
-            fetchMentions={fetchMentions}
-          />
-          
-          <button 
-            disabled={!content.trim() || isSubmittingComment || isCreatingComment}
-            onClick={handleComment}
-            className="absolute right-2 sm:right-3 top-1.5 sm:top-2 text-primary hover:text-primary/80 disabled:opacity-50 p-1.5 sm:p-2 bg-primary/10 rounded-full shrink-0"
-          >
-            {(isSubmittingComment || isCreatingComment) ? <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-          </button>
-        </div>
-      </div>
+  if (!isExpanded || !mounted) return null;
 
+  return (
+    <div className="mt-3.5 pt-3 border-t border-border/30 animate-in fade-in-50 slide-in-from-top-1 duration-200">
+      {/* Comments List (Above Input, like Instagram) */}
       {loading && allComments.length === 0 ? (
         <div className="flex justify-center py-4">
-          <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2.5 mb-3.5">
           {allComments.map((comment: any) => (
             <CommentItem 
               key={comment.id} 
@@ -504,15 +503,16 @@ export const CommentSection = ({
               postId={postId} 
               fetchMentions={fetchMentions} 
               onViewUser={onViewUser}
+              onReply={handleReplyClick}
             />
           ))}
           
           {hasMoreComments && (
-            <div className="pt-2 pb-1">
+            <div className="pt-1.5 pb-0.5">
               <button
                 onClick={handleLoadMore}
                 disabled={fetchingMore}
-                className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 disabled:opacity-50"
+                className="text-xs font-semibold text-primary hover:underline flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >
                 {fetchingMore ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Load more comments'}
               </button>
@@ -520,6 +520,61 @@ export const CommentSection = ({
           )}
         </div>
       )}
+
+      {/* Main Comment & Reply Input (At bottom) */}
+      <div className="pt-1">
+        {replyingTo && (
+          <div className="flex items-center justify-between px-3 py-1.5 mb-2.5 bg-primary/10 border border-primary/20 rounded-xl text-xs text-foreground animate-in fade-in-50 duration-150">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Reply className="w-3.5 h-3.5 text-primary shrink-0" />
+              <span className="truncate">
+                Replying to <span className="font-semibold text-primary">@{replyingTo.authorName}</span>
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setReplyingTo(null)}
+              className="p-1 hover:text-foreground hover:bg-primary/20 rounded-full transition-colors cursor-pointer"
+              title="Cancel reply"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        <div className="flex gap-2.5 sm:gap-3 items-center relative w-full">
+          <Avatar className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 ring-1 ring-border/50">
+            <AvatarImage src={resolveAvatarUrl(user?.profilePictureUrl || (user as any)?.profilePicture)} className="object-cover" />
+            <AvatarFallback className="text-xs font-semibold">{user?.firstName?.[0] || 'U'}</AvatarFallback>
+          </Avatar>
+          <div className="flex-1 rounded-2xl px-3.5 py-1.5 sm:px-4 sm:py-2 bg-muted/40 dark:bg-muted/20 border border-border/50 hover:border-border/80 focus-within:border-primary/60 focus-within:bg-background focus-within:ring-2 focus-within:ring-primary/15 transition-all min-h-[42px] sm:min-h-[44px] relative group pr-11 sm:pr-12 flex items-center">
+            <MentionsInputWrapper
+              value={content}
+              onChange={(e: any) => setContent(e.target.value)}
+              placeholder={replyingTo ? `Reply to @${replyingTo.authorName}...` : "Write a comment..."}
+              className="w-full text-xs sm:text-sm text-foreground focus:outline-none"
+              fetchMentions={fetchMentions}
+            />
+            
+            <button 
+              disabled={!content.trim() || isSubmittingComment || isCreatingComment}
+              onClick={handleComment}
+              className={`absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all flex items-center justify-center cursor-pointer ${
+                content.trim() && !isSubmittingComment && !isCreatingComment 
+                  ? 'bg-primary text-white shadow-sm hover:bg-primary/90 hover:scale-105 active:scale-95' 
+                  : 'text-muted-foreground/30 bg-transparent cursor-not-allowed'
+              }`}
+              title="Send comment"
+            >
+              {(isSubmittingComment || isCreatingComment) ? (
+                <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin text-primary" />
+              ) : (
+                <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

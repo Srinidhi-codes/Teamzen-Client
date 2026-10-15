@@ -1,14 +1,17 @@
 import { gql } from "@apollo/client";
 
 export const CREATE_POST = gql`
-  mutation CreatePost($title: String!, $content: String!, $mediaB64: [String!]) {
-    createPost(title: $title, content: $content, mediaB64: $mediaB64) {
+  mutation CreatePost($title: String!, $content: String!, $mediaB64: [String!], $scheduledFor: String) {
+    createPost(title: $title, content: $content, mediaB64: $mediaB64, scheduledFor: $scheduledFor) {
       id
       title
       content
       mediaUrls
       likesCount
       commentsCount
+      viewsCount
+      scheduledFor
+      isScheduled
       createdAt
       hasLiked
       author {
@@ -96,3 +99,10 @@ export const REPORT_POST = gql`
     reportPost(postId: $postId, reason: $reason)
   }
 `;
+
+export const REPORT_COMMENT = gql`
+  mutation ReportComment($commentId: String!, $reason: String!) {
+    reportComment(commentId: $commentId, reason: $reason)
+  }
+`;
+

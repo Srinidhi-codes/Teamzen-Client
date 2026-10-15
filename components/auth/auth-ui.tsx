@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export const AUTH_INPUT_CLASS = "h-11 rounded-lg";
+export const AUTH_INPUT_CLASS =
+  "h-11 rounded-xl bg-background/80 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 focus:border-[#38ABB1] dark:focus:border-[#38ABB1] focus:ring-4 focus:ring-[#38ABB1]/15 backdrop-blur-sm shadow-xs transition-all text-sm placeholder:text-muted-foreground/50";
 
 export function AuthSubmitButton({
   children,
@@ -15,12 +16,13 @@ export function AuthSubmitButton({
       {...props}
       disabled={props.disabled || loading}
       className={cn(
-        "inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60",
+        "relative group overflow-hidden inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#38ABB1] hover:bg-[#30969c] active:bg-[#28848a] text-sm font-semibold text-white shadow-md shadow-[#38ABB1]/25 hover:shadow-lg hover:shadow-[#38ABB1]/35 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:shadow-none",
         className
       )}
     >
+      <span className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-      {children}
+      <span className="relative z-10 flex items-center justify-center gap-2">{children}</span>
     </button>
   );
 }
@@ -34,7 +36,7 @@ export function AuthGhostButton({
     <button
       {...props}
       className={cn(
-        "inline-flex h-11 w-full items-center justify-center rounded-lg text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+        "inline-flex h-11 w-full items-center justify-center rounded-xl text-sm font-medium text-muted-foreground transition-all hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-foreground",
         className
       )}
     >
@@ -45,10 +47,13 @@ export function AuthGhostButton({
 
 export function AuthDivider({ label = "Or continue with" }: { label?: string }) {
   return (
-    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-      <span className="h-px flex-1 bg-border" />
-      {label}
-      <span className="h-px flex-1 bg-border" />
+    <div className="relative flex items-center justify-center py-2 text-xs font-medium text-muted-foreground">
+      <div className="absolute inset-0 flex items-center">
+        <div className="w-full border-t border-slate-200 dark:border-slate-800" />
+      </div>
+      <span className="relative bg-card dark:bg-slate-900 px-3 py-0.5 rounded-full text-[11px] font-medium tracking-wide text-muted-foreground border border-slate-200/80 dark:border-slate-800 shadow-xs">
+        {label}
+      </span>
     </div>
   );
 }
@@ -63,9 +68,12 @@ export function AuthFooterLink({
   label: string;
 }) {
   return (
-    <p className="mt-8 text-center text-sm text-muted-foreground">
+    <p className="mt-6 text-center text-sm text-muted-foreground">
       {prompt}{" "}
-      <Link href={href} className="font-medium text-primary hover:underline">
+      <Link
+        href={href}
+        className="font-semibold text-[#38ABB1] dark:text-[#4cd1d7] hover:text-[#2d9399] dark:hover:text-[#6ae3e9] transition-colors underline-offset-4 hover:underline"
+      >
         {label}
       </Link>
     </p>
@@ -145,3 +153,20 @@ export function GoogleMark() {
     </svg>
   );
 }
+
+export function AppleIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.99.6-2.61 1.33-.55.63-.99 1.68-.86 2.7.99.08 2.02-.49 2.55-1.18z"/>
+    </svg>
+  );
+}
+
+export function FacebookIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="#1877F2">
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+    </svg>
+  );
+}
+

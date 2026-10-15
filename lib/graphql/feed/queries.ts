@@ -11,6 +11,8 @@ export const GET_POSTS = gql`
         likesCount
         commentsCount
         viewsCount
+        scheduledFor
+        isScheduled
         createdAt
         hasLiked
         likers {

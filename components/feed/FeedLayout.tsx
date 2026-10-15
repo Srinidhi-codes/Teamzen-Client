@@ -10,11 +10,21 @@ import { useNotifications } from '@/lib/hooks/useNotifications';
 export const FeedLayout = () => {
   const { posts, loading, error, fetchMore, refetch, total } = useFeedPosts(1, 10);
   const [showFab, setShowFab] = useState(false);
+  const refetchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   useNotifications((msg) => {
     if (msg?.level === 'feed_update') {
-      // Just a lightweight refetch when someone interacts with the feed
-      refetch();
+      // Do NOT refetch on view updates — views update in-place without triggering feed requests
+      if (msg?.action === 'post_viewed' || msg?.action === 'view_post') {
+        return;
+      }
+      // Debounce refetches so rapid events don't trigger multiple simultaneous API calls
+      if (refetchTimeoutRef.current) {
+        clearTimeout(refetchTimeoutRef.current);
+      }
+      refetchTimeoutRef.current = setTimeout(() => {
+        refetch();
+      }, 500);
     }
   }, { silent: true });
 

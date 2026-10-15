@@ -42,8 +42,8 @@ export function ForgotPasswordForm() {
       description={
         isSent ? "We've sent a reset link to your email." : "We'll email you a reset link."
       }
-      sideImage={AuthImages.security}
-      sideImageAlt="Password reset security illustration"
+      sideImage={AuthImages.dashboard}
+      sideImageAlt="Teamzen workforce analytics and payroll dashboard"
     >
       {!isSent ? (
         <form className="space-y-5" onSubmit={handleSubmit}>

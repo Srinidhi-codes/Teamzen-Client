@@ -11,7 +11,10 @@ import {
   EyeOff,
   KeyRound,
   ShieldCheck,
+  Sparkles,
+  Phone,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Input } from "../ui/input";
 import { AuthShell } from "./AuthShell";
 import { cn } from "@/lib/utils";
@@ -22,6 +25,8 @@ import {
   AuthFooterLink,
   AuthSubmitButton,
   GoogleMark,
+  AppleIcon,
+  FacebookIcon,
 } from "./auth-ui";
 import ConfirmationModal from "../common/ConfirmationModal";
 
@@ -265,53 +270,48 @@ export default function LoginForm() {
   return (
     <>
     <AuthShell
-      title={step === "totp" ? "Two-factor authentication" : "Sign in"}
+      title={step === "totp" ? "Two-Factor Authentication" : "Login to Your Account"}
       description={
         step === "totp"
           ? "Enter the 6-digit code from your authenticator app."
-          : "Use your work email to continue."
+          : undefined
       }
-      sideImage={step === "totp" ? AuthImages.security : AuthImages.employee}
-      sideImageAlt={
-        step === "totp"
-          ? "Secure authentication illustration"
-          : "Teamzen employee workspace illustration"
-      }
+      sideImage={AuthImages.dashboard}
+      sideImageAlt="Teamzen workforce analytics and payroll dashboard"
     >
       {step === "totp" ? (
         <form onSubmit={handleVerifyTotp} className="space-y-5">
-          <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/40 p-3">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-            <p className="text-sm text-muted-foreground">
-              Open your authenticator app and enter the current code for Teamzen.
+          <div className="flex items-start gap-3 rounded-2xl border border-[#38ABB1]/20 bg-[#38ABB1]/5 p-4 backdrop-blur-sm">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#38ABB1] dark:text-[#4cd1d7]" />
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Open your authenticator app and enter the active 6-digit verification code for your Teamzen account.
             </p>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground" htmlFor="totp-code">
-              Security code
+            <label className="text-xs font-semibold text-foreground/90 block" htmlFor="totp-code">
+              Security Code <span className="text-red-500">*</span>
             </label>
-            <Input
+            <input
               id="totp-code"
               name="code"
               type="text"
               required
               maxLength={6}
-              icon={<KeyRound className="h-4 w-4" />}
               placeholder="000000"
               value={totpCode}
               onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
-              className={cn(AUTH_INPUT_CLASS, "text-center font-mono tracking-widest")}
+              className="w-full h-12 rounded-xl sm:rounded-2xl bg-[#f0f2f5] dark:bg-slate-800/80 border-2 border-transparent focus:border-[#38ABB1] dark:focus:border-[#38ABB1] focus:bg-white dark:focus:bg-slate-900 text-center font-mono text-lg tracking-widest text-foreground placeholder:text-muted-foreground/60 outline-none transition-all duration-200"
             />
           </div>
 
-          <AuthSubmitButton
+          <button
             type="submit"
             disabled={isRedirecting || verifyTotp.isPending}
-            loading={isRedirecting || verifyTotp.isPending}
+            className="w-full h-12 rounded-xl sm:rounded-2xl bg-[#101726] hover:bg-[#1c273c] text-white dark:bg-[#38ABB1] dark:hover:bg-[#2e949a] dark:text-slate-950 font-bold text-sm sm:text-base shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
           >
-            {isRedirecting ? "Redirecting…" : "Verify and sign in"}
-          </AuthSubmitButton>
+            {isRedirecting ? "Redirecting…" : verifyTotp.isPending ? "Verifying…" : "Verify and Sign In"}
+          </button>
 
           <button
             type="button"
@@ -319,167 +319,148 @@ export default function LoginForm() {
               setStep("login");
               setTotpCode("");
             }}
-            className="w-full text-center text-sm text-muted-foreground hover:text-foreground"
+            className="w-full text-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2 cursor-pointer"
           >
-            Back to sign in
+            ← Back to sign in
           </button>
         </form>
       ) : (
         <>
-          {step === "login" && (
-            <div className="mb-6 grid grid-cols-2 gap-1 rounded-lg border border-border bg-muted/40 p-1">
-              <button
-                type="button"
-                onClick={() => setAuthType("password")}
-                className={cn(
-                  "rounded-md px-3 py-2.5 text-sm transition-colors",
-                  authType === "password"
-                    ? "bg-card font-medium text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Password
-              </button>
-              <button
-                type="button"
-                onClick={() => setAuthType("otp")}
-                className={cn(
-                  "rounded-md px-3 py-2.5 text-sm transition-colors",
-                  authType === "otp"
-                    ? "bg-card font-medium text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Email OTP
-              </button>
-            </div>
-          )}
-
-          <form className="space-y-5" onSubmit={handleSubmit}>
+          {/* Main Login Form matching reference UI */}
+          <form className="space-y-4" onSubmit={handleSubmit}>
             {step === "login" ? (
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground" htmlFor="email-address">
-                    Email
+                {/* Field 1: Email, Username or User ID */}
+                <div className="space-y-1.5">
+                  <label className="text-xs sm:text-sm font-semibold text-foreground/90 block" htmlFor="email-address">
+                    Email <span className="text-red-500">*</span>
                   </label>
-                  <Input
+                  <input
                     id="email-address"
                     name="email"
-                    type="email"
+                    type="text"
                     required
-                    icon={<Mail className="h-4 w-4" />}
-                    placeholder="you@company.com"
+                    placeholder="Enter Email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={AUTH_INPUT_CLASS}
+                    className="w-full h-12 rounded-xl sm:rounded-2xl bg-[#f0f2f5] dark:bg-slate-800/80 border-2 border-transparent focus:border-[#38ABB1] dark:focus:border-[#38ABB1] focus:bg-white dark:focus:bg-slate-900 px-4 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all duration-200"
                   />
                 </div>
 
-                {authType === "password" && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <label className="text-sm font-medium text-foreground" htmlFor="password">
-                        Password
-                      </label>
-                      <Link
-                        href="/forgot-password"
-                        prefetch={false}
-                        className="text-sm font-medium text-primary hover:underline"
-                      >
-                        Forgot password?
-                      </Link>
-                    </div>
+                {/* Field 2: Password or OTP notification */}
+                {authType === "password" ? (
+                  <div className="space-y-1.5">
+                    <label className="text-xs sm:text-sm font-semibold text-foreground/90 block" htmlFor="password">
+                      Password <span className="text-red-500">*</span>
+                    </label>
                     <div className="relative">
-                      <Input
+                      <input
                         id="password"
                         name="password"
                         type={showPassword ? "text" : "password"}
                         required
-                        icon={<Lock className="h-4 w-4" />}
-                        placeholder="Enter your password"
+                        placeholder="Enter Password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className={cn(AUTH_INPUT_CLASS, "pr-10")}
+                        className="w-full h-12 rounded-xl sm:rounded-2xl bg-[#f0f2f5] dark:bg-slate-800/80 border-2 border-transparent focus:border-[#38ABB1] dark:focus:border-[#38ABB1] focus:bg-white dark:focus:bg-slate-900 px-4 pr-12 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all duration-200"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                        className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer"
                         aria-label={showPassword ? "Hide password" : "Show password"}
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
                   </div>
+                ) : (
+                  <div className="rounded-xl border border-[#38ABB1]/30 bg-[#38ABB1]/5 p-3 text-xs text-muted-foreground flex items-center justify-between">
+                    <span>Signing in via One-Time Passcode (OTP).</span>
+                    <button
+                      type="button"
+                      onClick={() => setAuthType("password")}
+                      className="text-xs font-semibold text-[#38ABB1] hover:underline cursor-pointer"
+                    >
+                      Use Password
+                    </button>
+                  </div>
                 )}
               </div>
             ) : (
               <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  We sent a 6-digit code to <span className="font-medium text-foreground">{email}</span>
-                </p>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground" htmlFor="otp-code">
-                    Verification code
+                <div className="rounded-xl border border-[#38ABB1]/20 bg-[#38ABB1]/5 p-3 text-xs text-muted-foreground">
+                  We sent a 6-digit one-time passcode to{" "}
+                  <span className="font-semibold text-foreground">{email}</span>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs sm:text-sm font-semibold text-foreground/90 block" htmlFor="otp-code">
+                    Verification Code <span className="text-red-500">*</span>
                   </label>
-                  <Input
+                  <input
                     id="otp-code"
                     name="otp"
                     type="text"
                     required
                     maxLength={6}
-                    icon={<KeyRound className="h-4 w-4" />}
                     placeholder="000000"
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                    className={cn(AUTH_INPUT_CLASS, "text-center font-mono tracking-widest")}
+                    className="w-full h-12 rounded-xl sm:rounded-2xl bg-[#f0f2f5] dark:bg-slate-800/80 border-2 border-transparent focus:border-[#38ABB1] dark:focus:border-[#38ABB1] focus:bg-white dark:focus:bg-slate-900 text-center font-mono text-lg tracking-widest text-foreground placeholder:text-muted-foreground/60 outline-none transition-all duration-200"
                   />
                 </div>
-                <div className="text-center text-sm">
+                <div className="text-center text-xs sm:text-sm">
                   {countdown > 0 ? (
                     <span className="text-muted-foreground">Resend code in {countdown}s</span>
                   ) : (
                     <button
                       type="button"
                       onClick={handleResendOtp}
-                      className="font-medium text-primary hover:underline"
+                      className="font-semibold text-[#38ABB1] dark:text-[#4cd1d7] hover:underline cursor-pointer"
                     >
-                      Resend code
+                      Resend new code
                     </button>
                   )}
                 </div>
               </div>
             )}
 
+            {/* Checkbox and Forgot Password Row */}
             {step === "login" && (
-              <label className="flex cursor-pointer items-center gap-2.5">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 rounded border-border text-primary accent-primary"
-                />
-                <span className="text-sm text-muted-foreground">Remember me</span>
-              </label>
+              <div className="flex items-center justify-between pt-1">
+                <label className="flex cursor-pointer items-center gap-2 select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-[#38ABB1] focus:ring-[#38ABB1] accent-[#38ABB1] cursor-pointer"
+                  />
+                  <span className="text-xs sm:text-sm font-medium text-foreground/80">
+                    Remember me on this device
+                  </span>
+                </label>
+                {authType === "password" && (
+                  <Link
+                    href="/forgot-password"
+                    prefetch={false}
+                    className="text-xs sm:text-sm font-semibold text-[#38ABB1] dark:text-[#4cd1d7] hover:underline transition-colors"
+                  >
+                    Forgot Your Password?
+                  </Link>
+                )}
+              </div>
             )}
 
-            <AuthSubmitButton
-              type="submit"
-              disabled={
-                isRedirecting ||
-                login.isPending ||
-                requestOtp.isPending ||
-                verifyOtp.isPending
-              }
-              loading={
-                isRedirecting ||
-                login.isPending ||
-                requestOtp.isPending ||
-                verifyOtp.isPending
-              }
-            >
-              {submitLabel()}
-            </AuthSubmitButton>
+            {/* Primary Action Button: Log in */}
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={isRedirecting || login.isPending || requestOtp.isPending || verifyOtp.isPending}
+                className="w-full h-12 rounded-xl sm:rounded-2xl bg-[#38ABB1] hover:bg-[#2e949a] text-white shadow-lg shadow-[#38ABB1]/25 dark:bg-[#38ABB1] dark:hover:bg-[#2e949a] dark:text-slate-950 font-bold text-sm sm:text-base transition-all duration-200 active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {submitLabel() === "Sign in" ? "Log in" : submitLabel()}
+              </button>
+            </div>
 
             {step === "otp_code" && (
               <button
@@ -488,30 +469,71 @@ export default function LoginForm() {
                   setStep("login");
                   setOtpCode("");
                 }}
-                className="w-full text-center text-sm text-muted-foreground hover:text-foreground"
+                className="w-full text-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors pt-1 cursor-pointer"
               >
-                Change email
+                ← Use different email
               </button>
             )}
           </form>
 
+          {/* Sign up prompt */}
           {step === "login" && (
-            <div className="mt-6 space-y-4">
-              <AuthDivider />
-              <div className="relative h-11 w-full overflow-hidden rounded-lg border border-border bg-white">
-                <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center gap-2.5 text-sm font-medium text-slate-800">
-                  <GoogleMark />
-                  Sign in with Google
+            <div className="mt-3 text-center">
+              <p className="text-xs sm:text-sm text-foreground/80 font-medium">
+                Dont Have an Account ?{" "}
+                <Link
+                  href="/register"
+                  className="font-semibold text-[#38ABB1] dark:text-[#4cd1d7] hover:underline ml-1"
+                >
+                  Sign Up
+                </Link>
+              </p>
+            </div>
+          )}
+
+          {/* Or login with Divider */}
+          {step === "login" && (
+            <div className="mt-5 space-y-4">
+              <div className="relative flex items-center justify-center text-xs text-muted-foreground">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-200 dark:border-slate-800" />
                 </div>
+                <span className="relative bg-white dark:bg-[#0d1622] px-3 text-xs text-muted-foreground font-medium">
+                  Or login with
+                </span>
+              </div>
+
+              {/* 4 Circular Social / SSO Buttons */}
+              <div className="flex items-center justify-center gap-4 py-1">
+                {/* Google Button */}
                 <div
-                  id="google-signin-btn"
-                  className="absolute inset-0 z-10 flex items-center justify-center opacity-[0.02]"
-                />
+                  className="relative h-11 w-11 rounded-full border border-slate-200/90 dark:border-slate-700/80 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-center shadow-xs hover:border-[#38ABB1] hover:scale-105 transition-all cursor-pointer group overflow-hidden"
+                  title="Sign in with Google"
+                >
+                  <GoogleMark />
+                  <div
+                    id="google-signin-btn"
+                    className="absolute inset-0 z-10 opacity-[0.01] cursor-pointer overflow-hidden scale-150"
+                  />
+                </div>
               </div>
             </div>
           )}
 
-          <AuthFooterLink prompt="New here?" href="/register" label="Create an account" />
+          {/* Legal and Copyright Footer */}
+          <div className="mt-6 pt-4 text-center space-y-1 text-[11px] text-muted-foreground border-t border-slate-100 dark:border-slate-800/80">
+            <p className="leading-tight">
+              By Continuing you Agree to our{" "}
+              <Link href="/terms" className="text-[#38ABB1] hover:underline font-medium">Terms &amp; Conditions</Link>,{" "}
+              <Link href="/privacy" className="text-[#38ABB1] hover:underline font-medium">Privacy Policy</Link>, and{" "}
+              <Link href="/cookies" className="text-[#38ABB1] hover:underline font-medium">Cookies Policy</Link>.
+            </p>
+            <p className="text-[10px] text-muted-foreground/70">
+              © {new Date().getFullYear()} Teamzen. All rights reserved.{" "}
+              <Link href="/terms" className="hover:underline ml-1">Terms &amp; Conditions</Link>{" "}
+              <Link href="/privacy" className="hover:underline ml-1">Privacy Policy</Link>
+            </p>
+          </div>
         </>
       )}
     </AuthShell>
