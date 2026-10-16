@@ -151,11 +151,11 @@ export function NotificationBell() {
             <DropdownMenuTrigger asChild>
                 <button
                     type="button"
-                    className="relative flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 bg-muted/20 text-muted-foreground transition-all hover:bg-muted/60 hover:text-foreground hover:border-border cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                     aria-label="Notifications"
                 >
                     {unreadCount > 0 ? (
-                        <BellRing className={cn("h-4 w-4 text-primary", "animate-pulse")} />
+                        <BellRing className="h-4 w-4 text-primary origin-top animate-bell-ring" />
                     ) : (
                         <Bell className="h-4 w-4" />
                     )}

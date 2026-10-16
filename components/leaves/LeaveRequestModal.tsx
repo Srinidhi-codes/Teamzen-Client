@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { PremiumModal } from "@/components/common/PremiumModal";
 import { cn } from "@/lib/utils";
+import { useStore } from "@/lib/store/useStore";
 
 interface LeaveRequestModalProps {
     isOpen: boolean;
@@ -48,6 +49,57 @@ export function LeaveRequestModal({
     myLeavesData = [],
     serverError,
 }: LeaveRequestModalProps) {
+    const { user } = useStore();
+
+    // Weekend days according to organization setting (0: Mon ... 5: Sat, 6: Sun). Defaults to Saturday & Sunday [5, 6].
+    const orgWeekendDays: number[] = React.useMemo(() => {
+        const raw = user?.organization?.weekendDays;
+        if (Array.isArray(raw) && raw.length > 0) {
+            return raw;
+        }
+        return [5, 6];
+    }, [user?.organization?.weekendDays]);
+
+    // Analyze if the selected range touches or falls entirely on weekends
+    const weekendAnalysis = React.useMemo(() => {
+        if (!formData.fromDate || !formData.toDate) {
+            return { isAllWeekend: false, hasWeekend: false, weekendDaysCount: 0, weekendDayNames: [] as string[], totalDays: 0 };
+        }
+        const from = moment(formData.fromDate).startOf("day");
+        const to = moment(formData.toDate).startOf("day");
+        if (to.isBefore(from)) {
+            return { isAllWeekend: false, hasWeekend: false, weekendDaysCount: 0, weekendDayNames: [], totalDays: 0 };
+        }
+
+        const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+        let totalDays = 0;
+        let weekendCount = 0;
+        const weekendNamesSet = new Set<string>();
+
+        const curr = from.clone();
+        while (curr.isSameOrBefore(to)) {
+            totalDays++;
+            const pyWeekday = curr.isoWeekday() - 1; // 0=Mon ... 5=Sat, 6=Sun
+            if (orgWeekendDays.includes(pyWeekday)) {
+                weekendCount++;
+                weekendNamesSet.add(DAY_NAMES[pyWeekday] || curr.format("dddd"));
+            }
+            curr.add(1, "days");
+        }
+
+        const isAllWeekend = totalDays > 0 && weekendCount === totalDays;
+        const hasWeekend = weekendCount > 0;
+        const weekendDayNames = Array.from(weekendNamesSet);
+
+        return {
+            isAllWeekend,
+            hasWeekend,
+            weekendDaysCount: weekendCount,
+            weekendDayNames,
+            totalDays,
+        };
+    }, [formData.fromDate, formData.toDate, orgWeekendDays]);
+
     // 1. Balance calculations & soft error check
     const selectedBalance = React.useMemo(() => {
         if (!formData.leaveTypeId || !leaveBalanceData?.length) return null;
@@ -160,6 +212,26 @@ export function LeaveRequestModal({
                     </div>
                 )}
 
+                {/* Soft Warning: Selected Dates Fall Entirely on Weekend */}
+                {weekendAnalysis.isAllWeekend && (
+                    <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 text-amber-900 dark:text-amber-200 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                        <div className="space-y-1 flex-1">
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                                    Weekend Selected ({weekendAnalysis.weekendDayNames.join(" & ")})
+                                </p>
+                                <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300">
+                                    Weekly Off
+                                </span>
+                            </div>
+                            <p className="text-xs text-amber-800/90 dark:text-amber-200/90 leading-relaxed">
+                                The selected date{weekendAnalysis.totalDays > 1 ? "s fall" : " falls"} on your organization's non-working weekend ({weekendAnalysis.weekendDayNames.join(", ")}). You do not need to apply for leave on weekly offs.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <FormSelect
                         label="Leave Type"
@@ -249,6 +321,12 @@ export function LeaveRequestModal({
                             )}>
                                 {requestedDuration} day{requestedDuration !== 1 ? 's' : ''}
                             </p>
+                            {weekendAnalysis.hasWeekend && (
+                                <p className="text-xs text-muted-foreground pt-1 flex items-center gap-1.5">
+                                    <Info className="w-3.5 h-3.5 text-primary shrink-0" />
+                                    Excludes {weekendAnalysis.weekendDaysCount} weekend day{weekendAnalysis.weekendDaysCount !== 1 ? 's' : ''} ({weekendAnalysis.weekendDayNames.join(", ")}) per policy
+                                </p>
+                            )}
                         </div>
                         {isInsufficientBalance ? (
                             <AlertCircle className="w-6 h-6 text-destructive/70" />
@@ -302,13 +380,15 @@ export function LeaveRequestModal({
                     <Button
                         type="submit"
                         className="h-9 rounded-md btn-primary px-6 text-sm font-medium order-1 sm:order-2"
-                        disabled={isLoading || isInsufficientBalance || !!myOverlappingLeave}
+                        disabled={isLoading || isInsufficientBalance || !!myOverlappingLeave || weekendAnalysis.isAllWeekend}
                     >
                         {isLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                         {isInsufficientBalance
                             ? "Insufficient balance"
                             : myOverlappingLeave
                             ? "Leave already applied"
+                            : weekendAnalysis.isAllWeekend
+                            ? "Weekend dates selected"
                             : "Request leave"}
                     </Button>
                 </div>

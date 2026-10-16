@@ -871,6 +871,8 @@ export default function AttendancePage() {
                       radiusMeters={radiusMeters}
                       employeeName={user?.firstName || "You"}
                       officeName={office.name || "Office"}
+                      distanceMeters={activeDistanceMeters}
+                      isWithin={isWithin}
                     />
                   ) : (
                     <div className="h-[220px] w-full bg-muted/20 border border-border/50 rounded-xl flex flex-col items-center justify-center text-sm text-muted-foreground gap-2">

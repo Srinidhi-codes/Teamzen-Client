@@ -327,60 +327,69 @@ export default function LoginForm() {
       ) : (
         <>
           {/* Main Login Form matching reference UI */}
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit}>
             {step === "login" ? (
-              <div className="space-y-4">
+              <div className="space-y-4 sm:space-y-5">
                 {/* Field 1: Email, Username or User ID */}
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="text-xs sm:text-sm font-semibold text-foreground/90 block" htmlFor="email-address">
-                    Email <span className="text-red-500">*</span>
+                    Email or Username <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="email-address"
                     name="email"
                     type="text"
                     required
-                    placeholder="Enter Email"
+                    placeholder="Enter your email or username"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full h-12 rounded-xl sm:rounded-2xl bg-[#f0f2f5] dark:bg-slate-800/80 border-2 border-transparent focus:border-[#38ABB1] dark:focus:border-[#38ABB1] focus:bg-white dark:focus:bg-slate-900 px-4 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all duration-200"
+                    className="w-full h-13 sm:h-14 rounded-xl sm:rounded-2xl bg-[#f0f2f5] dark:bg-slate-800/80 border-2 border-transparent focus:border-[#38ABB1] dark:focus:border-[#38ABB1] focus:bg-white dark:focus:bg-slate-900 px-4 sm:px-5 text-sm sm:text-base text-foreground placeholder:text-muted-foreground/60 outline-none transition-all duration-200 shadow-xs"
                   />
                 </div>
 
                 {/* Field 2: Password or OTP notification */}
                 {authType === "password" ? (
-                  <div className="space-y-1.5">
-                    <label className="text-xs sm:text-sm font-semibold text-foreground/90 block" htmlFor="password">
-                      Password <span className="text-red-500">*</span>
-                    </label>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs sm:text-sm font-semibold text-foreground/90 block" htmlFor="password">
+                        Password <span className="text-red-500">*</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setAuthType("otp")}
+                        className="text-xs font-semibold text-[#38ABB1] dark:text-[#4cd1d7] hover:underline cursor-pointer"
+                      >
+                        Sign in with OTP
+                      </button>
+                    </div>
                     <div className="relative">
                       <input
                         id="password"
                         name="password"
                         type={showPassword ? "text" : "password"}
                         required
-                        placeholder="Enter Password"
+                        placeholder="Enter your password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full h-12 rounded-xl sm:rounded-2xl bg-[#f0f2f5] dark:bg-slate-800/80 border-2 border-transparent focus:border-[#38ABB1] dark:focus:border-[#38ABB1] focus:bg-white dark:focus:bg-slate-900 px-4 pr-12 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all duration-200"
+                        className="w-full h-13 sm:h-14 rounded-xl sm:rounded-2xl bg-[#f0f2f5] dark:bg-slate-800/80 border-2 border-transparent focus:border-[#38ABB1] dark:focus:border-[#38ABB1] focus:bg-white dark:focus:bg-slate-900 px-4 sm:px-5 pr-12 text-sm sm:text-base text-foreground placeholder:text-muted-foreground/60 outline-none transition-all duration-200 shadow-xs"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer"
+                        className="absolute inset-y-0 right-0 flex items-center pr-4 text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer"
                         aria-label={showPassword ? "Hide password" : "Show password"}
                       >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-[#38ABB1]/30 bg-[#38ABB1]/5 p-3 text-xs text-muted-foreground flex items-center justify-between">
+                  <div className="rounded-2xl border border-[#38ABB1]/30 bg-[#38ABB1]/5 p-4 text-xs sm:text-sm text-muted-foreground flex items-center justify-between">
                     <span>Signing in via One-Time Passcode (OTP).</span>
                     <button
                       type="button"
                       onClick={() => setAuthType("password")}
-                      className="text-xs font-semibold text-[#38ABB1] hover:underline cursor-pointer"
+                      className="font-semibold text-[#38ABB1] hover:underline cursor-pointer"
                     >
                       Use Password
                     </button>
@@ -389,11 +398,11 @@ export default function LoginForm() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="rounded-xl border border-[#38ABB1]/20 bg-[#38ABB1]/5 p-3 text-xs text-muted-foreground">
+                <div className="rounded-2xl border border-[#38ABB1]/20 bg-[#38ABB1]/5 p-4 text-xs sm:text-sm text-muted-foreground">
                   We sent a 6-digit one-time passcode to{" "}
                   <span className="font-semibold text-foreground">{email}</span>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="text-xs sm:text-sm font-semibold text-foreground/90 block" htmlFor="otp-code">
                     Verification Code <span className="text-red-500">*</span>
                   </label>
@@ -406,7 +415,7 @@ export default function LoginForm() {
                     placeholder="000000"
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                    className="w-full h-12 rounded-xl sm:rounded-2xl bg-[#f0f2f5] dark:bg-slate-800/80 border-2 border-transparent focus:border-[#38ABB1] dark:focus:border-[#38ABB1] focus:bg-white dark:focus:bg-slate-900 text-center font-mono text-lg tracking-widest text-foreground placeholder:text-muted-foreground/60 outline-none transition-all duration-200"
+                    className="w-full h-13 sm:h-14 rounded-xl sm:rounded-2xl bg-[#f0f2f5] dark:bg-slate-800/80 border-2 border-transparent focus:border-[#38ABB1] dark:focus:border-[#38ABB1] focus:bg-white dark:focus:bg-slate-900 text-center font-mono text-xl tracking-widest text-foreground placeholder:text-muted-foreground/60 outline-none transition-all duration-200"
                   />
                 </div>
                 <div className="text-center text-xs sm:text-sm">
@@ -428,7 +437,7 @@ export default function LoginForm() {
             {/* Checkbox and Forgot Password Row */}
             {step === "login" && (
               <div className="flex items-center justify-between pt-1">
-                <label className="flex cursor-pointer items-center gap-2 select-none">
+                <label className="flex cursor-pointer items-center gap-2.5 select-none">
                   <input
                     type="checkbox"
                     checked={rememberMe}
@@ -456,7 +465,7 @@ export default function LoginForm() {
               <button
                 type="submit"
                 disabled={isRedirecting || login.isPending || requestOtp.isPending || verifyOtp.isPending}
-                className="w-full h-12 rounded-xl sm:rounded-2xl bg-[#38ABB1] hover:bg-[#2e949a] text-white shadow-lg shadow-[#38ABB1]/25 dark:bg-[#38ABB1] dark:hover:bg-[#2e949a] dark:text-slate-950 font-bold text-sm sm:text-base transition-all duration-200 active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full h-13 sm:h-14 rounded-xl sm:rounded-2xl bg-[#38ABB1] hover:bg-[#2e949a] text-white shadow-lg shadow-[#38ABB1]/30 dark:bg-[#38ABB1] dark:hover:bg-[#2e949a] dark:text-slate-950 font-bold text-base sm:text-lg transition-all duration-200 active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
               >
                 {submitLabel() === "Sign in" ? "Log in" : submitLabel()}
               </button>
@@ -478,14 +487,14 @@ export default function LoginForm() {
 
           {/* Sign up prompt */}
           {step === "login" && (
-            <div className="mt-3 text-center">
+            <div className="mt-4 sm:mt-5 text-center">
               <p className="text-xs sm:text-sm text-foreground/80 font-medium">
-                Dont Have an Account ?{" "}
+                Don&apos;t have an account?{" "}
                 <Link
                   href="/register"
-                  className="font-semibold text-[#38ABB1] dark:text-[#4cd1d7] hover:underline ml-1"
+                  className="font-bold text-[#38ABB1] dark:text-[#4cd1d7] hover:underline ml-1"
                 >
-                  Sign Up
+                  Create an account
                 </Link>
               </p>
             </div>
@@ -493,21 +502,21 @@ export default function LoginForm() {
 
           {/* Or login with Divider */}
           {step === "login" && (
-            <div className="mt-5 space-y-4">
+            <div className="mt-6 sm:mt-7 space-y-4">
               <div className="relative flex items-center justify-center text-xs text-muted-foreground">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-slate-200 dark:border-slate-800" />
                 </div>
-                <span className="relative bg-white dark:bg-[#0d1622] px-3 text-xs text-muted-foreground font-medium">
-                  Or login with
+                <span className="relative bg-white dark:bg-[#0d1622] px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
+                  Or continue with
                 </span>
               </div>
 
-              {/* 4 Circular Social / SSO Buttons */}
-              <div className="flex items-center justify-center gap-4 py-1">
+              {/* Social / SSO Buttons */}
+              <div className="flex items-center justify-center gap-3.5 py-1">
                 {/* Google Button */}
                 <div
-                  className="relative h-11 w-11 rounded-full border border-slate-200/90 dark:border-slate-700/80 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-center shadow-xs hover:border-[#38ABB1] hover:scale-105 transition-all cursor-pointer group overflow-hidden"
+                  className="relative h-12 w-12 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/80 flex items-center justify-center shadow-xs hover:border-[#38ABB1] hover:scale-105 transition-all cursor-pointer group overflow-hidden"
                   title="Sign in with Google"
                 >
                   <GoogleMark />
@@ -516,22 +525,40 @@ export default function LoginForm() {
                     className="absolute inset-0 z-10 opacity-[0.01] cursor-pointer overflow-hidden scale-150"
                   />
                 </div>
+
+                {/* Apple SSO Button */}
+                <button
+                  type="button"
+                  onClick={() => showError("Apple SSO is configured for enterprise domains. Please use email or Google.")}
+                  className="h-12 w-12 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/80 flex items-center justify-center shadow-xs hover:border-[#38ABB1] hover:scale-105 transition-all cursor-pointer text-foreground"
+                  title="Sign in with Apple"
+                >
+                  <AppleIcon className="h-5 w-5" />
+                </button>
+
+                {/* Enterprise SSO / Key Button */}
+                <button
+                  type="button"
+                  onClick={() => showError("Enterprise SAML / SSO portal available on Pro and Elite plans.")}
+                  className="h-12 w-12 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/80 flex items-center justify-center shadow-xs hover:border-[#38ABB1] hover:scale-105 transition-all cursor-pointer text-muted-foreground hover:text-[#38ABB1]"
+                  title="Enterprise SSO"
+                >
+                  <KeyRound className="h-5 w-5" />
+                </button>
               </div>
             </div>
           )}
 
           {/* Legal and Copyright Footer */}
-          <div className="mt-6 pt-4 text-center space-y-1 text-[11px] text-muted-foreground border-t border-slate-100 dark:border-slate-800/80">
-            <p className="leading-tight">
-              By Continuing you Agree to our{" "}
+          <div className="mt-8 pt-5 text-center space-y-1.5 text-xs text-muted-foreground border-t border-slate-100 dark:border-slate-800/80">
+            <p className="leading-relaxed">
+              By continuing you agree to our{" "}
               <Link href="/terms" className="text-[#38ABB1] hover:underline font-medium">Terms &amp; Conditions</Link>,{" "}
               <Link href="/privacy" className="text-[#38ABB1] hover:underline font-medium">Privacy Policy</Link>, and{" "}
               <Link href="/cookies" className="text-[#38ABB1] hover:underline font-medium">Cookies Policy</Link>.
             </p>
-            <p className="text-[10px] text-muted-foreground/70">
-              © {new Date().getFullYear()} Teamzen. All rights reserved.{" "}
-              <Link href="/terms" className="hover:underline ml-1">Terms &amp; Conditions</Link>{" "}
-              <Link href="/privacy" className="hover:underline ml-1">Privacy Policy</Link>
+            <p className="text-[11px] text-muted-foreground/70">
+              © {new Date().getFullYear()} Teamzen. All rights reserved.
             </p>
           </div>
         </>

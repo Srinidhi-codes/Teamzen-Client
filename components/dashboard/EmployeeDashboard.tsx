@@ -520,14 +520,21 @@ export function EmployeeDashboard() {
         </div>
 
         {/* Today's Attendance Wave Chart */}
-        <section className="flex flex-col justify-between rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs">
-          <div className="flex items-center justify-between border-b border-border/60 pb-3 mb-2">
-            <div className="flex items-center gap-2">
-              <span className="h-4 w-1 shrink-0 rounded-full bg-[#38ABB1]" aria-hidden />
-              <h3 className="text-sm sm:text-base font-bold text-foreground">
+        <section className="flex flex-col justify-between rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs">
+          <div className="flex items-center justify-between border-b border-border/60 pb-3 mb-4">
+            <div className="flex items-center gap-2.5">
+              <span className="h-5 w-1 shrink-0 rounded-full bg-[#38ABB1]" aria-hidden />
+              <h2 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
                 Today&apos;s Attendance
-              </h3>
+              </h2>
             </div>
+            <Link
+              href="/attendance"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label="View attendance"
+            >
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
           </div>
           <div className="h-64 sm:h-72 w-full pt-1">
             <AttendanceTrendChart
@@ -543,7 +550,7 @@ export function EmployeeDashboard() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         {/* Featured leave with circular gauges */}
         <section className="flex flex-col rounded-2xl border border-border bg-card p-5 sm:p-6 lg:col-span-4">
-          <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-3 border-b border-border/60 pb-4 mb-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2.5">
                 <span className="h-5 w-1 shrink-0 rounded-full bg-[#38ABB1]" aria-hidden />
@@ -1044,9 +1051,9 @@ export function EmployeeDashboard() {
       {/* ── Next best actions ───────────────────────────────── */}
       {aiInsights.length > 0 && (
         <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
-          <div className="mb-5 flex items-center gap-2.5">
-            <span className="h-5 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between border-b border-border/60 pb-3 mb-4">
+            <div className="flex items-center gap-2.5">
+              <span className="h-5 w-1 shrink-0 rounded-full bg-[#38ABB1]" aria-hidden />
               <h2 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
                 Next up
               </h2>
@@ -1059,27 +1066,30 @@ export function EmployeeDashboard() {
               return (
                 <div
                   key={i}
-                  className={cn(
-                    "flex flex-col rounded-xl border p-4",
-                    isWarning
-                      ? "border-amber-500/25 bg-amber-500/5"
-                      : "border-border bg-background"
-                  )}
+                  className="group flex flex-col justify-between rounded-xl border border-border bg-card hover:border-primary/40 transition-all p-4 space-y-3"
                 >
-                  <p
-                    className={cn(
-                      "text-xs font-medium",
-                      isWarning
-                        ? "text-amber-700 dark:text-amber-400"
-                        : "text-muted-foreground"
-                    )}
-                  >
-                    {insight.title || "Insight"}
-                  </p>
-                  <p className="mt-1.5 flex-1 line-clamp-3 text-sm leading-relaxed text-foreground">
-                    {insight.message}
-                  </p>
-                  <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <p className="text-xs font-semibold text-foreground truncate">
+                        {insight.title || "Action Item"}
+                      </p>
+                      {isWarning ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/25 shrink-0">
+                          <AlertCircle className="w-3 h-3 text-amber-500" />
+                          Attention
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20 shrink-0">
+                          <Sparkles className="w-3 h-3 text-primary" />
+                          Suggested
+                        </span>
+                      )}
+                    </div>
+                    <p className="line-clamp-3 text-xs leading-relaxed text-muted-foreground">
+                      {insight.message}
+                    </p>
+                  </div>
+                  <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-2">
                     {insight.path ? (
                       <Link
                         href={insight.path}
@@ -1088,7 +1098,7 @@ export function EmployeeDashboard() {
                         {openLabel}
                         <ArrowUpRight className="h-3 w-3" />
                       </Link>
-                    ) : null}
+                    ) : <span />}
                     <button
                       type="button"
                       onClick={() => {

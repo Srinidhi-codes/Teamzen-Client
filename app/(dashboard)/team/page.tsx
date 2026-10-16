@@ -36,9 +36,14 @@ type Member = {
   id: string;
   firstName: string;
   lastName: string;
+  email?: string | null;
+  employeeId?: string | null;
+  phoneNumber?: string | null;
   profilePictureUrl?: string | null;
   designation?: { name: string } | null;
   department?: { name: string } | null;
+  officeLocation?: { name: string } | null;
+  organization?: { name: string } | null;
 };
 
 type ViewMode = "directory" | "org" | "tree";

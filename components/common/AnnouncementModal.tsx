@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Megaphone,
   X,
@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   Notebook,
   NotebookPenIcon,
+  ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,6 +62,7 @@ export function AnnouncementModal({
 
   const [isZoomed, setIsZoomed] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const items = announcements?.length
     ? announcements
@@ -69,6 +71,10 @@ export function AnnouncementModal({
       : [];
 
   const currentAnnouncement = items[currentIndex];
+
+  useEffect(() => {
+    setImageLoaded(false);
+  }, [currentAnnouncement?.imageUrl, currentIndex]);
 
   if (!isOpen || !currentAnnouncement) return null;
 
@@ -348,19 +354,29 @@ export function AnnouncementModal({
                   className={cn(
                     "group relative mt-6 block w-full overflow-hidden",
                     "rounded-xl border border-border/70",
-                    "bg-muted/30",
-                    "text-left",
+                    "bg-muted/30 aspect-[16/9] sm:aspect-[2/1] max-h-[320px]",
+                    "text-left cursor-pointer",
                     "focus:outline-none focus:ring-2 focus:ring-primary/40"
                   )}
                 >
+                  {/* Shimmer / Skeleton Placeholder while loading */}
+                  {!imageLoaded && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-muted/60 animate-pulse text-muted-foreground/50">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-background/50 border border-border/40">
+                        <ImageIcon className="h-5 w-5 opacity-60" />
+                      </div>
+                      <span className="text-xs font-medium">Loading image…</span>
+                    </div>
+                  )}
+
                   <img
                     src={currentAnnouncement.imageUrl}
                     alt="Announcement"
+                    onLoad={() => setImageLoaded(true)}
                     className={cn(
-                      "block w-full h-auto",
-                      "max-h-[330px]",
-                      "object-cover",
-                      "transition-transform duration-500",
+                      "block w-full h-full object-cover",
+                      "transition-all duration-500",
+                      imageLoaded ? "opacity-100" : "opacity-0",
                       "group-hover:scale-[1.015]"
                     )}
                   />

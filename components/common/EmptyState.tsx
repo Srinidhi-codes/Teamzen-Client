@@ -24,6 +24,18 @@ const minH: Record<EmptyStateSize, string> = {
   wide: "h-[360px] sm:h-[460px]",
 };
 
+const headingSize: Record<EmptyStateSize, string> = {
+  compact: "text-base font-semibold",
+  default: "text-base sm:text-lg font-semibold",
+  wide: "text-xl sm:text-2xl lg:text-3xl font-bold",
+};
+
+const descSize: Record<EmptyStateSize, string> = {
+  compact: "text-xs sm:text-sm max-w-xs",
+  default: "text-sm max-w-xs",
+  wide: "text-sm sm:text-base max-w-md leading-relaxed",
+};
+
 /** Illustrated empty state — art fills the parent card; copy sits in the left cream space. */
 export function EmptyState({
   src,
@@ -59,7 +71,8 @@ export function EmptyState({
         >
           <h3
             className={cn(
-              "text-base font-semibold tracking-tight text-slate-900 sm:text-lg",
+              headingSize[size],
+              "tracking-tight text-slate-900",
               headingClassName
             )}
           >
@@ -68,7 +81,8 @@ export function EmptyState({
           {description ? (
             <p
               className={cn(
-                "mt-1.5 max-w-xs text-sm leading-relaxed text-slate-600",
+                "mt-2 text-slate-600",
+                descSize[size],
                 descriptionClassName
               )}
             >

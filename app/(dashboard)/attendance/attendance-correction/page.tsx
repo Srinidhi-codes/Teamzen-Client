@@ -44,6 +44,8 @@ export default function AttendanceCorrectionPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
   const total = attendance?.length || 0;
+  const pendingCount =
+    attendance?.filter((r) => r.correctionStatus === "pending").length || 0;
   const paginatedData =
     attendance?.slice((currentPage - 1) * pageSize, currentPage * pageSize) || [];
 
@@ -93,12 +95,14 @@ export default function AttendanceCorrectionPage() {
       <button
         type="button"
         onClick={router.back}
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
       >
         <ArrowLeftIcon className="h-4 w-4" />
+        <span>Back to Attendance</span>
       </button>
 
       <PageHeader
+        eyebrow="Time Tracking"
         title="Attendance Regularization"
         description="Review records and request changes to punch-in or out."
       />
@@ -129,14 +133,17 @@ export default function AttendanceCorrectionPage() {
         </div>
 
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between pb-4 border-b border-border/50">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            Records
-          </h2>
-          <div className="px-3 py-1 bg-primary/5 text-primary rounded-md text-xs font-medium border border-primary/10 whitespace-nowrap shrink-0">
-            {attendance?.length || 0} records
+      <div className="space-y-4 sm:space-y-6">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+              Records
+            </h2>
+            <div className="px-3 py-1 bg-primary/5 text-primary rounded-md text-xs font-medium border border-primary/10 whitespace-nowrap shrink-0">
+              {pendingCount > 0 ? `${pendingCount} pending` : `${total} records`}
+            </div>
           </div>
+          <div className="h-px w-full bg-border" />
         </div>
 
         <AttendanceTable

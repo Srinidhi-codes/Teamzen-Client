@@ -52,16 +52,16 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: 1.25rem;
 
-  --animate-bell-ring: bell-ring 0.8s ease-in-out infinite;
+  --animate-bell-ring: bell-ring 2.2s ease-in-out infinite;
 
   @keyframes bell-ring {
-    0%, 100% { transform: rotate(0); }
-    15% { transform: rotate(-15deg); }
-    30% { transform: rotate(12deg); }
-    45% { transform: rotate(-10deg); }
-    60% { transform: rotate(8deg); }
-    75% { transform: rotate(-4deg); }
-    90% { transform: rotate(2deg); }
+    0%, 35%, 100% { transform: rotate(0); }
+    5% { transform: rotate(-18deg); }
+    10% { transform: rotate(16deg); }
+    15% { transform: rotate(-14deg); }
+    20% { transform: rotate(10deg); }
+    25% { transform: rotate(-6deg); }
+    30% { transform: rotate(3deg); }
   }
 }
 

@@ -31,6 +31,14 @@ const httpLink = createHttpLink({
   },
 });
 
+function getDynamicFrontendUrl(): string {
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  const envUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || "";
+  return envUrl.replace(/\/+$/, "") || "http://localhost:3000";
+}
+
 const authLink = setContext((_, { headers }) => {
   let csrftoken = "";
   if (typeof document !== "undefined") {
@@ -40,10 +48,13 @@ const authLink = setContext((_, { headers }) => {
     }
   }
 
+  const dynamicFrontendUrl = getDynamicFrontendUrl();
+
   return {
     headers: {
       ...headers,
       "X-CSRFToken": csrftoken,
+      ...(dynamicFrontendUrl ? { "X-Frontend-Url": dynamicFrontendUrl } : {}),
     },
   };
 });

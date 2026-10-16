@@ -139,7 +139,6 @@ export function AttendanceTrendChart({
         <div className="flex items-center justify-between pb-2 px-1">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#22D3EE]" />
             </span>
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               {viewMode === "realtime" ? "Live Attendance Wave (24h)" : "Monthly Attendance History"}
