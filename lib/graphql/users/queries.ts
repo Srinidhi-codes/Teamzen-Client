@@ -170,6 +170,27 @@ export const GET_TEAM_HIERARCHY = gql`
           name
         }
       }
+      managementChain {
+        id
+        firstName
+        lastName
+        email
+        employeeId
+        phoneNumber
+        profilePictureUrl
+        designation {
+          name
+        }
+        department {
+          name
+        }
+        officeLocation {
+          name
+        }
+        organization {
+          name
+        }
+      }
     }
   }
 `;

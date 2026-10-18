@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { FEEDBACK_LIST } from "@/lib/graphql/feedback/queries";
 import { CREATE_FEEDBACK } from "@/lib/graphql/feedback/mutations";
@@ -297,7 +298,7 @@ export default function FeedbackPage() {
   };
 
   return (
-    <div className="p-4 sm:p-8 space-y-6 max-w-7xl mx-auto pb-24 animate-fade-in">
+    <div className="w-full space-y-6 pb-20 animate-fade-in">
       {/* Page Header with Action Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <PageHeader
@@ -315,105 +316,6 @@ export default function FeedbackPage() {
           </Button>
         )}
       </div>
-
-      {/* Top Quick Metrics Cards (Visible on List Tabs) */}
-      {tab !== "new" && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              setStatusFilter("all");
-              setCategoryFilter("all");
-            }}
-            className={cn(
-              "p-4 rounded-2xl border text-left transition-all duration-200",
-              statusFilter === "all"
-                ? "bg-card border-primary/40 ring-1 ring-primary/20 shadow-xs"
-                : "bg-card/60 hover:bg-card border-border/80"
-            )}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">Total Tickets</span>
-              <Inbox className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <div className="text-2xl font-bold text-foreground mt-2 tabular-nums">
-              {totalSubmissions}
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setStatusFilter("open");
-              setCategoryFilter("all");
-            }}
-            className={cn(
-              "p-4 rounded-2xl border text-left transition-all duration-200",
-              statusFilter === "open"
-                ? "bg-amber-500/10 border-amber-500/40 ring-1 ring-amber-500/20 shadow-xs"
-                : "bg-card/60 hover:bg-card border-border/80"
-            )}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
-                Open / Reviewing
-              </span>
-              <Clock className="w-4 h-4 text-amber-500" />
-            </div>
-            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-2 tabular-nums">
-              {openCount}
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setStatusFilter("in_progress");
-              setCategoryFilter("all");
-            }}
-            className={cn(
-              "p-4 rounded-2xl border text-left transition-all duration-200",
-              statusFilter === "in_progress"
-                ? "bg-sky-500/10 border-sky-500/40 ring-1 ring-sky-500/20 shadow-xs"
-                : "bg-card/60 hover:bg-card border-border/80"
-            )}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-sky-600 dark:text-sky-400">
-                In Progress
-              </span>
-              <AlertCircle className="w-4 h-4 text-sky-500" />
-            </div>
-            <div className="text-2xl font-bold text-sky-600 dark:text-sky-400 mt-2 tabular-nums">
-              {inProgressCount}
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setStatusFilter("resolved");
-              setCategoryFilter("all");
-            }}
-            className={cn(
-              "p-4 rounded-2xl border text-left transition-all duration-200",
-              statusFilter === "resolved"
-                ? "bg-emerald-500/10 border-emerald-500/40 ring-1 ring-emerald-500/20 shadow-xs"
-                : "bg-card/60 hover:bg-card border-border/80"
-            )}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                Resolved
-              </span>
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            </div>
-            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-2 tabular-nums">
-              {resolvedCount}
-            </div>
-          </button>
-        </div>
-      )}
 
       {/* Modern Segmented Navigation Bar */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -703,6 +605,7 @@ export default function FeedbackPage() {
                   { id: "open", label: "Open" },
                   { id: "in_progress", label: "In Progress" },
                   { id: "resolved", label: "Resolved" },
+                  { id: "closed", label: "Closed" },
                 ].map((s) => (
                   <button
                     key={s.id}
@@ -719,19 +622,6 @@ export default function FeedbackPage() {
                   </button>
                 ))}
               </div>
-
-              {/* Category Filter Pills */}
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-2.5 py-1.5 rounded-lg text-xs border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                <option value="all">All Categories</option>
-                <option value="bug">🐛 Bugs</option>
-                <option value="feature">💡 Features</option>
-                <option value="praise">🌟 Praise</option>
-                <option value="general">💬 General</option>
-              </select>
             </div>
           </div>
 
@@ -1060,8 +950,17 @@ export default function FeedbackPage() {
                               className="group rounded-xl border border-border/80 bg-muted/20 hover:bg-muted/40 p-3 transition-all flex items-center justify-between gap-3"
                             >
                               <div className="flex items-center gap-3 min-w-0">
-                                <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
-                                  {isImg ? (
+                                <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20 overflow-hidden relative">
+                                  {isImg && (href || a.fileUrl) ? (
+                                    <Image
+                                      src={href || a.fileUrl || ""}
+                                      alt={a.fileName || "preview"}
+                                      width={40}
+                                      height={40}
+                                      className="w-full h-full object-cover"
+                                      unoptimized
+                                    />
+                                  ) : isImg ? (
                                     <ImageIcon className="w-5 h-5" />
                                   ) : (
                                     <FileText className="w-5 h-5" />

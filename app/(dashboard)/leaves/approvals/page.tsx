@@ -46,7 +46,7 @@ export default function ApprovalsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-8 pb-20 animate-fade-in">
+    <div className="w-full space-y-8 pb-20 animate-fade-in">
       <PageHeader
         title="Leave approvals"
         description="Review and approve pending leave requests from your team."

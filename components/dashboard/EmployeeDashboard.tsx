@@ -23,6 +23,7 @@ import {
   Coffee,
   ChevronRight,
   Sparkles,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
@@ -471,7 +472,7 @@ export function EmployeeDashboard() {
               icon: TrendingUp,
               hint: "Overall rate",
               accentClass: "bg-muted",
-              hoverBorder: "hover:border-[#38ABB1]/50",
+              hoverBorder: "hover:border-foreground/40",
             },
             {
               label: "Days present",
@@ -480,7 +481,7 @@ export function EmployeeDashboard() {
               icon: CheckCircle2,
               hint: "This cycle",
               accentClass: "bg-muted",
-              hoverBorder: "hover:border-cyan-500/50",
+              hoverBorder: "hover:border-foreground/40",
             },
             {
               label: "Primary leave",
@@ -489,7 +490,7 @@ export function EmployeeDashboard() {
               icon: Calendar,
               hint: primaryLeave?.name || "Available balance",
               accentClass: "bg-muted",
-              hoverBorder: "hover:border-violet-500/50",
+              hoverBorder: "hover:border-foreground/40",
             },
           ].map((m) => (
             <Link
@@ -504,7 +505,7 @@ export function EmployeeDashboard() {
                 <span className={cn("flex h-9 w-9 items-center justify-center rounded-xl transition-colors", m.accentClass)}>
                   <m.icon className="h-4.5 w-4.5" />
                 </span>
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/60 text-muted-foreground/60 transition-colors group-hover:border-[#38ABB1]/40 group-hover:text-[#38ABB1]">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/60 text-muted-foreground/60 transition-colors group-hover:border-foreground/40 group-hover:text-foreground/40">
                   <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </div>
               </div>
@@ -1066,7 +1067,7 @@ export function EmployeeDashboard() {
               return (
                 <div
                   key={i}
-                  className="group flex flex-col justify-between rounded-xl border border-border bg-card hover:border-primary/40 transition-all p-4 space-y-3"
+                  className="group flex flex-col justify-between rounded-xl border border-border bg-card hover:border-foreground/40 transition-all p-4 space-y-3"
                 >
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -1080,7 +1081,7 @@ export function EmployeeDashboard() {
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20 shrink-0">
-                          <Sparkles className="w-3 h-3 text-primary" />
+                          <Zap className="w-3 h-3 text-primary" />
                           Suggested
                         </span>
                       )}
@@ -1105,7 +1106,7 @@ export function EmployeeDashboard() {
                         setAssistantQuery(insight.query);
                         setAssistantOpen(true);
                       }}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
                     >
                       Ask assistant
                     </button>

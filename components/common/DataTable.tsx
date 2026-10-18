@@ -28,6 +28,7 @@ export interface DataTableProps<T = any> {
   paginationLabel?: string;
   sortConfig?: SortConfig | null;
   onSortChange?: (sort: SortConfig | null) => void;
+  emptyState?: React.ReactNode;
 }
 
 const getNestedValue = (obj: any, path: string) => {
@@ -46,6 +47,7 @@ export function DataTable<T>({
   paginationLabel = "items",
   sortConfig,
   onSortChange,
+  emptyState,
 }: DataTableProps<T>) {
   if (isLoading) {
     return (
@@ -56,6 +58,10 @@ export function DataTable<T>({
   }
 
   if (!data || data.length === 0) {
+    if (emptyState) {
+      return <>{emptyState}</>;
+    }
+
     return (
       <div className="mx-auto max-w-2xl rounded-xl border border-border bg-card py-16 text-center">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl border border-border/50 bg-muted">

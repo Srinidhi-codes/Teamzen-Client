@@ -36,27 +36,66 @@ function MapController({
 }) {
     const map = useMap();
 
-    // Invalidate size whenever container height changes
+    const isValidCoord = (lat?: number | null, lng?: number | null): boolean => {
+        return (
+            typeof lat === "number" &&
+            typeof lng === "number" &&
+            !isNaN(lat) &&
+            !isNaN(lng) &&
+            lat !== 0 &&
+            lng !== 0 &&
+            lat >= -85 &&
+            lat <= 85 &&
+            lng >= -180 &&
+            lng <= 180
+        );
+    };
+
+    // Invalidate size whenever container height changes or mounts
     useEffect(() => {
-        const timer = setTimeout(() => {
-            map.invalidateSize();
-        }, 120);
-        return () => clearTimeout(timer);
+        const t1 = setTimeout(() => map.invalidateSize(), 60);
+        const t2 = setTimeout(() => map.invalidateSize(), 200);
+        const t3 = setTimeout(() => map.invalidateSize(), 500);
+        return () => {
+            clearTimeout(t1);
+            clearTimeout(t2);
+            clearTimeout(t3);
+        };
     }, [mapHeight, map]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (triggerCenter === "employee" && employeeLat && employeeLng) {
-                map.flyTo([employeeLat, employeeLng], 16, { duration: 1 });
-            } else if (triggerCenter === "office" && officeLat && officeLng) {
-                map.flyTo([officeLat, officeLng], 16, { duration: 1 });
-            } else if (employeeLat && employeeLng && officeLat && officeLng) {
-                const bounds = L.latLngBounds(
-                    [employeeLat, employeeLng],
-                    [officeLat, officeLng]
-                );
-                map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
-            } else if (officeLat && officeLng) {
+            map.invalidateSize();
+
+            const hasEmp = isValidCoord(employeeLat, employeeLng);
+            const hasOff = isValidCoord(officeLat, officeLng);
+
+            if (triggerCenter === "employee" && hasEmp) {
+                map.flyTo([employeeLat!, employeeLng!], 16, { duration: 0.8 });
+            } else if (triggerCenter === "office" && hasOff) {
+                map.flyTo([officeLat, officeLng], 16, { duration: 0.8 });
+            } else if (hasEmp && hasOff) {
+                const empPoint = L.latLng(employeeLat!, employeeLng!);
+                const offPoint = L.latLng(officeLat, officeLng);
+                const distanceKm = empPoint.distanceTo(offPoint) / 1000;
+
+                // If distance is reasonable for local check-in (<= 80 km), fit both in view
+                if (distanceKm <= 80) {
+                    const bounds = L.latLngBounds(
+                        [employeeLat!, employeeLng!],
+                        [officeLat, officeLng]
+                    );
+                    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+                    if (map.getZoom() < 12) {
+                        map.setZoom(12);
+                    }
+                } else {
+                    // Far away / remote test: Focus on employee without collapsing out to world view
+                    map.setView([employeeLat!, employeeLng!], 15);
+                }
+            } else if (hasEmp) {
+                map.setView([employeeLat!, employeeLng!], 15);
+            } else if (hasOff) {
                 map.setView([officeLat, officeLng], 15);
             }
         }, 150);
@@ -78,10 +117,15 @@ export default function AttendanceMap({
     distanceMeters,
     isWithin,
 }: AttendanceMapProps) {
-    const defaultCenter: [number, number] = useMemo(
-        () => [officeLat || 20.5937, officeLng || 78.9629],
-        [officeLat, officeLng]
-    );
+    const defaultCenter: [number, number] = useMemo(() => {
+        if (employeeLat && employeeLng && employeeLat !== 0 && employeeLng !== 0) {
+            return [employeeLat, employeeLng];
+        }
+        if (officeLat && officeLng && officeLat !== 0 && officeLng !== 0) {
+            return [officeLat, officeLng];
+        }
+        return [13.094701, 77.598633]; // Bangalore HQ default
+    }, [employeeLat, employeeLng, officeLat, officeLng]);
 
     const [isExpanded, setIsExpanded] = useState(false);
     const [centerTrigger, setCenterTrigger] = useState<"both" | "employee" | "office">("both");
@@ -230,12 +274,18 @@ export default function AttendanceMap({
                     key={mapKey}
                     center={defaultCenter}
                     zoom={15}
+                    minZoom={4}
+                    maxBounds={[[-85, -180], [85, 180]]}
+                    maxBoundsViscosity={1.0}
+                    worldCopyJump={false}
                     scrollWheelZoom={true}
                     style={{ height: "100%", width: "100%" }}
                 >
                     <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         url={tileUrl}
+                        noWrap={true}
+                        bounds={[[-85, -180], [85, 180]]}
                     />
 
                     {/* Geofence Outer Radius Area */}

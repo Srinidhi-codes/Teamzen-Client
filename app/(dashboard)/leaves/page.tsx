@@ -31,10 +31,6 @@ import {
   RotateCcw,
   LayoutList,
   Eye,
-  Palmtree,
-  HeartPulse,
-  Coffee,
-  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataTable, Column } from "@/components/common/DataTable";
@@ -50,47 +46,20 @@ import { toast } from "sonner";
 
 const getLeaveTypeStyle = (name: string = "") => {
   const lower = name.toLowerCase();
+  let label = "Standard Policy";
   if (lower.includes("casual") || lower.includes("vacation") || lower.includes("annual")) {
-    return {
-      gradient: "from-emerald-500/10 via-emerald-500/5 to-transparent",
-      accentBorder: "hover:border-emerald-500/40",
-      iconBg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
-      progressBg: "bg-emerald-500",
-      tagBg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
-      icon: Palmtree,
-      label: "Annual Cycle",
-    };
-  }
-  if (lower.includes("sick") || lower.includes("medical")) {
-    return {
-      gradient: "from-rose-500/10 via-rose-500/5 to-transparent",
-      accentBorder: "hover:border-rose-500/40",
-      iconBg: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
-      progressBg: "bg-rose-500",
-      tagBg: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
-      icon: HeartPulse,
-      label: "Health & Care",
-    };
-  }
-  if (lower.includes("complementary") || lower.includes("comp") || lower.includes("earned")) {
-    return {
-      gradient: "from-amber-500/10 via-amber-500/5 to-transparent",
-      accentBorder: "hover:border-amber-500/40",
-      iconBg: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-      progressBg: "bg-amber-500",
-      tagBg: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-      icon: Coffee,
-      label: "Comp Off",
-    };
+    label = "Annual Cycle";
+  } else if (lower.includes("sick") || lower.includes("medical")) {
+    label = "Health & Care";
+  } else if (lower.includes("complementary") || lower.includes("comp") || lower.includes("earned")) {
+    label = "Comp Off";
   }
   return {
     gradient: "from-primary/10 via-primary/5 to-transparent",
     accentBorder: "hover:border-primary/40",
-    iconBg: "bg-primary/10 text-primary border-primary/20",
     progressBg: "bg-primary",
     tagBg: "bg-primary/10 text-primary border-primary/20",
-    icon: Sparkles,
-    label: "Leave Policy",
+    label,
   };
 };
 
@@ -405,7 +374,7 @@ export default function LeavesPage() {
   ];
 
   return (
-    <div className="p-4 sm:p-6 space-y-8 animate-fade-in relative min-h-screen">
+    <div className="w-full space-y-8 animate-fade-in relative min-h-screen pb-20">
       <PageHeader
         eyebrow="Time Off"
         title="Leave management"
@@ -435,23 +404,29 @@ export default function LeavesPage() {
           </>
         }
       />
-      <div className="flex items-center bg-muted/40 p-1 rounded-xl border border-border w-full sm:w-fit">
+      <div className="flex items-center bg-muted/40 p-1 rounded-xl border border-border/80 w-full sm:w-fit">
         {([
           { key: "overview", label: "Overview", icon: LayoutList },
           { key: "calendar", label: "Calendar", icon: CalendarDays },
-        ] as const).map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`flex flex-1 sm:flex-none justify-center items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.key
-              ? "bg-background text-primary shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-              }`}
-          >
-            <tab.icon className="w-3.5 h-3.5" />
-            {tab.label}
-          </button>
-        ))}
+        ] as const).map((tab) => {
+          const Icon = tab.icon;
+          const active = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                "flex flex-1 sm:flex-none items-center justify-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all",
+                active
+                  ? "bg-background text-foreground shadow-xs font-semibold border border-border/40"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Icon className={cn("w-3.5 h-3.5", active && "text-primary")} />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {activeTab === "calendar" && (
@@ -500,47 +475,25 @@ export default function LeavesPage() {
                         )}
                       />
 
-                      {/* Header: Title + Tag + Themed Icon */}
-                      <div className="flex items-start justify-between gap-3 relative z-10">
-                        <div className="space-y-1 min-w-0">
-                          <h3 className="text-base sm:text-lg font-bold text-foreground tracking-tight truncate">
-                            {balance.leaveType.name}
-                          </h3>
-                          <span className={cn("inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border tracking-wide uppercase", theme.tagBg)}>
-                            {theme.label}
-                          </span>
-                        </div>
-                        <div className={cn("shrink-0 w-10 h-10 rounded-xl border flex items-center justify-center transition-transform group-hover:scale-105 shadow-xs", theme.iconBg)}>
-                          <theme.icon className="w-5 h-5" />
-                        </div>
+                      {/* Header: Title + Tag */}
+                      <div className="space-y-1 relative z-10">
+                        <h3 className="text-base sm:text-lg font-bold text-foreground tracking-tight truncate">
+                          {balance.leaveType.name}
+                        </h3>
+                        <span className={cn("inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border tracking-wide uppercase", theme.tagBg)}>
+                          {theme.label}
+                        </span>
                       </div>
 
-                      {/* Hero Section: Big Available Days + Optimistic Badge */}
+                      {/* Hero Section: Big Available Days */}
                       <div className="mt-4 relative z-10">
-                        <div className="flex items-baseline justify-between gap-2">
-                          <div className="flex items-baseline gap-1.5">
-                            <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground tabular-nums">
-                              {available}
-                            </span>
-                            <span className="text-xs sm:text-sm font-semibold text-muted-foreground">
-                              / {total} days left
-                            </span>
-                          </div>
-                          {available > 2 ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                              Ready to take
-                            </span>
-                          ) : available > 0 ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
-                              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                              Low balance
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border shrink-0">
-                              Exhausted
-                            </span>
-                          )}
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground tabular-nums">
+                            {available}
+                          </span>
+                          <span className="text-xs sm:text-sm font-semibold text-muted-foreground">
+                            / {total} days left
+                          </span>
                         </div>
                       </div>
 
@@ -808,21 +761,23 @@ export default function LeavesPage() {
               </div>
               <div className="h-px w-full bg-border" />
             </div>
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              {teamLeavesLoading ? (
+            {teamLeavesLoading ? (
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <div className="flex gap-4 p-4 overflow-hidden">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="w-64 h-32 border border-border rounded-xl bg-muted/50 animate-pulse shrink-0" />
                   ))}
                 </div>
-              ) : teamLeavesData.length === 0 ? (
-                <EmptyState
-                  src={EmptyImages.leaves}
-                  title="All team members are present"
-                  description="Everyone is currently at work and accounted for. Any scheduled team time-offs or absences will appear here."
-                  size="wide"
-                />
-              ) : (
+              </div>
+            ) : teamLeavesData.length === 0 ? (
+              <EmptyState
+                src={EmptyImages.leaves}
+                title="All team members are present"
+                description="Everyone is currently at work and accounted for. Any scheduled team time-offs or absences will appear here."
+                size="wide"
+              />
+            ) : (
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <div className="overflow-x-auto no-scrollbar">
                   <div className="flex gap-4 p-4 min-w-max">
                     {teamLeavesData.map((leave: any) => (
@@ -859,8 +814,8 @@ export default function LeavesPage() {
                     ))}
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </>
       )}

@@ -142,7 +142,7 @@ export default function EmployeesPage() {
   ];
 
   return (
-    <div className="space-y-8 animate-fade-in pb-20 p-4 sm:p-8">
+    <div className="w-full space-y-8 animate-fade-in pb-20">
       <PageHeader
         title="Employees"
         description="Browse and manage people in your organization."

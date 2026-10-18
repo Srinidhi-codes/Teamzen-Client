@@ -355,7 +355,7 @@ export default function AttendancePage() {
 
   if (isLoading) {
     return (
-      <div className="p-4 sm:p-8">
+      <div className="w-full">
         <PageSkeleton variant="punch" />
       </div>
     );
@@ -366,7 +366,7 @@ export default function AttendancePage() {
   const liveTimeLabel = format(now, "hh:mm:ss a");
 
   return (
-    <div className="space-y-10 animate-fade-in pb-20 p-4 sm:p-8">
+    <div className="w-full space-y-10 animate-fade-in pb-20">
       <PageHeader
         eyebrow="Time Tracking"
         title="Attendance"
@@ -765,8 +765,14 @@ export default function AttendancePage() {
                 );
               }
 
-              const officeLat = Number(office.latitude);
-              const officeLng = Number(office.longitude);
+              const officeLat =
+                office?.latitude != null && !isNaN(Number(office.latitude)) && Number(office.latitude) !== 0
+                  ? Number(office.latitude)
+                  : 13.094701;
+              const officeLng =
+                office?.longitude != null && !isNaN(Number(office.longitude)) && Number(office.longitude) !== 0
+                  ? Number(office.longitude)
+                  : 77.598633;
               const radiusMeters = office.geoRadiusMeters || 200;
 
               let activeLat = null;

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { usePolicies, useAskPolicy } from "@/lib/api/hooks";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/common/PageHeader";
 import { PageSkeleton } from "@/components/common/PageSkeleton";
+import { EmptyState } from "@/components/common/EmptyState";
 import { toast } from "sonner";
 import {
   FileText,
@@ -28,6 +29,9 @@ import {
   Clock,
   Calendar,
   Layers,
+  Zap,
+  RotateCcw,
+  Info,
 } from "lucide-react";
 import moment from "moment";
 
@@ -71,6 +75,145 @@ const SUGGESTED_QUESTIONS = [
   },
 ];
 
+// Helper to extract category for a policy document
+const getPolicyCategory = (p: any): { id: string; label: string } => {
+  const text = `${p?.title || ""} ${p?.description || ""}`.toLowerCase();
+  if (
+    text.includes("leave") ||
+    text.includes("vacation") ||
+    text.includes("holiday") ||
+    text.includes("pto") ||
+    text.includes("absence") ||
+    text.includes("sick") ||
+    text.includes("maternity") ||
+    text.includes("paternity")
+  ) {
+    return { id: "leave", label: "Leaves" };
+  }
+  if (
+    text.includes("attendance") ||
+    text.includes("check-in") ||
+    text.includes("clock") ||
+    text.includes("shift") ||
+    text.includes("working hour") ||
+    text.includes("geofence") ||
+    text.includes("regularization")
+  ) {
+    return { id: "attendance", label: "Attendance" };
+  }
+  if (
+    text.includes("conduct") ||
+    text.includes("ethics") ||
+    text.includes("discipline") ||
+    text.includes("harassment") ||
+    text.includes("compliance")
+  ) {
+    return { id: "conduct", label: "Conduct & Ethics" };
+  }
+  if (
+    text.includes("travel") ||
+    text.includes("expense") ||
+    text.includes("reimbursement") ||
+    text.includes("allowance")
+  ) {
+    return { id: "travel", label: "Travel & Expense" };
+  }
+  if (
+    text.includes("security") ||
+    text.includes("privacy") ||
+    text.includes("data") ||
+    text.includes("cyber") ||
+    text.includes("it policy")
+  ) {
+    return { id: "security", label: "IT & Security" };
+  }
+  if (
+    text.includes("payroll") ||
+    text.includes("salary") ||
+    text.includes("compensation") ||
+    text.includes("benefit")
+  ) {
+    return { id: "payroll", label: "Payroll & Benefits" };
+  }
+  return { id: "general", label: "General" };
+};
+
+const matchesSearch = (p: any, query: string) => {
+  if (!query) return true;
+  const q = query.toLowerCase().trim();
+  const title = (p?.title || "").toLowerCase();
+  const desc = (p?.description || "").toLowerCase();
+  const org = (p?.organization_name || "").toLowerCase();
+  const cat = getPolicyCategory(p);
+  return (
+    title.includes(q) ||
+    desc.includes(q) ||
+    org.includes(q) ||
+    cat.label.toLowerCase().includes(q) ||
+    cat.id.toLowerCase().includes(q)
+  );
+};
+
+// Session Cache Key for Policy AI Q&A
+const POLICY_AI_CACHE_KEY = "lms_policy_ai_session_cache_v1";
+
+const normalizeQuery = (text: string) => text.trim().toLowerCase().replace(/[?.,!]+$/, "");
+
+const getSessionStorageCache = (): Record<string, any> => {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = sessionStorage.getItem(POLICY_AI_CACHE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+};
+
+const saveSessionStorageCache = (key: string, data: any) => {
+  if (typeof window === "undefined") return;
+  try {
+    const cache = getSessionStorageCache();
+    cache[key] = data;
+    sessionStorage.setItem(POLICY_AI_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // Ignore quota errors
+  }
+};
+
+interface InsightCardData {
+  title?: string;
+  message?: string;
+  type?: string;
+  topic?: string;
+}
+
+const parsePolicyAnswer = (raw: string): { cleanAnswer: string; insightCard: InsightCardData | null } => {
+  if (!raw) return { cleanAnswer: "", insightCard: null };
+
+  const match = raw.match(/\[INSIGHT_CARD\]([\s\S]*?)\[\/INSIGHT_CARD\]/i);
+  if (!match) {
+    return { cleanAnswer: raw.trim(), insightCard: null };
+  }
+
+  const rawCard = match[1];
+  const cleanAnswer = raw.replace(match[0], "").trim();
+
+  const cardData: InsightCardData = {};
+  rawCard.split("\n").forEach((line) => {
+    const colonIdx = line.indexOf(":");
+    if (colonIdx !== -1) {
+      const key = line.slice(0, colonIdx).trim().toLowerCase();
+      const val = line.slice(colonIdx + 1).trim();
+      if (key === "title") cardData.title = val;
+      if (key === "message") cardData.message = val;
+      if (key === "type") cardData.type = val;
+      if (key === "topic") cardData.topic = val;
+    }
+  });
+
+  return { cleanAnswer, insightCard: cardData.title || cardData.message ? cardData : null };
+};
+
 export default function PoliciesPage() {
   const { policies, isLoading } = usePolicies();
   const askPolicyMutation = useAskPolicy();
@@ -83,11 +226,11 @@ export default function PoliciesPage() {
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<"all" | "leave" | "attendance">("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const POLICIES_PER_PAGE = 6;
 
-  // Ask AI State
+  // Ask AI State & In-Session Cache
   const [aiQuery, setAiQuery] = useState("");
   const [aiAnswer, setAiAnswer] = useState<{
     query: string;
@@ -95,6 +238,103 @@ export default function PoliciesPage() {
     sources: Array<{ title: string; file_id?: number; file_url?: string; page_number?: number }>;
   } | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // In-memory cache ref for zero-latency instant lookup + token savings
+  const aiCacheRef = useRef<Map<string, { query: string; answer: string; sources: any[]; timestamp: number }>>(new Map());
+  const [cachedKeys, setCachedKeys] = useState<Record<string, boolean>>({});
+  const [isCurrentAnswerCached, setIsCurrentAnswerCached] = useState<boolean>(false);
+
+  // Load existing session cache into memory on mount
+  useEffect(() => {
+    const stored = getSessionStorageCache();
+    const keysMap: Record<string, boolean> = {};
+    Object.entries(stored).forEach(([k, v]) => {
+      aiCacheRef.current.set(k, v as any);
+      keysMap[k] = true;
+    });
+    setCachedKeys(keysMap);
+  }, []);
+
+  // Parsed Answer with Structured Insight Card
+  const parsedAnswer = useMemo(() => {
+    return parsePolicyAnswer(aiAnswer?.answer || "");
+  }, [aiAnswer?.answer]);
+
+  // Available categories derived dynamically from policies
+  const availableCategories = useMemo(() => {
+    const list: Array<{ id: string; label: string; count: number }> = [
+      { id: "all", label: "All", count: policies && Array.isArray(policies) ? policies.length : 0 },
+    ];
+
+    const counts: Record<string, number> = {};
+    if (policies && Array.isArray(policies)) {
+      policies.forEach((p: any) => {
+        const cat = getPolicyCategory(p);
+        counts[cat.id] = (counts[cat.id] || 0) + 1;
+      });
+    }
+
+    // Always ensure Leaves and Attendance tabs are available
+    list.push({ id: "leave", label: "Leaves", count: counts["leave"] || 0 });
+    list.push({ id: "attendance", label: "Attendance", count: counts["attendance"] || 0 });
+
+    // Include any other dynamic categories discovered in policies
+    if (policies && Array.isArray(policies)) {
+      policies.forEach((p: any) => {
+        const cat = getPolicyCategory(p);
+        if (cat.id !== "leave" && cat.id !== "attendance" && !list.some((c) => c.id === cat.id)) {
+          list.push({ id: cat.id, label: cat.label, count: counts[cat.id] || 0 });
+        }
+      });
+    }
+
+    return list;
+  }, [policies]);
+
+  // Handle Search Input Change with Auto-Category Detection
+  const handleSearchChange = (val: string) => {
+    setSearchQuery(val);
+    setCurrentPage(1);
+
+    const trimmed = val.trim().toLowerCase();
+    if (!trimmed || !policies || !Array.isArray(policies)) return;
+
+    // If a specific category tab is selected
+    if (categoryFilter !== "all") {
+      const hasMatchInCurrent = policies.some(
+        (p: any) => getPolicyCategory(p).id === categoryFilter && matchesSearch(p, trimmed)
+      );
+
+      // If current category has 0 matches, but another category does, auto-switch tab!
+      if (!hasMatchInCurrent) {
+        const globalMatches = policies.filter((p: any) => matchesSearch(p, trimmed));
+        if (globalMatches.length > 0) {
+          const matchCatIds = Array.from(new Set(globalMatches.map((p: any) => getPolicyCategory(p).id)));
+          if (matchCatIds.length === 1) {
+            setCategoryFilter(matchCatIds[0]);
+          } else {
+            setCategoryFilter("all");
+          }
+        }
+      }
+    }
+  };
+
+  // Handle Category Tab Selection with Search Clearing if Incompatible
+  const handleSelectCategory = (catId: string) => {
+    setCategoryFilter(catId);
+    setCurrentPage(1);
+
+    // If an existing search query has no match in newly selected category, clear search
+    if (searchQuery.trim() && catId !== "all" && policies && Array.isArray(policies)) {
+      const hasMatch = policies.some(
+        (p: any) => getPolicyCategory(p).id === catId && matchesSearch(p, searchQuery.trim())
+      );
+      if (!hasMatch) {
+        setSearchQuery("");
+      }
+    }
+  };
 
   // Handle Print
   const handlePrint = () => {
@@ -116,8 +356,8 @@ export default function PoliciesPage() {
     }
   };
 
-  // Handle Ask AI
-  const handleAskAi = async (queryText?: string) => {
+  // Handle Ask AI with Session Caching (prevents redundant API calls & token consumption)
+  const handleAskAi = async (queryText?: string, forceRefresh = false) => {
     const q = (queryText || aiQuery).trim();
     if (!q) {
       toast.error("Please enter a question");
@@ -126,13 +366,62 @@ export default function PoliciesPage() {
     if (queryText) {
       setAiQuery(queryText);
     }
+
+    const cacheKey = normalizeQuery(q);
+
+    // 1. Check Session Cache if not forcing a refresh
+    if (!forceRefresh) {
+      // Check in-memory map
+      const memCached = aiCacheRef.current.get(cacheKey);
+      if (memCached) {
+        setAiAnswer({
+          query: memCached.query,
+          answer: memCached.answer,
+          sources: memCached.sources || [],
+        });
+        setIsCurrentAnswerCached(true);
+        return;
+      }
+
+      // Check sessionStorage
+      const sessionCached = getSessionStorageCache()[cacheKey];
+      if (sessionCached) {
+        aiCacheRef.current.set(cacheKey, sessionCached);
+        setCachedKeys((prev) => ({ ...prev, [cacheKey]: true }));
+        setAiAnswer({
+          query: sessionCached.query,
+          answer: sessionCached.answer,
+          sources: sessionCached.sources || [],
+        });
+        setIsCurrentAnswerCached(true);
+        return;
+      }
+    }
+
+    // 2. Cache miss or forced refresh: call API
+    setIsCurrentAnswerCached(false);
     try {
       const res = await askPolicyMutation.mutateAsync({ query: q });
+      const entry = {
+        query: q,
+        answer: res.answer,
+        sources: res.sources || [],
+        timestamp: Date.now(),
+      };
+
+      // Store in memory ref and sessionStorage
+      aiCacheRef.current.set(cacheKey, entry);
+      saveSessionStorageCache(cacheKey, entry);
+      setCachedKeys((prev) => ({ ...prev, [cacheKey]: true }));
+
       setAiAnswer({
         query: q,
         answer: res.answer,
         sources: res.sources || [],
       });
+      if (forceRefresh) {
+        toast.success("Answer refreshed with latest policy context");
+      }
     } catch (err: any) {
       toast.error(err?.response?.data?.error || "Failed to get policy answer");
     }
@@ -147,29 +436,55 @@ export default function PoliciesPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Filtered & Paginated Policies
-  const filteredPolicies = useMemo(() => {
-    if (!policies || !Array.isArray(policies)) return [];
-    return policies.filter((p: any) => {
-      // Category filter
-      if (categoryFilter === "leave") {
-        const isLeave = p.title?.toLowerCase().includes("leave") || p.description?.toLowerCase().includes("leave");
-        if (!isLeave) return false;
-      } else if (categoryFilter === "attendance") {
-        const isAttendance = p.title?.toLowerCase().includes("attendance") || p.description?.toLowerCase().includes("attendance");
-        if (!isAttendance) return false;
-      }
+  // Filtered & Paginated Policies with Cross-Category Search Fallback
+  const { filteredPolicies, searchNotice } = useMemo(() => {
+    if (!policies || !Array.isArray(policies)) {
+      return { filteredPolicies: [], searchNotice: null };
+    }
 
-      // Search query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        const matchesTitle = p.title?.toLowerCase().includes(q);
-        const matchesDesc = p.description?.toLowerCase().includes(q);
-        if (!matchesTitle && !matchesDesc) return false;
+    const trimmed = searchQuery.trim().toLowerCase();
+
+    // 1. If category filter is "all", filter by search query across all policies
+    if (categoryFilter === "all") {
+      const result = trimmed ? policies.filter((p: any) => matchesSearch(p, trimmed)) : policies;
+      return { filteredPolicies: result, searchNotice: null };
+    }
+
+    // 2. Filter within the selected category
+    const inCategoryPolicies = policies.filter(
+      (p: any) => getPolicyCategory(p).id === categoryFilter
+    );
+    const inCategoryMatches = trimmed
+      ? inCategoryPolicies.filter((p: any) => matchesSearch(p, trimmed))
+      : inCategoryPolicies;
+
+    if (inCategoryMatches.length > 0) {
+      return { filteredPolicies: inCategoryMatches, searchNotice: null };
+    }
+
+    // 3. Fallback: If 0 matches in current category, but matches exist in other categories:
+    if (trimmed) {
+      const globalMatches = policies.filter((p: any) => matchesSearch(p, trimmed));
+      if (globalMatches.length > 0) {
+        const currentTab = availableCategories.find((c) => c.id === categoryFilter);
+        const currentLabel = currentTab ? currentTab.label : "selected category";
+        const otherCat = getPolicyCategory(globalMatches[0]);
+
+        return {
+          filteredPolicies: globalMatches,
+          searchNotice: {
+            currentLabel,
+            matchCount: globalMatches.length,
+            suggestedCatId: otherCat.id,
+            suggestedCatLabel: otherCat.label,
+          },
+        };
       }
-      return true;
-    });
-  }, [policies, categoryFilter, searchQuery]);
+    }
+
+    // 4. Truly 0 matches anywhere
+    return { filteredPolicies: [], searchNotice: null };
+  }, [policies, categoryFilter, searchQuery, availableCategories]);
 
   const totalPages = Math.max(1, Math.ceil(filteredPolicies.length / POLICIES_PER_PAGE));
   const safePage = Math.min(currentPage, totalPages);
@@ -177,7 +492,7 @@ export default function PoliciesPage() {
   const paginatedPolicies = filteredPolicies.slice(startIndex, startIndex + POLICIES_PER_PAGE);
 
   return (
-    <div className="p-4 sm:p-8 space-y-8 animate-fade-in max-w-7xl mx-auto pb-24">
+    <div className="w-full space-y-8 animate-fade-in pb-20">
       {/* Header */}
       <PageHeader
         eyebrow="Company Knowledge"
@@ -253,18 +568,40 @@ export default function PoliciesPage() {
             <span>Suggested questions from company PDFs:</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {SUGGESTED_QUESTIONS.map((item, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => handleAskAi(item.query)}
-                className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-background/80 hover:bg-background border border-border/80 hover:border-primary/40 text-foreground/90 transition-all hover:shadow-xs active:scale-98"
-              >
-                <span>{item.icon}</span>
-                <span>{item.label}</span>
-                <ArrowRight className="w-3 h-3 text-muted-foreground opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-              </button>
-            ))}
+            {SUGGESTED_QUESTIONS.map((item, idx) => {
+              const itemKey = normalizeQuery(item.query);
+              const isCached = !!cachedKeys[itemKey];
+              const isActive = aiAnswer?.query && normalizeQuery(aiAnswer.query) === itemKey;
+
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleAskAi(item.query)}
+                  className={`group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all hover:shadow-xs active:scale-98 ${
+                    isActive
+                      ? "bg-primary/10 border-primary text-foreground shadow-xs font-semibold ring-1 ring-primary/25"
+                      : "bg-background/80 hover:bg-background border-border/80 hover:border-primary/40 text-foreground/90"
+                  }`}
+                >
+                  <span>{item.icon}</span>
+                  <span>{item.label}</span>
+                  {isCached && (
+                    <span
+                      className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"
+                      title="Answer cached in session (instant)"
+                    />
+                  )}
+                  <ArrowRight
+                    className={`w-3 h-3 transition-all ${
+                      isActive
+                        ? "text-primary opacity-100"
+                        : "text-muted-foreground opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5"
+                    }`}
+                  />
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -284,21 +621,40 @@ export default function PoliciesPage() {
         {aiAnswer && !askPolicyMutation.isPending && (
           <div className="mt-5 rounded-xl border border-primary/20 bg-card p-5 space-y-4 shadow-sm animate-in fade-in duration-200">
             <div className="flex items-start justify-between gap-3 pb-3 border-b border-border/60">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <Sparkles className="w-3.5 h-3.5" />
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Sparkles className="w-4 h-4 text-primary" />
                 </div>
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Policy Copilot Answer
-                  </h4>
-                  <p className="text-xs font-medium text-foreground italic mt-0.5">
-                    "{aiAnswer.query}"
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Policy Copilot Answer
+                    </h4>
+                    {isCurrentAnswerCached && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        <Zap className="w-2.5 h-2.5 text-emerald-500 fill-emerald-500" />
+                        Cached
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs font-medium text-foreground italic mt-0.5 truncate max-w-xl">
+                    &ldquo;{aiAnswer.query}&rdquo;
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleAskAi(aiAnswer.query, true)}
+                  disabled={askPolicyMutation.isPending}
+                  className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                  title="Ask again (re-query AI without cache)"
+                >
+                  <RotateCcw className={`w-3.5 h-3.5 ${askPolicyMutation.isPending ? "animate-spin" : ""}`} />
+                  <span className="hidden sm:inline">Refresh</span>
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -321,8 +677,29 @@ export default function PoliciesPage() {
 
             {/* Answer Content */}
             <div className="text-sm leading-relaxed text-foreground/95 whitespace-pre-line space-y-2">
-              {aiAnswer.answer}
+              {parsedAnswer.cleanAnswer}
             </div>
+
+            {/* Structured Insight Card if present */}
+            {parsedAnswer.insightCard && (
+              <div className="p-3.5 rounded-xl border border-primary/20 bg-primary/5 flex items-start gap-3">
+                <div className="w-7 h-7 rounded-lg bg-primary/15 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+                  <Info className="w-4 h-4 text-primary" />
+                </div>
+                <div className="space-y-1 min-w-0">
+                  {parsedAnswer.insightCard.title && (
+                    <h5 className="text-xs font-bold text-foreground">
+                      {parsedAnswer.insightCard.title}
+                    </h5>
+                  )}
+                  {parsedAnswer.insightCard.message && (
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {parsedAnswer.insightCard.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Document Sources */}
             {aiAnswer.sources && aiAnswer.sources.length > 0 && (
@@ -384,10 +761,7 @@ export default function PoliciesPage() {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder="Search policies..."
                 className="pl-8 pr-7 py-1.5 text-xs rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary w-full sm:w-56"
               />
@@ -406,63 +780,114 @@ export default function PoliciesPage() {
             </div>
 
             {/* Category Filter Tabs */}
-            <div className="flex items-center gap-1 p-0.5 bg-muted/40 rounded-lg border border-border/60">
-              {[
-                { id: "all", label: "All" },
-                { id: "leave", label: "Leaves" },
-                { id: "attendance", label: "Attendance" },
-              ].map((tab) => (
+            <div className="flex items-center gap-1 p-1 bg-muted/40 rounded-xl border border-border/80 overflow-x-auto max-w-full">
+              {availableCategories.map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => {
-                    setCategoryFilter(tab.id as any);
-                    setCurrentPage(1);
-                  }}
-                  className={`px-2.5 py-1 text-xs rounded-md font-medium transition-all ${
+                  onClick={() => handleSelectCategory(tab.id)}
+                  className={`px-3.5 py-1.5 text-xs rounded-lg font-medium transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                     categoryFilter === tab.id
-                      ? "bg-background text-foreground shadow-xs font-semibold"
+                      ? "bg-background text-foreground shadow-xs font-semibold border border-border/40"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {tab.label}
+                  <span>{tab.label}</span>
+                  {tab.count !== undefined && (
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                        categoryFilter === tab.id
+                          ? "bg-muted font-bold text-foreground"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Policy Cards Grid */}
-        {isLoading && !policies ? (
-          <PageSkeleton variant="inline" />
-        ) : filteredPolicies.length === 0 ? (
-          <div className="text-center p-10 text-muted-foreground border border-dashed rounded-2xl bg-muted/15 space-y-2">
-            <FileText className="w-8 h-8 text-muted-foreground/60 mx-auto" />
-            <h4 className="text-sm font-semibold text-foreground">No policies found</h4>
-            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-              {searchQuery ? "No policies match your search term." : "No company policies have been uploaded yet."}
-            </p>
-            {searchQuery && (
+        {/* Cross-Category Search Fallback Notice */}
+        {searchNotice && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:px-4 rounded-xl bg-primary/10 border border-primary/20 text-xs text-foreground animate-fade-in shadow-xs">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary shrink-0 animate-pulse" />
+              <span>
+                No policies match &ldquo;<strong>{searchQuery}</strong>&rdquo; in <strong>{searchNotice.currentLabel}</strong>. Showing{" "}
+                <strong>{searchNotice.matchCount}</strong> result{searchNotice.matchCount > 1 ? "s" : ""} from other categories.
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  setSearchQuery("");
+                  setCategoryFilter(searchNotice.suggestedCatId);
+                  setCurrentPage(1);
+                }}
+                className="h-7 px-2.5 text-xs bg-background hover:bg-muted font-medium shadow-xs"
+              >
+                Switch to {searchNotice.suggestedCatLabel}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
                   setCategoryFilter("all");
                   setCurrentPage(1);
                 }}
-                className="h-8 text-xs mt-2"
+                className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground"
               >
-                Clear Search
+                View All
               </Button>
-            )}
+            </div>
           </div>
+        )}
+
+        {/* Policy Cards Grid */}
+        {isLoading && !policies ? (
+          <PageSkeleton variant="inline" />
+        ) : filteredPolicies.length === 0 ? (
+          searchQuery ? (
+            <div className="text-center p-10 text-muted-foreground border rounded-2xl bg-card space-y-2">
+              <FileText className="w-8 h-8 text-muted-foreground/60 mx-auto" />
+              <h4 className="text-sm font-semibold text-foreground">No policies found</h4>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                No policies match your search term "{searchQuery}".
+              </p>
+              <div className="flex items-center justify-center gap-2 pt-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setCategoryFilter("all");
+                    setCurrentPage(1);
+                  }}
+                  className="h-8 text-xs mt-2"
+                >
+                  Clear Search & Reset Filters
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <EmptyState
+              src="/images/empty/empty-payslip.webp"
+              title="No company policies found"
+              description="Official company policies, compliance documents, and employee handbooks will appear here."
+              size="wide"
+            />
+          )
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {paginatedPolicies.map((policy: any) => {
               const fileUrl = policy.file_url || policy.file;
               const formattedDate = moment(policy.created_at).format("MMM D, YYYY");
               const sizeMb = policy.file_size ? (policy.file_size / 1024 / 1024).toFixed(2) + " MB" : null;
+              const category = getPolicyCategory(policy);
 
               return (
                 <div
@@ -497,15 +922,11 @@ export default function PoliciesPage() {
                         </div>
                       </div>
 
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide shrink-0 border ${
-                          policy.is_processed
-                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                            : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
-                        }`}
-                      >
-                        {policy.is_processed ? "AI Indexed" : "Processing"}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="rounded-md px-2 py-0.5 text-[10px] font-medium tracking-wide bg-primary/10 text-primary border border-primary/20">
+                          {category.label}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Description */}

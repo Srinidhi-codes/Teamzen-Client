@@ -4,6 +4,8 @@ import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, TrendingUp, RotateCcw, PenLine, ArrowRight } from "lucide-react";
 import { PageSkeleton } from "@/components/common/PageSkeleton";
+import { EmptyState } from "@/components/common/EmptyState";
+import { EmptyImages } from "@/lib/brand-images";
 
 export type AttendanceRow = {
     id: string;
@@ -304,6 +306,15 @@ export function AttendanceTable({
         );
     };
 
+    const emptyStateView = (
+        <EmptyState
+            src={EmptyImages.attendance}
+            title="No attendance records found"
+            description="There are no attendance or regularization records matching the selected date range. Try selecting different dates above."
+            size="wide"
+        />
+    );
+
     return (
         <>
             {/* Desktop View */}
@@ -317,6 +328,7 @@ export function AttendanceTable({
                     pageSize={pageSize}
                     onPageChange={onPageChange}
                     paginationLabel="records"
+                    emptyState={emptyStateView}
                 />
             </div>
 
@@ -331,9 +343,13 @@ export function AttendanceTable({
                         {data.map(renderMobileCard)}
                     </div>
                 ) : (
-                    <div className="text-center py-10 text-muted-foreground border border-border border-dashed rounded-xl bg-muted/20">
-                        No records found
-                    </div>
+                    <EmptyState
+                        src={EmptyImages.attendance}
+                        title="No records found"
+                        description="No attendance records match your current date filters."
+                        size="compact"
+                        className="rounded-2xl border border-border/60 overflow-hidden shadow-xs"
+                    />
                 )}
             </div>
         </>

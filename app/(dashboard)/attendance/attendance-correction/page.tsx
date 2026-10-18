@@ -91,7 +91,7 @@ export default function AttendanceCorrectionPage() {
   };
 
   return (
-    <div className="animate-fade-in space-y-8 pb-20">
+    <div className="w-full space-y-8 animate-fade-in pb-20">
       <button
         type="button"
         onClick={router.back}
@@ -108,7 +108,9 @@ export default function AttendanceCorrectionPage() {
       />
 
 
-        <div className="grid grid-cols-1 items-end gap-6 rounded-xl border border-border/50 bg-muted/5 p-6 md:grid-cols-3">
+      {/* Date Filter Bar */}
+      <div className="flex flex-wrap items-end gap-3 sm:gap-4 pt-1">
+        <div className="w-full sm:w-52">
           <DatePickerSimple
             label="From"
             value={startDate}
@@ -116,6 +118,8 @@ export default function AttendanceCorrectionPage() {
             disableFuture={true}
             maxDate={endDate || undefined}
           />
+        </div>
+        <div className="w-full sm:w-52">
           <DatePickerSimple
             label="To"
             value={endDate}
@@ -123,14 +127,15 @@ export default function AttendanceCorrectionPage() {
             disableFuture={true}
             minDate={startDate || undefined}
           />
-          <Button
-            className="h-9 w-full rounded-md"
-            onClick={() => loadAttendance(startDate, endDate)}
-          >
-            <Search className="mr-2 h-4 w-4" />
-            Search
-          </Button>
         </div>
+        <Button
+          className="h-[45px] px-6 rounded-xl font-medium shadow-xs gap-2"
+          onClick={() => loadAttendance(startDate, endDate)}
+        >
+          <Search className="h-4 w-4" />
+          <span>Search</span>
+        </Button>
+      </div>
 
 
       <div className="space-y-4 sm:space-y-6">
