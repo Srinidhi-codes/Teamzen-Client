@@ -149,6 +149,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return () => clearTimeout(timer);
   }, [user, isLoading, wizard, wizardOpen, canUseAssistant]);
 
+  const isTourBlocked =
+    !deferredReady ||
+    wizardOpen ||
+    Boolean(canUseAssistant && !shouldSkipWizard && (isLoading || wizard?.shouldShow)) ||
+    activeAnnouncements.length > 0;
+
   return (
     <div
       className="min-h-screen bg-background text-foreground"
@@ -164,7 +170,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <div
         className={cn(
           "flex min-h-screen flex-col transition-[margin] duration-200 ease-out",
-          isCollapsed ? "md:ml-16" : "md:ml-60"
+          isCollapsed ? "md:ml-[84px]" : "md:ml-64"
         )}
       >
         {!inactive && <LocationSyncBanner />}
@@ -173,7 +179,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
 
       {canUseAssistant && <AssistantWidget />}
-      {!inactive && <OnboardingTour />}
+      {!inactive && <OnboardingTour isBlocked={isTourBlocked} />}
       {canUseAssistant && wizardOpen && wizard?.shouldShow && (
         <FirstDayWizard
           data={wizard}

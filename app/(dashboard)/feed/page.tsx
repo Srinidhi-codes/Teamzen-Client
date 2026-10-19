@@ -5,17 +5,14 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { FeedLayout } from '@/components/feed/FeedLayout';
 export default function FeedPage() {
   return (
-    <div className="min-h-screen bg-gray-50/50 dark:bg-background/95">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <PageHeader 
-          title="Company Feed" 
-          eyebrow="Community"
-          description="Stay updated with the latest announcements, milestones, and team updates."
-        />
-        
-        <div className="mt-8">
-          <FeedLayout />
-        </div>
+    <div className="w-full space-y-8 animate-fade-in pb-20">
+      <PageHeader 
+        title="Company Feed" 
+        eyebrow="Community"
+        description="Stay updated with the latest announcements, milestones, and team updates."
+      />
+      <div>
+        <FeedLayout />
       </div>
     </div>
   );

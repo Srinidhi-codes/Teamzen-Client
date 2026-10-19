@@ -6,7 +6,7 @@ import "driver.js/dist/driver.css";
 import { useStore } from "@/lib/store/useStore";
 import { useGraphQLUpdateUser } from "@/lib/api/graphqlHooks";
 
-export function useOnboardingTour() {
+export function useOnboardingTour(isBlocked = false) {
     const { user, setSidebarCollapsed, setSidebarMobileOpen } = useStore();
     const { updateUserAsync } = useGraphQLUpdateUser();
 
@@ -72,22 +72,23 @@ export function useOnboardingTour() {
     }, [setSidebarCollapsed, setSidebarMobileOpen]);
 
     useEffect(() => {
+        if (isBlocked) return;
         if (user && user.hasSeenOnboarding === false) {
-            // Give some time for the page to settle
+            // Give time after blocking elements (like FirstDayWizard) are cleared
             const timer = setTimeout(() => {
                 startTour();
                 // Persist to DB immediately
                 updateUserAsync({ has_seen_onboarding: true }).catch(console.error);
-            }, 2000);
+            }, 1200);
             return () => clearTimeout(timer);
         }
-    }, [user, startTour, updateUserAsync]);
+    }, [user, startTour, updateUserAsync, isBlocked]);
 
     return { startTour };
 }
 
-export function OnboardingTour() {
+export function OnboardingTour({ isBlocked = false }: { isBlocked?: boolean }) {
     // This component is strictly used to inject the hook into the layout
-    useOnboardingTour();
+    useOnboardingTour(isBlocked);
     return null;
 }

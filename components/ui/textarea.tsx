@@ -119,7 +119,7 @@ function Textarea({ className, enableAi = true, value, onChange, ...props }: Tex
       <textarea
         ref={ref}
         data-slot="textarea"
-        className={cn("textarea", showAi && "pt-10", className)}
+        className={cn("textarea", showAi ? "pr-20" : "", className)}
         {...props}
         value={value}
         onChange={onChange}

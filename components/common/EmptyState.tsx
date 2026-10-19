@@ -20,8 +20,20 @@ type EmptyStateProps = {
 
 const minH: Record<EmptyStateSize, string> = {
   compact: "min-h-[220px] sm:min-h-[280px]",
-  default: "min-h-[320px] sm:min-h-[400px]",
-  wide: "h-[360px] sm:h-[460px]",
+  default: "min-h-[300px] sm:min-h-[360px] lg:min-h-[400px]",
+  wide: "h-[320px] sm:h-[400px] lg:h-[440px]",
+};
+
+const headingSize: Record<EmptyStateSize, string> = {
+  compact: "text-lg sm:text-xl font-bold",
+  default: "text-xl sm:text-2xl font-bold",
+  wide: "text-xl sm:text-2xl lg:text-3xl font-bold",
+};
+
+const descSize: Record<EmptyStateSize, string> = {
+  compact: "text-xs sm:text-sm max-w-sm leading-relaxed",
+  default: "text-sm sm:text-base max-w-md leading-relaxed",
+  wide: "text-sm sm:text-base max-w-md leading-relaxed",
 };
 
 /** Illustrated empty state — art fills the parent card; copy sits in the left cream space. */
@@ -41,7 +53,13 @@ export function EmptyState({
 }: EmptyStateProps) {
   if (src) {
     return (
-      <div className={cn("relative w-full overflow-hidden", minH[size], className)}>
+      <div
+        className={cn(
+          "relative w-full rounded-2xl border border-border/60 overflow-hidden shadow-xs",
+          minH[size],
+          className
+        )}
+      >
         <Image
           src={src}
           alt=""
@@ -53,13 +71,14 @@ export function EmptyState({
         />
         <div
           className={cn(
-            "absolute inset-y-0 left-0 z-10 flex w-[60%] max-w-lg flex-col justify-center px-5 py-6 text-left sm:w-[46%] sm:px-8",
+            "absolute inset-y-0 left-0 z-10 flex w-[62%] sm:w-[48%] max-w-lg flex-col justify-center px-6 py-8 text-left sm:px-10",
             contentClassName
           )}
         >
           <h3
             className={cn(
-              "text-base font-semibold tracking-tight text-slate-900 sm:text-lg",
+              headingSize[size],
+              "tracking-tight text-slate-900",
               headingClassName
             )}
           >
@@ -68,7 +87,8 @@ export function EmptyState({
           {description ? (
             <p
               className={cn(
-                "mt-1.5 max-w-xs text-sm leading-relaxed text-slate-600",
+                "mt-2 text-slate-600",
+                descSize[size],
                 descriptionClassName
               )}
             >

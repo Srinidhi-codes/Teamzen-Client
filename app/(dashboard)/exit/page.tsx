@@ -100,7 +100,7 @@ export default function MyExitPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-6 animate-fade-in pb-20">
       <PageHeader
         title="Exit / Full & Final"
         description="Track your exit clearance, settlement, and letters."

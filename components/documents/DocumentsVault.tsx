@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileText, Upload, FolderOpen } from "lucide-react";
+import { Download, FileText, Upload, FolderOpen, FileCheck, AlertCircle, Send, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 import moment from "moment";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -91,7 +91,7 @@ export default function DocumentsVault() {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-8 animate-fade-in relative min-h-screen">
+    <div className="w-full space-y-8 animate-fade-in relative min-h-screen pb-20">
       <PageHeader
         eyebrow="Vault"
         title="Documents"
@@ -99,29 +99,39 @@ export default function DocumentsVault() {
       />
 
       <div className="flex flex-col sm:flex-row gap-4 sm:gap-2 pb-4 sm:pb-2 justify-between items-start sm:items-center">
-        <div className="flex gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 hide-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <div className="flex items-center bg-muted/40 p-1 rounded-xl border border-border/80 overflow-x-auto max-w-full">
           {(
             [
-              ["issued", "Issued"],
-              ["requests", "Action required"],
-              ["employeeRequests", "My requests"],
-              ["uploads", "My uploads"],
+              { key: "issued" as const, label: "Issued", icon: FileCheck, count: issued.length },
+              { key: "requests" as const, label: "Action required", icon: AlertCircle, count: openRequests.length },
+              { key: "employeeRequests" as const, label: "My requests", icon: Send, count: employeeRequests.length },
+              { key: "uploads" as const, label: "My uploads", icon: UploadCloud, count: uploads.length },
             ] as const
-          ).map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setTab(key)}
-            className={cn(
-              "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0",
-              tab === key
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted"
-            )}
-          >
-            {label}
-          </button>
-        ))}
+          ).map((t) => {
+            const Icon = t.icon;
+            const active = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTab(t.key)}
+                className={cn(
+                  "flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap shrink-0",
+                  active
+                    ? "bg-background text-foreground shadow-xs font-semibold border border-border/40"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Icon className={cn("w-3.5 h-3.5", active && "text-primary")} />
+                <span>{t.label}</span>
+                {t.count > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-muted font-mono">
+                    {t.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
         
         <Button size="sm" onClick={() => setModalOpen(true)} className="w-full sm:w-auto flex-shrink-0">Request Document</Button>
@@ -185,7 +195,6 @@ export default function DocumentsVault() {
           {issued.length === 0 && !loading && (
             <div className="col-span-full">
               <EmptyState 
-                className="rounded-xl border bg-card"
                 size="wide"
                 src="/images/empty/empty-payslip.webp" 
                 title="No issued documents yet" 
@@ -225,7 +234,6 @@ export default function DocumentsVault() {
         <div className="space-y-3">
           {requests.length === 0 && !loading && (
             <EmptyState 
-              className="rounded-xl border bg-card"
               size="wide"
               src="/images/empty/empty-payslip.webp" 
               title="No pending HR requests" 
@@ -282,7 +290,6 @@ export default function DocumentsVault() {
         <div className="space-y-4">
           {employeeRequests.length === 0 && !loading && (
             <EmptyState 
-              className="rounded-xl border bg-card"
               size="wide"
               src="/images/empty/empty-payslip.webp" 
               title="No requests made" 
@@ -359,7 +366,6 @@ export default function DocumentsVault() {
         <div className="space-y-3">
           {uploads.length === 0 && !loading && (
             <EmptyState 
-              className="rounded-xl border bg-card"
               size="wide"
               src="/images/empty/empty-payslip.webp" 
               title="No uploads" 

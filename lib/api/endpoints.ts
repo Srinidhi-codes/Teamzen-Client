@@ -40,6 +40,7 @@ export const API_ENDPOINTS = {
   POLICIES: "/ai/policies/",
   CHAT: "/ai/chat/",
   FORMAT_TEXT: "/ai/format-text/",
+  ASK_POLICY: "/ai/ask-policy/",
   FEEDBACK_ATTACHMENTS: "/feedback/attachments/",
   ONBOARDING_SIGNED_OFFER_UPLOAD: "/onboarding/offers/signed/upload/",
 

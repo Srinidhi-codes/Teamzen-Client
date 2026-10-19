@@ -343,6 +343,34 @@ export const usePolicies = () => {
   };
 };
 
+export const useAskPolicy = () => {
+  return useMutation({
+    mutationFn: async ({
+      query,
+      organizationId,
+    }: {
+      query: string;
+      organizationId?: number;
+    }) => {
+      const response = await client.post(API_ENDPOINTS.ASK_POLICY, {
+        query,
+        ...(organizationId ? { organization_id: organizationId } : {}),
+      });
+      return response.data as {
+        answer: string;
+        sources: Array<{
+          title: string;
+          file_id?: number;
+          file_url?: string;
+          page_number?: number;
+          score?: number;
+          match_type?: string;
+        }>;
+      };
+    },
+  });
+};
+
 export const useDeviceSessions = () => {
   const queryClient = useQueryClient();
 

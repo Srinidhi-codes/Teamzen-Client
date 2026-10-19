@@ -44,6 +44,25 @@ import Image from "next/image";
 import { PageHeader } from "@/components/common/PageHeader";
 import { toast } from "sonner";
 
+const getLeaveTypeStyle = (name: string = "") => {
+  const lower = name.toLowerCase();
+  let label = "Standard Policy";
+  if (lower.includes("casual") || lower.includes("vacation") || lower.includes("annual")) {
+    label = "Annual Cycle";
+  } else if (lower.includes("sick") || lower.includes("medical")) {
+    label = "Health & Care";
+  } else if (lower.includes("complementary") || lower.includes("comp") || lower.includes("earned")) {
+    label = "Comp Off";
+  }
+  return {
+    gradient: "from-primary/10 via-primary/5 to-transparent",
+    accentBorder: "hover:border-primary/40",
+    progressBg: "bg-primary",
+    tagBg: "bg-primary/10 text-primary border-primary/20",
+    label,
+  };
+};
+
 export default function LeavesPage() {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -121,6 +140,10 @@ export default function LeavesPage() {
     }
   };
 
+  const orgWeekendDays: number[] = user?.organization?.weekendDays?.length
+    ? user.organization.weekendDays
+    : [5, 6];
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -138,6 +161,29 @@ export default function LeavesPage() {
     if (formData.fromDate && formData.toDate) {
       if (moment(formData.toDate).isBefore(moment(formData.fromDate))) {
         newErrors.toDate = "Invalid range";
+      }
+
+      // Check if the requested range falls entirely on organization weekend days
+      const from = moment(formData.fromDate).startOf("day");
+      const to = moment(formData.toDate).startOf("day");
+      if (to.isSameOrAfter(from)) {
+        const weekendSet = new Set<number>(orgWeekendDays);
+        let allWeekend = true;
+        let c = from.clone();
+        while (c.isSameOrBefore(to)) {
+          if (!weekendSet.has(c.isoWeekday() - 1)) {
+            allWeekend = false;
+            break;
+          }
+          c.add(1, "days");
+        }
+        if (allWeekend) {
+          newErrors.fromDate = "Falls on weekend";
+          newErrors.toDate = "Falls on weekend";
+          setSubmissionError(
+            "The selected dates fall entirely on your organization's non-working weekend days (Saturday & Sunday). Leave cannot be requested for weekly offs."
+          );
+        }
       }
     }
 
@@ -228,12 +274,15 @@ export default function LeavesPage() {
           .map((h: any) => moment(h.holidayDate).format("YYYY-MM-DD"))
       );
 
+      const weekendSet = new Set<number>(orgWeekendDays);
+
       let count = 0;
       let curr = from.clone();
       while (curr.isSameOrBefore(to)) {
         const dateStr = curr.format("YYYY-MM-DD");
-        // Exclude Sundays and company holidays from billable working duration
-        if (curr.day() !== 0 && !holidayDates.has(dateStr)) {
+        const pyWeekday = curr.isoWeekday() - 1; // 0=Mon ... 5=Sat, 6=Sun
+        // Exclude organization weekend days and company holidays from billable working duration
+        if (!weekendSet.has(pyWeekday) && !holidayDates.has(dateStr)) {
           if (from.isSame(to) && formData.halfDayPeriod !== "full_day") {
             count += 0.5;
           } else {
@@ -291,33 +340,32 @@ export default function LeavesPage() {
     },
     {
       key: "actions",
-      label: "Action",
+      label: "Actions",
       render: (_: any, row: any) => (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            size="sm"
+            variant="outline"
+            className="group relative h-8 w-20 overflow-hidden text-xs font-medium border-border/80 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-all cursor-pointer"
             onClick={() => setViewDetails(row)}
             title="View details"
-            aria-label="View details"
           >
-            <Eye className="h-4 w-4" />
+            <span className="transition-transform duration-200 group-hover:-translate-x-2">View</span>
+            <ArrowRight className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 opacity-0 transition-all duration-200 group-hover:opacity-100 text-primary" />
           </Button>
           {row.status === "pending" && (
             <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              size="sm"
+              variant="outline"
+              className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 handleCancelLeave(row.id);
               }}
               disabled={cancelLeaveRequestLoading}
               title="Cancel request"
-              aria-label="Cancel request"
             >
-              <XCircle className="h-4 w-4" />
+              Cancel
             </Button>
           )}
         </div>
@@ -326,7 +374,7 @@ export default function LeavesPage() {
   ];
 
   return (
-    <div className="p-4 sm:p-6 space-y-8 animate-fade-in relative min-h-screen">
+    <div className="w-full space-y-8 animate-fade-in relative min-h-screen pb-20">
       <PageHeader
         eyebrow="Time Off"
         title="Leave management"
@@ -356,23 +404,29 @@ export default function LeavesPage() {
           </>
         }
       />
-      <div className="flex items-center bg-muted/40 p-1 rounded-xl border border-border w-full sm:w-fit">
+      <div className="flex items-center bg-muted/40 p-1 rounded-xl border border-border/80 w-full sm:w-fit">
         {([
           { key: "overview", label: "Overview", icon: LayoutList },
           { key: "calendar", label: "Calendar", icon: CalendarDays },
-        ] as const).map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`flex flex-1 sm:flex-none justify-center items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.key
-              ? "bg-background text-primary shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-              }`}
-          >
-            <tab.icon className="w-3.5 h-3.5" />
-            {tab.label}
-          </button>
-        ))}
+        ] as const).map((tab) => {
+          const Icon = tab.icon;
+          const active = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                "flex flex-1 sm:flex-none items-center justify-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all",
+                active
+                  ? "bg-background text-foreground shadow-xs font-semibold border border-border/40"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Icon className={cn("w-3.5 h-3.5", active && "text-primary")} />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {activeTab === "calendar" && (
@@ -388,59 +442,117 @@ export default function LeavesPage() {
           {/* Leave Balance Grid */}
           <div className="space-y-6">
             {leaveBalanceLoading ? (
-              <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 overflow-x-auto pb-4 snap-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-2">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="min-w-[280px] sm:min-w-0 shrink-0 snap-start rounded-xl border border-border h-40 animate-pulse bg-muted/50" />
+                  <div key={i} className="rounded-2xl border border-border h-48 animate-pulse bg-muted/40" />
                 ))}
               </div>
             ) : (
-              <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 overflow-x-auto pb-4 snap-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {leaveBalanceData?.map((balance: any) => (
-                  <div key={balance.id} className="min-w-[280px] sm:min-w-0 shrink-0 snap-start rounded-xl border border-border bg-card p-4 sm:p-5">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="space-y-1 min-w-0">
-                        <h3 className="text-base font-semibold truncate">{balance.leaveType.name}</h3>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span>Total allocation</span>
-                          <span className="font-medium text-foreground">{balance.totalAllocation}</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-2">
+                {leaveBalanceData?.map((balance: any) => {
+                  const theme = getLeaveTypeStyle(balance.leaveType?.name);
+                  const total = Number(balance.totalAllocation) || 0;
+                  const available = Number(balance.availableBalance) || 0;
+                  const used = Number(balance.used) || 0;
+                  const pending = Number(balance.pendingApproval) || 0;
+                  const remainingPercent = total > 0
+                    ? Math.round((available / total) * 100)
+                    : (available > 0 ? 100 : 0);
+
+                  return (
+                    <div
+                      key={balance.id}
+                      className={cn(
+                        "group relative overflow-hidden rounded-2xl border border-border/80 bg-card p-5 sm:p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 flex flex-col justify-between",
+                        theme.accentBorder
+                      )}
+                    >
+                      {/* Ambient background glow on top-right */}
+                      <div
+                        className={cn(
+                          "absolute -right-8 -top-8 h-28 w-28 rounded-full blur-2xl pointer-events-none opacity-40 transition-opacity group-hover:opacity-75 bg-gradient-to-br",
+                          theme.gradient
+                        )}
+                      />
+
+                      {/* Header: Title + Tag */}
+                      <div className="space-y-1 relative z-10">
+                        <h3 className="text-base sm:text-lg font-bold text-foreground tracking-tight truncate">
+                          {balance.leaveType.name}
+                        </h3>
+                        <span className={cn("inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border tracking-wide uppercase", theme.tagBg)}>
+                          {theme.label}
+                        </span>
+                      </div>
+
+                      {/* Hero Section: Big Available Days */}
+                      <div className="mt-4 relative z-10">
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground tabular-nums">
+                            {available}
+                          </span>
+                          <span className="text-xs sm:text-sm font-semibold text-muted-foreground">
+                            / {total} days left
+                          </span>
                         </div>
                       </div>
-                      <div className="shrink-0 w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                        <Calendar className="w-4 h-4" />
-                      </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-4 pb-4 border-b border-border">
-                      <div className="space-y-0.5">
-                        <p className="text-sm text-muted-foreground">Available</p>
-                        <p className="text-2xl font-semibold text-emerald-600 tabular-nums">{balance.availableBalance}</p>
+                      {/* Micro-metrics strip */}
+                      <div className="mt-4 grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-muted/40 border border-border/70 relative z-10">
+                        <div className="space-y-0.5 text-center sm:text-left">
+                          <p className="text-[11px] font-medium text-muted-foreground">Allocated</p>
+                          <p className="text-sm font-bold text-foreground tabular-nums">{total}d</p>
+                        </div>
+                        <div className="space-y-0.5 text-center sm:text-left border-x border-border/70 px-2">
+                          <p className="text-[11px] font-medium text-muted-foreground">Used</p>
+                          <p className="text-sm font-bold text-foreground tabular-nums">{used}d</p>
+                        </div>
+                        <div className="space-y-0.5 text-center sm:text-left pl-1">
+                          <p className="text-[11px] font-medium text-muted-foreground">In Review</p>
+                          <p className={cn("text-sm font-bold tabular-nums", pending > 0 ? "text-amber-500" : "text-foreground")}>
+                            {pending}d
+                          </p>
+                        </div>
                       </div>
-                      <div className="space-y-0.5">
-                        <p className="text-sm text-muted-foreground">Used</p>
-                        <p className="text-2xl font-semibold text-foreground tabular-nums">
-                          {Number(balance.used) + Number(balance.pendingApproval)}
-                        </p>
-                      </div>
-                    </div>
 
-                    <div className="mt-4 space-y-2">
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">Remaining</span>
-                        <span className="font-medium text-primary">{balance.totalAllocation > 0 ? Math.round((balance.availableBalance / balance.totalAllocation) * 100) : (balance.availableBalance > 0 ? 100 : 0)}%</span>
+                      {/* Progress bar */}
+                      <div className="mt-4 space-y-2 relative z-10">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-muted-foreground font-medium">
+                            {used} day{used !== 1 ? 's' : ''} consumed
+                          </span>
+                          <span className="font-semibold text-foreground tabular-nums">
+                            {remainingPercent}% available
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-muted rounded-full overflow-hidden p-0.5 border border-border/40">
+                          <div
+                            className={cn("h-full rounded-full transition-all duration-500", theme.progressBg)}
+                            style={{ width: `${Math.min(100, Math.max(0, remainingPercent))}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary transition-all duration-500 rounded-full"
-                          style={{
-                            width: balance.totalAllocation > 0
-                              ? `${(balance.availableBalance / balance.totalAllocation) * 100}%`
-                              : (balance.availableBalance > 0 ? "100%" : "0%")
+
+                      {/* Footer: Quota info + Quick Action */}
+                      <div className="mt-4 pt-3 border-t border-border/60 flex items-center justify-between relative z-10">
+                        <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                          {Number(balance.carriedForward) > 0 ? `+${balance.carriedForward}d carried forward` : "Standard quota"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev: any) => ({ ...prev, leaveTypeId: String(balance.leaveType.id) }));
+                            setShowForm(true);
                           }}
-                        />
+                          className="inline-flex items-end gap-1 text-xs font-semibold text-primary cursor-pointer hover:translate-x-0.5 transition-transform duration-300"
+                        >
+                          Apply
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -508,7 +620,34 @@ export default function LeavesPage() {
                               </div>
                               <div className="flex justify-between items-center pt-3 border-t border-border/60">
                                 <span className="text-xs text-muted-foreground font-medium">{row.durationDays} day{row.durationDays !== 1 ? 's' : ''}</span>
-                                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="group relative h-7 w-16 overflow-hidden text-[11px] font-medium border-border/80 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-all cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setViewDetails(row);
+                                    }}
+                                  >
+                                    <span className="transition-transform duration-200 group-hover:-translate-x-1.5">View</span>
+                                    <ArrowRight className="absolute right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 opacity-0 transition-all duration-200 group-hover:opacity-100 text-primary" />
+                                  </Button>
+                                  {row.status === "pending" && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-7 px-2 text-[11px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all cursor-pointer"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleCancelLeave(row.id);
+                                      }}
+                                      disabled={cancelLeaveRequestLoading}
+                                    >
+                                      Cancel
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           ))}
@@ -622,21 +761,23 @@ export default function LeavesPage() {
               </div>
               <div className="h-px w-full bg-border" />
             </div>
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              {teamLeavesLoading ? (
+            {teamLeavesLoading ? (
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <div className="flex gap-4 p-4 overflow-hidden">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="w-64 h-32 border border-border rounded-xl bg-muted/50 animate-pulse shrink-0" />
                   ))}
                 </div>
-              ) : teamLeavesData.length === 0 ? (
-                <EmptyState
-                  src={EmptyImages.leaves}
-                  title="No one on leave"
-                  description="No colleagues are currently on leave."
-                  size="wide"
-                />
-              ) : (
+              </div>
+            ) : teamLeavesData.length === 0 ? (
+              <EmptyState
+                src={EmptyImages.leaves}
+                title="All team members are present"
+                description="Everyone is currently at work and accounted for. Any scheduled team time-offs or absences will appear here."
+                size="wide"
+              />
+            ) : (
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <div className="overflow-x-auto no-scrollbar">
                   <div className="flex gap-4 p-4 min-w-max">
                     {teamLeavesData.map((leave: any) => (
@@ -673,8 +814,8 @@ export default function LeavesPage() {
                     ))}
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </>
       )}

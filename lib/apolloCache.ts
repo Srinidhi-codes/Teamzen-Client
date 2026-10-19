@@ -14,7 +14,7 @@ export const apolloCacheConfig: InMemoryCacheConfig = {
           keyArgs: false,
         },
         teamHierarchy: {
-          keyArgs: false,
+          keyArgs: ["userId"],
         },
         myAttendance: {
           keyArgs: ["input"],

@@ -144,7 +144,7 @@ export default function MyOnboardingPage() {
 
   if (isLoading) {
     return (
-      <div className="p-4 sm:p-6 space-y-6 animate-fade-in" aria-busy="true" aria-label="Loading onboarding">
+      <div className="w-full space-y-6 animate-fade-in" aria-busy="true" aria-label="Loading onboarding">
         <div className="space-y-2">
           <div className="h-8 w-48 animate-pulse rounded bg-muted" />
           <div className="h-4 w-64 animate-pulse rounded bg-muted" />
@@ -169,7 +169,7 @@ export default function MyOnboardingPage() {
 
   if (error) {
     return (
-      <div className="p-4 sm:p-6 text-destructive text-sm animate-fade-in">
+      <div className="w-full text-destructive text-sm animate-fade-in">
         {(error as Error).message}
       </div>
     );
@@ -177,20 +177,18 @@ export default function MyOnboardingPage() {
 
   if (!onboarding) {
     return (
-      <div className="p-4 sm:p-6 space-y-6 animate-fade-in">
+      <div className="w-full space-y-6 animate-fade-in pb-20">
         <PageHeader
           eyebrow="Onboarding"
           title="My Onboarding"
           description="Your checklist will appear here when HR starts your onboarding."
         />
-        <Card className="overflow-hidden p-0">
-          <EmptyState
-            src={EmptyImages.team}
-            title="No active onboarding"
-            description="Your checklist will appear here when HR starts your onboarding."
-            size="wide"
-          />
-        </Card>
+        <EmptyState
+          src={EmptyImages.team}
+          title="No active onboarding"
+          description="Your checklist will appear here when HR starts your onboarding."
+          size="wide"
+        />
       </div>
     );
   }
@@ -200,7 +198,7 @@ export default function MyOnboardingPage() {
   );
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 animate-fade-in">
+    <div className="w-full space-y-6 animate-fade-in pb-20">
       <PageHeader
         eyebrow="Onboarding"
         title="My Onboarding"

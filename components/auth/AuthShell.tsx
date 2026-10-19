@@ -46,95 +46,162 @@ export function AuthShell({
   description,
   sideImage = AuthImages.dashboard,
   sideImageAlt = "Teamzen workforce analytics and payroll dashboard",
-  sideHeadline = "Business Management Made Simple",
+  sideHeadline = "Business Management",
   sideSubtitle = "Streamline operations across departments with one integrated platform that handles everything from workforce attendance to payroll management.",
   wide = false,
 }: AuthShellProps) {
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center p-3 sm:p-6 lg:p-8 xl:p-12 bg-[#edf2f7] dark:bg-[#070c14] selection:bg-[#38ABB1]/20 selection:text-[#38ABB1] transition-colors">
+    <div className="relative min-h-screen w-full flex items-center justify-center p-3 sm:p-4 lg:p-5 xl:p-6 bg-[#edf2f7] dark:bg-[#070c14] selection:bg-[#38ABB1]/20 selection:text-[#38ABB1] transition-colors">
       {/* Ambient background glowing accents */}
-      <div className="pointer-events-none absolute -top-32 -left-32 h-[550px] w-[550px] rounded-full bg-[#38ABB1]/12 blur-[140px]" />
-      <div className="pointer-events-none absolute -bottom-32 -right-32 h-[550px] w-[550px] rounded-full bg-[#38ABB1]/12 blur-[140px]" />
+      <div className="pointer-events-none absolute -top-32 -left-32 h-[650px] w-[650px] rounded-full bg-[#38ABB1]/15 blur-[160px]" />
+      <div className="pointer-events-none absolute -bottom-32 -right-32 h-[650px] w-[650px] rounded-full bg-[#38ABB1]/15 blur-[160px]" />
 
       {/* Main 2-Column Auth Card Container */}
-      <div className="relative w-full max-w-[1200px] xl:max-w-[1260px] rounded-[32px] sm:rounded-[36px] overflow-hidden border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#0d1622] shadow-2xl shadow-slate-900/10 dark:shadow-black/70 grid lg:grid-cols-12 min-h-[660px]">
-        
+      <div
+        className={cn(
+          "relative w-full rounded-[28px] sm:rounded-[36px] overflow-hidden border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#0d1622] shadow-2xl shadow-slate-900/10 dark:shadow-black/70 grid lg:grid-cols-12 min-h-[640px] lg:h-[86vh] lg:min-h-[700px] lg:max-h-[850px] transition-all",
+          wide
+            ? "max-w-[1640px] 2xl:max-w-[1780px]"
+            : "max-w-[1540px] 2xl:max-w-[1680px]"
+        )}
+      >
         {/* ========================================================
             LEFT COLUMN: Dashboard Showcase with Contour Wave Patterns
            ======================================================== */}
-        <aside className="relative hidden lg:col-span-6 xl:col-span-6 overflow-hidden bg-gradient-to-b from-[#0a232c] via-[#0d2e3b] to-[#09151e] lg:flex lg:flex-col lg:justify-between text-white border-r border-slate-200/40 dark:border-white/10">
+        <aside className="relative hidden lg:col-span-6 xl:col-span-6 overflow-hidden bg-gradient-to-b from-[#0a232c] via-[#0d2e3b] to-[#09151e] lg:flex lg:flex-col lg:justify-between text-white border-r border-slate-200/40 dark:border-white/10 h-full">
           {/* Ambient Glow & Topographic Waves */}
-          <div className="pointer-events-none absolute -top-24 -left-24 h-[450px] w-[450px] rounded-full bg-[#38ABB1]/25 blur-[110px]" />
-          <div className="pointer-events-none absolute top-1/2 -right-24 h-[380px] w-[380px] rounded-full bg-[#38ABB1]/20 blur-[110px]" />
+          <div className="pointer-events-none absolute -top-24 -left-24 h-[500px] w-[500px] rounded-full bg-[#38ABB1]/25 blur-[120px]" />
+          <div className="pointer-events-none absolute top-1/2 -right-24 h-[440px] w-[440px] rounded-full bg-[#38ABB1]/20 blur-[120px]" />
           <TopographicWaves />
 
-          {/* Top Showcase: Wide Clean Dashboard Mockup (takes full width) */}
-          <div className="relative z-10 w-full flex-1 flex items-center justify-center p-5 xl:p-7 pt-7">
-            <div className="relative w-full h-[340px] xl:h-[390px] rounded-2xl xl:rounded-3xl overflow-hidden border border-white/20 bg-slate-950/80 shadow-2xl shadow-black/70 group">
-              <Image
-                src={sideImage}
-                alt={sideImageAlt}
-                fill
-                priority
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover object-top transition-transform duration-700 group-hover:scale-[1.02]"
-              />
-              {/* Subtle glass reflection overlay */}
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-white/10" />
+          {/* Top Showcase: Wide App Window Mockup */}
+          <div className="relative z-10 w-full flex-1 flex flex-col justify-center p-4 sm:p-5 lg:p-6 min-h-0">
+            <div className="relative w-full h-full min-h-[240px] lg:min-h-[280px] xl:min-h-[320px] max-h-[460px] rounded-2xl xl:rounded-3xl overflow-hidden border border-white/20 bg-slate-950/90 shadow-2xl shadow-black/80 flex flex-col group">
+              {/* Browser / App Header Bar */}
+              <div className="flex items-center justify-between px-3.5 py-2 bg-slate-950/90 border-b border-white/10 backdrop-blur-md">
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
+                  <span className="ml-2 text-[11px] font-mono text-slate-400">
+                    portal.teamzen.io/analytics
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#38ABB1]/20 text-[#38ABB1] text-[10px] font-semibold tracking-wide uppercase">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#38ABB1] animate-pulse" />
+                    Live Portal
+                  </span>
+                </div>
+              </div>
+
+              {/* Main Screenshot Container */}
+              <div className="relative flex-1 w-full min-h-[180px] xl:min-h-[240px] overflow-hidden bg-slate-950">
+                <Image
+                  src={sideImage}
+                  alt={sideImageAlt}
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="object-cover object-top transition-transform duration-700 group-hover:scale-[1.02]"
+                />
+                {/* Subtle glass reflection overlay */}
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-white/10" />
+
+                {/* Floating Metric Pill */}
+                <div className="pointer-events-none absolute bottom-3.5 left-3.5 z-20 flex items-center gap-2 rounded-xl bg-slate-900/85 backdrop-blur-md border border-white/15 px-3 py-1.5 shadow-xl shadow-black/50">
+                  <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                  <div className="text-[11px] font-medium text-slate-200">
+                    <span className="font-bold text-white">1,248</span> Active Employees Connected
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Bottom Dark Card: Bold Headline & Subtitle */}
-          <div className="relative z-10 bg-[#081118] p-7 xl:p-9 border-t border-white/10 space-y-2.5">
-            <h2 className="text-2xl xl:text-3xl font-extrabold tracking-tight text-white leading-tight">
-              Business Management <br className="hidden sm:inline" />
-              <span className="text-[#38ABB1]">Made Simple</span>
-            </h2>
-            <p className="text-xs xl:text-sm leading-relaxed text-slate-300/80 max-w-md">
-              {sideSubtitle}
-            </p>
+          {/* Bottom Dark Card: Headline, Subtitle & Value Metrics */}
+          <div className="relative z-10 bg-[#081118]/95 p-4 sm:p-5 xl:p-6 border-t border-white/10 space-y-2.5">
+            <div>
+              <h2 className="text-xl xl:text-2xl 2xl:text-3xl font-extrabold tracking-tight text-white leading-tight">
+                {sideHeadline}{" "}
+                <span className="text-[#38ABB1]">Made Simple</span>
+              </h2>
+              <p className="mt-1 text-xs xl:text-sm leading-relaxed text-slate-300/80 max-w-xl">
+                {sideSubtitle}
+              </p>
+            </div>
+
+            {/* 3 Metric Value Props filling the space */}
+            <div className="grid grid-cols-3 gap-2.5 pt-0.5">
+              <div className="rounded-xl bg-white/[0.04] border border-white/10 p-2.5 xl:p-3 backdrop-blur-xs">
+                <div className="text-sm xl:text-base font-bold text-white">99.8%</div>
+                <div className="text-[10px] xl:text-[11px] text-slate-400 leading-tight">Payroll Accuracy</div>
+              </div>
+              <div className="rounded-xl bg-white/[0.04] border border-white/10 p-2.5 xl:p-3 backdrop-blur-xs">
+                <div className="text-sm xl:text-base font-bold text-[#38ABB1]">10x</div>
+                <div className="text-[10px] xl:text-[11px] text-slate-400 leading-tight">Faster Processing</div>
+              </div>
+              <div className="rounded-xl bg-white/[0.04] border border-white/10 p-2.5 xl:p-3 backdrop-blur-xs">
+                <div className="text-sm xl:text-base font-bold text-white">100%</div>
+                <div className="text-[10px] xl:text-[11px] text-slate-400 leading-tight">Statutory Compliant</div>
+              </div>
+            </div>
           </div>
         </aside>
 
         {/* ========================================================
             RIGHT COLUMN: Sleek Auth Form Container
            ======================================================== */}
-        <div className="relative flex flex-col justify-between p-6 sm:p-9 xl:p-12 lg:col-span-6 xl:col-span-6 bg-white dark:bg-[#0d1622] transition-colors">
-          <div className="w-full max-w-[430px] mx-auto flex-1 flex flex-col justify-center">
-            
-            {/* Top Bar: App Logo Badge + Theme Selector */}
-            <div className="flex items-center justify-between mb-5">
-              <Link
-                href="/"
-                className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/60 hover:bg-slate-200/80 dark:hover:bg-slate-700 transition-all shadow-xs"
-              >
-                <div className="relative flex h-5 w-5 items-center justify-center overflow-hidden rounded-md">
-                  <Image
-                    src={BrandImages.mark}
-                    alt="Teamzen"
-                    width={20}
-                    height={20}
-                    priority
-                    className="h-4 w-4 object-contain"
-                  />
-                </div>
-                <span className="text-xs font-bold text-foreground tracking-tight group-hover:text-[#38ABB1] transition-colors">
-                  Teamzen
-                </span>
-              </Link>
-
-              <div className="flex items-center gap-2">
-                <ThemeSelector />
+        <div className="relative flex flex-col justify-between p-6 sm:p-8 md:p-10 xl:p-12 lg:col-span-6 xl:col-span-6 bg-white dark:bg-[#0d1622] transition-colors h-full overflow-y-auto">
+          {/* Top Bar: App Logo Badge + Theme Selector */}
+          <div
+            className={cn(
+              "w-full mx-auto flex items-center justify-between pb-4 sm:pb-6",
+              wide
+                ? "max-w-[580px] xl:max-w-[640px]"
+                : "max-w-[500px] xl:max-w-[540px] 2xl:max-w-[560px]"
+            )}
+          >
+            <Link
+              href="/"
+              className="group inline-flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/60 hover:bg-slate-200/80 dark:hover:bg-slate-700 transition-all shadow-xs"
+            >
+              <div className="relative flex h-5 w-5 items-center justify-center overflow-hidden rounded-md">
+                <Image
+                  src={BrandImages.mark}
+                  alt="Teamzen"
+                  width={22}
+                  height={22}
+                  priority
+                  className="h-5 w-5 object-contain"
+                />
               </div>
-            </div>
+              <span className="text-sm font-bold text-foreground tracking-tight group-hover:text-[#38ABB1] transition-colors">
+                Teamzen
+              </span>
+            </Link>
 
+            <div className="flex items-center gap-2">
+              <ThemeSelector />
+            </div>
+          </div>
+
+          {/* Form Main Section */}
+          <div
+            className={cn(
+              "w-full mx-auto my-auto py-3 sm:py-5 flex flex-col justify-center",
+              wide
+                ? "max-w-[580px] xl:max-w-[640px]"
+                : "max-w-[500px] xl:max-w-[540px] 2xl:max-w-[560px]"
+            )}
+          >
             {/* Title & Description */}
-            <div className="mb-5">
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+            <div className="mb-6 sm:mb-7">
+              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
                 {title}
               </h1>
               {description ? (
-                <p className="mt-1 text-xs sm:text-sm text-muted-foreground">{description}</p>
+                <p className="mt-2 text-sm sm:text-base text-muted-foreground">{description}</p>
               ) : null}
             </div>
 
@@ -143,6 +210,16 @@ export function AuthShell({
               {children}
             </div>
           </div>
+
+          {/* Bottom spacer for flex balance */}
+          <div
+            className={cn(
+              "w-full mx-auto hidden sm:block",
+              wide
+                ? "max-w-[580px] xl:max-w-[640px]"
+                : "max-w-[500px] xl:max-w-[540px] 2xl:max-w-[560px]"
+            )}
+          />
         </div>
       </div>
     </div>

@@ -52,6 +52,7 @@ export function UserProfileModal({ userId, open, onOpenChange, initialData }: Us
 
   const locationName =
     user?.office_location_details?.name ||
+    user?.officeLocation?.name ||
     user?.location;
 
   const email = user?.email;
@@ -64,7 +65,7 @@ export function UserProfileModal({ userId, open, onOpenChange, initialData }: Us
   ].filter(Boolean).join(' • ');
 
   const initial = (firstName?.[0] || displayName?.[0] || '?').toUpperCase();
-  const employeeId = user?.employee_id || (user?.id ? String(user.id).substring(0, 8) : 'STAFF');
+  const employeeId = user?.employee_id || user?.employeeId || (user?.id ? String(user.id).substring(0, 8) : 'STAFF');
 
   return (
     <Dialog open={open && !!(userId || user)} onOpenChange={onOpenChange}>
@@ -120,28 +121,45 @@ export function UserProfileModal({ userId, open, onOpenChange, initialData }: Us
 
               {/* Details List */}
               <div className="mt-6 flex flex-col text-sm text-left divide-y divide-border/60 border-t border-b border-border/60">
-                {email && (
+                {isLoading && !userDetails && !email ? (
+                  <div className="flex items-center gap-3 py-2.5 text-muted-foreground">
+                    <Mail className="w-4 h-4 shrink-0 text-primary/40 animate-pulse" />
+                    <div className="h-4 w-44 rounded bg-muted animate-pulse" />
+                  </div>
+                ) : email ? (
                   <div className="flex items-center gap-3 py-2.5 text-muted-foreground transition-colors hover:text-foreground">
                     <Mail className="w-4 h-4 shrink-0 text-primary/70" />
                     <a href={`mailto:${email}`} className="truncate hover:underline">
                       {email}
                     </a>
                   </div>
-                )}
-                {phone && (
+                ) : null}
+
+                {isLoading && !userDetails && !phone ? (
+                  <div className="flex items-center gap-3 py-2.5 text-muted-foreground">
+                    <Phone className="w-4 h-4 shrink-0 text-primary/40 animate-pulse" />
+                    <div className="h-4 w-32 rounded bg-muted animate-pulse" />
+                  </div>
+                ) : phone ? (
                   <div className="flex items-center gap-3 py-2.5 text-muted-foreground transition-colors hover:text-foreground">
                     <Phone className="w-4 h-4 shrink-0 text-primary/70" />
                     <a href={`tel:${phone}`} className="truncate hover:underline">
                       {phone}
                     </a>
                   </div>
-                )}
-                {metaDetails && (
+                ) : null}
+
+                {isLoading && !userDetails && !metaDetails ? (
+                  <div className="flex items-center gap-3 py-2.5 text-muted-foreground">
+                    <MapPin className="w-4 h-4 shrink-0 text-primary/40 animate-pulse" />
+                    <div className="h-4 w-36 rounded bg-muted animate-pulse" />
+                  </div>
+                ) : metaDetails ? (
                   <div className="flex items-center gap-3 py-2.5 text-muted-foreground transition-colors hover:text-foreground">
                     <MapPin className="w-4 h-4 shrink-0 text-primary/70" />
                     <span className="truncate">{metaDetails}</span>
                   </div>
-                )}
+                ) : null}
               </div>
 
               {/* Barcode/Footer */}
@@ -159,9 +177,13 @@ export function UserProfileModal({ userId, open, onOpenChange, initialData }: Us
                   ))}
                 </div>
               </div>
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1.5 font-mono">
-                ID: {employeeId}
-              </p>
+              {isLoading && !userDetails && !user?.employee_id && !user?.employeeId ? (
+                <div className="h-3 w-20 mx-auto rounded bg-muted animate-pulse mt-1.5" />
+              ) : (
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1.5 font-mono">
+                  ID: {employeeId}
+                </p>
+              )}
 
               {(user?.id || userId) && (
                 <div className="mt-4 pt-3 border-t border-border/40">

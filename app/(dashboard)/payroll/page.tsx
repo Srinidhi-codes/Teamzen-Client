@@ -27,7 +27,7 @@ export default function PayrollPage() {
     const latestPayslip = payslips[0];
 
     return (
-        <div className="p-4 sm:p-6 space-y-8 animate-fade-in">
+        <div className="w-full space-y-8 animate-fade-in pb-20">
             <PageHeader
                 eyebrow="Salary"
                 title="My Payroll"

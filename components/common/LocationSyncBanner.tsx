@@ -14,6 +14,7 @@ export function LocationSyncBanner() {
   const [isBlocked, setIsBlocked] = useState(false);
   const [canQuery, setCanQuery] = useState(false);
   const askedRef = useRef(false);
+  const promptTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [updateLocation] = useMutation(UPDATE_LOGIN_LOCATION);
 
   useEffect(() => {
@@ -27,16 +28,27 @@ export function LocationSyncBanner() {
     fetchPolicy: "cache-first",
   });
 
-  const handleSync = useCallback(() => {
+  const handleSync = useCallback((showBannerImmediately = false) => {
     if (!navigator.geolocation) {
       setIsBlocked(true);
       setIsVisible(true);
       return;
     }
 
+    if (showBannerImmediately) {
+      setIsVisible(true);
+    } else {
+      if (promptTimerRef.current) clearTimeout(promptTimerRef.current);
+      // Only show banner if the request takes more than 2.5s (meaning prompt is waiting for user action)
+      promptTimerRef.current = setTimeout(() => {
+        setIsVisible(true);
+      }, 2500);
+    }
+
     setIsSyncing(true);
     navigator.geolocation.getCurrentPosition(
       async (position) => {
+        if (promptTimerRef.current) clearTimeout(promptTimerRef.current);
         try {
           await updateLocation({
             variables: {
@@ -60,6 +72,7 @@ export function LocationSyncBanner() {
         }
       },
       (err) => {
+        if (promptTimerRef.current) clearTimeout(promptTimerRef.current);
         if (err.code === 1) setIsBlocked(true);
         setIsSyncing(false);
         setIsVisible(true);
@@ -86,11 +99,6 @@ export function LocationSyncBanner() {
     if (askedRef.current) return;
     askedRef.current = true;
 
-    const requestNativePrompt = () => {
-      setIsVisible(true);
-      handleSync();
-    };
-
     if (navigator.permissions?.query) {
       navigator.permissions
         .query({ name: "geolocation" as PermissionName })
@@ -103,9 +111,10 @@ export function LocationSyncBanner() {
           
           if (result.state === "granted") {
             setIsVisible(false);
-            handleSync();
+            handleSync(false);
           } else {
-            requestNativePrompt();
+            // state === "prompt" - try silent sync without flashing banner first
+            handleSync(false);
           }
 
           result.onchange = () => {
@@ -114,13 +123,13 @@ export function LocationSyncBanner() {
               setIsVisible(true);
             } else if (result.state === "granted") {
               setIsBlocked(false);
-              handleSync();
+              handleSync(false);
             }
           };
         })
-        .catch(() => requestNativePrompt());
+        .catch(() => handleSync(false));
     } else {
-      requestNativePrompt();
+      handleSync(false);
     }
   }, [data, handleSync]);
 
@@ -148,7 +157,7 @@ export function LocationSyncBanner() {
 
           <div className="flex shrink-0 items-center gap-2">
             <button
-              onClick={handleSync}
+              onClick={() => handleSync(true)}
               disabled={isSyncing}
               className={cn(
                 "inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors",

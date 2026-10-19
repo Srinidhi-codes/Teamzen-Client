@@ -2,16 +2,16 @@
 
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import { toast } from "sonner";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 let cachedToken: string | null = null;
 let tokenFetchPromise: Promise<string | null> | null = null;
 let lastTokenTime = 0;
 
-async function getSharedWsToken(): Promise<string | null> {
+export async function getSharedWsToken(forceRefresh = false): Promise<string | null> {
     const now = Date.now();
-    // Cache token for 5 minutes
-    if (cachedToken && now - lastTokenTime < 300000) {
+    // Cache token for 2 minutes unless forced
+    if (!forceRefresh && cachedToken && now - lastTokenTime < 120000) {
         return cachedToken;
     }
     if (tokenFetchPromise) {
@@ -20,19 +20,24 @@ async function getSharedWsToken(): Promise<string | null> {
 
     tokenFetchPromise = (async () => {
         try {
-            const tokenResponse = await fetch("/api/auth/ws-token", {
+            const url = forceRefresh ? "/api/auth/ws-token?refresh=1" : "/api/auth/ws-token";
+            const tokenResponse = await fetch(url, {
                 credentials: "include",
             });
-            if (!tokenResponse.ok) return null;
+            if (!tokenResponse.ok) {
+                cachedToken = null;
+                return null;
+            }
             const { token } = (await tokenResponse.json()) as { token?: string };
             if (token) {
                 cachedToken = token;
                 lastTokenTime = Date.now();
                 return token;
             }
+            cachedToken = null;
             return null;
         } catch (error) {
-            console.error("Failed to fetch ws-token:", error);
+            cachedToken = null;
             return null;
         } finally {
             tokenFetchPromise = null;
@@ -42,6 +47,22 @@ async function getSharedWsToken(): Promise<string | null> {
     return tokenFetchPromise;
 }
 
+function buildWsUrl(token: string): string {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/";
+    let protocol = "ws:";
+    let host = "localhost:8000";
+
+    try {
+        const urlObj = new URL(apiUrl);
+        protocol = urlObj.protocol === "https:" ? "wss:" : "ws:";
+        host = urlObj.host;
+    } catch {
+        // Fallback
+    }
+
+    return `${protocol}//${host}/ws/notifications/?token=${encodeURIComponent(token)}`;
+}
+
 export function useNotifications(
     onMessageReceived?: (msg: any) => void,
     options: { silent?: boolean } = { silent: false }
@@ -49,93 +70,128 @@ export function useNotifications(
     const [socketUrl, setSocketUrl] = useState<string | null>(null);
     const [shouldConnect, setShouldConnect] = useState(false);
     const callbackRef = useRef(onMessageReceived);
+    const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         callbackRef.current = onMessageReceived;
     }, [onMessageReceived]);
 
-    useEffect(() => {
-        let cancelled = false;
+    const initConnection = useCallback(async (forceRefresh = false) => {
+        const token = await getSharedWsToken(forceRefresh);
+        if (!token) {
+            setSocketUrl(null);
+            setShouldConnect(false);
+            return;
+        }
 
-        const connect = async () => {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/";
-            let protocol = "ws:";
-            let host = "localhost:8000";
-
-            try {
-                const urlObj = new URL(apiUrl);
-                protocol = urlObj.protocol === "https:" ? "wss:" : "ws:";
-                host = urlObj.host;
-            } catch (e) {
-                console.error("Invalid NEXT_PUBLIC_API_URL for WebSocket:", e);
-            }
-
-            const token = await getSharedWsToken();
-            if (cancelled) return;
-
-            if (!token) {
-                setSocketUrl(null);
-                setShouldConnect(false);
-                return;
-            }
-
-            const url = `${protocol}//${host}/ws/notifications/?token=${encodeURIComponent(token)}`;
-            setSocketUrl(url);
-            setShouldConnect(true);
-        };
-
-        connect();
-
-        return () => {
-            cancelled = true;
-        };
+        const url = buildWsUrl(token);
+        setSocketUrl(url);
+        setShouldConnect(true);
     }, []);
 
-    const { readyState, sendJsonMessage, sendMessage } = useWebSocket(socketUrl, {
-        shouldReconnect: () => shouldConnect,
-        reconnectInterval: 5000,
-        share: true,
-        onOpen: () => { },
-        onClose: () => { },
-        onError: (err) => {
-            if (err instanceof Error) {
-                console.error("Error Message:", err.message);
-            }
-        },
-        onMessage: (event) => {
-            const data = JSON.parse(event.data);
-            // Process both personal and admin notifications
-            if (data.level === 'personal' || data.level === 'admin' || data.level === 'feed_update') {
-                if (data.level !== 'feed_update' && !options.silent) {
-                    const displayVerb = data.verb?.replace(/_self$/, "").replace(/_/g, " ");
-                    const description = data.verb?.endsWith('_self') ? "Action confirmed" : `${data.actor?.firstName} ${displayVerb}`;
+    useEffect(() => {
+        let mounted = true;
+        initConnection();
 
-                    // Color coding based on verb
-                    if (data.verb?.includes('rejected')) {
-                        toast.error(data.message, { description, duration: 6000 });
-                    } else if (data.verb?.includes('approved')) {
-                        toast.success(data.message, { description, duration: 6000 });
-                    } else if (data.verb?.includes('cancelled')) {
-                        toast(data.message, {
-                            description,
-                            duration: 6000,
-                            className: "bg-blue-500 text-white border-none shadow-blue-500/50",
-                        });
-                    } else {
-                        toast.success(data.message, { description, duration: 5000 });
+        return () => {
+            mounted = false;
+            if (refreshTimeoutRef.current) {
+                clearTimeout(refreshTimeoutRef.current);
+            }
+        };
+    }, [initConnection]);
+
+    const { readyState, sendJsonMessage, sendMessage } = useWebSocket(
+        socketUrl,
+        {
+            shouldReconnect: (closeEvent) => {
+                // Never reconnect automatically if the server rejected authentication
+                if (
+                    closeEvent?.code === 4401 ||
+                    closeEvent?.code === 4001 ||
+                    closeEvent?.code === 1008
+                ) {
+                    return false;
+                }
+                return shouldConnect;
+            },
+            reconnectAttempts: 10,
+            reconnectInterval: (attempt) => Math.min(2000 * Math.pow(1.5, attempt), 20000),
+            share: true,
+            onOpen: () => {
+                if (refreshTimeoutRef.current) {
+                    clearTimeout(refreshTimeoutRef.current);
+                    refreshTimeoutRef.current = null;
+                }
+            },
+            onClose: (event) => {
+                // If authentication failed on server (code 4401/4001), stop immediately.
+                // Clear the stale token and attempt a single quiet token refresh after 3 seconds.
+                if (event.code === 4401 || event.code === 4001) {
+                    cachedToken = null;
+                    lastTokenTime = 0;
+                    setShouldConnect(false);
+                    setSocketUrl(null);
+
+                    if (refreshTimeoutRef.current) {
+                        clearTimeout(refreshTimeoutRef.current);
+                    }
+                    refreshTimeoutRef.current = setTimeout(() => {
+                        initConnection(true);
+                    }, 3000);
+                }
+            },
+            onError: () => {
+                // Quietly handle connection errors to avoid flooding developer console
+            },
+            onMessage: (event) => {
+                let data: any;
+                try {
+                    data = JSON.parse(event.data);
+                } catch {
+                    return;
+                }
+
+                // Process personal, admin, and feed notifications
+                if (data.level === "personal" || data.level === "admin" || data.level === "feed_update") {
+                    if (data.level !== "feed_update" && !options.silent) {
+                        const displayVerb = data.verb?.replace(/_self$/, "").replace(/_/g, " ");
+                        const description = data.verb?.endsWith("_self")
+                            ? "Action confirmed"
+                            : `${data.actor?.firstName || ""} ${displayVerb || ""}`.trim();
+
+                        if (data.verb?.includes("rejected")) {
+                            toast.error(data.message, { description, duration: 6000 });
+                        } else if (data.verb?.includes("approved")) {
+                            toast.success(data.message, { description, duration: 6000 });
+                        } else if (data.verb?.includes("cancelled")) {
+                            toast(data.message, {
+                                description,
+                                duration: 6000,
+                                className: "bg-blue-500 text-white border-none shadow-blue-500/50",
+                            });
+                        } else {
+                            toast.success(data.message, { description, duration: 5000 });
+                        }
+                    }
+
+                    if (typeof window !== "undefined" && data.verb === "announcement") {
+                        window.dispatchEvent(new CustomEvent("teamzen_announcement", { detail: data }));
+                    }
+
+                    if (callbackRef.current) {
+                        callbackRef.current(data);
                     }
                 }
+            },
+        },
+        shouldConnect && socketUrl !== null
+    );
 
-                if (typeof window !== "undefined" && data.verb === "announcement") {
-                    window.dispatchEvent(new CustomEvent("teamzen_announcement", { detail: data }));
-                }
-
-                if (callbackRef.current) {
-                    callbackRef.current(data);
-                }
-            }
-        }
-    }, shouldConnect && socketUrl !== null);
-
-    return { readyState, isConnected: readyState === ReadyState.OPEN, sendJsonMessage, sendMessage };
+    return {
+        readyState,
+        isConnected: readyState === ReadyState.OPEN,
+        sendJsonMessage,
+        sendMessage,
+    };
 }

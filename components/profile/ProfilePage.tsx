@@ -253,7 +253,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in mb-24">
+    <div className="w-full space-y-6 animate-fade-in pb-20">
       <ProfileHeader
         user={userForHeader}
         isEditing={isEditing}

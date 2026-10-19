@@ -150,7 +150,7 @@ export default function NotificationsPage() {
     );
 
     return (
-        <div className="p-4 sm:p-8 space-y-6 animate-fade-in mx-auto">
+        <div className="w-full space-y-6 animate-fade-in pb-20">
             <PageHeader
                 eyebrow="Updates"
                 title="Notifications"
@@ -185,197 +185,217 @@ export default function NotificationsPage() {
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Card className="p-5 bg-primary/5 border-primary/10 rounded-xl">
+                <Card className="p-4 border border-border/70 bg-card rounded-xl">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-background rounded-md text-primary">
-                            <Bell className="w-5 h-5" />
+                        <div className="p-2 bg-muted rounded-lg text-primary">
+                            <Bell className="w-4 h-4" />
                         </div>
                         <div>
                             <p className="text-xs font-medium text-muted-foreground mb-0.5">Total</p>
-                            <p className="text-xl font-semibold">{totalNotificationsCount}</p>
+                            <p className="text-lg font-semibold tabular-nums">{totalNotificationsCount}</p>
                         </div>
                     </div>
                 </Card>
 
-                <Card className="p-5 bg-orange-500/5 border-orange-500/10 rounded-xl">
+                <Card className="p-4 border border-border/70 bg-card rounded-xl">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-background rounded-md text-orange-500">
-                            <Mail className="w-5 h-5" />
+                        <div className="p-2 bg-muted rounded-lg text-foreground">
+                            <Mail className="w-4 h-4" />
                         </div>
                         <div>
                             <p className="text-xs font-medium text-muted-foreground mb-0.5">Unread</p>
-                            <p className="text-xl font-semibold">{unreadCount}</p>
+                            <p className="text-lg font-semibold tabular-nums">{unreadCount}</p>
                         </div>
                     </div>
                 </Card>
 
-                <Card className="p-5 bg-emerald-500/5 border-emerald-500/10 rounded-xl">
+                <Card className="p-4 border border-border/70 bg-card rounded-xl">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-background rounded-md text-emerald-500">
-                            <Activity className="w-5 h-5" />
+                        <div className="p-2 bg-muted rounded-lg text-foreground">
+                            <Activity className="w-4 h-4" />
                         </div>
                         <div>
                             <p className="text-xs font-medium text-muted-foreground mb-0.5">Activity</p>
-                            <p className="text-xl font-semibold">{activities.length}</p>
+                            <p className="text-lg font-semibold tabular-nums">{activities.length}</p>
                         </div>
                     </div>
                 </Card>
             </div>
 
-            <Card className="rounded-xl border-border overflow-hidden min-h-[500px]">
-                <Tabs defaultValue="all" onValueChange={handleFilterChange} className="w-full">
-                    <div className="px-4 sm:px-6 pt-5 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b border-border/40 pb-5">
-                        <TabsList className="flex items-center bg-muted/40 p-1 rounded-xl border border-border w-full sm:w-fit flex-wrap sm:flex-nowrap h-auto">
-                            <TabsTrigger value="all" className="flex-1 sm:flex-none rounded-lg px-4 py-2 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
-                                All
-                            </TabsTrigger>
-                            <TabsTrigger value="unread" className="flex-1 sm:flex-none rounded-lg px-4 py-2 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
-                                Unread
-                                {unreadCount > 0 && (
-                                    <span className="ml-2 rounded-md px-1.5 py-0.5 text-[11px] font-medium bg-destructive text-destructive-foreground">
-                                        {unreadCount}
-                                    </span>
-                                )}
-                            </TabsTrigger>
-                            <TabsTrigger value="activity" className="flex-1 sm:flex-none rounded-lg px-4 py-2 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
-                                Activity
-                            </TabsTrigger>
-                        </TabsList>
-
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleDeleteAllRead}
-                            disabled={totalNotificationsCount === unreadCount}
-                            className="text-muted-foreground hover:text-destructive h-9 rounded-md text-sm font-medium px-3"
+            <Tabs defaultValue="all" onValueChange={handleFilterChange} className="w-full space-y-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2">
+                    <TabsList className="flex items-center bg-muted/40 p-1 rounded-xl border border-border/80 w-full sm:w-fit flex-wrap sm:flex-nowrap h-auto gap-1">
+                        <TabsTrigger
+                            value="all"
+                            className="group flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs data-[state=active]:font-semibold data-[state=active]:border data-[state=active]:border-border/40"
                         >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Clear read
-                        </Button>
-                    </div>
+                            <Bell className="w-3.5 h-3.5 group-data-[state=active]:text-primary" />
+                            <span>All</span>
+                            {totalNotificationsCount > 0 && (
+                                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-muted font-mono">
+                                    {totalNotificationsCount}
+                                </span>
+                            )}
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="unread"
+                            className="group flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs data-[state=active]:font-semibold data-[state=active]:border data-[state=active]:border-border/40"
+                        >
+                            <Mail className="w-3.5 h-3.5 group-data-[state=active]:text-primary" />
+                            <span>Unread</span>
+                            {unreadCount > 0 && (
+                                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-muted font-mono">
+                                    {unreadCount}
+                                </span>
+                            )}
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="activity"
+                            className="group flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs data-[state=active]:font-semibold data-[state=active]:border data-[state=active]:border-border/40"
+                        >
+                            <Activity className="w-3.5 h-3.5 group-data-[state=active]:text-primary" />
+                            <span>Activity</span>
+                            {activities.length > 0 && (
+                                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-muted font-mono">
+                                    {activities.length}
+                                </span>
+                            )}
+                        </TabsTrigger>
+                    </TabsList>
 
-                    <TabsContent value="activity" className="m-0 border-none outline-none pb-6">
-                        {activityLoading ? (
-                            <PageSkeleton variant="list" />
-                        ) : activities.length > 0 ? (
-                            <>
-                                <div className="divide-y divide-border/30 max-h-150 overflow-y-auto custom-scrollbar">
-                                    {paginatedActivities.map((item: any) => {
-                                        const isLeave = item.id.includes('leave');
-                                        const isNotif = item.id.includes('notif');
-                                        const isJoin = item.action.toLowerCase().includes('joined');
-                                        const isAnniv = item.action.toLowerCase().includes('celebrates');
-                                        const Icon = isLeave ? Calendar : isNotif ? Bell : isJoin ? UserPlus : isAnniv ? Award : Clock;
-                                        const color = isAnniv ? 'text-amber-500' : isJoin ? 'text-blue-500' : isLeave ? 'text-blue-600' : 'text-primary';
-                                        const bg = isAnniv ? 'bg-amber-500/10' : isJoin ? 'bg-blue-500/10' : isLeave ? 'bg-blue-500/10' : 'bg-primary/10';
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleDeleteAllRead}
+                        disabled={totalNotificationsCount === unreadCount}
+                        className="text-muted-foreground hover:text-destructive h-8 rounded-lg text-xs font-medium px-3"
+                    >
+                        <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                        Clear read
+                    </Button>
+                </div>
 
-                                        return (
-                                            <div key={item.id} className="group relative p-4 sm:p-5 transition-colors hover:bg-muted/30">
-                                                <div className="flex gap-3 sm:gap-4">
-                                                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", bg, color)}>
-                                                        <Icon className="w-4 h-4" />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0 space-y-1">
-                                                        <h4 className="text-sm font-medium leading-relaxed text-foreground capitalize truncate">
-                                                            {item.action}
-                                                        </h4>
-                                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                                                            <div className="flex items-center gap-1.5">
-                                                                <Clock className="w-3 h-3" />
-                                                                {moment(item.time).format("MMM DD, HH:mm")}
-                                                            </div>
-                                                            <span className="text-border">·</span>
-                                                            <span>{item.user}</span>
+                <TabsContent value="activity" className="m-0 border-none outline-none">
+                    {activityLoading ? (
+                        <PageSkeleton variant="list" />
+                    ) : activities.length > 0 ? (
+                        <div className="rounded-2xl border border-border/80 bg-card overflow-hidden">
+                            <div className="divide-y divide-border/30 max-h-150 overflow-y-auto custom-scrollbar">
+                                {paginatedActivities.map((item: any) => {
+                                    const isLeave = item.id.includes('leave');
+                                    const isNotif = item.id.includes('notif');
+                                    const isJoin = item.action.toLowerCase().includes('joined');
+                                    const isAnniv = item.action.toLowerCase().includes('celebrates');
+                                    const Icon = isLeave ? Calendar : isNotif ? Bell : isJoin ? UserPlus : isAnniv ? Award : Clock;
+                                    const color = isAnniv ? 'text-amber-500' : isJoin ? 'text-blue-500' : isLeave ? 'text-blue-600' : 'text-primary';
+                                    const bg = isAnniv ? 'bg-amber-500/10' : isJoin ? 'bg-blue-500/10' : isLeave ? 'bg-blue-500/10' : 'bg-primary/10';
+
+                                    return (
+                                        <div key={item.id} className="group relative p-4 sm:p-5 transition-colors hover:bg-muted/30">
+                                            <div className="flex gap-3 sm:gap-4">
+                                                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", bg, color)}>
+                                                    <Icon className="w-4 h-4" />
+                                                </div>
+                                                <div className="flex-1 min-w-0 space-y-1">
+                                                    <h4 className="text-sm font-medium leading-relaxed text-foreground capitalize truncate">
+                                                        {item.action}
+                                                    </h4>
+                                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Clock className="w-3 h-3" />
+                                                            {moment(item.time).format("MMM DD, HH:mm")}
                                                         </div>
+                                                        <span className="text-border">·</span>
+                                                        <span>{item.user}</span>
                                                     </div>
                                                 </div>
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                                {totalActivityPages > 1 && (
-                                    <div className="p-6 border-t border-border/30 bg-muted/10">
-                                        <Pagination
-                                            currentPage={currentPage}
-                                            totalPages={totalActivityPages}
-                                            onPageChange={setCurrentPage}
-                                            total={activities.length}
-                                            pageSize={pageSize}
-                                            label="activities"
-                                        />
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
-                                <Activity className="w-10 h-10 text-muted-foreground/40 mb-4" />
-                                <h3 className="text-base font-semibold text-foreground mb-2">No activity yet</h3>
-                                <p className="text-sm text-muted-foreground max-w-xs">
-                                    Recent account activity will show up here.
-                                </p>
+                                        </div>
+                                    );
+                                })}
                             </div>
-                        )}
-                    </TabsContent>
+                            {totalActivityPages > 1 && (
+                                <div className="p-6 border-t border-border/30 bg-muted/10">
+                                    <Pagination
+                                        currentPage={currentPage}
+                                        totalPages={totalActivityPages}
+                                        onPageChange={setCurrentPage}
+                                        total={activities.length}
+                                        pageSize={pageSize}
+                                        label="activities"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="rounded-2xl border border-border/60 bg-card flex flex-col items-center justify-center py-24 px-6 text-center shadow-xs">
+                            <Activity className="w-10 h-10 text-muted-foreground/40 mb-4" />
+                            <h3 className="text-base font-semibold text-foreground mb-2">No activity yet</h3>
+                            <p className="text-sm text-muted-foreground max-w-xs">
+                                Recent account activity will show up here.
+                            </p>
+                        </div>
+                    )}
+                </TabsContent>
 
-                    <TabsContent value="all" className="p-0 m-0 pb-6">
-                        {loading ? (
-                            <PageSkeleton variant="list" />
-                        ) : notifications.length > 0 ? (
-                            <>
-                                {renderNotifications(paginatedNotifications)}
-                                {totalNotificationPages > 1 && (
-                                    <div className="p-6 border-t border-border/30 bg-muted/10">
-                                        <Pagination
-                                            currentPage={currentPage}
-                                            totalPages={totalNotificationPages}
-                                            onPageChange={setCurrentPage}
-                                            total={totalNotificationsCount}
-                                            pageSize={pageSize}
-                                            label="notifications"
-                                        />
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                            <EmptyState
-                                src={EmptyImages.notifications}
-                                title="No notifications"
-                                description="You're all caught up. New alerts will appear here."
-                                size="wide"
-                            />
-                        )}
-                    </TabsContent>
+                <TabsContent value="all" className="p-0 m-0">
+                    {loading ? (
+                        <PageSkeleton variant="list" />
+                    ) : notifications.length > 0 ? (
+                        <div className="rounded-2xl border border-border/80 bg-card overflow-hidden">
+                            {renderNotifications(paginatedNotifications)}
+                            {totalNotificationPages > 1 && (
+                                <div className="p-6 border-t border-border/30 bg-muted/10">
+                                    <Pagination
+                                        currentPage={currentPage}
+                                        totalPages={totalNotificationPages}
+                                        onPageChange={setCurrentPage}
+                                        total={totalNotificationsCount}
+                                        pageSize={pageSize}
+                                        label="notifications"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <EmptyState
+                            src={EmptyImages.notifications}
+                            title="No notifications"
+                            description="You're all caught up. New alerts will appear here."
+                            size="wide"
+                        />
+                    )}
+                </TabsContent>
 
-                    <TabsContent value="unread" className="p-0 m-0 pb-6">
-                        {loading ? (
-                            <PageSkeleton variant="list" />
-                        ) : notifications.length > 0 ? (
-                            <>
-                                {renderNotifications(paginatedNotifications)}
-                                {totalNotificationPages > 1 && (
-                                    <div className="p-6 border-t border-border/30 bg-muted/10">
-                                        <Pagination
-                                            currentPage={currentPage}
-                                            totalPages={totalNotificationPages}
-                                            onPageChange={setCurrentPage}
-                                            total={totalNotificationsCount}
-                                            pageSize={pageSize}
-                                            label="notifications"
-                                        />
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                            <EmptyState
-                                src={EmptyImages.notifications}
-                                title="No unread notifications"
-                                description="You're all caught up."
-                                size="wide"
-                            />
-                        )}
-                    </TabsContent>
-                </Tabs>
-            </Card>
+                <TabsContent value="unread" className="p-0 m-0">
+                    {loading ? (
+                        <PageSkeleton variant="list" />
+                    ) : notifications.length > 0 ? (
+                        <div className="rounded-2xl border border-border/80 bg-card overflow-hidden">
+                            {renderNotifications(paginatedNotifications)}
+                            {totalNotificationPages > 1 && (
+                                <div className="p-6 border-t border-border/30 bg-muted/10">
+                                    <Pagination
+                                        currentPage={currentPage}
+                                        totalPages={totalNotificationPages}
+                                        onPageChange={setCurrentPage}
+                                        total={totalNotificationsCount}
+                                        pageSize={pageSize}
+                                        label="notifications"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <EmptyState
+                            src={EmptyImages.notifications}
+                            title="No unread notifications"
+                            description="You're all caught up."
+                            size="wide"
+                        />
+                    )}
+                </TabsContent>
+            </Tabs>
 
             <div className="text-center pb-8">
                 <p className="text-xs text-muted-foreground">

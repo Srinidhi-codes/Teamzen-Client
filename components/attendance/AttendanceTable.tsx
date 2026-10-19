@@ -2,8 +2,10 @@ import { DataTable, Column } from "@/components/common/DataTable";
 import moment from "moment";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, TrendingUp, RotateCcw, PenLine, SquareArrowOutUpRight } from "lucide-react";
+import { Calendar, Clock, TrendingUp, RotateCcw, PenLine, ArrowRight } from "lucide-react";
 import { PageSkeleton } from "@/components/common/PageSkeleton";
+import { EmptyState } from "@/components/common/EmptyState";
+import { EmptyImages } from "@/lib/brand-images";
 
 export type AttendanceRow = {
     id: string;
@@ -134,9 +136,9 @@ export function AttendanceTable({
             render: (value: string) => {
                 const config = STATUS_CONFIG[value] || { label: value, variant: "info" as const };
                 return (
-                    <span className="inline-flex rounded-md px-1.5 py-0.5 text-[11px] font-medium capitalize bg-muted text-foreground">
+                    <Badge variant={config.variant}>
                         {config.label}
-                    </span>
+                    </Badge>
                 );
             },
         },
@@ -147,22 +149,17 @@ export function AttendanceTable({
                 if (!value && !row.correctionReason) return <span className="text-muted-foreground/40 text-sm">—</span>;
                 const config = STATUS_CONFIG[value] || { label: value || "Pending", variant: "info" as const };
                 return (
-                    <div className="flex flex-col gap-1.5">
-                        <span className={`inline-flex w-fit rounded-md px-1.5 py-0.5 text-[11px] font-medium capitalize ${
-                            config.variant === "success" ? "bg-emerald-500/10 text-emerald-700" :
-                            config.variant === "danger" ? "bg-destructive/10 text-destructive" :
-                            config.variant === "warning" ? "bg-amber-500/10 text-amber-700" :
-                            "bg-muted text-muted-foreground"
-                        }`}>
+                    <div className="flex flex-col gap-1">
+                        <Badge variant={config.variant}>
                             {config.label}
-                        </span>
+                        </Badge>
                         {row.correctionReason && (
-                            <p className="text-xs text-muted-foreground truncate max-w-[120px]" title={row.correctionReason}>
+                            <p className="text-xs text-muted-foreground truncate max-w-[140px]" title={row.correctionReason}>
                                 {row.correctionReason}
                             </p>
                         )}
                     </div>
-                )
+                );
             },
         },
         ...(data?.some(row => row.correctionStatus !== "approved") ? [{
@@ -174,29 +171,26 @@ export function AttendanceTable({
                     return null;
                 }
                 return (
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            className="group relative h-8 w-20 overflow-hidden text-xs font-medium border-border/80 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-all cursor-pointer"
+                            onClick={() => onRequestCorrection(row)}
+                            title={status ? "View / Request again" : "View"}
+                        >
+                            <span className="transition-transform duration-200 group-hover:-translate-x-2">View</span>
+                            <ArrowRight className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 opacity-0 transition-all duration-200 group-hover:opacity-100 text-primary" />
+                        </Button>
                         {status === "pending" && row.correctionId && (
                             <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                size="sm"
+                                variant="outline"
+                                className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all cursor-pointer"
                                 onClick={() => onCancelCorrection(row.correctionId!)}
                                 title="Cancel correction"
-                                aria-label="Cancel correction"
                             >
-                                <RotateCcw className="h-4 w-4" />
-                            </Button>
-                        )}
-                        {(!status || status === "rejected" || status === "cancelled") && (
-                            <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                                onClick={() => onRequestCorrection(row)}
-                                title={status ? "Request again" : "Request correction"}
-                                aria-label={status ? "Request again" : "Request correction"}
-                            >
-                                <SquareArrowOutUpRight/>
+                                Cancel
                             </Button>
                         )}
                     </div>
@@ -286,24 +280,24 @@ export function AttendanceTable({
                     </div>
 
                     <div className="flex items-center gap-2">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            className="group relative h-9 w-20 overflow-hidden text-xs font-medium border-border/80 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-all cursor-pointer shadow-xs rounded-lg"
+                            onClick={() => onRequestCorrection(row)}
+                            title={row.correctionStatus ? "View / Request again" : "View"}
+                        >
+                            <span className="transition-transform duration-200 group-hover:-translate-x-2">View</span>
+                            <ArrowRight className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 opacity-0 transition-all duration-200 group-hover:opacity-100 text-primary" />
+                        </Button>
                         {row.correctionStatus === "pending" && row.correctionId && (
                             <Button
                                 size="sm"
                                 variant="outline"
-                                className="h-9 px-3.5 text-xs font-semibold text-muted-foreground hover:bg-destructive/10 hover:text-destructive border-border shadow-sm rounded-lg"
+                                className="h-9 px-3 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive border-border shadow-xs rounded-lg transition-all"
                                 onClick={() => onCancelCorrection(row.correctionId!)}
                             >
-                                <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Cancel
-                            </Button>
-                        )}
-                        {(!row.correctionStatus || row.correctionStatus === "rejected" || row.correctionStatus === "cancelled") && (
-                            <Button
-                                size="sm"
-                                variant="default"
-                                className="h-9 p-5 text-xs font-bold shadow-sm rounded-lg"
-                                onClick={() => onRequestCorrection(row)}
-                            >
-                               Request
+                                Cancel
                             </Button>
                         )}
                     </div>
@@ -312,30 +306,34 @@ export function AttendanceTable({
         );
     };
 
+    const emptyStateView = (
+        <EmptyState
+            src={EmptyImages.attendance}
+            title="No attendance records found"
+            description="There are no attendance or regularization records matching the selected date range. Try selecting different dates above."
+            size="wide"
+        />
+    );
+
     return (
         <>
             {/* Desktop View */}
-            <div className="hidden md:block bg-card rounded-xl border border-border overflow-hidden p-1 sm:p-2">
-                {isLoading ? (
-                    <div className="p-4">
-                        <PageSkeleton variant="list" />
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto custom-scrollbar">
-                        <DataTable
-                            columns={columns}
-                            data={data}
-                            total={total}
-                            currentPage={currentPage}
-                            pageSize={pageSize}
-                            onPageChange={onPageChange}
-                        />
-                    </div>
-                )}
+            <div className="hidden sm:block">
+                <DataTable
+                    columns={columns}
+                    data={data}
+                    isLoading={isLoading}
+                    total={total}
+                    currentPage={currentPage}
+                    pageSize={pageSize}
+                    onPageChange={onPageChange}
+                    paginationLabel="records"
+                    emptyState={emptyStateView}
+                />
             </div>
 
             {/* Mobile View */}
-            <div className="md:hidden">
+            <div className="block sm:hidden">
                 {isLoading ? (
                     <div className="p-2">
                         <PageSkeleton variant="list" />
@@ -345,9 +343,13 @@ export function AttendanceTable({
                         {data.map(renderMobileCard)}
                     </div>
                 ) : (
-                    <div className="text-center py-10 text-muted-foreground border border-border border-dashed rounded-xl bg-muted/20">
-                        No records found
-                    </div>
+                    <EmptyState
+                        src={EmptyImages.attendance}
+                        title="No records found"
+                        description="No attendance records match your current date filters."
+                        size="compact"
+                        className="rounded-2xl border border-border/60 overflow-hidden shadow-xs"
+                    />
                 )}
             </div>
         </>
