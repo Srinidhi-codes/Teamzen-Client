@@ -31,6 +31,59 @@ const flattenReplies = (replies: any[] = []): any[] => {
   }, []);
 };
 
+const insertCommentIntoTree = (comments: any[], newComment: any, parentId?: string | null): any[] => {
+  if (!parentId) {
+    if (comments.some(c => c.id === newComment.id)) return comments;
+    return [...comments, { ...newComment, replies: newComment.replies || [] }];
+  }
+  return comments.map(c => {
+    if (c.id === parentId) {
+      const existingReplies = c.replies || [];
+      if (existingReplies.some((r: any) => r.id === newComment.id)) return c;
+      return {
+        ...c,
+        replies: [...existingReplies, { ...newComment, replies: newComment.replies || [] }]
+      };
+    }
+    if (c.replies && c.replies.length > 0) {
+      return {
+        ...c,
+        replies: insertCommentIntoTree(c.replies, newComment, parentId)
+      };
+    }
+    return c;
+  });
+};
+
+const removeCommentFromTree = (comments: any[], commentId: string): any[] => {
+  return comments
+    .filter(c => c.id !== commentId)
+    .map(c => {
+      if (c.replies && c.replies.length > 0) {
+        return {
+          ...c,
+          replies: removeCommentFromTree(c.replies, commentId)
+        };
+      }
+      return c;
+    });
+};
+
+const updateCommentInTree = (comments: any[], commentId: string, updates: Partial<any>): any[] => {
+  return comments.map(c => {
+    if (c.id === commentId) {
+      return { ...c, ...updates };
+    }
+    if (c.replies && c.replies.length > 0) {
+      return {
+        ...c,
+        replies: updateCommentInTree(c.replies, commentId, updates)
+      };
+    }
+    return c;
+  });
+};
+
 const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser, onReply }: any) => {
   const { user } = useUser();
   const [showAllReplies, setShowAllReplies] = useState(false);
@@ -393,9 +446,44 @@ export const CommentSection = ({
   }, [initialComments, loading, isExpanded]);
 
   useNotifications((msg) => {
-    if (isExpanded && msg?.level === 'feed_update' && msg?.target_id === postId) {
-      refetch();
+    if (!isExpanded || msg?.level !== 'feed_update') return;
+    const msgPostId = msg.post_id || msg.target_id || msg.data?.post_id;
+    if (String(msgPostId) !== String(postId)) return;
+
+    if (msg.action === 'comment_created' || (msg.action === 'create_comment' && (msg.comment || msg.data?.comment))) {
+      const newComment = msg.comment || msg.data?.comment;
+      if (newComment?.id) {
+        setAllComments(prev => insertCommentIntoTree(prev, newComment, msg.parent_id || msg.data?.parent_id || newComment.parentId));
+        return;
+      }
     }
+
+    if (msg.action === 'comment_deleted' || (msg.action === 'delete_comment' && (msg.comment_id || msg.data?.comment_id))) {
+      const commentId = msg.comment_id || msg.data?.comment_id;
+      if (commentId) {
+        setAllComments(prev => removeCommentFromTree(prev, String(commentId)));
+        return;
+      }
+    }
+
+    if (msg.action === 'comment_updated' || (msg.action === 'update_comment' && (msg.comment || msg.data?.comment))) {
+      const updated = msg.comment || msg.data?.comment;
+      if (updated?.id) {
+        setAllComments(prev => updateCommentInTree(prev, String(updated.id), { content: updated.content, updatedAt: updated.updatedAt }));
+        return;
+      }
+    }
+
+    if (msg.action === 'comment_liked' || msg.action === 'toggle_comment_like') {
+      const commentId = msg.comment_id || msg.data?.comment_id;
+      const likesCount = msg.likes_count ?? msg.data?.likes_count;
+      if (commentId && likesCount !== undefined) {
+        setAllComments(prev => updateCommentInTree(prev, String(commentId), { likesCount }));
+        return;
+      }
+    }
+
+    refetch();
   }, { silent: true });
 
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
@@ -439,10 +527,13 @@ export const CommentSection = ({
     setReplyingTo(null);
 
     try {
-      await createComment({
-        variables: { postId, content: commentText, parentId },
-        refetchQueries: ['GetPostComments']
+      const res = await createComment({
+        variables: { postId, content: commentText, parentId }
       });
+      const created = res?.data?.createComment;
+      if (created) {
+        setAllComments(prev => insertCommentIntoTree(prev, created, parentId));
+      }
       toast.success(parentId ? 'Reply posted' : 'Comment posted');
     } catch (e) {
       setContent(commentText);

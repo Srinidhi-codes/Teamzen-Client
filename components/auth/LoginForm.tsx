@@ -9,7 +9,6 @@ import {
   Lock,
   Eye,
   EyeOff,
-  KeyRound,
   ShieldCheck,
   Sparkles,
   Phone,
@@ -25,7 +24,6 @@ import {
   AuthFooterLink,
   AuthSubmitButton,
   GoogleMark,
-  AppleIcon,
   FacebookIcon,
 } from "./auth-ui";
 import ConfirmationModal from "../common/ConfirmationModal";
@@ -174,11 +172,12 @@ export default function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanEmail = email.trim().toLowerCase();
 
     if (authType === "otp") {
       if (step === "login") {
         try {
-          await requestOtp.mutateAsync(email);
+          await requestOtp.mutateAsync(cleanEmail);
           setStep("otp_code");
           setCountdown(60);
         } catch (error: any) {
@@ -187,8 +186,8 @@ export default function LoginForm() {
       } else if (step === "otp_code") {
         try {
           const result = await verifyOtp.mutateAsync({
-            email,
-            otp: otpCode,
+            email: cleanEmail,
+            otp: otpCode.trim(),
             remember_me: rememberMe,
           });
 
@@ -210,7 +209,8 @@ export default function LoginForm() {
   const handleResendOtp = async () => {
     if (countdown > 0) return;
     try {
-      await requestOtp.mutateAsync(email);
+      const cleanEmail = email.trim().toLowerCase();
+      await requestOtp.mutateAsync(cleanEmail);
       setCountdown(60);
     } catch (error: any) {
       showError(error.message || "Failed to send code");
@@ -223,7 +223,7 @@ export default function LoginForm() {
     try {
       const result = await verifyTotp.mutateAsync({
         temp_token: tempToken,
-        code: totpCode,
+        code: totpCode.trim(),
         remember_me: rememberMe,
       });
       if (result.user) {
@@ -236,8 +236,9 @@ export default function LoginForm() {
 
   const performLogin = async () => {
     try {
+      const cleanEmail = email.trim().toLowerCase();
       const response = await login.mutateAsync({
-        email,
+        email: cleanEmail,
         password,
         remember_me: rememberMe,
       });
@@ -327,11 +328,11 @@ export default function LoginForm() {
       ) : (
         <>
           {/* Main Login Form matching reference UI */}
-          <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-4" onSubmit={handleSubmit}>
             {step === "login" ? (
-              <div className="space-y-4 sm:space-y-5">
+              <div className="space-y-3.5">
                 {/* Field 1: Email, Username or User ID */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-xs sm:text-sm font-semibold text-foreground/90 block" htmlFor="email-address">
                     Email or Username <span className="text-red-500">*</span>
                   </label>
@@ -339,17 +340,22 @@ export default function LoginForm() {
                     id="email-address"
                     name="email"
                     type="text"
+                    inputMode="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
                     required
                     placeholder="Enter your email or username"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full h-13 sm:h-14 rounded-xl sm:rounded-2xl bg-[#f0f2f5] dark:bg-slate-800/80 border-2 border-transparent focus:border-[#38ABB1] dark:focus:border-[#38ABB1] focus:bg-white dark:focus:bg-slate-900 px-4 sm:px-5 text-sm sm:text-base text-foreground placeholder:text-muted-foreground/60 outline-none transition-all duration-200 shadow-xs"
+                    onChange={(e) => setEmail(e.target.value.toLowerCase())}
+                    onBlur={() => setEmail((prev) => prev.trim().toLowerCase())}
+                    className="w-full h-12 rounded-xl sm:rounded-2xl bg-[#f0f2f5] dark:bg-slate-800/80 border-2 border-transparent focus:border-[#38ABB1] dark:focus:border-[#38ABB1] focus:bg-white dark:focus:bg-slate-900 px-4 sm:px-5 text-sm sm:text-base text-foreground placeholder:text-muted-foreground/60 outline-none transition-all duration-200 shadow-xs"
                   />
                 </div>
 
                 {/* Field 2: Password or OTP notification */}
                 {authType === "password" ? (
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <label className="text-xs sm:text-sm font-semibold text-foreground/90 block" htmlFor="password">
                         Password <span className="text-red-500">*</span>
@@ -371,7 +377,7 @@ export default function LoginForm() {
                         placeholder="Enter your password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full h-13 sm:h-14 rounded-xl sm:rounded-2xl bg-[#f0f2f5] dark:bg-slate-800/80 border-2 border-transparent focus:border-[#38ABB1] dark:focus:border-[#38ABB1] focus:bg-white dark:focus:bg-slate-900 px-4 sm:px-5 pr-12 text-sm sm:text-base text-foreground placeholder:text-muted-foreground/60 outline-none transition-all duration-200 shadow-xs"
+                        className="w-full h-12 rounded-xl sm:rounded-2xl bg-[#f0f2f5] dark:bg-slate-800/80 border-2 border-transparent focus:border-[#38ABB1] dark:focus:border-[#38ABB1] focus:bg-white dark:focus:bg-slate-900 px-4 sm:px-5 pr-12 text-sm sm:text-base text-foreground placeholder:text-muted-foreground/60 outline-none transition-all duration-200 shadow-xs"
                       />
                       <button
                         type="button"
@@ -436,8 +442,8 @@ export default function LoginForm() {
 
             {/* Checkbox and Forgot Password Row */}
             {step === "login" && (
-              <div className="flex items-center justify-between pt-1">
-                <label className="flex cursor-pointer items-center gap-2.5 select-none">
+              <div className="flex items-center justify-between pt-0.5">
+                <label className="flex cursor-pointer items-center gap-2 select-none">
                   <input
                     type="checkbox"
                     checked={rememberMe}
@@ -445,7 +451,7 @@ export default function LoginForm() {
                     className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-[#38ABB1] focus:ring-[#38ABB1] accent-[#38ABB1] cursor-pointer"
                   />
                   <span className="text-xs sm:text-sm font-medium text-foreground/80">
-                    Remember me on this device
+                    Remember me
                   </span>
                 </label>
                 {authType === "password" && (
@@ -454,18 +460,18 @@ export default function LoginForm() {
                     prefetch={false}
                     className="text-xs sm:text-sm font-semibold text-[#38ABB1] dark:text-[#4cd1d7] hover:underline transition-colors"
                   >
-                    Forgot Your Password?
+                    Forgot Password?
                   </Link>
                 )}
               </div>
             )}
 
             {/* Primary Action Button: Log in */}
-            <div className="pt-2">
+            <div className="pt-1">
               <button
                 type="submit"
                 disabled={isRedirecting || login.isPending || requestOtp.isPending || verifyOtp.isPending}
-                className="w-full h-13 sm:h-14 rounded-xl sm:rounded-2xl bg-[#38ABB1] hover:bg-[#2e949a] text-white shadow-lg shadow-[#38ABB1]/30 dark:bg-[#38ABB1] dark:hover:bg-[#2e949a] dark:text-slate-950 font-bold text-base sm:text-lg transition-all duration-200 active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full h-12 rounded-xl sm:rounded-2xl bg-[#38ABB1] hover:bg-[#2e949a] text-white shadow-lg shadow-[#38ABB1]/30 dark:bg-[#38ABB1] dark:hover:bg-[#2e949a] dark:text-slate-950 font-bold text-base transition-all duration-200 active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
               >
                 {submitLabel() === "Sign in" ? "Log in" : submitLabel()}
               </button>
@@ -487,7 +493,7 @@ export default function LoginForm() {
 
           {/* Sign up prompt */}
           {step === "login" && (
-            <div className="mt-4 sm:mt-5 text-center">
+            <div className="mt-3 text-center">
               <p className="text-xs sm:text-sm text-foreground/80 font-medium">
                 Don&apos;t have an account?{" "}
                 <Link
@@ -502,55 +508,38 @@ export default function LoginForm() {
 
           {/* Or login with Divider */}
           {step === "login" && (
-            <div className="mt-6 sm:mt-7 space-y-4">
+            <div className="mt-3.5 space-y-2.5">
               <div className="relative flex items-center justify-center text-xs text-muted-foreground">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-slate-200 dark:border-slate-800" />
                 </div>
-                <span className="relative bg-white dark:bg-[#0d1622] px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
+                <span className="relative bg-white dark:bg-[#0d1622] px-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
                   Or continue with
                 </span>
               </div>
 
               {/* Social / SSO Buttons */}
-              <div className="flex items-center justify-center gap-3.5 py-1">
+              <div className="pt-0.5">
                 {/* Google Button */}
                 <div
-                  className="relative h-12 w-12 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/80 flex items-center justify-center shadow-xs hover:border-[#38ABB1] hover:scale-105 transition-all cursor-pointer group overflow-hidden"
+                  className="relative w-full h-12 rounded-xl sm:rounded-2xl border border-slate-200/90 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center gap-3 shadow-xs hover:border-[#38ABB1] dark:hover:border-[#38ABB1] transition-all cursor-pointer group overflow-hidden"
                   title="Sign in with Google"
                 >
-                  <GoogleMark />
+                  <GoogleMark className="h-5 w-5 shrink-0" />
+                  <span className="text-sm sm:text-base font-semibold text-foreground/90 group-hover:text-foreground transition-colors">
+                    Continue with Google
+                  </span>
                   <div
                     id="google-signin-btn"
-                    className="absolute inset-0 z-10 opacity-[0.01] cursor-pointer overflow-hidden scale-150"
+                    className="absolute inset-0 z-10 opacity-[0.01] cursor-pointer overflow-hidden flex items-center justify-center scale-125"
                   />
                 </div>
-
-                {/* Apple SSO Button */}
-                <button
-                  type="button"
-                  onClick={() => showError("Apple SSO is configured for enterprise domains. Please use email or Google.")}
-                  className="h-12 w-12 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/80 flex items-center justify-center shadow-xs hover:border-[#38ABB1] hover:scale-105 transition-all cursor-pointer text-foreground"
-                  title="Sign in with Apple"
-                >
-                  <AppleIcon className="h-5 w-5" />
-                </button>
-
-                {/* Enterprise SSO / Key Button */}
-                <button
-                  type="button"
-                  onClick={() => showError("Enterprise SAML / SSO portal available on Pro and Elite plans.")}
-                  className="h-12 w-12 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/80 flex items-center justify-center shadow-xs hover:border-[#38ABB1] hover:scale-105 transition-all cursor-pointer text-muted-foreground hover:text-[#38ABB1]"
-                  title="Enterprise SSO"
-                >
-                  <KeyRound className="h-5 w-5" />
-                </button>
               </div>
             </div>
           )}
 
           {/* Legal and Copyright Footer */}
-          <div className="mt-8 pt-5 text-center space-y-1.5 text-xs text-muted-foreground border-t border-slate-100 dark:border-slate-800/80">
+          <div className="mt-4 pt-3 text-center space-y-1 text-xs text-muted-foreground border-t border-slate-100 dark:border-slate-800/80">
             <p className="leading-relaxed">
               By continuing you agree to our{" "}
               <Link href="/terms" className="text-[#38ABB1] hover:underline font-medium">Terms &amp; Conditions</Link>,{" "}

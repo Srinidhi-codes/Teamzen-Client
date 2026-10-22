@@ -97,6 +97,9 @@ export function Sidebar({
     if (item.exitOnly && !inactive) return false;
     if (inactive && item.hideWhenInactive) return false;
     if (inactive && !isExitOnlyHref(item.href) && !item.exitOnly) return false;
+    if (item.roles && user?.role && !item.roles.map((r) => r.toLowerCase()).includes(user.role.toLowerCase())) {
+      return false;
+    }
     if (!item.feature) return true;
     return hasPlanFeature(
       user?.organization?.plan,

@@ -40,6 +40,7 @@ import { ScanFace } from "lucide-react";
 import Image from "next/image";
 import { LandingImages } from "@/lib/brand-images";
 import moment from "moment";
+import { AttendanceTimelineBar } from "@/components/attendance/AttendanceTimelineBar";
 
 const AttendanceMap = dynamic(() => import("@/components/attendance/AttendanceMap"), {
   ssr: false,
@@ -551,6 +552,29 @@ export default function AttendancePage() {
                   </div>
                 </>
               )}
+
+              {/* Today's Live Shift Timeline Bar */}
+              <div className="w-full pt-4 mt-2 border-t border-border/50 text-left space-y-2">
+                <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
+                  <span className="flex items-center gap-1.5 text-foreground">
+                    <Clock className="h-3.5 w-3.5 text-primary" />
+                    Today's Session Timeline
+                  </span>
+                  <span>Office Hours: 09:00 AM – 06:00 PM</span>
+                </div>
+                <div className="h-10 pt-0.5 relative">
+                  <AttendanceTimelineBar
+                    loginTime={todayAttendance?.loginTime}
+                    logoutTime={todayAttendance?.logoutTime}
+                    attendanceDate={todayAttendance?.attendanceDate || format(now, "yyyy-MM-dd")}
+                    status={todayAttendance?.status || "present"}
+                    workedHours={todayAttendance?.workedHours}
+                    compact={false}
+                    showTimeMarkers={true}
+                    interactive={true}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -235,7 +235,15 @@ const VALIDATION_RULES: Record<
     label: "Phone",
     placeholder: "10-digit mobile number",
     hint: "10 digits (e.g. 9876543210)",
-    format: (raw) => raw.replace(/\D/g, "").slice(0, 10),
+    format: (raw) => {
+      let digits = raw.replace(/\D/g, "");
+      if (digits.length === 12 && digits.startsWith("91")) {
+        digits = digits.slice(2);
+      } else if (digits.length === 11 && digits.startsWith("0")) {
+        digits = digits.slice(1);
+      }
+      return digits.slice(0, 10);
+    },
     validate: (val) => !val || /^[6-9]\d{9}$/.test(val),
     message: "Must be a 10-digit mobile number starting with 6, 7, 8, or 9",
   },
@@ -334,6 +342,7 @@ export default function PreboardingPage({
     bankIfscCode: "",
   });
 
+  const isDirtyRef = useRef(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const signedOfferRef = useRef<HTMLInputElement>(null);
 
@@ -367,13 +376,17 @@ export default function PreboardingPage({
       } else {
         const s = data.preboardingSession;
         setSession(s);
-        setProfile({
-          phoneNumber: s.phoneNumber || "",
-          panNumber: s.panNumber || "",
-          aadharNumber: s.aadharNumber || "",
-          bankAccountNumber: s.bankAccountNumber || "",
-          bankIfscCode: s.bankIfscCode || "",
-        });
+        // CRITICAL FIX: Only overwrite form inputs if it's an initial/explicit load,
+        // or if the user hasn't typed uncommitted changes into the form.
+        if (!opts?.silent || !isDirtyRef.current) {
+          setProfile({
+            phoneNumber: s.phoneNumber || "",
+            panNumber: s.panNumber || "",
+            aadharNumber: s.aadharNumber || "",
+            bankAccountNumber: s.bankAccountNumber || "",
+            bankIfscCode: s.bankIfscCode || "",
+          });
+        }
       }
     } catch (e) {
       if (!opts?.silent) {
@@ -404,7 +417,7 @@ export default function PreboardingPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  async function mutate(mutation: string, variables: Record<string, unknown>) {
+  async function mutate<T = any>(mutation: string, variables: Record<string, unknown>): Promise<T> {
     const res = await fetch("/api/graphql/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -416,10 +429,11 @@ export default function PreboardingPage({
     const json = await res.json();
     if (json.errors?.length) throw new Error(json.errors[0].message);
     if (!json.data) throw new Error("Invalid GraphQL response");
-    return json.data;
+    return json.data as T;
   }
 
   const handleFieldChange = (key: ProfileFieldKey, rawVal: string) => {
+    isDirtyRef.current = true;
     const rule = VALIDATION_RULES[key];
     const formatted = rule.format(rawVal);
     setProfile((prev) => ({ ...prev, [key]: formatted }));
@@ -467,9 +481,22 @@ export default function PreboardingPage({
 
     setSavingProfile(true);
     try {
-      await mutate(
+      const res = await mutate<{ updatePreboardingProfile: OnboardingSession }>(
         `mutation UpdatePreboardingProfile($input: UpdatePreboardingProfileInput!) {
-          updatePreboardingProfile(input: $input) { id progressPct }
+          updatePreboardingProfile(input: $input) {
+            id
+            progressPct
+            phoneNumber
+            panNumber
+            aadharNumber
+            bankAccountNumber
+            bankIfscCode
+            tasks {
+              id
+              title
+              status
+            }
+          }
         }`,
         {
           input: {
@@ -482,9 +509,20 @@ export default function PreboardingPage({
           },
         }
       );
+      isDirtyRef.current = false;
+      if (res?.updatePreboardingProfile) {
+        const u = res.updatePreboardingProfile;
+        setSession((prev) => (prev ? { ...prev, ...u } : prev));
+        setProfile({
+          phoneNumber: u.phoneNumber || "",
+          panNumber: u.panNumber || "",
+          aadharNumber: u.aadharNumber || "",
+          bankAccountNumber: u.bankAccountNumber || "",
+          bankIfscCode: u.bankIfscCode || "",
+        });
+      }
       toast.success("Profile details saved successfully!");
       setMsg("Profile details saved successfully.");
-      await load({ silent: true });
     } catch (err: any) {
       toast.error(err.message || "Failed to save details");
     } finally {
@@ -722,27 +760,28 @@ export default function PreboardingPage({
             fill
             priority
             sizes="(max-width: 768px) 100vw, 896px"
-            className="object-cover object-center"
+            className="object-cover object-right sm:object-[80%_center]"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-transparent dark:from-slate-950/95 dark:via-slate-950/80 dark:to-transparent" />
-          <div className="absolute inset-y-0 left-0 flex w-full max-w-[90%] sm:max-w-[70%] flex-col justify-center px-4 sm:px-8 md:px-10 z-10">
+          {/* Constrained gradient so the character illustration on the right remains clear and unobstructed */}
+          <div className="absolute inset-y-0 left-0 w-full sm:w-[62%] md:w-[56%] bg-gradient-to-r from-white via-white/90 to-transparent dark:from-slate-950 dark:via-slate-950/90 dark:to-transparent z-[1]" />
+          <div className="relative z-10 flex h-full w-full max-w-[90%] sm:max-w-[56%] flex-col justify-center px-5 sm:px-8 md:px-10 py-6">
             <div
-              className="mb-2 inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold backdrop-blur-md border shadow-xs"
+              className="mb-2.5 inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold backdrop-blur-md border shadow-xs"
               style={{
                 backgroundColor: theme.lightBg,
                 borderColor: theme.border,
                 color: theme.primary,
               }}
             >
-              <span className="font-bold">{session.organizationName || "Teamzen"}</span>
+              <span className="font-bold">{session.organizationName?.replace(/\.+$/, "") || "Teamzen"}</span>
               <span className="opacity-40">•</span>
               <span>New Hire Journey</span>
             </div>
             <h2 className="mb-1.5 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-950 dark:text-white drop-shadow-xs">
               Welcome aboard, {session.userName.split(" ")[0]}!
             </h2>
-            <p className="text-xs sm:text-sm md:text-base font-semibold leading-relaxed text-slate-900 dark:text-slate-100 drop-shadow-xs">
-              We&apos;re thrilled to have you join {session.organizationName || "the team"}.
+            <p className="text-xs sm:text-sm md:text-base font-medium leading-relaxed text-slate-800 dark:text-slate-200 drop-shadow-xs">
+              We&apos;re thrilled to have you join {session.organizationName?.replace(/\.+$/, "") || "the team"}.
               <br className="hidden sm:inline" />
               {" "}Please complete your preboarding checklist below before your first day.
             </p>

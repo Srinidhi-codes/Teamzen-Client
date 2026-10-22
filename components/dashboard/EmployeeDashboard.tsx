@@ -108,34 +108,32 @@ function periodForHour(hour: number): DayPeriod {
 
 const periodHero: Record<
   DayPeriod,
-  { day1: string; day2: string; dark: boolean }
+  { src: string; dark: boolean; timeLabel: string }
 > = {
   morning: {
-    day1: "/images/hero/morning.webp",
-    day2: "/images/hero/morning-2.webp",
+    src: "/images/hero/3d-morning.jpg",
     dark: false,
+    timeLabel: "Morning Focus",
   },
   noon: {
-    day1: "/images/hero/noon.webp",
-    day2: "/images/hero/noon-2.webp",
+    src: "/images/hero/3d-noon.jpg",
     dark: false,
+    timeLabel: "Midday Work",
   },
   evening: {
-    day1: "/images/hero/evening.webp",
-    day2: "/images/hero/evening-2.webp",
-    dark: false,
+    src: "/images/hero/3d-evening.jpg",
+    dark: true,
+    timeLabel: "Twilight Hours",
   },
   night: {
-    day1: "/images/hero/night.webp",
-    day2: "/images/hero/night-2.webp",
+    src: "/images/hero/3d-night.jpg",
     dark: true,
+    timeLabel: "Night Shift",
   },
 };
 
-/** Odd calendar days → set 1; even days → set 2 */
-function heroSrcForDay(period: DayPeriod, dayOfMonth: number) {
-  const set = periodHero[period];
-  return dayOfMonth % 2 === 1 ? set.day1 : set.day2;
+function heroSrcForDay(period: DayPeriod) {
+  return periodHero[period].src;
 }
 
 const dayTone: Record<
@@ -309,153 +307,181 @@ export function EmployeeDashboard() {
   const heroMeta = periodHero[period];
   const dark = resolvedTheme === "dark";
   const isDarkBg = dark || heroMeta.dark;
-  const heroSrc = heroSrcForDay(period, now.date());
+  const heroSrc = heroSrcForDay(period);
 
   return (
     <div className="w-full space-y-6 pb-8">
-      {/* ── Today hero ───────────────────────────────────────── */}
+      {/* ── Today hero: 3D Architectural Workspace ───────────────────────────────────────── */}
       <section
         className={cn(
-          "relative overflow-hidden rounded-b-[34px] shadow-sm -mx-4 -mt-6 sm:-mx-6 lg:-mx-8 mb-6",
-          isDarkBg ? "bg-[#16122a]" : "bg-[#e8eef4]"
+          "relative overflow-hidden rounded-3xl shadow-xl border border-border/40 -mx-4 -mt-6 sm:-mx-6 lg:-mx-8 mb-6 min-h-[320px] lg:min-h-[350px]",
+          isDarkBg ? "bg-[#0b0f17]" : "bg-[#f1f5f9]"
         )}
       >
         <Image
           src={heroSrc}
-          alt=""
+          alt="3D Architectural Workspace"
           aria-hidden
           fill
           priority
           sizes="(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1280px"
-          className="hero-art"
+          className="hero-art object-cover object-center transition-all duration-700"
         />
-        {/* Responsive Gradient Scrim & Legibility Shield */}
+
+        {/* Ambient Gradient Scrim for crisp text legibility without obscuring the background */}
         <div
           className={cn(
             "pointer-events-none absolute inset-0 z-[1]",
             isDarkBg
-              ? "bg-gradient-to-r from-[#16122a] via-[#16122a]/95 via-70% to-[#16122a]/40 sm:via-[#16122a]/95 sm:via-60% sm:to-[#16122a]/20 md:via-55% lg:via-[#16122a]/85 lg:via-48% lg:to-transparent"
-              : "bg-gradient-to-r from-[#e8eef4] via-[#e8eef4]/95 via-70% to-[#e8eef4]/40 sm:via-[#e8eef4]/95 sm:via-60% sm:to-[#e8eef4]/20 md:via-55% lg:via-[#e8eef4]/85 lg:via-48% lg:to-transparent"
+              ? "bg-gradient-to-r from-slate-950/70 via-slate-950/30 via-45% to-transparent"
+              : "bg-gradient-to-r from-white/80 via-white/40 via-45% to-transparent"
           )}
         />
-        {/* Subtle vertical vignette on smaller screens for buttons and top text */}
+        {/* Bottom subtle vignette to smoothly blend with dashboard */}
         <div
           className={cn(
-            "pointer-events-none absolute inset-0 z-[2] lg:hidden",
+            "pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t",
             isDarkBg
-              ? "bg-gradient-to-b from-[#16122a]/60 via-transparent to-[#16122a]/70"
-              : "bg-gradient-to-b from-[#e8eef4]/60 via-transparent to-[#e8eef4]/70"
+              ? "from-slate-950/40 via-transparent to-transparent"
+              : "from-white/40 via-transparent to-transparent"
           )}
         />
-        <div className="relative z-10 flex min-h-[300px] flex-col justify-between gap-5 px-6 py-8 sm:min-h-[300px] sm:px-10 sm:py-10 lg:min-h-[340px] lg:px-12 lg:py-12">
-          <div className="max-w-full sm:max-w-md md:max-w-lg lg:max-w-xl space-y-4 sm:space-y-5">
-            <div className="space-y-1.5 sm:space-y-2">
-              <p
-                className={cn(
-                  "text-xs font-semibold tracking-wide uppercase sm:text-sm",
-                  isDarkBg ? "text-slate-200/90" : "text-slate-600"
-                )}
-              >
-                {now.format("dddd, MMMM D")}
-              </p>
-              <h1
-                className={cn(
-                  "text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-balance break-words",
-                  isDarkBg ? "text-white" : "text-slate-900"
-                )}
-              >
-                {greetingForHour(now.hour())},{" "}
-                <br className="block sm:hidden" />
-                <span className={cn(
-                  "sm:ml-0 font-extrabold",
-                  isDarkBg ? "text-teal-400" : "text-teal-700"
-                )}>
-                  {user?.firstName || "there"}
-                </span>
-              </h1>
-              <p
-                className={cn(
-                  "line-clamp-2 text-xs sm:text-base font-medium",
-                  isDarkBg ? "text-slate-300" : "text-slate-700"
-                )}
-              >
-                {[user?.designation?.name, user?.department?.name, user?.organization?.name]
-                  .filter(Boolean)
-                  .join(" · ") || "Your workforce home"}
-              </p>
-            </div>
 
-            <div
-              className={cn(
-                "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 shadow-xs backdrop-blur-md sm:gap-2.5 sm:px-3.5",
-                isDarkBg
-                  ? "border-white/20 bg-white/10 text-white"
-                  : "border-slate-300/80 bg-white/90 text-slate-800"
-              )}
-            >
-              <TodayIcon className={cn("h-3.5 w-3.5", isDarkBg ? "text-white" : "text-slate-700")} />
-              <span className="text-xs font-semibold sm:text-sm">Today · {todayMeta.label}</span>
-            </div>
-
-            <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:gap-3">
-              <Link
-                href="/attendance"
-                className={cn(
-                  "inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold shadow-md transition-opacity hover:opacity-95 sm:h-11 sm:w-auto sm:px-5",
-                  isDarkBg ? "bg-white text-slate-900" : "bg-slate-900 text-white"
-                )}
-              >
-                <MapPin className="h-4 w-4" />
-                {["present", "late_login", "early_logout", "half_day"].includes(todayEntry?.status) ? "Open attendance" : "Check in"}
-              </Link>
-              <Link
-                href="/leaves"
-                className={cn(
-                  "inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border px-4 text-sm font-medium shadow-xs backdrop-blur-md transition-colors sm:h-11 sm:w-auto sm:px-5",
-                  isDarkBg
-                    ? "border-white/30 bg-white/10 text-white hover:bg-white/16"
-                    : "border-slate-300 bg-white/90 text-slate-800 hover:bg-white"
-                )}
-              >
-                <Plus className="h-4 w-4" />
-                Request leave
-              </Link>
-            </div>
-
-            {wishMessage && (
+        {/* Content Area */}
+        <div className="relative z-10 flex min-h-[320px] lg:min-h-[350px] flex-col justify-between p-6 sm:p-8 lg:p-10">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+            {/* Left Content */}
+            <div className="max-w-xl space-y-4">
+              {/* Date & Period Live Chip */}
               <div
                 className={cn(
-                  "flex items-start gap-2.5 rounded-xl border px-3.5 py-3 backdrop-blur-sm",
-                  dark
-                    ? "border-white/15 bg-white/8"
-                    : "border-slate-200/70 bg-white/65"
+                  "inline-flex items-center gap-2 rounded-full border px-3 py-1 shadow-xs backdrop-blur-md text-xs font-semibold",
+                  isDarkBg
+                    ? "border-white/20 bg-slate-950/60 text-white"
+                    : "border-slate-300/80 bg-white/80 text-slate-800"
                 )}
               >
-                {wishMessage.toLowerCase().includes("birthday") ? (
-                  <Cake
-                    className={cn(
-                      "mt-0.5 h-4 w-4 shrink-0",
-                      dark ? "text-amber-200" : "text-amber-600"
-                    )}
-                  />
-                ) : (
-                  <PartyPopper
-                    className={cn(
-                      "mt-0.5 h-4 w-4 shrink-0",
-                      dark ? "text-amber-200" : "text-amber-600"
-                    )}
-                  />
-                )}
-                <p
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#38ABB1] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#38ABB1]"></span>
+                </span>
+                <span className="uppercase tracking-wider text-[11px] font-bold">
+                  {now.format("dddd, MMMM D")}
+                </span>
+                <span className="opacity-40">•</span>
+                <span className="text-[#38ABB1] font-semibold">{heroMeta.timeLabel}</span>
+              </div>
+
+              {/* Headline */}
+              <div className="space-y-1.5">
+                <h1
                   className={cn(
-                    "text-sm leading-relaxed",
-                    dark ? "text-white/80" : "text-slate-700"
+                    "text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-balance leading-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)]",
+                    isDarkBg ? "text-white" : "text-slate-900"
                   )}
                 >
-                  {wishMessage}
+                  {greetingForHour(now.hour())},{" "}
+                  <span className="bg-gradient-to-r from-[#38ABB1] via-teal-300 to-cyan-200 bg-clip-text text-transparent drop-shadow-sm">
+                    {user?.firstName || "there"}
+                  </span>
+                </h1>
+                <p
+                  className={cn(
+                    "text-xs sm:text-sm font-medium flex flex-wrap items-center gap-1.5 sm:gap-2 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]",
+                    isDarkBg ? "text-slate-200" : "text-slate-600"
+                  )}
+                >
+                  <span>{user?.designation?.name || "Software Engineer"}</span>
+                  <span className="opacity-30">•</span>
+                  <span>{user?.department?.name || "Engineering"}</span>
+                  <span className="opacity-30">•</span>
+                  <span className={cn("font-semibold", isDarkBg ? "text-white/90" : "text-slate-900")}>
+                    {user?.organization?.name || "TechNova Pvt. Ltd."}
+                  </span>
                 </p>
               </div>
-            )}
+
+              {/* Action Buttons & Status */}
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <Link
+                  href="/attendance"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold shadow-lg shadow-[#38ABB1]/25 bg-gradient-to-r from-[#38ABB1] to-[#2d8d93] text-white hover:opacity-95 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  <MapPin className="h-4 w-4" />
+                  {["present", "late_login", "early_logout", "half_day"].includes(todayEntry?.status)
+                    ? "Open attendance"
+                    : "Check in"}
+                </Link>
+
+                <Link
+                  href="/leaves"
+                  className={cn(
+                    "inline-flex h-11 items-center justify-center gap-2 rounded-xl border px-5 text-sm font-semibold shadow-xs backdrop-blur-md transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer",
+                    isDarkBg
+                      ? "border-white/20 bg-white/10 text-white hover:bg-white/15"
+                      : "border-slate-300 bg-white/80 text-slate-800 hover:bg-white"
+                  )}
+                >
+                  <Plus className="h-4 w-4" />
+                  Request leave
+                </Link>
+
+                <div
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-xs font-semibold shadow-xs backdrop-blur-md",
+                    isDarkBg
+                      ? "border-white/15 bg-black/40 text-white"
+                      : "border-slate-200 bg-white/85 text-slate-800"
+                  )}
+                >
+                  <TodayIcon className="h-3.5 w-3.5 text-[#38ABB1]" />
+                  <span>
+                    Today: <span className="font-bold text-[#38ABB1]">{todayMeta.label}</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Celebration / Wish Banner */}
+              {wishMessage && (
+                <div
+                  className={cn(
+                    "flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 backdrop-blur-md shadow-xs animate-in fade-in-50",
+                    isDarkBg
+                      ? "border-white/15 bg-white/10 text-white"
+                      : "border-amber-200 bg-amber-50/90 text-amber-900"
+                  )}
+                >
+                  {wishMessage.toLowerCase().includes("birthday") ? (
+                    <Cake className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+                  ) : (
+                    <PartyPopper className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+                  )}
+                  <p className="text-xs sm:text-sm font-medium leading-relaxed">{wishMessage}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Right Side Glassmorphic Live Shift Widget (Visible on lg screens) */}
+            <div
+              className={cn(
+                "hidden lg:flex flex-col items-end gap-2 rounded-2xl border p-4.5 backdrop-blur-xl shadow-xl min-w-[210px]",
+                isDarkBg
+                  ? "border-white/15 bg-slate-950/50 text-white"
+                  : "border-white/60 bg-white/60 text-slate-900"
+              )}
+            >
+              <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#38ABB1]">
+                <Clock className="w-3.5 h-3.5 text-[#38ABB1]" />
+                <span>Shift Schedule</span>
+              </div>
+              <div className="text-2xl font-black font-mono tracking-tight">
+                {now.format("hh:mm A")}
+              </div>
+              <div className="flex items-center gap-2 pt-1 border-t border-white/10 w-full justify-end text-xs font-medium opacity-90">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>09:00 AM – 06:00 PM</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>

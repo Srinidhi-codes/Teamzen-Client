@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { FEEDBACK_LIST } from "@/lib/graphql/feedback/queries";
@@ -9,6 +9,7 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { PageHeader } from "@/components/common/PageHeader";
 import { PageSkeleton } from "@/components/common/PageSkeleton";
 import { PhotoOverlay } from "@/components/common/PhotoOverlay";
+import { Pagination } from "@/components/common/Pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -190,6 +191,12 @@ export default function FeedbackPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [page, setPage] = useState(1);
+  const pageSize = 8;
+
+  useEffect(() => {
+    setPage(1);
+  }, [tab, searchQuery, statusFilter, categoryFilter]);
 
   const { data, loading, refetch } = useQuery(FEEDBACK_LIST, {
     variables: {
@@ -240,6 +247,12 @@ export default function FeedbackPage() {
       return true;
     });
   }, [rawItems, statusFilter, categoryFilter, searchQuery]);
+
+  const totalPages = Math.ceil(filteredItems.length / pageSize) || 1;
+  const paginatedItems = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredItems.slice(start, start + pageSize);
+  }, [filteredItems, page, pageSize]);
 
   // Selected item
   const selected = useMemo(() => {
@@ -674,10 +687,9 @@ export default function FeedbackPage() {
               )}
 
               {!loading &&
-                filteredItems.map((item) => {
+                paginatedItems.map((item) => {
                   const isSelected = selected?.id === item.id;
                   const cat = CATEGORIES_CONFIG[item.category] || CATEGORIES_CONFIG.general;
-                  const CatIcon = cat.icon;
                   const stat = STATUS_CONFIG[item.status] || STATUS_CONFIG.open;
                   const formattedDate = moment(item.createdAt).fromNow();
                   const hasReply = Boolean(item.adminReply);
@@ -703,7 +715,6 @@ export default function FeedbackPage() {
                             cat.badgeClass
                           )}
                         >
-                          <CatIcon className="w-3 h-3" />
                           <span>{cat.short}</span>
                         </span>
 
@@ -759,6 +770,19 @@ export default function FeedbackPage() {
                     </button>
                   );
                 })}
+
+              {totalPages > 1 && (
+                <div className="p-2 border-t border-border/80 bg-card/60 shrink-0">
+                  <Pagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                    total={filteredItems.length}
+                    pageSize={pageSize}
+                    label="tickets"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Right: Selected Ticket Details & Discussion */}
@@ -779,7 +803,6 @@ export default function FeedbackPage() {
                       {(() => {
                         const cat =
                           CATEGORIES_CONFIG[selected.category] || CATEGORIES_CONFIG.general;
-                        const CatIcon = cat.icon;
                         return (
                           <span
                             className={cn(
@@ -787,7 +810,6 @@ export default function FeedbackPage() {
                               cat.badgeClass
                             )}
                           >
-                            <CatIcon className="w-3.5 h-3.5" />
                             <span>{cat.label}</span>
                           </span>
                         );

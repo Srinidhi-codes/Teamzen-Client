@@ -1664,16 +1664,16 @@
 
 .hero-art {
   object-fit: cover !important;
-  object-position: 85% center !important;
+  object-position: center center !important;
   animation: hero-art-drift 28s ease-in-out infinite;
-  transform-origin: right center;
+  transform-origin: center center;
   will-change: transform;
 }
 
 @media (min-width: 640px) {
   .hero-art {
-    object-position: right center !important;
-    transform-origin: right center;
+    object-position: center center !important;
+    transform-origin: center center;
   }
 }
 
@@ -2191,4 +2191,13 @@
 .tiptap p:has(> img),
 .rich-post-content p:has(> img) {
   width: 100% !important;
+}
+
+/* ── Hide scrollbar while preserving scroll functionality ── */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

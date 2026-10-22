@@ -6,6 +6,7 @@ import { Calendar, Clock, TrendingUp, RotateCcw, PenLine, ArrowRight } from "luc
 import { PageSkeleton } from "@/components/common/PageSkeleton";
 import { EmptyState } from "@/components/common/EmptyState";
 import { EmptyImages } from "@/lib/brand-images";
+import { AttendanceTimelineBar } from "./AttendanceTimelineBar";
 
 export type AttendanceRow = {
     id: string;
@@ -90,6 +91,24 @@ export function AttendanceTable({
                 <div className="flex items-center gap-2 text-foreground font-medium tabular-nums text-sm">
                     <Clock className="w-3 h-3 text-muted-foreground" />
                     {value ? moment(value, "HH:mm:ss").format("hh:mm:ss A") : "—"}
+                </div>
+            ),
+        },
+        {
+            key: "timeline",
+            label: "Visual Timeline",
+            render: (_: any, row: AttendanceRow) => (
+                <div className="w-52 h-6 flex items-center">
+                    <AttendanceTimelineBar
+                        loginTime={row.loginTime}
+                        logoutTime={row.logoutTime}
+                        attendanceDate={row.attendanceDate}
+                        status={row.status}
+                        workedHours={row.workedHours}
+                        compact={true}
+                        showTimeMarkers={false}
+                        interactive={true}
+                    />
                 </div>
             ),
         },
@@ -257,6 +276,26 @@ export function AttendanceTable({
                             <Clock className="w-4 h-4 text-primary/70" />
                             {row.logoutTime ? moment(row.logoutTime, "HH:mm:ss").format("hh:mm A") : "—"}
                         </div>
+                    </div>
+                </div>
+
+                {/* Mobile Visual Timeline Bar */}
+                <div className="mb-4 bg-muted/20 p-3 rounded-xl border border-border/30 space-y-1.5">
+                    <div className="flex items-center justify-between text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        <span>Day Timeline</span>
+                        <span>09:00 AM – 06:00 PM</span>
+                    </div>
+                    <div className="h-10 pt-0.5 relative">
+                        <AttendanceTimelineBar
+                            loginTime={row.loginTime}
+                            logoutTime={row.logoutTime}
+                            attendanceDate={row.attendanceDate}
+                            status={row.status}
+                            workedHours={row.workedHours}
+                            compact={false}
+                            showTimeMarkers={true}
+                            interactive={true}
+                        />
                     </div>
                 </div>
 

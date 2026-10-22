@@ -152,9 +152,9 @@ export function useNotifications(
                     return;
                 }
 
-                // Process personal, admin, and feed notifications
-                if (data.level === "personal" || data.level === "admin" || data.level === "feed_update") {
-                    if (data.level !== "feed_update" && !options.silent) {
+                // Process personal, admin, feed, and draft_sync notifications
+                if (data.level === "personal" || data.level === "admin" || data.level === "feed_update" || data.level === "draft_sync") {
+                    if (data.level !== "feed_update" && data.level !== "draft_sync" && !options.silent) {
                         const displayVerb = data.verb?.replace(/_self$/, "").replace(/_/g, " ");
                         const description = data.verb?.endsWith("_self")
                             ? "Action confirmed"

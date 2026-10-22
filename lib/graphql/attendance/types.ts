@@ -11,7 +11,7 @@ export interface AttendanceRecord {
   logoutLatitude?: number | null;
   logoutLongitude?: number | null;
 
-  status: "present" | "absent" | "half_day" | "leave" | "holiday";
+  status: "present" | "absent" | "half_day" | "leave" | "holiday" | "late_login" | "early_logout" | string;
   workedHours?: number | null;
 
   workingHours?: number | null;
