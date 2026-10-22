@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { Card } from "@/components/common/Card";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -11,12 +11,24 @@ import {
 } from "@/lib/graphql/attendance/attendanceHooks";
 import type { AttendanceRow } from "@/components/attendance/AttendanceTable";
 import { CorrectionModal, CorrectionPayload } from "@/components/attendance/CorrectionModal";
+import { AttendanceTimelineMatrix } from "@/components/attendance/AttendanceTimelineMatrix";
 import { format } from "date-fns";
-import { Search, History, ArrowLeftIcon } from "lucide-react";
+import {
+  Search,
+  History,
+  ArrowLeftIcon,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+  FilePenLine,
+  Table as TableIcon,
+  Calendar,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DatePickerSimple } from "@/components/ui/datePicker";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 const AttendanceTable = dynamic(
   () =>
@@ -35,6 +47,7 @@ export default function AttendanceCorrectionPage() {
   );
   const [endDate, setEndDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [selected, setSelected] = useState<AttendanceRow | null>(null);
+  const [viewMode, setViewMode] = useState<"timeline" | "table">("timeline");
 
   const { cancelAttendanceCorrection } = useCancelAttendanceCorrection();
   const { attendance, isLoading, refetchAttendance } = useGraphQlAttendance();
@@ -42,7 +55,7 @@ export default function AttendanceCorrectionPage() {
   const router = useRouter();
 
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 15;
   const total = attendance?.length || 0;
   const pendingCount =
     attendance?.filter((r) => r.correctionStatus === "pending").length || 0;
@@ -90,6 +103,20 @@ export default function AttendanceCorrectionPage() {
     }
   };
 
+  // Quick stats summary
+  const stats = useMemo(() => {
+    const list = attendance || [];
+    const present = list.filter((r) => r.status === "present").length;
+    const late = list.filter((r) => r.status === "late_login").length;
+    const earlyOut = list.filter((r) => r.status === "early_logout").length;
+    return {
+      total: list.length,
+      present,
+      deficits: late + earlyOut,
+      pending: pendingCount,
+    };
+  }, [attendance, pendingCount]);
+
   return (
     <div className="w-full space-y-8 animate-fade-in pb-20">
       <button
@@ -103,10 +130,82 @@ export default function AttendanceCorrectionPage() {
 
       <PageHeader
         eyebrow="Time Tracking"
-        title="Attendance Regularization"
-        description="Review records and request changes to punch-in or out."
+        title="Attendance Regularization & Activity"
+        description="Review daily timelines, check office hours compliance, and request punch corrections."
+        actions={
+          <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/50 p-1 shadow-xs">
+            <button
+              onClick={() => setViewMode("timeline")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer",
+                viewMode === "timeline"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Clock className="h-3.5 w-3.5 text-primary" />
+              Timeline View
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer",
+                viewMode === "table"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <TableIcon className="h-3.5 w-3.5 text-primary" />
+              Table View
+            </button>
+          </div>
+        }
       />
 
+      {/* Metric Cards Summary */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
+          <div className="flex items-center justify-between text-muted-foreground">
+            <span className="text-xs font-medium uppercase tracking-wider">Logged Days</span>
+            <Calendar className="h-4 w-4 text-sky-500" />
+          </div>
+          <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">{stats.total}</p>
+          <span className="text-[11px] text-muted-foreground">Selected period</span>
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
+          <div className="flex items-center justify-between text-muted-foreground">
+            <span className="text-xs font-medium uppercase tracking-wider">On-Time Days</span>
+            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+          </div>
+          <p className="mt-2 text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+            {stats.present}
+          </p>
+          <span className="text-[11px] text-muted-foreground">Compliant shifts</span>
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
+          <div className="flex items-center justify-between text-muted-foreground">
+            <span className="text-xs font-medium uppercase tracking-wider">Shift Deficits</span>
+            <AlertTriangle className="h-4 w-4 text-rose-500" />
+          </div>
+          <p className="mt-2 text-2xl font-bold tabular-nums text-rose-600 dark:text-rose-400">
+            {stats.deficits}
+          </p>
+          <span className="text-[11px] text-muted-foreground">Late arrivals / Early exits</span>
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
+          <div className="flex items-center justify-between text-muted-foreground">
+            <span className="text-xs font-medium uppercase tracking-wider">Regularization</span>
+            <FilePenLine className="h-4 w-4 text-amber-500" />
+          </div>
+          <p className="mt-2 text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400">
+            {stats.pending}
+          </p>
+          <span className="text-[11px] text-muted-foreground">Pending approval</span>
+        </div>
+      </div>
 
       {/* Date Filter Bar */}
       <div className="flex flex-wrap items-end gap-3 sm:gap-4 pt-1">
@@ -129,40 +228,47 @@ export default function AttendanceCorrectionPage() {
           />
         </div>
         <Button
-          className="h-[45px] px-6 rounded-xl font-medium shadow-xs gap-2"
+          className="h-[45px] px-6 rounded-xl font-semibold shadow-xs gap-2 cursor-pointer"
           onClick={() => loadAttendance(startDate, endDate)}
         >
           <Search className="h-4 w-4" />
-          <span>Search</span>
+          <span>Apply Filter</span>
         </Button>
       </div>
 
-
-      <div className="space-y-4 sm:space-y-6">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-              Records
-            </h2>
-            <div className="px-3 py-1 bg-primary/5 text-primary rounded-md text-xs font-medium border border-primary/10 whitespace-nowrap shrink-0">
-              {pendingCount > 0 ? `${pendingCount} pending` : `${total} records`}
-            </div>
-          </div>
-          <div className="h-px w-full bg-border" />
-        </div>
-
-        <AttendanceTable
-          data={paginatedData}
-          isLoading={isLoading}
-          onRequestCorrection={setSelected}
-          onCancelCorrection={handleCancelCorrection}
-          total={total}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          onPageChange={setCurrentPage}
-        />
+      {/* Main View: Timeline Matrix vs Table */}
+      <div className="space-y-4">
+        {viewMode === "timeline" ? (
+          <AttendanceTimelineMatrix
+            records={(attendance || []).map((r) => ({
+              id: r.id,
+              attendanceDate: r.attendanceDate,
+              loginTime: r.loginTime,
+              logoutTime: r.logoutTime,
+              status: r.status,
+              workedHours: r.workedHours,
+              correctionStatus: r.correctionStatus,
+              correctionReason: r.correctionReason,
+              correctionId: r.correctionId,
+            }))}
+            isLoading={isLoading}
+            onRequestCorrection={(rec) => setSelected(rec as AttendanceRow)}
+          />
+        ) : (
+          <AttendanceTable
+            data={paginatedData}
+            isLoading={isLoading}
+            onRequestCorrection={setSelected}
+            onCancelCorrection={handleCancelCorrection}
+            total={total}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
 
+      {/* Correction Modal */}
       {selected && (
         <CorrectionModal
           record={selected}

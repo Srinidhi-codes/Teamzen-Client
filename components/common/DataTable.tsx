@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Pagination } from "@/components/common/Pagination";
@@ -101,7 +102,17 @@ export function DataTable<T>({
     }
   };
 
-  const totalPages = pageSize ? Math.ceil((total || 0) / pageSize) : 0;
+  const effectiveTotal = total ?? (data?.length || 0);
+  const totalPages = pageSize ? Math.ceil(effectiveTotal / pageSize) : 0;
+
+  const displayData = useMemo(() => {
+    if (!data) return [];
+    if (currentPage && pageSize && data.length > pageSize && (!total || total === data.length)) {
+      const start = (currentPage - 1) * pageSize;
+      return data.slice(start, start + pageSize);
+    }
+    return data;
+  }, [data, currentPage, pageSize, total]);
 
   return (
     <div className="space-y-4">
@@ -140,7 +151,7 @@ export function DataTable<T>({
             </tr>
           </thead>
           <tbody className="divide-y divide-border bg-card">
-            {data?.map((row, idx) => (
+            {displayData?.map((row, idx) => (
               <tr
                 key={idx}
                 onClick={() => onRowClick?.(row)}
@@ -166,12 +177,12 @@ export function DataTable<T>({
         </table>
       </div>
 
-      {totalPages > 0 && currentPage && onPageChange && (
+      {totalPages > 1 && currentPage && onPageChange && (
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={onPageChange}
-          total={total}
+          total={effectiveTotal}
           pageSize={pageSize}
           label={paginationLabel}
         />

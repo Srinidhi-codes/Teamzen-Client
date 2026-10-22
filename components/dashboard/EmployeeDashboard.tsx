@@ -325,16 +325,16 @@ export function EmployeeDashboard() {
           fill
           priority
           sizes="(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1280px"
-          className="hero-art object-cover object-right lg:object-center transition-all duration-700"
+          className="hero-art object-cover object-center transition-all duration-700"
         />
 
-        {/* Ambient Gradient Scrim for crisp text legibility */}
+        {/* Ambient Gradient Scrim for crisp text legibility without obscuring the background */}
         <div
           className={cn(
             "pointer-events-none absolute inset-0 z-[1]",
             isDarkBg
-              ? "bg-gradient-to-r from-slate-950/95 via-slate-950/85 via-55% to-slate-950/25 lg:via-slate-950/75 lg:via-48% lg:to-transparent"
-              : "bg-gradient-to-r from-white/95 via-white/85 via-55% to-white/25 lg:via-white/75 lg:via-48% lg:to-transparent"
+              ? "bg-gradient-to-r from-slate-950/70 via-slate-950/30 via-45% to-transparent"
+              : "bg-gradient-to-r from-white/80 via-white/40 via-45% to-transparent"
           )}
         />
         {/* Bottom subtle vignette to smoothly blend with dashboard */}
@@ -342,8 +342,8 @@ export function EmployeeDashboard() {
           className={cn(
             "pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t",
             isDarkBg
-              ? "from-slate-950/80 via-transparent to-slate-950/20"
-              : "from-white/75 via-transparent to-white/10"
+              ? "from-slate-950/40 via-transparent to-transparent"
+              : "from-white/40 via-transparent to-transparent"
           )}
         />
 
@@ -357,7 +357,7 @@ export function EmployeeDashboard() {
                 className={cn(
                   "inline-flex items-center gap-2 rounded-full border px-3 py-1 shadow-xs backdrop-blur-md text-xs font-semibold",
                   isDarkBg
-                    ? "border-white/15 bg-white/10 text-white"
+                    ? "border-white/20 bg-slate-950/60 text-white"
                     : "border-slate-300/80 bg-white/80 text-slate-800"
                 )}
               >
@@ -376,19 +376,19 @@ export function EmployeeDashboard() {
               <div className="space-y-1.5">
                 <h1
                   className={cn(
-                    "text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-balance leading-tight",
+                    "text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-balance leading-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)]",
                     isDarkBg ? "text-white" : "text-slate-900"
                   )}
                 >
                   {greetingForHour(now.hour())},{" "}
-                  <span className="bg-gradient-to-r from-[#38ABB1] via-teal-300 to-cyan-200 bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-[#38ABB1] via-teal-300 to-cyan-200 bg-clip-text text-transparent drop-shadow-sm">
                     {user?.firstName || "there"}
                   </span>
                 </h1>
                 <p
                   className={cn(
-                    "text-xs sm:text-sm font-medium flex flex-wrap items-center gap-1.5 sm:gap-2",
-                    isDarkBg ? "text-slate-300/90" : "text-slate-600"
+                    "text-xs sm:text-sm font-medium flex flex-wrap items-center gap-1.5 sm:gap-2 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]",
+                    isDarkBg ? "text-slate-200" : "text-slate-600"
                   )}
                 >
                   <span>{user?.designation?.name || "Software Engineer"}</span>

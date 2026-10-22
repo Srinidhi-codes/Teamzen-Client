@@ -37,6 +37,7 @@ import { DataTable, Column } from "@/components/common/DataTable";
 import { Pagination } from "@/components/common/Pagination";
 import { LeaveRequestModal } from "@/components/leaves/LeaveRequestModal";
 import { LeaveReviewModal } from "@/components/leaves/LeaveReviewModal";
+import { LeaveRequestMasterDetail } from "@/components/leaves/LeaveRequestMasterDetail";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/common/EmptyState";
 import { EmptyImages } from "@/lib/brand-images";
@@ -84,7 +85,7 @@ export default function LeavesPage() {
   const { createLeaveRequest, createLeaveRequestLoading } = useGraphQLCreateLeaveRequest();
   const { teamLeavesData, isLoading: teamLeavesLoading, refetch: refetchTeam } = useGraphQLTeamLeaves();
   const { companyHolidaysData } = useGraphQLCompanyHolidays();
-  const [activeTab, setActiveTab] = useState<"overview" | "calendar">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "requests" | "calendar">("overview");
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -97,6 +98,8 @@ export default function LeavesPage() {
     }
     if (tab === "calendar") {
       setActiveTab("calendar");
+    } else if (tab === "requests") {
+      setActiveTab("requests");
     } else if (tab === "overview") {
       setActiveTab("overview");
     }
@@ -404,9 +407,10 @@ export default function LeavesPage() {
           </>
         }
       />
-      <div className="flex items-center bg-muted/40 p-1 rounded-xl border border-border/80 w-full sm:w-fit">
+      <div className="flex items-center bg-muted/40 p-1 rounded-xl border border-border/80 w-full sm:w-fit overflow-x-auto">
         {([
-          { key: "overview", label: "Overview", icon: LayoutList },
+          { key: "overview", label: "My Leave & Balances", icon: LayoutList },
+          { key: "requests", label: "My Requests", icon: Clock, count: pendingCount },
           { key: "calendar", label: "Calendar", icon: CalendarDays },
         ] as const).map((tab) => {
           const Icon = tab.icon;
@@ -416,7 +420,7 @@ export default function LeavesPage() {
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={cn(
-                "flex flex-1 sm:flex-none items-center justify-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all",
+                "flex flex-1 sm:flex-none items-center justify-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer",
                 active
                   ? "bg-background text-foreground shadow-xs font-semibold border border-border/40"
                   : "text-muted-foreground hover:text-foreground"
@@ -424,6 +428,18 @@ export default function LeavesPage() {
             >
               <Icon className={cn("w-3.5 h-3.5", active && "text-primary")} />
               <span>{tab.label}</span>
+              {"count" in tab && typeof tab.count === "number" && tab.count > 0 && (
+                <span
+                  className={cn(
+                    "rounded-full px-1.5 py-0.2 text-[10px] font-bold tabular-nums",
+                    active
+                      ? "bg-amber-500 text-white"
+                      : "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                  )}
+                >
+                  {tab.count}
+                </span>
+              )}
             </button>
           );
         })}
@@ -435,6 +451,35 @@ export default function LeavesPage() {
           teamLeaves={teamLeavesData || []}
           holidays={companyHolidaysData || []}
         />
+      )}
+
+      {activeTab === "requests" && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold text-foreground">My Leave Applications</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Inspect application status, workflow progress, manager review notes, and manage pending leaves.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => setShowForm(true)}
+              className="gap-2 shadow-xs cursor-pointer h-9 px-4 text-xs font-semibold shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Apply for Leave</span>
+            </Button>
+          </div>
+
+          <LeaveRequestMasterDetail
+            requests={leaveRequestData as any}
+            isLoading={leaveRequestLoading}
+            onRefresh={refetchRequests}
+            mode="employee"
+            onCancel={handleCancelLeave}
+          />
+        </div>
       )}
 
       {activeTab === "overview" && (
@@ -557,198 +602,32 @@ export default function LeavesPage() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10">
-            {/* Left Column: History */}
-            <div className="lg:col-span-8 space-y-6 sm:space-y-8">
-              <div className="space-y-4 sm:space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-                      My Requests
-                    </h2>
-                    <div className="px-3 py-1 bg-primary/5 text-primary rounded-md text-xs font-medium border border-primary/10 whitespace-nowrap shrink-0">
-                      {pendingCount} pending
-                    </div>
-                  </div>
-                  <div className="h-px w-full bg-border" />
-                </div>
-                
-                {/* Desktop View */}
-                <div className="hidden sm:block">
-                  <DataTable
-                    columns={columns}
-                    data={paginatedData}
-                    isLoading={leaveRequestLoading}
-                    total={total}
-                    currentPage={currentPage}
-                    pageSize={pageSize}
-                    onPageChange={setCurrentPage}
-                    onRowClick={setViewDetails}
-                    paginationLabel="requests"
-                  />
-                </div>
-
-                {/* Mobile View */}
-                <div className="block sm:hidden space-y-3">
-                  {leaveRequestLoading ? (
-                     <div className="space-y-3">
-                        {[1, 2, 3].map(i => <div key={i} className="h-24 rounded-xl border border-border bg-muted/50 animate-pulse" />)}
-                     </div>
-                  ) : paginatedData.length === 0 ? (
-                     <div className="text-center py-8 text-muted-foreground text-sm border border-border rounded-xl bg-card">No requests found</div>
-                  ) : (
-                     <>
-                        <div className="space-y-3">
-                          {paginatedData.map((row: any) => (
-                            <div 
-                              key={row.id} 
-                              onClick={() => setViewDetails(row)}
-                              className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3 active:bg-muted/50 transition-colors"
-                            >
-                              <div className="flex justify-between items-start gap-2">
-                                <div className="space-y-1">
-                                  <h4 className="font-medium text-sm text-foreground">{row.leaveType?.name}</h4>
-                                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                                    <span>{moment(row.fromDate).format("MMM DD")}</span>
-                                    <ArrowRight className="w-3 h-3" />
-                                    <span>{moment(row.toDate).format("MMM DD")}</span>
-                                  </div>
-                                </div>
-                                <Badge variant={getStatusVariant(row.status) as any} className="capitalize text-[10px] px-2 py-0.5">
-                                  {row.status}
-                                </Badge>
-                              </div>
-                              <div className="flex justify-between items-center pt-3 border-t border-border/60">
-                                <span className="text-xs text-muted-foreground font-medium">{row.durationDays} day{row.durationDays !== 1 ? 's' : ''}</span>
-                                <div className="flex items-center gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="group relative h-7 w-16 overflow-hidden text-[11px] font-medium border-border/80 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-all cursor-pointer"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setViewDetails(row);
-                                    }}
-                                  >
-                                    <span className="transition-transform duration-200 group-hover:-translate-x-1.5">View</span>
-                                    <ArrowRight className="absolute right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 opacity-0 transition-all duration-200 group-hover:opacity-100 text-primary" />
-                                  </Button>
-                                  {row.status === "pending" && (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="h-7 px-2 text-[11px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all cursor-pointer"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleCancelLeave(row.id);
-                                      }}
-                                      disabled={cancelLeaveRequestLoading}
-                                    >
-                                      Cancel
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        {total > pageSize && (
-                          <div className="pt-2">
-                            <Pagination
-                              currentPage={currentPage}
-                              totalPages={Math.ceil(total / pageSize)}
-                              onPageChange={setCurrentPage}
-                              total={total}
-                              pageSize={pageSize}
-                              label="requests"
-                            />
-                          </div>
-                        )}
-                     </>
-                  )}
-                </div>
+          {/* Master-Detail Leave Requests & History */}
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold text-foreground">My Leave Requests & History</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Track the status of your applications, review manager feedback, or cancel pending requests.
+                </p>
               </div>
+              <Button
+                size="sm"
+                onClick={() => setShowForm(true)}
+                className="gap-2 shadow-xs cursor-pointer h-9 px-4 text-xs font-semibold shrink-0"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Apply for Leave</span>
+              </Button>
             </div>
 
-            {/* Right Column: Insights */}
-            <div className="lg:col-span-4 space-y-6">
-              <Card className="p-5 bg-card border border-border rounded-xl h-fit" title="Summary">
-                <div className="space-y-6">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Annual usage</span>
-                      <span className="font-medium text-primary">
-                        {Math.round(
-                          ((leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.used), 0) || 0) /
-                            (leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.totalEntitled), 0) || 1)) * 100
-                        )}%
-                      </span>
-                    </div>
-                    <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary transition-all duration-500"
-                        style={{
-                          width: `${Math.round(
-                            ((leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.used), 0) || 0) /
-                              (leaveBalanceData?.reduce((acc: number, b: any) => acc + Number(b.totalEntitled), 0) || 1)) * 100
-                          )}%`
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {[
-                      {
-                        label: "Approval rate",
-                        val: `${leaveRequestData && leaveRequestData.length > 0
-                          ? Math.round(
-                            (leaveRequestData.filter((r: any) => r.status === "approved").length /
-                              (leaveRequestData.filter((r: any) => r.status !== "pending").length || 1)) *
-                            100
-                          )
-                          : 0
-                          }%`,
-                        icon: CheckCircle2,
-                        color: "text-emerald-500"
-                      },
-                      {
-                        label: "Pending requests",
-                        val: `${leaveRequestData?.filter((r: any) => r.status === "pending").length || 0}`,
-                        icon: Clock,
-                        color: "text-orange-500"
-                      },
-                      {
-                        label: "Rejected requests",
-                        val: `${leaveRequestData?.filter((r: any) => r.status === "rejected").length || 0}`,
-                        icon: XCircle,
-                        color: "text-red-500"
-                      },
-                    ].map((insight, i) => (
-                      <div key={i} className="flex items-center justify-between group">
-                        <div className="flex items-center gap-3">
-                          <insight.icon className={`w-4 h-4 ${insight.color}`} />
-                          <span className="text-xs font-bold text-muted-foreground group-hover:text-foreground transition-colors">{insight.label}</span>
-                        </div>
-                        <span className="text-sm font-medium tabular-nums">{insight.val}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {leaveBalanceData?.find((b: any) => b.availableBalance <= 2 && b.availableBalance >= 1) && (
-                    <div className="p-4 rounded-xl bg-destructive/5 border border-destructive/20 space-y-2">
-                      <div className="flex items-center gap-2 text-destructive">
-                        <AlertCircle className="w-4 h-4" />
-                        <span className="text-sm font-medium">Low leave balance</span>
-                      </div>
-                      <p className="text-sm text-destructive/80 leading-relaxed">
-                        Your {leaveBalanceData?.find((b: any) => b.availableBalance <= 2 && b.availableBalance >= 1)?.leaveType.name} balance is running low ({leaveBalanceData?.find((b: any) => b.availableBalance <= 2 && b.availableBalance >= 1)?.availableBalance} days remaining).
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
+            <LeaveRequestMasterDetail
+              requests={leaveRequestData as any}
+              isLoading={leaveRequestLoading}
+              onRefresh={refetchRequests}
+              mode="employee"
+              onCancel={handleCancelLeave}
+            />
           </div>
 
           {/* Team on Leave Section */}

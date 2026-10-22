@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,6 +14,7 @@ import { GET_DIRECTORY_USERS } from '@/lib/graphql/users/queries';
 import { resolveAvatarUrl } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useNotifications } from '@/lib/hooks/useNotifications';
 
 const SUGGESTED_TAGS = ['#Announcement', '#Important', '#Update', '#Kudos', '#General'];
 
@@ -39,6 +40,68 @@ export const CreatePost = () => {
   const { user } = useUser();
   const { createPost, isCreatingPost } = useFeedMutations();
   const client = useApolloClient();
+
+  const isSyncingFromRemoteRef = useRef(false);
+  const draftDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  const { sendJsonMessage, isConnected } = useNotifications((msg) => {
+    if (msg?.level === 'draft_sync' && msg?.scope === 'post') {
+      if (msg.action === 'draft_loaded' || msg.action === 'draft_updated') {
+        const draft = msg.draft;
+        if (draft) {
+          isSyncingFromRemoteRef.current = true;
+          if (typeof draft.title === 'string') {
+            setTitle(draft.title);
+          }
+          if (typeof draft.content === 'string') {
+            setContent(draft.content);
+          }
+          if (Array.isArray(draft.selectedTags)) {
+            setSelectedTags(draft.selectedTags);
+          }
+          setTimeout(() => {
+            isSyncingFromRemoteRef.current = false;
+          }, 100);
+        }
+      } else if (msg.action === 'draft_cleared') {
+        isSyncingFromRemoteRef.current = true;
+        setTitle('');
+        setContent('');
+        setSelectedTags([]);
+        setTimeout(() => {
+          isSyncingFromRemoteRef.current = false;
+        }, 100);
+      }
+    }
+  }, { silent: true });
+
+  // On mount / connection established, request any existing draft
+  useEffect(() => {
+    if (isConnected) {
+      sendJsonMessage({ action: 'get_draft', scope: 'post' });
+    }
+  }, [isConnected]);
+
+  // Synchronize draft changes across tabs and devices with typing debounce
+  useEffect(() => {
+    if (!isConnected || isSyncingFromRemoteRef.current) return;
+    if (draftDebounceRef.current) {
+      clearTimeout(draftDebounceRef.current);
+    }
+    draftDebounceRef.current = setTimeout(() => {
+      sendJsonMessage({
+        action: 'draft_sync',
+        scope: 'post',
+        draft: { title, content, selectedTags }
+      });
+    }, 400);
+
+    return () => {
+      if (draftDebounceRef.current) {
+        clearTimeout(draftDebounceRef.current);
+      }
+    };
+  }, [title, content, selectedTags, isConnected]);
 
   const fetchMentions = async (query: string, callback: any) => {
     try {
@@ -155,6 +218,11 @@ export const CreatePost = () => {
       setSelectedTags([]);
       setShowTags(false);
       setShowTagInput(false);
+      try {
+        sendJsonMessage({ action: 'draft_clear', scope: 'post' });
+      } catch (e) {
+        // Ignore quiet websocket send errors
+      }
       if (scheduledDate) {
         toast.success(`Post scheduled for ${new Date(scheduledDate).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}!`);
       } else {

@@ -21,8 +21,18 @@ export const useFeedPosts = (page = 1, pageSize = 10, authorId?: string) => {
     fetchPolicy: "cache-first",
   });
 
+  const rawPosts: any[] = data?.posts?.results || [];
+  const seenIds = new Set<string>();
+  const posts = rawPosts.filter((p: any) => {
+    if (!p?.id) return false;
+    const strId = String(p.id);
+    if (seenIds.has(strId)) return false;
+    seenIds.add(strId);
+    return true;
+  });
+
   return {
-    posts: data?.posts?.results || [],
+    posts,
     total: data?.posts?.total || 0,
     loading,
     error,
@@ -52,9 +62,17 @@ export const usePostComments = (postId: string, skip: boolean = false) => {
 export const useFeedMutations = () => {
   const [createPost, { loading: isCreatingPost }] = useMutation<any>(CREATE_POST, {
     update(cache, { data: { createPost } }) {
+      if (!createPost?.id) return;
       cache.modify({
         fields: {
-          posts(existingPosts = {}) {
+          posts(existingPosts = {}, { readField }) {
+            const existingResults = existingPosts.results || [];
+            // Remove any existing reference with this ID to guarantee uniqueness
+            const filteredResults = existingResults.filter((ref: any) => {
+              const id = readField ? readField('id', ref) : (ref?.id || ref?.__ref);
+              return String(id) !== String(createPost.id);
+            });
+
             const newPostRef = cache.writeFragment({
               data: createPost,
               fragment: gql`
@@ -65,7 +83,8 @@ export const useFeedMutations = () => {
             });
             return {
               ...existingPosts,
-              results: [newPostRef, ...(existingPosts.results || [])]
+              total: filteredResults.length + 1,
+              results: [newPostRef, ...filteredResults]
             };
           }
         }
