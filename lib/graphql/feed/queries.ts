@@ -28,6 +28,21 @@ export const GET_POSTS = gql`
           email
           profilePictureUrl
         }
+        poll {
+          id
+          question
+          isMultipleChoice
+          totalVotes
+          hasVoted
+          userVotedOptionId
+          userVotedOptionIds
+          options {
+            id
+            text
+            votesCount
+            percentage
+          }
+        }
       }
       total
       page
@@ -41,6 +56,7 @@ export const GET_POST_COMMENTS = gql`
     id
     content
     likesCount
+    isPinned
     createdAt
     hasLiked
     author {

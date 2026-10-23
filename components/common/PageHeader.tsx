@@ -1,23 +1,37 @@
-import { cn } from "@/lib/utils";
+"use client";
 
-interface PageHeaderProps {
-  title: string;
+import React from "react";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Breadcrumbs, BreadcrumbItem } from "@/components/common/Breadcrumbs";
+
+export interface PageHeaderProps {
+  title: React.ReactNode;
   description?: React.ReactNode;
   actions?: React.ReactNode;
   className?: string;
-  /** Optional short label above the title, e.g. "Workforce" */
+  breadcrumbs?: BreadcrumbItem[];
+  breadcrumbIcon?: React.ComponentType<{ className?: string }>;
+  hideBreadcrumbs?: boolean;
+  /** Deprecated - replaced by Breadcrumbs */
   eyebrow?: string;
+  /** Optional back button link */
+  backHref?: string;
 }
 
 /**
- * Shared page title — light, unboxed strip used across employee portal routes.
+ * Shared page title — light, unboxed strip with reusable breadcrumbs used across employee portal routes.
  */
 export function PageHeader({
   title,
   description,
   actions,
   className,
-  eyebrow,
+  breadcrumbs,
+  breadcrumbIcon,
+  hideBreadcrumbs = false,
+  backHref,
 }: PageHeaderProps) {
   return (
     <header
@@ -26,20 +40,33 @@ export function PageHeader({
         className
       )}
     >
-      <div className="min-w-0 space-y-1.5">
-        {eyebrow && (
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-            {eyebrow}
-          </p>
+      <div className="flex items-start gap-4 min-w-0">
+        {backHref && (
+          <Link
+            href={backHref}
+            className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            title="Go back"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
         )}
-        <h1 className="text-[1.65rem] font-semibold leading-none tracking-tight text-foreground sm:text-[1.85rem]">
-          {title}
-        </h1>
-        {description && (
-          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            {description}
-          </p>
-        )}
+        <div className="min-w-0 space-y-1.5">
+          {!hideBreadcrumbs && (
+            <Breadcrumbs
+              items={breadcrumbs}
+              icon={breadcrumbIcon}
+              className="mb-1"
+            />
+          )}
+          <h1 className="text-[1.65rem] font-semibold leading-none tracking-tight text-foreground sm:text-[1.85rem]">
+            {title}
+          </h1>
+          {description && (
+            <div className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              {description}
+            </div>
+          )}
+        </div>
       </div>
 
       {actions && (
@@ -50,3 +77,5 @@ export function PageHeader({
     </header>
   );
 }
+
+export default PageHeader;

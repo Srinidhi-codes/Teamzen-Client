@@ -758,159 +758,211 @@ export function LeaveRequestMasterDetail({
                 </div>
               </div>
 
-              {/* Resolution Stepper (Timeline like Feedback page) */}
-              <div className="rounded-2xl bg-muted/30 border border-border/70 p-4 space-y-3">
+              {/* Resolution Stepper with Connected Progress Line */}
+              <div className="rounded-2xl bg-muted/30 border border-border/70 p-4 sm:p-5 space-y-4">
                 <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
                   Workflow & Resolution Progress
                 </span>
-                <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                  {/* Step 1: Submitted */}
-                  <div className="flex flex-col items-center gap-1.5">
-                    <div className="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shadow-xs">
-                      <Check className="w-4 h-4" />
+
+                <div className="relative pt-1 pb-0.5">
+                  {/* Connecting Progress Line Track */}
+                  <div
+                    className="absolute top-[18px] left-[16.67%] right-[16.67%] h-1 -translate-y-1/2 z-0"
+                    aria-hidden="true"
+                  >
+                    <div className="h-full w-full bg-muted-foreground/20 dark:bg-muted/60 rounded-full overflow-hidden flex">
+                      {/* Segment 1: Step 1 (Submitted) -> Step 2 (Reviewing) */}
+                      <div
+                        className={cn(
+                          "h-full w-1/2 transition-all duration-500",
+                          selected.status?.toLowerCase() === "approved" ||
+                            selected.status?.toLowerCase() === "rejected" ||
+                            selected.approvedBy
+                            ? "bg-emerald-500"
+                            : selected.status?.toLowerCase() === "pending"
+                            ? "bg-gradient-to-r from-emerald-500 to-amber-500"
+                            : "bg-muted-foreground/20"
+                        )}
+                      />
+                      {/* Segment 2: Step 2 (Reviewing) -> Step 3 (Resolution) */}
+                      <div
+                        className={cn(
+                          "h-full w-1/2 transition-all duration-500",
+                          selected.status?.toLowerCase() === "approved"
+                            ? "bg-emerald-500"
+                            : selected.status?.toLowerCase() === "rejected"
+                            ? "bg-rose-500"
+                            : selected.status?.toLowerCase() === "cancelled"
+                            ? "bg-slate-500"
+                            : "bg-transparent"
+                        )}
+                      />
                     </div>
-                    <span className="font-semibold text-foreground text-[11px]">
-                      1. Submitted
-                    </span>
-                    <span className="text-[10px] text-muted-foreground font-mono">
-                      {moment(selected.createdAt || selected.fromDate).format("MMM D")}
-                    </span>
                   </div>
 
-                  {/* Step 2: Reviewing */}
-                  <div className="flex flex-col items-center gap-1.5">
-                    <div
-                      className={cn(
-                        "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
-                        selected.status?.toLowerCase() === "approved" ||
-                          selected.status?.toLowerCase() === "rejected" ||
-                          selected.approvedBy
-                          ? "bg-emerald-500 text-white shadow-xs"
+                  {/* Stepper Nodes */}
+                  <div className="relative z-10 grid grid-cols-3 gap-2 text-center text-xs">
+                    {/* Step 1: Submitted */}
+                    <div className="flex flex-col items-center gap-1.5">
+                      <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shadow-xs ring-4 ring-card">
+                        <Check className="w-4 h-4" />
+                      </div>
+                      <span className="font-semibold text-foreground text-[11px]">
+                        1. Submitted
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        {moment(selected.createdAt || selected.fromDate).format("MMM D")}
+                      </span>
+                    </div>
+
+                    {/* Step 2: Reviewing */}
+                    <div className="flex flex-col items-center gap-1.5">
+                      <div
+                        className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ring-4 ring-card",
+                          selected.status?.toLowerCase() === "approved" ||
+                            selected.status?.toLowerCase() === "rejected" ||
+                            selected.approvedBy
+                            ? "bg-emerald-500 text-white shadow-xs"
+                            : selected.status?.toLowerCase() === "pending"
+                            ? "bg-amber-500 text-white shadow-xs"
+                            : "bg-muted text-muted-foreground border border-border"
+                        )}
+                      >
+                        {selected.status?.toLowerCase() === "approved" ||
+                        selected.status?.toLowerCase() === "rejected" ||
+                        selected.approvedBy ? (
+                          <Check className="w-4 h-4" />
+                        ) : (
+                          <Clock className="w-4 h-4" />
+                        )}
+                      </div>
+                      <span className="font-semibold text-foreground text-[11px]">
+                        2. Reviewing
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {selected.approvedBy
+                          ? `By ${selected.approvedBy.firstName || "Manager"}`
                           : selected.status?.toLowerCase() === "pending"
-                          ? "bg-amber-500 text-white shadow-xs"
-                          : "bg-muted text-muted-foreground border border-border"
-                      )}
-                    >
-                      {selected.status?.toLowerCase() === "approved" ||
-                      selected.status?.toLowerCase() === "rejected" ||
-                      selected.approvedBy ? (
-                        <Check className="w-4 h-4" />
-                      ) : (
-                        <Clock className="w-3.5 h-3.5" />
-                      )}
+                          ? "In Review Queue"
+                          : "Processed"}
+                      </span>
                     </div>
-                    <span className="font-semibold text-foreground text-[11px]">
-                      2. Reviewing
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {selected.approvedBy
-                        ? `By ${selected.approvedBy.firstName || "Manager"}`
-                        : selected.status?.toLowerCase() === "pending"
-                        ? "In Review Queue"
-                        : "Processed"}
-                    </span>
-                  </div>
 
-                  {/* Step 3: Resolution */}
-                  <div className="flex flex-col items-center gap-1.5">
-                    <div
-                      className={cn(
-                        "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
-                        selected.status?.toLowerCase() === "approved"
-                          ? "bg-emerald-500 text-white shadow-xs"
+                    {/* Step 3: Resolution */}
+                    <div className="flex flex-col items-center gap-1.5">
+                      <div
+                        className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ring-4 ring-card",
+                          selected.status?.toLowerCase() === "approved"
+                            ? "bg-emerald-500 text-white shadow-xs"
+                            : selected.status?.toLowerCase() === "rejected"
+                            ? "bg-rose-500 text-white shadow-xs"
+                            : selected.status?.toLowerCase() === "cancelled"
+                            ? "bg-slate-500 text-white shadow-xs"
+                            : "bg-muted text-muted-foreground border border-border"
+                        )}
+                      >
+                        {selected.status?.toLowerCase() === "approved" ? (
+                          <Check className="w-4 h-4" />
+                        ) : selected.status?.toLowerCase() === "rejected" ? (
+                          <X className="w-4 h-4" />
+                        ) : (
+                          <CheckCircle2 className="w-4 h-4" />
+                        )}
+                      </div>
+                      <span className="font-semibold text-foreground text-[11px]">
+                        3. Resolution
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {selected.status?.toLowerCase() === "approved"
+                          ? "Approved"
                           : selected.status?.toLowerCase() === "rejected"
-                          ? "bg-rose-500 text-white shadow-xs"
+                          ? "Rejected"
                           : selected.status?.toLowerCase() === "cancelled"
-                          ? "bg-slate-500 text-white shadow-xs"
-                          : "bg-muted text-muted-foreground border border-border"
-                      )}
-                    >
-                      {selected.status?.toLowerCase() === "approved" ? (
-                        <Check className="w-4 h-4" />
-                      ) : selected.status?.toLowerCase() === "rejected" ? (
-                        <X className="w-4 h-4" />
-                      ) : (
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                      )}
+                          ? "Cancelled"
+                          : "Pending Action"}
+                      </span>
                     </div>
-                    <span className="font-semibold text-foreground text-[11px]">
-                      3. Resolution
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {selected.status?.toLowerCase() === "approved"
-                        ? "Approved"
-                        : selected.status?.toLowerCase() === "rejected"
-                        ? "Rejected"
-                        : selected.status?.toLowerCase() === "cancelled"
-                        ? "Cancelled"
-                        : "Pending Action"}
-                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Schedule & Duration Card */}
-              <div className="rounded-2xl border border-border bg-muted/20 p-4 sm:p-5 space-y-3">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
-                  Absence Schedule & Duration
-                </span>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="bg-card p-3 rounded-xl border border-border/80">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium mb-1">
-                      <Calendar className="w-3.5 h-3.5 text-primary" />
-                      <span>From Date</span>
+              {/* Absence Details: Schedule & Reason */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+                {/* 1. Schedule & Duration Card */}
+                <div className="rounded-2xl border border-border/80 bg-muted/20 p-4 sm:p-5 flex flex-col justify-between space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                        Absence Schedule
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1 text-xs font-bold text-primary">
+                        <Clock className="w-3.5 h-3.5" />
+                        {selected.durationDays || 1} Day(s)
+                      </span>
                     </div>
-                    <p className="text-sm font-semibold text-foreground">
-                      {moment(selected.fromDate).format("ddd, MMM D, YYYY")}
-                    </p>
+
+                    <div className="grid grid-cols-2 gap-4 pt-1">
+                      <div>
+                        <span className="text-[11px] font-medium text-muted-foreground block">From</span>
+                        <p className="text-sm font-bold text-foreground mt-0.5">
+                          {moment(selected.fromDate).format("ddd, MMM D, YYYY")}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-medium text-muted-foreground block">To</span>
+                        <p className="text-sm font-bold text-foreground mt-0.5">
+                          {moment(selected.toDate).format("ddd, MMM D, YYYY")}
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="bg-card p-3 rounded-xl border border-border/80">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium mb-1">
-                      <Calendar className="w-3.5 h-3.5 text-primary" />
-                      <span>To Date</span>
-                    </div>
-                    <p className="text-sm font-semibold text-foreground">
-                      {moment(selected.toDate).format("ddd, MMM D, YYYY")}
-                    </p>
-                  </div>
-
-                  <div className="bg-card p-3 rounded-xl border border-border/80">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium mb-1">
-                      <Clock className="w-3.5 h-3.5 text-primary" />
-                      <span>Total Duration</span>
-                    </div>
-                    <p className="text-sm font-semibold text-foreground tabular-nums">
-                      {selected.durationDays || 1} Day(s)
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-xs text-muted-foreground px-1 pt-1">
-                  <span>
-                    Expected resume date:{" "}
-                    <strong className="text-foreground">
-                      {moment(selected.toDate).add(1, "day").format("dddd, MMM D, YYYY")}
-                    </strong>
-                  </span>
-                  {selected.leaveType?.isPaidLeave && (
-                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                      ✓ Paid Leave
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground pt-3 border-t border-border/40">
+                    <span>
+                      Expected back:{" "}
+                      <strong className="text-foreground">
+                        {moment(selected.toDate).add(1, "day").format("dddd, MMM D, YYYY")}
+                      </strong>
                     </span>
-                  )}
+                    {selected.leaveType?.isPaidLeave && (
+                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
+                        ✓ Paid Leave
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Reason For Absence */}
-              <div className="space-y-2">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
-                  Reason for Absence
-                </span>
-                <div className="rounded-xl border border-border bg-background p-4 border-l-4 border-l-primary">
-                  <p className="text-sm text-foreground/90 italic leading-relaxed">
-                    "{selected.reason || "No written reason provided."}"
-                  </p>
+                {/* 2. Reason for Absence Card */}
+                <div className="rounded-2xl border border-border/80 bg-muted/20 p-4 sm:p-5 flex flex-col justify-between space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                        Reason for Absence
+                      </span>
+                      {selected.halfDayPeriod && (
+                        <span className="rounded-md bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                          {getHalfDayLabel(selected.halfDayPeriod)}
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-sm text-foreground leading-relaxed pt-1">
+                      {selected.reason || "No written reason provided."}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t border-border/40">
+                    <span>
+                      Category: <strong className="text-foreground">{selected.leaveType?.name || "General Leave"}</strong>
+                    </span>
+                    {selected.user?.firstName && (
+                      <span className="text-[11px] text-muted-foreground">
+                        Applied by {selected.user.firstName}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 

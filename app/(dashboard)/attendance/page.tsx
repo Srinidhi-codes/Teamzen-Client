@@ -2,7 +2,7 @@
 
 import { useAttendanceMutations, useGraphQlAttendance } from "@/lib/graphql/attendance/attendanceHooks";
 import { useQuery } from "@apollo/client/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { format, parse, differenceInSeconds } from "date-fns";
 import { useRouter } from "next/navigation";
 import {
@@ -41,6 +41,7 @@ import Image from "next/image";
 import { LandingImages } from "@/lib/brand-images";
 import moment from "moment";
 import { AttendanceTimelineBar } from "@/components/attendance/AttendanceTimelineBar";
+import { WeeklyAttendanceLog } from "@/components/attendance/WeeklyAttendanceLog";
 
 const AttendanceMap = dynamic(() => import("@/components/attendance/AttendanceMap"), {
   ssr: false,
@@ -68,7 +69,29 @@ function formatWorkedDuration(attendanceDate: string, loginTime: string): string
 export default function AttendancePage() {
   const { checkIn, checkOut, checkInLoading, checkOutLoading, enrollFace, enrollFaceLoading } =
     useAttendanceMutations();
-  const { attendance: attendanceData, isLoading } = useGraphQlAttendance();
+  const weekRange = useMemo(() => {
+    const startOfIsoWeek = moment().startOf("isoWeek").format("YYYY-MM-DD");
+    const sevenDaysAgo = moment().subtract(6, "days").format("YYYY-MM-DD");
+    const startDate = moment(startOfIsoWeek).isBefore(moment(sevenDaysAgo))
+      ? startOfIsoWeek
+      : sevenDaysAgo;
+    const endDate = moment().endOf("isoWeek").format("YYYY-MM-DD");
+    return { startDate, endDate };
+  }, []);
+
+  const {
+    attendance: attendanceData,
+    isLoading,
+    refetch: refetchAttendance,
+  } = useGraphQlAttendance({
+    variables: {
+      input: {
+        startDate: weekRange.startDate,
+        endDate: weekRange.endDate,
+      },
+    },
+    fetchPolicy: "cache-and-network",
+  });
   const { refetch: refetchMe } = useGraphQLUser();
   const router = useRouter();
   const { user } = useStore();
@@ -161,7 +184,10 @@ export default function AttendancePage() {
     return () => window.clearInterval(id);
   }, []);
 
-  const todayAttendance = attendanceData[0];
+  const todayStr = useMemo(() => moment().format("YYYY-MM-DD"), []);
+  const todayAttendance = useMemo(() => {
+    return attendanceData.find((a: any) => a.attendanceDate === todayStr);
+  }, [attendanceData, todayStr]);
   const loginDistance = todayAttendance?.loginDistance ? (todayAttendance.loginDistance / 1000).toFixed(2) : "0";
   const logoutDistance = todayAttendance?.logoutDistance ? (todayAttendance.logoutDistance / 1000).toFixed(2) : "0";
 
@@ -300,6 +326,7 @@ export default function AttendancePage() {
         });
         toast.success("Checked out successfully.");
       }
+      await refetchAttendance();
       requestCurrentLocation();
     } catch (error) {
       toast.error(
@@ -346,6 +373,7 @@ export default function AttendancePage() {
         if (id) void uploadSelfie(String(id), "check_out", result.imageBase64);
         toast.success("Checked out with face verification.", { id: toastId });
       }
+      await refetchAttendance();
       requestCurrentLocation();
     } catch (error: any) {
       toast.error(error?.message || "Attendance punch failed", { id: toastId });
@@ -916,6 +944,19 @@ export default function AttendancePage() {
               </>
             )}
           </div>
+        </div>
+
+        {/* Weekly Attendance Log & Overview */}
+        <div className="lg:col-span-12 order-4">
+          <WeeklyAttendanceLog
+            records={attendanceData}
+            isLoading={isLoading}
+            onRefresh={() => refetchAttendance()}
+            officeName={user?.officeLocation?.name || "Office"}
+            officeRadiusMeters={user?.officeLocation?.geoRadiusMeters || 200}
+            shiftStart={user?.officeLocation?.loginTime || "09:00:00"}
+            shiftEnd={user?.officeLocation?.logoutTime || "18:00:00"}
+          />
         </div>
 
       </div>

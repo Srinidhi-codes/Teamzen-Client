@@ -21,6 +21,16 @@ export interface AttendanceRecord {
   correctionStatus?: string;
   correctionId?: string;
   correctionReason?: string;
+  actualLoginTime?: string | null;
+  actualLogoutTime?: string | null;
+  isPayrollLocked?: boolean;
+  correctionCategory?: string | null;
+  officeLocation?: {
+    id: string;
+    name: string;
+    loginTime?: string | null;
+    logoutTime?: string | null;
+  } | null;
   approvalComment?: string;
   faceVerified?: boolean;
   faceMatchScore?: number | null;

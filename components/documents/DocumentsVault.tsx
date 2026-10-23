@@ -192,7 +192,6 @@ export default function DocumentsVault() {
     <div className="w-full space-y-6 animate-fade-in pb-10">
       {/* Header */}
       <PageHeader
-        eyebrow="DOCUMENT VAULT & COMPLIANCE"
         title="Documents & Certificates"
         description="Download Form 16 tax summaries and official company certificates, fulfill HR upload requests, and store verified credentials."
         actions={

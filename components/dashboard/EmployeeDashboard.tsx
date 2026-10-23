@@ -328,22 +328,22 @@ export function EmployeeDashboard() {
           className="hero-art object-cover object-center transition-all duration-700"
         />
 
-        {/* Ambient Gradient Scrim for crisp text legibility without obscuring the background */}
+        {/* Balanced Ambient Gradient Scrim: Lifts darks slightly for crisp text without obscuring the 3D workspace photo */}
         <div
           className={cn(
             "pointer-events-none absolute inset-0 z-[1]",
             isDarkBg
-              ? "bg-gradient-to-r from-slate-950/70 via-slate-950/30 via-45% to-transparent"
-              : "bg-gradient-to-r from-white/80 via-white/40 via-45% to-transparent"
+              ? "bg-gradient-to-r from-slate-950/75 via-slate-950/40 via-40% to-transparent"
+              : "bg-gradient-to-r from-white/65 via-white/30 via-40% to-transparent"
           )}
         />
-        {/* Bottom subtle vignette to smoothly blend with dashboard */}
+        {/* Subtle bottom vignette to softly ground the banner */}
         <div
           className={cn(
             "pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t",
             isDarkBg
-              ? "from-slate-950/40 via-transparent to-transparent"
-              : "from-white/40 via-transparent to-transparent"
+              ? "from-slate-950/30 via-transparent to-transparent"
+              : "from-white/20 via-transparent to-transparent"
           )}
         />
 
@@ -357,8 +357,8 @@ export function EmployeeDashboard() {
                 className={cn(
                   "inline-flex items-center gap-2 rounded-full border px-3 py-1 shadow-xs backdrop-blur-md text-xs font-semibold",
                   isDarkBg
-                    ? "border-white/20 bg-slate-950/60 text-white"
-                    : "border-slate-300/80 bg-white/80 text-slate-800"
+                    ? "border-white/20 bg-slate-950/70 text-white"
+                    : "border-slate-300/80 bg-white/85 text-slate-800"
                 )}
               >
                 <span className="relative flex h-2 w-2">
@@ -368,34 +368,43 @@ export function EmployeeDashboard() {
                 <span className="uppercase tracking-wider text-[11px] font-bold">
                   {now.format("dddd, MMMM D")}
                 </span>
-                <span className="opacity-40">•</span>
-                <span className="text-[#38ABB1] font-semibold">{heroMeta.timeLabel}</span>
+                <span className={cn("opacity-40", isDarkBg ? "text-white" : "text-slate-400")}>•</span>
+                <span className={cn("font-bold", isDarkBg ? "text-[#38ABB1]" : "text-[#0d767e]")}>
+                  {heroMeta.timeLabel}
+                </span>
               </div>
 
               {/* Headline */}
               <div className="space-y-1.5">
                 <h1
                   className={cn(
-                    "text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-balance leading-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)]",
+                    "text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-balance leading-tight",
                     isDarkBg ? "text-white" : "text-slate-900"
                   )}
                 >
                   {greetingForHour(now.hour())},{" "}
-                  <span className="bg-gradient-to-r from-[#38ABB1] via-teal-300 to-cyan-200 bg-clip-text text-transparent drop-shadow-sm">
+                  <span
+                    className={cn(
+                      "bg-clip-text text-transparent font-extrabold",
+                      isDarkBg
+                        ? "bg-gradient-to-r from-[#38ABB1] via-teal-200 to-cyan-300"
+                        : "bg-gradient-to-r from-[#0d767e] via-[#0e7490] to-[#0284c7]"
+                    )}
+                  >
                     {user?.firstName || "there"}
                   </span>
                 </h1>
                 <p
                   className={cn(
-                    "text-xs sm:text-sm font-medium flex flex-wrap items-center gap-1.5 sm:gap-2 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]",
-                    isDarkBg ? "text-slate-200" : "text-slate-600"
+                    "text-xs sm:text-sm font-medium flex flex-wrap items-center gap-1.5 sm:gap-2",
+                    isDarkBg ? "text-slate-300" : "text-slate-700"
                   )}
                 >
                   <span>{user?.designation?.name || "Software Engineer"}</span>
-                  <span className="opacity-30">•</span>
+                  <span className={cn(isDarkBg ? "text-slate-500" : "text-slate-400")}>•</span>
                   <span>{user?.department?.name || "Engineering"}</span>
-                  <span className="opacity-30">•</span>
-                  <span className={cn("font-semibold", isDarkBg ? "text-white/90" : "text-slate-900")}>
+                  <span className={cn(isDarkBg ? "text-slate-500" : "text-slate-400")}>•</span>
+                  <span className={cn("font-semibold", isDarkBg ? "text-white" : "text-slate-900")}>
                     {user?.organization?.name || "TechNova Pvt. Ltd."}
                   </span>
                 </p>
@@ -405,7 +414,7 @@ export function EmployeeDashboard() {
               <div className="flex flex-wrap items-center gap-3 pt-2">
                 <Link
                   href="/attendance"
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold shadow-lg shadow-[#38ABB1]/25 bg-gradient-to-r from-[#38ABB1] to-[#2d8d93] text-white hover:opacity-95 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold shadow-md shadow-[#38ABB1]/20 bg-gradient-to-r from-[#38ABB1] to-[#2d8d93] text-white hover:opacity-95 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
                 >
                   <MapPin className="h-4 w-4" />
                   {["present", "late_login", "early_logout", "half_day"].includes(todayEntry?.status)
@@ -419,7 +428,7 @@ export function EmployeeDashboard() {
                     "inline-flex h-11 items-center justify-center gap-2 rounded-xl border px-5 text-sm font-semibold shadow-xs backdrop-blur-md transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer",
                     isDarkBg
                       ? "border-white/20 bg-white/10 text-white hover:bg-white/15"
-                      : "border-slate-300 bg-white/80 text-slate-800 hover:bg-white"
+                      : "border-slate-300 bg-white/85 text-slate-800 hover:bg-white hover:border-slate-400"
                   )}
                 >
                   <Plus className="h-4 w-4" />
@@ -434,9 +443,12 @@ export function EmployeeDashboard() {
                       : "border-slate-200 bg-white/85 text-slate-800"
                   )}
                 >
-                  <TodayIcon className="h-3.5 w-3.5 text-[#38ABB1]" />
+                  <TodayIcon className={cn("h-3.5 w-3.5", isDarkBg ? "text-[#38ABB1]" : "text-[#0d767e]")} />
                   <span>
-                    Today: <span className="font-bold text-[#38ABB1]">{todayMeta.label}</span>
+                    Today:{" "}
+                    <span className={cn("font-bold", isDarkBg ? "text-[#38ABB1]" : "text-[#0d767e]")}>
+                      {todayMeta.label}
+                    </span>
                   </span>
                 </div>
               </div>
@@ -448,13 +460,13 @@ export function EmployeeDashboard() {
                     "flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 backdrop-blur-md shadow-xs animate-in fade-in-50",
                     isDarkBg
                       ? "border-white/15 bg-white/10 text-white"
-                      : "border-amber-200 bg-amber-50/90 text-amber-900"
+                      : "border-amber-200 bg-amber-50/95 text-amber-900"
                   )}
                 >
                   {wishMessage.toLowerCase().includes("birthday") ? (
-                    <Cake className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+                    <Cake className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
                   ) : (
-                    <PartyPopper className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+                    <PartyPopper className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
                   )}
                   <p className="text-xs sm:text-sm font-medium leading-relaxed">{wishMessage}</p>
                 </div>
@@ -464,21 +476,31 @@ export function EmployeeDashboard() {
             {/* Right Side Glassmorphic Live Shift Widget (Visible on lg screens) */}
             <div
               className={cn(
-                "hidden lg:flex flex-col items-end gap-2 rounded-2xl border p-4.5 backdrop-blur-xl shadow-xl min-w-[210px]",
+                "hidden lg:flex flex-col items-end gap-2 rounded-2xl border p-4.5 backdrop-blur-xl shadow-lg",
                 isDarkBg
-                  ? "border-white/15 bg-slate-950/50 text-white"
-                  : "border-white/60 bg-white/60 text-slate-900"
+                  ? "border-white/15 bg-slate-950/60 text-white"
+                  : "border-slate-200/90 bg-white/90 text-slate-900 shadow-slate-200/50"
               )}
             >
-              <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#38ABB1]">
-                <Clock className="w-3.5 h-3.5 text-[#38ABB1]" />
+              <div
+                className={cn(
+                  "flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider",
+                  isDarkBg ? "text-[#38ABB1]" : "text-[#0d767e]"
+                )}
+              >
+                <Clock className="w-3.5 h-3.5" />
                 <span>Shift Schedule</span>
               </div>
-              <div className="text-2xl font-black font-mono tracking-tight">
+              <div className="text-2xl font-black font-mono tracking-tight text-slate-900 dark:text-white">
                 {now.format("hh:mm A")}
               </div>
-              <div className="flex items-center gap-2 pt-1 border-t border-white/10 w-full justify-end text-xs font-medium opacity-90">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <div
+                className={cn(
+                  "flex items-center gap-2 pt-1 border-t w-full justify-end text-xs font-medium",
+                  isDarkBg ? "border-white/10 text-slate-300" : "border-slate-200 text-slate-600"
+                )}
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>09:00 AM – 06:00 PM</span>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { usePostComments, useFeedMutations } from '@/lib/graphql/feed/feedHooks';
-import { Loader2, ThumbsUp, Reply, Trash2, Heart, Edit2, Send, MoreHorizontal, X, Flag } from 'lucide-react';
+import { Loader2, ThumbsUp, Reply, Trash2, Heart, Edit2, Send, MoreHorizontal, X, Flag, Pin } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useUser } from '@/lib/api/hooks';
 import { toast } from 'sonner';
@@ -84,7 +84,7 @@ const updateCommentInTree = (comments: any[], commentId: string, updates: Partia
   });
 };
 
-const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser, onReply }: any) => {
+const CommentItem = ({ comment, postId, postAuthorId, depth = 0, fetchMentions, onViewUser, onReply, onTogglePin }: any) => {
   const { user } = useUser();
   const [showAllReplies, setShowAllReplies] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -100,7 +100,7 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser, on
   const isDeletingRef = useRef(false);
   const isEditingRef = useRef(false);
 
-  const { deleteComment, updateComment, toggleCommentLike, reportComment } = useFeedMutations();
+  const { deleteComment, updateComment, toggleCommentLike, reportComment, togglePinComment } = useFeedMutations();
 
   useEffect(() => {
     setDisplayContent(comment.content);
@@ -198,7 +198,20 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser, on
 
   const isOwner = user?.id?.toString() === comment.author?.id?.toString();
   const isAdmin = (user?.role as string) === 'admin' || (user?.role as string) === 'superadmin' || user?.role === 'hr';
+  const isPostAuthor = user?.id?.toString() === postAuthorId?.toString();
+  const canPin = depth === 0 && (isPostAuthor || isAdmin);
   const canDelete = isOwner || isAdmin;
+
+  const handleTogglePin = async () => {
+    try {
+      await togglePinComment({ variables: { commentId: comment.id } });
+      const nextPinned = !comment.isPinned;
+      toast.success(nextPinned ? "Comment pinned to top" : "Comment unpinned");
+      onTogglePin?.(comment.id, nextPinned);
+    } catch {
+      toast.error("Failed to pin comment");
+    }
+  };
 
   // Format mentions to be bolded or colored
   const renderContent = (contentStr: string) => {
@@ -263,6 +276,12 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser, on
                   <MoreHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  {canPin && (
+                    <DropdownMenuItem onClick={handleTogglePin} className="cursor-pointer">
+                      <Pin className="w-3.5 h-3.5 mr-2" />
+                      {comment.isPinned ? "Unpin Comment" : "Pin to Top"}
+                    </DropdownMenuItem>
+                  )}
                   {isOwner && (
                     <DropdownMenuItem onClick={() => setIsEditing(!isEditing)} className="cursor-pointer">
                       <Edit2 className="w-3.5 h-3.5 mr-2" />
@@ -288,6 +307,12 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser, on
               </DropdownMenu>
             </div>
           </div>
+          {comment.isPinned && (
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-teal-600 dark:text-teal-400 mt-1 mb-1">
+              <Pin className="w-3.5 h-3.5 fill-current rotate-45" />
+              <span>Pinned comment</span>
+            </div>
+          )}
           {isEditing ? (
             <div className="mt-2">
               <MentionsInputWrapper
@@ -403,11 +428,13 @@ const CommentItem = ({ comment, postId, depth = 0, fetchMentions, onViewUser, on
 
 export const CommentSection = ({ 
   postId, 
+  postAuthorId,
   isExpanded, 
   commentsCount = 0,
   onViewUser
 }: { 
   postId: string; 
+  postAuthorId?: string;
   isExpanded: boolean; 
   commentsCount?: number;
   onViewUser?: (userId: string, author?: any) => void;
@@ -481,6 +508,20 @@ export const CommentSection = ({
         setAllComments(prev => updateCommentInTree(prev, String(commentId), { likesCount }));
         return;
       }
+    }
+
+    if (msg.action === 'comment_pinned' || msg.action === 'comment_unpinned' || msg.action === 'toggle_pin_comment') {
+      const commentId = msg.comment_id || msg.data?.comment_id;
+      const isPinned = msg.is_pinned ?? msg.data?.is_pinned;
+      setAllComments(prev =>
+        prev.map(c => {
+          if (c.id === commentId) {
+            return { ...c, isPinned: Boolean(isPinned) };
+          }
+          return isPinned ? { ...c, isPinned: false } : c;
+        })
+      );
+      return;
     }
 
     refetch();
@@ -576,7 +617,26 @@ export const CommentSection = ({
       : false
   );
 
+  const sortedComments = useMemo(() => {
+    return [...allComments].sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return 0;
+    });
+  }, [allComments]);
+
   if (!isExpanded || !mounted) return null;
+
+  const handleTogglePinLocal = (commentId: string, nextPinned: boolean) => {
+    setAllComments(prev =>
+      prev.map(c => {
+        if (c.id === commentId) {
+          return { ...c, isPinned: nextPinned };
+        }
+        return nextPinned ? { ...c, isPinned: false } : c;
+      })
+    );
+  };
 
   return (
     <div className="mt-3.5 pt-3 border-t border-border/30 animate-in fade-in-50 slide-in-from-top-1 duration-200">
@@ -587,14 +647,16 @@ export const CommentSection = ({
         </div>
       ) : (
         <div className="space-y-2.5 mb-3.5">
-          {allComments.map((comment: any) => (
+          {sortedComments.map((comment: any) => (
             <CommentItem 
               key={comment.id} 
               comment={comment} 
               postId={postId} 
+              postAuthorId={postAuthorId}
               fetchMentions={fetchMentions} 
               onViewUser={onViewUser}
               onReply={handleReplyClick}
+              onTogglePin={handleTogglePinLocal}
             />
           ))}
           

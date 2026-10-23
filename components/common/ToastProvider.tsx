@@ -1,13 +1,9 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode, useCallback } from "react";
-import { Toast, ToastType } from "./Toast";
+import { createContext, useContext, ReactNode } from "react";
+import { toast as sonnerToast } from "sonner";
 
-interface ToastMessage {
-    id: number;
-    message: string;
-    type: ToastType;
-}
+export type ToastType = "success" | "error" | "warning" | "info";
 
 interface ToastContextType {
     toast: (message: string, type?: ToastType) => void;
@@ -20,38 +16,22 @@ interface ToastContextType {
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-    const [toasts, setToasts] = useState<ToastMessage[]>([]);
-
-    const addToast = useCallback((message: string, type: ToastType = "info") => {
-        const id = Date.now();
-        setToasts((prev) => [...prev, { id, message, type }]);
-    }, []);
-
-    const removeToast = useCallback((id: number) => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, []);
-
-    const value = {
-        toast: addToast,
-        success: (msg: string) => addToast(msg, "success"),
-        error: (msg: string) => addToast(msg, "error"),
-        warning: (msg: string) => addToast(msg, "warning"),
-        info: (msg: string) => addToast(msg, "info"),
+    const value: ToastContextType = {
+        toast: (message: string, type: ToastType = "info") => {
+            if (type === "success") sonnerToast.success(message);
+            else if (type === "error") sonnerToast.error(message);
+            else if (type === "warning") sonnerToast.warning(message);
+            else sonnerToast.info(message);
+        },
+        success: (msg: string) => sonnerToast.success(msg),
+        error: (msg: string) => sonnerToast.error(msg),
+        warning: (msg: string) => sonnerToast.warning(msg),
+        info: (msg: string) => sonnerToast.info(msg),
     };
 
     return (
         <ToastContext.Provider value={value}>
             {children}
-            <div className="fixed top-4 right-4 z-50 flex flex-col space-y-2 min-w-[300px]">
-                {toasts.map((t) => (
-                    <Toast
-                        key={t.id}
-                        message={t.message}
-                        type={t.type}
-                        onClose={() => removeToast(t.id)}
-                    />
-                ))}
-            </div>
         </ToastContext.Provider>
     );
 }

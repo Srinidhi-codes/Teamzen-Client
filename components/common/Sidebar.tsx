@@ -280,7 +280,7 @@ export function Sidebar({
               <Fragment key={item.href}>
                 {isNewSection && item.section && (
                   <div className={cn("px-2.5 pb-1 select-none", index > 0 ? "pt-4" : "pt-1")}>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 dark:text-slate-400/70">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                       {item.section}
                     </p>
                   </div>

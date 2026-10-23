@@ -1133,7 +1133,6 @@ export default function TeamPage() {
   return (
     <div className="w-full space-y-6 pb-10">
       <PageHeader
-        eyebrow="People"
         title={pageTitle}
         description="Your reporting circle, who’s in today, and who’s away."
         actions={
