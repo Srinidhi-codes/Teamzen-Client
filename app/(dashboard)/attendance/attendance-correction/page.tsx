@@ -10,7 +10,6 @@ import {
   useCancelAttendanceCorrection,
 } from "@/lib/graphql/attendance/attendanceHooks";
 import type { AttendanceRow } from "@/components/attendance/AttendanceTable";
-import { CorrectionModal, CorrectionPayload } from "@/components/attendance/CorrectionModal";
 import { AttendanceTimelineMatrix } from "@/components/attendance/AttendanceTimelineMatrix";
 import { format } from "date-fns";
 import {
@@ -23,6 +22,7 @@ import {
   FilePenLine,
   Table as TableIcon,
   Calendar,
+  PlusCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DatePickerSimple } from "@/components/ui/datePicker";
@@ -46,12 +46,10 @@ export default function AttendanceCorrectionPage() {
     format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd")
   );
   const [endDate, setEndDate] = useState(format(new Date(), "yyyy-MM-dd"));
-  const [selected, setSelected] = useState<AttendanceRow | null>(null);
   const [viewMode, setViewMode] = useState<"timeline" | "table">("timeline");
 
   const { cancelAttendanceCorrection } = useCancelAttendanceCorrection();
   const { attendance, isLoading, refetchAttendance } = useGraphQlAttendance();
-  const { requestCorrection } = useAttendanceMutations();
   const router = useRouter();
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -87,22 +85,6 @@ export default function AttendanceCorrectionPage() {
     }
   };
 
-  const handleSubmit = async (data: CorrectionPayload) => {
-    try {
-      await requestCorrection({
-        attendanceRecordId: data.attendanceRecordId,
-        correctedLoginTime: data.correctedLoginTime,
-        correctedLogoutTime: data.correctedLogoutTime,
-        reason: data.reason,
-      });
-      toast.success("Correction request submitted.");
-      setSelected(null);
-      await refetchAttendance({ startDate, endDate });
-    } catch {
-      toast.error("Failed to submit correction request.");
-    }
-  };
-
   // Quick stats summary
   const stats = useMemo(() => {
     const list = attendance || [];
@@ -119,45 +101,44 @@ export default function AttendanceCorrectionPage() {
 
   return (
     <div className="w-full space-y-8 animate-fade-in pb-20">
-      <button
-        type="button"
-        onClick={router.back}
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
-      >
-        <ArrowLeftIcon className="h-4 w-4" />
-        <span>Back to Attendance</span>
-      </button>
-
       <PageHeader
-        eyebrow="Time Tracking"
         title="Attendance Regularization & Activity"
         description="Review daily timelines, check office hours compliance, and request punch corrections."
         actions={
-          <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/50 p-1 shadow-xs">
-            <button
-              onClick={() => setViewMode("timeline")}
-              className={cn(
-                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer",
-                viewMode === "timeline"
-                  ? "bg-card text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              onClick={() => router.push("/attendance/attendance-correction/request")}
+              className="h-9 rounded-lg font-semibold shadow-xs gap-1.5 cursor-pointer"
             >
-              <Clock className="h-3.5 w-3.5 text-primary" />
-              Timeline View
-            </button>
-            <button
-              onClick={() => setViewMode("table")}
-              className={cn(
-                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer",
-                viewMode === "table"
-                  ? "bg-card text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <TableIcon className="h-3.5 w-3.5 text-primary" />
-              Table View
-            </button>
+              <PlusCircle className="h-4 w-4" />
+              <span>Apply Regularization</span>
+            </Button>
+            <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/50 p-1 shadow-xs">
+              <button
+                onClick={() => setViewMode("timeline")}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer",
+                  viewMode === "timeline"
+                    ? "bg-card text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Clock className="h-3.5 w-3.5 text-primary" />
+                Timeline View
+              </button>
+              <button
+                onClick={() => setViewMode("table")}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer",
+                  viewMode === "table"
+                    ? "bg-card text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <TableIcon className="h-3.5 w-3.5 text-primary" />
+                Table View
+              </button>
+            </div>
           </div>
         }
       />
@@ -252,13 +233,17 @@ export default function AttendanceCorrectionPage() {
               correctionId: r.correctionId,
             }))}
             isLoading={isLoading}
-            onRequestCorrection={(rec) => setSelected(rec as AttendanceRow)}
+            onRequestCorrection={(rec) =>
+              router.push(`/attendance/attendance-correction/request?recordId=${rec.id}`)
+            }
           />
         ) : (
           <AttendanceTable
             data={paginatedData}
             isLoading={isLoading}
-            onRequestCorrection={setSelected}
+            onRequestCorrection={(rec) =>
+              router.push(`/attendance/attendance-correction/request?recordId=${rec.id}`)
+            }
             onCancelCorrection={handleCancelCorrection}
             total={total}
             currentPage={currentPage}
@@ -267,15 +252,6 @@ export default function AttendanceCorrectionPage() {
           />
         )}
       </div>
-
-      {/* Correction Modal */}
-      {selected && (
-        <CorrectionModal
-          record={selected}
-          onClose={() => setSelected(null)}
-          onSubmit={handleSubmit}
-        />
-      )}
     </div>
   );
 }

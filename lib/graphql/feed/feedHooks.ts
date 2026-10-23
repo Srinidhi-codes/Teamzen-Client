@@ -12,7 +12,9 @@ import {
   TOGGLE_COMMENT_LIKE,
   VIEW_POST,
   REPORT_POST,
-  REPORT_COMMENT
+  REPORT_COMMENT,
+  TOGGLE_PIN_COMMENT,
+  VOTE_POLL
 } from "./mutations";
 
 export const useFeedPosts = (page = 1, pageSize = 10, authorId?: string) => {
@@ -180,6 +182,23 @@ export const useFeedMutations = () => {
   const [viewPost] = useMutation<any>(VIEW_POST);
   const [reportPost] = useMutation<any>(REPORT_POST);
   const [reportComment] = useMutation<any>(REPORT_COMMENT);
+  const [togglePinComment] = useMutation<any>(TOGGLE_PIN_COMMENT);
+  const [votePoll, { loading: isVotingPoll }] = useMutation<any>(VOTE_POLL, {
+    update(cache, { data: { votePoll } }) {
+      if (!votePoll?.id) return;
+      cache.modify({
+        id: cache.identify({ __typename: 'PollType', id: votePoll.id }),
+        fields: {
+          totalVotes() { return votePoll.totalVotes; },
+          hasVoted() { return votePoll.hasVoted; },
+          isMultipleChoice() { return votePoll.isMultipleChoice; },
+          userVotedOptionId() { return votePoll.userVotedOptionId; },
+          userVotedOptionIds() { return votePoll.userVotedOptionIds; },
+          options() { return votePoll.options; }
+        }
+      });
+    }
+  });
 
   return {
     createPost,
@@ -189,6 +208,9 @@ export const useFeedMutations = () => {
     viewPost,
     reportPost,
     reportComment,
+    togglePinComment,
+    votePoll,
+    isVotingPoll,
     isDeletingPost,
     togglePostLike,
     createComment,

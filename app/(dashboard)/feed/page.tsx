@@ -8,7 +8,6 @@ export default function FeedPage() {
     <div className="w-full space-y-8 animate-fade-in pb-20">
       <PageHeader 
         title="Company Feed" 
-        eyebrow="Community"
         description="Stay updated with the latest announcements, milestones, and team updates."
       />
       <div>

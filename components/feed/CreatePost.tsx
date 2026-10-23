@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ImagePlus, Loader2, Camera, FileText, Hash, Tag, Plus, X, CalendarClock } from 'lucide-react';
+import { ImagePlus, Loader2, Camera, FileText, Hash, Tag, Plus, X, CalendarClock, BarChart2, Trash2, CheckSquare } from 'lucide-react';
 import { useFeedMutations } from '@/lib/graphql/feed/feedHooks';
 import { useUser } from '@/lib/api/hooks';
 import { toast } from 'sonner';
@@ -30,6 +30,10 @@ export const CreatePost = () => {
   const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
   const [scheduledDate, setScheduledDate] = useState('');
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [showPollCreator, setShowPollCreator] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
+  const [pollIsMultipleChoice, setPollIsMultipleChoice] = useState(false);
   const isSubmittingRef = useRef(false);
 
   const [errorModal, setErrorModal] = useState({
@@ -142,6 +146,40 @@ export const CreatePost = () => {
     }
   };
 
+  const handleAddPollOption = () => {
+    if (pollOptions.length < 5) {
+      setPollOptions(prev => [...prev, '']);
+    }
+  };
+
+  const handleUpdatePollOption = (index: number, value: string) => {
+    setPollOptions(prev => {
+      const updated = [...prev];
+      updated[index] = value;
+      return updated;
+    });
+  };
+
+  const handleRemovePollOption = (index: number) => {
+    if (pollOptions.length > 2) {
+      setPollOptions(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleTogglePoll = () => {
+    if (showPollCreator) {
+      setShowPollCreator(false);
+      setPollQuestion('');
+      setPollOptions(['', '']);
+      setPollIsMultipleChoice(false);
+    } else {
+      setShowPollCreator(true);
+      if (!pollQuestion && title) {
+        setPollQuestion(title);
+      }
+    }
+  };
+
   const handlePost = async () => {
     // Prevent double clicking / concurrent submissions immediately
     if (isSubmittingRef.current || isSubmitting || isCreatingPost) {
@@ -152,16 +190,40 @@ export const CreatePost = () => {
     const strippedContent = content.replace(/<[^>]*>?/gm, '').trim();
     const hasImage = content.includes('<img');
 
-    if (!title.trim() && !strippedContent && !hasImage && !hasFiles) {
+    if (showPollCreator) {
+      const cleanedQuestion = pollQuestion.trim();
+      const cleanedOptions = pollOptions.map(o => o.trim()).filter(Boolean);
+      if (!cleanedQuestion) {
+        setErrorModal({
+          isOpen: true,
+          title: 'Poll Question Required',
+          description: 'Please enter a question for your poll before publishing.',
+        });
+        return;
+      }
+      if (cleanedOptions.length < 2) {
+        setErrorModal({
+          isOpen: true,
+          title: 'Poll Options Required',
+          description: 'Please provide at least 2 non-empty options for your poll.',
+        });
+        return;
+      }
+    }
+
+    const hasPoll = showPollCreator && pollQuestion.trim().length > 0 && pollOptions.map(o => o.trim()).filter(Boolean).length >= 2;
+    const effectiveTitle = title.trim() || (hasPoll ? pollQuestion.trim() : '');
+
+    if (!effectiveTitle && !strippedContent && !hasImage && !hasFiles && !hasPoll) {
       setErrorModal({
         isOpen: true,
         title: 'Title and Content Required',
-        description: 'Please provide both a title and either body text or an attachment (image/PDF) before publishing.',
+        description: 'Please provide both a title and either body text, a poll, or an attachment before publishing.',
       });
       return;
     }
 
-    if (!title.trim()) {
+    if (!effectiveTitle) {
       setErrorModal({
         isOpen: true,
         title: 'Title Required',
@@ -170,11 +232,11 @@ export const CreatePost = () => {
       return;
     }
 
-    if (!strippedContent && !hasImage && !hasFiles) {
+    if (!strippedContent && !hasImage && !hasFiles && !hasPoll) {
       setErrorModal({
         isOpen: true,
         title: 'Content Required',
-        description: 'Please enter body text or attach an image or PDF document before publishing.',
+        description: 'Please enter body text or attach media before publishing.',
       });
       return;
     }
@@ -204,12 +266,19 @@ export const CreatePost = () => {
         }
       }
 
+      const pollCleanedOptions = showPollCreator 
+        ? pollOptions.map(o => o.trim()).filter(Boolean)
+        : null;
+
       await createPost({
         variables: {
-          title,
+          title: effectiveTitle,
           content: finalContent,
           mediaB64: mediaB64.length > 0 ? mediaB64 : null,
           scheduledFor: scheduledDate ? new Date(scheduledDate).toISOString() : null,
+          pollQuestion: showPollCreator && pollQuestion.trim() ? pollQuestion.trim() : null,
+          pollOptions: pollCleanedOptions && pollCleanedOptions.length >= 2 ? pollCleanedOptions : null,
+          pollIsMultipleChoice: showPollCreator ? pollIsMultipleChoice : false,
         }
       });
       setTitle('');
@@ -218,6 +287,10 @@ export const CreatePost = () => {
       setSelectedTags([]);
       setShowTags(false);
       setShowTagInput(false);
+      setShowPollCreator(false);
+      setPollQuestion('');
+      setPollOptions(['', '']);
+      setPollIsMultipleChoice(false);
       try {
         sendJsonMessage({ action: 'draft_clear', scope: 'post' });
       } catch (e) {
@@ -226,7 +299,7 @@ export const CreatePost = () => {
       if (scheduledDate) {
         toast.success(`Post scheduled for ${new Date(scheduledDate).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}!`);
       } else {
-        toast.success('Post created successfully!');
+        toast.success(showPollCreator ? 'Poll created successfully!' : 'Post created successfully!');
       }
       setScheduledDate('');
     } catch (err) {
@@ -455,6 +528,123 @@ export const CreatePost = () => {
             </div>
           )}
 
+          {/* Poll Builder Section */}
+          {showPollCreator && (
+            <div className="mt-3.5 p-3.5 sm:p-4 rounded-xl border border-primary/30 bg-primary/[0.03] dark:bg-primary/[0.05] space-y-3 animate-in fade-in-0 duration-200">
+              <div className="flex items-center justify-between pb-2 border-b border-border/40">
+                <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-foreground">
+                  <BarChart2 className="w-4 h-4 text-primary" />
+                  <span>Create a Poll</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleTogglePoll}
+                  className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
+                  title="Remove poll"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground block mb-1">Question</label>
+                <input
+                  type="text"
+                  value={pollQuestion}
+                  onChange={(e) => setPollQuestion(e.target.value)}
+                  placeholder="Ask a question..."
+                  className="w-full px-3 py-2 text-xs sm:text-sm border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              {/* Poll Type Toggle */}
+              <div>
+                <label className="text-[11px] font-semibold text-muted-foreground block mb-1.5 uppercase tracking-wider">
+                  Poll Answer Mode
+                </label>
+                <div className="grid grid-cols-2 gap-2 p-1 bg-background/80 dark:bg-background/40 border border-border/80 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setPollIsMultipleChoice(false)}
+                    className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                      !pollIsMultipleChoice
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    }`}
+                  >
+                    <div
+                      className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
+                        !pollIsMultipleChoice ? "border-primary-foreground" : "border-muted-foreground"
+                      }`}
+                    >
+                      {!pollIsMultipleChoice && <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
+                    </div>
+                    <span>Single Choice</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPollIsMultipleChoice(true)}
+                    className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                      pollIsMultipleChoice
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    }`}
+                  >
+                    <CheckSquare className="w-3.5 h-3.5 shrink-0" />
+                    <span>Multiple Choice</span>
+                  </button>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  {pollIsMultipleChoice
+                    ? "Voters can select one or more answers"
+                    : "Voters can only select a single answer"}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[11px] font-medium text-muted-foreground block">Options</label>
+                {pollOptions.map((opt, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className="text-[11px] font-semibold text-muted-foreground w-5 text-center shrink-0">
+                      {idx + 1}.
+                    </span>
+                    <input
+                      type="text"
+                      value={opt}
+                      onChange={(e) => handleUpdatePollOption(idx, e.target.value)}
+                      placeholder={`Option ${idx + 1}`}
+                      className="flex-1 px-3 py-1.5 text-xs sm:text-sm border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    {pollOptions.length > 2 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePollOption(idx)}
+                        className="text-muted-foreground hover:text-rose-500 p-1.5 rounded-md hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                        title="Remove option"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+                {pollOptions.length < 5 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddPollOption}
+                    className="text-xs h-7 mt-1 text-primary border-primary/30 hover:bg-primary/10 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    Add Option
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Scheduled date indicator badge */}
           {scheduledDate && (
             <div className="flex items-center gap-2 mt-3 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-400 text-xs font-medium w-fit">
@@ -498,13 +688,13 @@ export const CreatePost = () => {
               onChange={handleFileChange}
             />
             
-            {/* Slack-style + Menu for Media, Camera, PDF */}
+            {/* Slack-style + Menu for Media, Camera, PDF, Poll */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="rounded-full h-8 w-8 sm:h-9 sm:w-9 p-0 text-muted-foreground hover:text-foreground border-border hover:bg-muted"
+                  className="rounded-full h-8 w-8 sm:h-9 sm:w-9 p-0 text-muted-foreground hover:text-foreground border-border hover:bg-muted cursor-pointer"
                   title="Add attachments & media"
                 >
                   <Plus className="w-4 h-4" />
@@ -532,8 +722,30 @@ export const CreatePost = () => {
                   <FileText className="w-4 h-4" />
                   <span>Attach document</span>
                 </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={handleTogglePoll}
+                  className="flex items-center gap-2.5 px-3 py-2 cursor-pointer text-sm"
+                >
+                  <BarChart2 className="w-4 h-4 text-primary" />
+                  <span>Create a poll</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Poll Quick Toggle Button */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleTogglePoll}
+              className={`text-xs gap-1.5 px-2.5 py-1.5 h-8 rounded-full cursor-pointer ${
+                showPollCreator ? 'bg-primary/15 text-primary font-semibold' : 'text-gray-500 hover:text-gray-700'
+              }`}
+              title="Create a poll"
+            >
+              <BarChart2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Poll</span>
+            </Button>
 
             {/* Schedule Post Popover */}
             <Popover open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
@@ -542,7 +754,7 @@ export const CreatePost = () => {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className={`text-xs gap-1.5 px-2.5 py-1.5 h-8 rounded-full ${
+                  className={`text-xs gap-1.5 px-2.5 py-1.5 h-8 rounded-full cursor-pointer ${
                     scheduledDate ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold' : 'text-gray-500 hover:text-gray-700'
                   }`}
                   title="Schedule post"

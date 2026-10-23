@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@apollo/client/react"
-import { GET_ATTENDANCE, GET_TEAM_ATTENDANCE_TODAY } from "./queries"
+import { GET_ATTENDANCE, GET_TEAM_ATTENDANCE_TODAY, GET_MY_REGULARIZATION_QUOTA, GET_ATTENDANCE_RECORD } from "./queries"
 import { CANCEL_ATTENDANCE_CORRECTION, CHECK_IN, CHECK_OUT, ENROLL_FACE, REQUEST_ATTENDANCE_CORRECTION } from "./mutations"
 import { GET_USER_DASHBOARD_STATS } from "../dashboard/queries"
 import { GET_ME } from "../users/queries"
@@ -10,6 +10,49 @@ import {
   GetAttendanceVars,
   GetTeamAttendanceTodayResponse,
 } from "./types"
+
+export type RegularizationQuota = {
+  monthlyLimit: number;
+  usedCount: number;
+  remainingCount: number;
+  deadlineDays: number;
+  isExhausted: boolean;
+};
+
+export function useRegularizationQuota(targetDate?: string) {
+  const { data, loading, error, refetch } = useQuery<{ myRegularizationQuota: RegularizationQuota }>(
+    GET_MY_REGULARIZATION_QUOTA,
+    {
+      variables: { targetDate },
+      fetchPolicy: "cache-and-network",
+    }
+  );
+
+  return {
+    quota: data?.myRegularizationQuota,
+    isLoading: loading,
+    error,
+    refetch,
+  };
+}
+
+export function useAttendanceRecord(id?: string) {
+  const { data, loading, error, refetch } = useQuery<{ attendanceRecord: AttendanceRecord }>(
+    GET_ATTENDANCE_RECORD,
+    {
+      variables: { id },
+      skip: !id,
+      fetchPolicy: "cache-and-network",
+    }
+  );
+
+  return {
+    record: data?.attendanceRecord,
+    isLoading: loading,
+    error,
+    refetch,
+  };
+}
 
 const ATTENDANCE_MUTATION_REFETCH = [
   { query: GET_ATTENDANCE },
@@ -83,9 +126,12 @@ export function useAttendanceMutations() {
         faceMatchScore?: number;
         faceDescriptor?: number[];
         selfieBase64?: string;
+        deviceId?: string;
+        deviceName?: string;
+        challengeToken?: string;
     }) => {
         const response = await checkInMutation({
-        variables: { input },
+            variables: { input },
         });
 
         return response.data;
@@ -99,9 +145,12 @@ export function useAttendanceMutations() {
         faceMatchScore?: number;
         faceDescriptor?: number[];
         selfieBase64?: string;
+        deviceId?: string;
+        deviceName?: string;
+        challengeToken?: string;
     }) => {
         const response = await checkOutMutation({
-        variables: { input },
+            variables: { input },
         });
 
         return response.data;
@@ -134,6 +183,8 @@ export function useAttendanceMutations() {
         correctedLoginTime: string;
         correctedLogoutTime: string;
         reason: string;
+        category?: string;
+        supportingEvidenceBase64?: string;
     }) => {
         const response = await requestCorrectionMutation({
             variables: { input: {
@@ -141,6 +192,8 @@ export function useAttendanceMutations() {
                 correctedLoginTime: input.correctedLoginTime,
                 correctedLogoutTime: input.correctedLogoutTime,
                 reason: input.reason,
+                category: input.category || "FORGOT_TO_PUNCH",
+                supportingEvidenceBase64: input.supportingEvidenceBase64 || null,
             }},
         });
         return response.data;

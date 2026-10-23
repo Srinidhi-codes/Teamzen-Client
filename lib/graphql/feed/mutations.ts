@@ -1,8 +1,24 @@
 import { gql } from "@apollo/client";
 
 export const CREATE_POST = gql`
-  mutation CreatePost($title: String!, $content: String!, $mediaB64: [String!], $scheduledFor: String) {
-    createPost(title: $title, content: $content, mediaB64: $mediaB64, scheduledFor: $scheduledFor) {
+  mutation CreatePost(
+    $title: String!
+    $content: String!
+    $mediaB64: [String!]
+    $scheduledFor: String
+    $pollQuestion: String
+    $pollOptions: [String!]
+    $pollIsMultipleChoice: Boolean
+  ) {
+    createPost(
+      title: $title
+      content: $content
+      mediaB64: $mediaB64
+      scheduledFor: $scheduledFor
+      pollQuestion: $pollQuestion
+      pollOptions: $pollOptions
+      pollIsMultipleChoice: $pollIsMultipleChoice
+    ) {
       id
       title
       content
@@ -14,6 +30,21 @@ export const CREATE_POST = gql`
       isScheduled
       createdAt
       hasLiked
+      poll {
+        id
+        question
+        isMultipleChoice
+        totalVotes
+        hasVoted
+        userVotedOptionId
+        userVotedOptionIds
+        options {
+          id
+          text
+          votesCount
+          percentage
+        }
+      }
       author {
         id
         firstName
@@ -24,6 +55,27 @@ export const CREATE_POST = gql`
     }
   }
 `;
+
+export const VOTE_POLL = gql`
+  mutation VotePoll($pollId: String!, $optionId: String!) {
+    votePoll(pollId: $pollId, optionId: $optionId) {
+      id
+      question
+      isMultipleChoice
+      totalVotes
+      hasVoted
+      userVotedOptionId
+      userVotedOptionIds
+      options {
+        id
+        text
+        votesCount
+        percentage
+      }
+    }
+  }
+`;
+
 
 export const DELETE_POST = gql`
   mutation DeletePost($id: String!) {
@@ -60,6 +112,7 @@ export const CREATE_COMMENT = gql`
       id
       content
       likesCount
+      isPinned
       createdAt
       hasLiked
       author {
@@ -91,6 +144,12 @@ export const UPDATE_COMMENT = gql`
 export const TOGGLE_COMMENT_LIKE = gql`
   mutation ToggleCommentLike($commentId: String!) {
     toggleCommentLike(commentId: $commentId)
+  }
+`;
+
+export const TOGGLE_PIN_COMMENT = gql`
+  mutation TogglePinComment($commentId: String!) {
+    togglePinComment(commentId: $commentId)
   }
 `;
 

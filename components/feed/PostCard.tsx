@@ -5,7 +5,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2, Eye, Hash, FileText, X, Clock } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2, Eye, Hash, FileText, X, Clock, BarChart2, CheckCircle2, Check } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useFeedMutations } from '@/lib/graphql/feed/feedHooks';
 import { useUser } from '@/lib/api/hooks';
@@ -49,7 +49,9 @@ export const PostCard = ({ post }: { post: any }) => {
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [reportReason, setReportReason] = useState('');
   
-  const { togglePostLike, deletePost, updatePost, reportPost } = useFeedMutations();
+  const { togglePostLike, deletePost, updatePost, reportPost, votePoll } = useFeedMutations();
+  const [poll, setPoll] = useState(post.poll);
+  const [isVoting, setIsVoting] = useState(false);
   const observerRef = React.useRef<HTMLDivElement>(null);
   const [hasViewed, setHasViewed] = useState(false);
   const client = useApolloClient();
@@ -58,6 +60,11 @@ export const PostCard = ({ post }: { post: any }) => {
     if (msg?.level === 'feed_update' && msg?.action === 'post_viewed' && msg?.target_id === post.id) {
       if (typeof msg?.views_count === 'number') {
         setViewsCount(msg.views_count);
+      }
+    }
+    if (msg?.level === 'feed_update' && msg?.action === 'poll_voted' && msg?.post_id === post.id) {
+      if (msg.poll) {
+        setPoll(msg.poll);
       }
     }
   }, { silent: true });
@@ -87,10 +94,98 @@ export const PostCard = ({ post }: { post: any }) => {
     setEditTitle(post.title || '');
     setEditContent(post.content || '');
     setEditMediaUrls(post.mediaUrls || []);
+    setPoll(post.poll);
     if (typeof post.viewsCount === 'number') {
       setViewsCount(post.viewsCount);
     }
-  }, [post.title, post.content, post.mediaUrls, post.viewsCount]);
+  }, [post.title, post.content, post.mediaUrls, post.viewsCount, post.poll]);
+
+  const handleVote = async (optionId: string) => {
+    if (!poll || isVoting) return;
+    if (!user) {
+      toast.error('Please log in to vote');
+      return;
+    }
+
+    const prevPoll = poll;
+    const isMultiple = Boolean(poll.isMultipleChoice);
+    const currentVotedIds: string[] = poll.userVotedOptionIds || (poll.userVotedOptionId ? [poll.userVotedOptionId] : []);
+    const isOptionAlreadyVoted = currentVotedIds.includes(optionId);
+
+    if (!isMultiple && poll.userVotedOptionId === optionId) {
+      return;
+    }
+
+    let newVotedIds: string[];
+    let newTotalVotes = poll.totalVotes;
+    let newOptions: any[];
+
+    if (isMultiple) {
+      if (isOptionAlreadyVoted) {
+        newVotedIds = currentVotedIds.filter(id => id !== optionId);
+        newTotalVotes = Math.max(0, poll.totalVotes - 1);
+      } else {
+        newVotedIds = [...currentVotedIds, optionId];
+        newTotalVotes = poll.totalVotes + 1;
+      }
+
+      newOptions = poll.options.map((opt: any) => {
+        let count = opt.votesCount;
+        if (opt.id === optionId) {
+          count = isOptionAlreadyVoted ? Math.max(0, count - 1) : count + 1;
+        }
+        return {
+          ...opt,
+          votesCount: count,
+          percentage: newTotalVotes > 0 ? Math.round((count / newTotalVotes) * 1000) / 10 : 0
+        };
+      });
+    } else {
+      newVotedIds = [optionId];
+      const isNewVote = !poll.hasVoted;
+      newTotalVotes = isNewVote ? poll.totalVotes + 1 : poll.totalVotes;
+      newOptions = poll.options.map((opt: any) => {
+        let count = opt.votesCount;
+        if (opt.id === optionId) {
+          count += 1;
+        } else if (opt.id === poll.userVotedOptionId) {
+          count = Math.max(0, count - 1);
+        }
+        return {
+          ...opt,
+          votesCount: count,
+          percentage: newTotalVotes > 0 ? Math.round((count / newTotalVotes) * 1000) / 10 : 0
+        };
+      });
+    }
+
+    setPoll({
+      ...poll,
+      totalVotes: newTotalVotes,
+      hasVoted: newVotedIds.length > 0,
+      userVotedOptionId: newVotedIds[0] || null,
+      userVotedOptionIds: newVotedIds,
+      options: newOptions
+    });
+
+    setIsVoting(true);
+    try {
+      const res = await votePoll({
+        variables: {
+          pollId: poll.id,
+          optionId
+        }
+      });
+      if (res?.data?.votePoll) {
+        setPoll(res.data.votePoll);
+      }
+    } catch (err: any) {
+      setPoll(prevPoll);
+      toast.error(err?.message || 'Failed to submit vote');
+    } finally {
+      setIsVoting(false);
+    }
+  };
 
   React.useEffect(() => {
     if (!observerRef.current || hasViewed) return;
@@ -664,6 +759,113 @@ export const PostCard = ({ post }: { post: any }) => {
           );
         })()}
 
+        {/* Interactive Poll Section */}
+        {poll && (
+          <div className="mt-3.5 p-3.5 sm:p-4 rounded-2xl border border-border/70 bg-muted/20 backdrop-blur-sm space-y-3">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                  <BarChart2 className="w-4 h-4" />
+                </div>
+                <h4 className="font-semibold text-sm sm:text-[15px] text-foreground tracking-tight">
+                  {poll.question}
+                </h4>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                  {poll.isMultipleChoice ? 'Multiple Choice' : 'Single Choice'}
+                </span>
+                <span className="text-[11px] font-medium text-muted-foreground whitespace-nowrap">
+                  {poll.totalVotes} {poll.totalVotes === 1 ? 'vote' : 'votes'}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-0.5">
+              {poll.options.map((option: any) => {
+                const isSelected = poll.isMultipleChoice
+                  ? (poll.userVotedOptionIds || (poll.userVotedOptionId ? [poll.userVotedOptionId] : [])).includes(option.id)
+                  : poll.userVotedOptionId === option.id;
+                const percentage = option.percentage ?? 0;
+
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    disabled={isVoting}
+                    onClick={() => handleVote(option.id)}
+                    className={`relative w-full text-left p-3 rounded-xl border transition-all duration-200 overflow-hidden cursor-pointer group ${
+                      isSelected
+                        ? 'border-primary ring-1 ring-primary/40 bg-primary/[0.04]'
+                        : 'border-border/60 hover:border-primary/50 hover:bg-muted/40'
+                    }`}
+                  >
+                    {/* Percentage fill bar if user has voted */}
+                    {poll.hasVoted && (
+                      <div
+                        className={`absolute inset-y-0 left-0 transition-all duration-500 rounded-xl ${
+                          isSelected ? 'bg-primary/20' : 'bg-muted/70'
+                        }`}
+                        style={{ width: `${Math.max(percentage, 2)}%` }}
+                      />
+                    )}
+
+                    <div className="relative z-10 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div
+                          className={`w-4 h-4 ${poll.isMultipleChoice ? 'rounded-md' : 'rounded-full'} border flex items-center justify-center shrink-0 transition-colors ${
+                            isSelected
+                              ? 'border-primary bg-primary text-primary-foreground'
+                              : 'border-muted-foreground/40 group-hover:border-primary'
+                          }`}
+                        >
+                          {isSelected && (
+                            poll.isMultipleChoice ? (
+                              <Check className="w-2.5 h-2.5 stroke-[3] text-white" />
+                            ) : (
+                              <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                            )
+                          )}
+                        </div>
+                        <span className={`text-xs sm:text-sm truncate ${isSelected ? 'font-semibold text-foreground' : 'font-medium text-foreground/90'}`}>
+                          {option.text}
+                        </span>
+                      </div>
+
+                      {poll.hasVoted && (
+                        <div className="flex items-center gap-2 shrink-0">
+                          {isSelected && (
+                            <span className="text-[10px] uppercase font-bold text-primary tracking-wider bg-primary/10 px-1.5 py-0.5 rounded">
+                              Your vote
+                            </span>
+                          )}
+                          <span className="text-xs font-bold text-foreground tabular-nums">
+                            {percentage}%
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1 border-t border-border/30">
+              <span>
+                {poll.isMultipleChoice
+                  ? (poll.hasVoted ? 'Click options to toggle your votes' : 'Select one or more options')
+                  : (poll.hasVoted ? 'Click another option to change your vote' : 'Select an option to cast your vote')}
+              </span>
+              {poll.hasVoted && (
+                <span className="flex items-center gap-1 text-primary font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Voted
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Badges & Tags Section Below Content / Media */}
         {uniqueTags.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5 items-center">
@@ -772,6 +974,7 @@ export const PostCard = ({ post }: { post: any }) => {
         {/* Threaded Comments */}
         <CommentSection 
           postId={post.id} 
+          postAuthorId={post.author?.id}
           isExpanded={showComments} 
           commentsCount={post.commentsCount || 0} 
           onViewUser={(userId, author) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import moment from "moment";
 import { ClipboardList, Upload, CheckCircle2, Trash2, Download, ExternalLink } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -39,6 +39,22 @@ function formatJoinDate(value?: string | Date | null) {
   return m.isValid() ? m.format("DD MMM YYYY") : String(value);
 }
 
+function getTaskDocumentCategory(task: any): string | null {
+  if (task.requiresDocumentCategory && task.requiresDocumentCategory.trim()) {
+    return task.requiresDocumentCategory.trim();
+  }
+  const t = (task.title || "").toLowerCase();
+  if (t.includes("pan")) return "pan";
+  if (t.includes("aadhaar") || t.includes("aadhar")) return "aadhaar";
+  if (t.includes("id proof") || t.includes("photo id") || t.includes("identity")) return "id_proof";
+  if (t.includes("bank proof") || t.includes("cancelled cheque") || t.includes("bank statement")) return "bank_proof";
+  if (t.includes("education") || t.includes("degree") || t.includes("certificate")) return "education";
+  if (t.includes("signed policy") || t.includes("handbook")) return "signed_policy";
+  if (t.includes("upload") && t.includes("offer")) return "offer";
+  if (t.includes("upload") || t.includes("document")) return "other";
+  return null;
+}
+
 const DOC_CATEGORIES = [
   "id_proof",
   "pan",
@@ -57,6 +73,9 @@ export default function MyOnboardingPage() {
   const [category, setCategory] = useState("pan");
   const [msg, setMsg] = useState("");
   const [docToDelete, setDocToDelete] = useState<string | null>(null);
+  const [uploadingCategory, setUploadingCategory] = useState<string | null>(null);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+  const taskFileInputRef = useRef<HTMLInputElement>(null);
 
   const { user, refetch: refetchUser } = useGraphQLUser();
   const { updateUserAsync, isLoading: isUpdatingGraphQL } = useGraphQLUpdateUser();
@@ -81,11 +100,47 @@ export default function MyOnboardingPage() {
     }
   }, [user]);
 
+  const isProfileDirty = useMemo(() => {
+    if (!user) return false;
+    return (
+      (profile.phone_number || "").trim() !== (user.phoneNumber || "").trim() ||
+      (profile.pan_number || "").trim() !== (user.panNumber || "").trim() ||
+      (profile.aadhar_number || "").trim() !== (user.aadharNumber || "").trim() ||
+      (profile.bank_account_number || "").trim() !== (user.bankAccountNumber || "").trim() ||
+      (profile.bank_ifsc_code || "").trim() !== (user.bankIfscCode || "").trim()
+    );
+  }, [profile, user]);
+
+  const isProfileFilled = Boolean(
+    profile.phone_number?.trim() ||
+    profile.pan_number?.trim() ||
+    profile.aadhar_number?.trim() ||
+    profile.bank_account_number?.trim() ||
+    profile.bank_ifsc_code?.trim()
+  );
+
+  const hireTasks = useMemo(() => {
+    return (onboarding?.tasks || []).filter(
+      (t: { assigneeRole: string }) => t.assigneeRole === "hire"
+    );
+  }, [onboarding?.tasks]);
+
   async function saveProfile() {
+    if (!isProfileDirty) return;
     try {
       await updateUserAsync(profile);
       setMsg("Details saved successfully");
-      refetchUser();
+      await refetchUser();
+
+      const detailsTask = hireTasks.find(
+        (t: any) =>
+          (t.title?.toLowerCase().includes("personal") || t.title?.toLowerCase().includes("bank")) &&
+          t.status !== "completed"
+      );
+      if (detailsTask) {
+        await completeTask({ variables: { taskId: detailsTask.id } });
+        refetch();
+      }
     } catch (e: any) {
       setMsg(e.message);
     }
@@ -93,17 +148,23 @@ export default function MyOnboardingPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const signedOfferRef = useRef<HTMLInputElement>(null);
 
-  async function uploadDoc(file: File) {
+  const triggerUpload = (cat: string) => {
+    setUploadingCategory(cat);
+    taskFileInputRef.current?.click();
+  };
+
+  async function uploadDoc(file: File, cat?: string) {
+    const targetCat = cat || uploadingCategory || category || "other";
     const form = new FormData();
     form.append("file", file);
-    form.append("category", category);
+    form.append("category", targetCat);
     form.append("title", file.name);
     if (onboarding?.id) form.append("onboarding_id", onboarding.id);
     await client.post("onboarding/documents/upload/", form, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    setMsg("Document uploaded — awaiting HR verification");
-    refetch();
+    setMsg(`Document "${file.name}" uploaded — awaiting HR verification`);
+    await refetch();
   }
 
   async function deleteDoc(docId: string) {
@@ -179,7 +240,6 @@ export default function MyOnboardingPage() {
     return (
       <div className="w-full space-y-6 animate-fade-in pb-20">
         <PageHeader
-          eyebrow="Onboarding"
           title="My Onboarding"
           description="Your checklist will appear here when HR starts your onboarding."
         />
@@ -193,14 +253,11 @@ export default function MyOnboardingPage() {
     );
   }
 
-  const hireTasks = (onboarding.tasks || []).filter(
-    (t: { assigneeRole: string }) => t.assigneeRole === "hire"
-  );
+
 
   return (
     <div className="w-full space-y-6 animate-fade-in pb-20">
       <PageHeader
-        eyebrow="Onboarding"
         title="My Onboarding"
         description={
           <span className="inline-flex flex-wrap items-center gap-2 mt-1">
@@ -425,153 +482,196 @@ export default function MyOnboardingPage() {
           </div>
           <Button
             type="button"
-            className="mt-6"
-            disabled={isUpdatingGraphQL}
+            className="mt-6 cursor-pointer"
+            disabled={isUpdatingGraphQL || !isProfileDirty}
             onClick={() => saveProfile()}
           >
-            {isUpdatingGraphQL ? "Saving..." : "Save details"}
+            {isUpdatingGraphQL ? (
+              "Saving..."
+            ) : !isProfileDirty && isProfileFilled ? (
+              <span className="flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                Details Saved
+              </span>
+            ) : (
+              "Save details"
+            )}
           </Button>
         </Card>
       </div>
 
-      <div id="my-onboarding-docs">
-      <Card className="space-y-3 p-4">
-        <h3 className="font-semibold pb-2 border-b border-border/50 mb-3">Upload Documents</h3>
-        <div className="flex flex-wrap gap-2">
-          <FormSelect
-            label=""
-            value={category}
-            onValueChange={setCategory}
-            className="min-w-45"
-            options={DOC_CATEGORIES.map((c) => ({ label: c, value: c }))}
-          />
+      <div id="my-onboarding-checklist">
+        <Card className="p-4">
+          <h3 className="font-semibold pb-2 border-b border-border/50 mb-3">Your Checklist</h3>
+          
           <input
-            ref={fileRef}
+            ref={taskFileInputRef}
             type="file"
             className="hidden"
-            onChange={(e) => {
+            onChange={async (e) => {
               const f = e.target.files?.[0];
-              if (f) uploadDoc(f);
+              if (f && uploadingCategory) {
+                try {
+                  setIsUploadingDoc(true);
+                  await uploadDoc(f, uploadingCategory);
+                } catch (err: any) {
+                  setMsg(err.message || "Failed to upload document");
+                } finally {
+                  setIsUploadingDoc(false);
+                  setUploadingCategory(null);
+                  if (taskFileInputRef.current) taskFileInputRef.current.value = "";
+                }
+              }
             }}
           />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => fileRef.current?.click()}
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            Upload
-          </Button>
-        </div>
-        <div className="space-y-2">
-          {(onboarding.documents || []).map(
-            (d: {
-              id: string;
-              category: string;
-              fileName: string;
-              verificationStatus: string;
-              rejectionReason?: string;
-            }) => (
-              <div
-                key={d.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm shadow-sm"
-              >
-                <div className="flex flex-col">
-                  <span className="font-medium">{d.fileName}</span>
-                  <span className="text-xs text-muted-foreground">{d.category}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge
-                    variant={d.verificationStatus === "verified" ? "default" : "secondary"}
-                    className={
-                      d.verificationStatus === "verified"
-                        ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100"
-                        : d.verificationStatus === "rejected"
-                          ? "bg-rose-100 text-rose-800 hover:bg-rose-100 capitalize"
-                          : "bg-amber-100 text-amber-800 hover:bg-amber-100 capitalize"
-                    }
-                  >
-                    {d.verificationStatus.replace("_", " ")}
-                  </Badge>
-                  {d.rejectionReason && (
-                    <span className="text-xs text-rose-600 max-w-[150px] truncate" title={d.rejectionReason}>
-                      {d.rejectionReason}
-                    </span>
-                  )}
-                  {d.verificationStatus !== "verified" && (
-                    <button
-                      type="button"
-                      onClick={() => setDocToDelete(d.id)}
-                      className="text-rose-600 transition-colors hover:text-rose-800"
-                      title="Delete document"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            )
-          )}
-        </div>
-      </Card>
-      </div>
 
-      <div id="my-onboarding-checklist">
-      <Card className="p-4">
-        <h3 className="font-semibold pb-2 border-b border-border/50 mb-3">Your Checklist</h3>
-        <div className="flex flex-col gap-3">
-        {hireTasks.map(
-          (task: {
-            id: string;
-            title: string;
-            status: string;
-            description: string;
-            dueAt?: string;
-          }) => (
-            <div
-              key={task.id}
-              className="flex flex-col gap-y-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div>
-                <p className="text-sm font-medium flex items-center gap-2">
-                  {task.status === "completed" && (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+          <div className="flex flex-col gap-3">
+            {hireTasks.map((task: any) => {
+              const docCategory = getTaskDocumentCategory(task);
+              const matchingDoc = docCategory
+                ? (onboarding.documents || []).find(
+                    (d: any) =>
+                      d.category?.toLowerCase() === docCategory.toLowerCase() ||
+                      (d.title && task.title && d.title.toLowerCase().includes(docCategory.toLowerCase()))
+                  )
+                : null;
+
+              const isDocApproved =
+                matchingDoc?.verificationStatus === "approved" ||
+                matchingDoc?.verificationStatus === "verified";
+              const isDocRejected = matchingDoc?.verificationStatus === "rejected";
+              const isDocUnderReview = matchingDoc && !isDocApproved && !isDocRejected;
+
+              const isTaskCompleted = task.status === "completed" || isDocApproved;
+
+              return (
+                <div
+                  key={task.id}
+                  className={cn(
+                    "flex flex-col gap-y-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between transition-all",
+                    isDocRejected
+                      ? "border-rose-300 bg-rose-50/40 dark:border-rose-900/40 dark:bg-rose-950/20"
+                      : isTaskCompleted
+                      ? "border-border bg-card/60"
+                      : "border-border bg-card"
                   )}
-                  {task.title}
-                </p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className={cn(
-                    "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                    task.status === "completed" ? "bg-emerald-500/10 text-emerald-700 border border-emerald-500/20" :
-                    "bg-amber-500/10 text-amber-700 border border-amber-500/20"
-                  )}>
-                    {task.status}
-                  </span>
-                  {task.dueAt && (
-                    <span className="text-xs text-muted-foreground font-medium">
-                      due {formatJoinDate(task.dueAt)}
-                    </span>
-                  )}
-                </div>
-              </div>
-              {task.status !== "completed" && task.status !== "skipped" && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={loading}
-                  onClick={async () => {
-                    await completeTask({ variables: { taskId: task.id } });
-                    refetch();
-                  }}
                 >
-                  Mark Done
-                </Button>
-              )}
-            </div>
-          )
-        )}
-        </div>
-      </Card>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold flex items-center gap-2">
+                      {isTaskCompleted && (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                      )}
+                      <span>{task.title}</span>
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                      <span
+                        className={cn(
+                          "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                          isTaskCompleted
+                            ? "bg-emerald-500/10 text-emerald-700 border border-emerald-500/20"
+                            : isDocRejected
+                            ? "bg-rose-500/10 text-rose-700 border border-rose-500/20"
+                            : isDocUnderReview
+                            ? "bg-amber-500/10 text-amber-700 border border-amber-500/20"
+                            : "bg-muted text-muted-foreground border border-border"
+                        )}
+                      >
+                        {isTaskCompleted
+                          ? "Completed"
+                          : isDocRejected
+                          ? "Action Required"
+                          : isDocUnderReview
+                          ? "Under Review"
+                          : task.status}
+                      </span>
+                      {task.dueAt && (
+                        <span className="text-xs text-muted-foreground font-medium">
+                          due {formatJoinDate(task.dueAt)}
+                        </span>
+                      )}
+                    </div>
+
+                    {matchingDoc && (
+                      <div className="mt-2 text-xs flex flex-wrap items-center gap-2">
+                        <span className="text-muted-foreground">Attached:</span>
+                        <span className="font-medium text-foreground bg-muted/60 px-2 py-0.5 rounded-md truncate max-w-[200px] sm:max-w-[280px]">
+                          {matchingDoc.fileName}
+                        </span>
+                        {matchingDoc.fileUrl && (
+                          <a
+                            href={matchingDoc.fileUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-primary hover:underline inline-flex items-center gap-1 font-medium"
+                          >
+                            View <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                      </div>
+                    )}
+
+                    {isDocRejected && matchingDoc?.rejectionReason && (
+                      <p className="text-xs text-rose-600 dark:text-rose-400 mt-1.5 font-medium">
+                        Rejection reason: {matchingDoc.rejectionReason}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0 pt-2 sm:pt-0">
+                    {docCategory ? (
+                      isDocApproved ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-500/10 border border-emerald-500/20">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Approved
+                        </span>
+                      ) : isDocRejected || isDocUnderReview ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={isUploadingDoc}
+                          onClick={() => triggerUpload(docCategory)}
+                          className={cn(
+                            "h-8 text-xs font-semibold cursor-pointer",
+                            isDocRejected
+                              ? "border-rose-300 text-rose-700 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-300"
+                              : ""
+                          )}
+                        >
+                          <Upload className="w-3.5 h-3.5 mr-1.5" />
+                          {isUploadingDoc && uploadingCategory === docCategory ? "Uploading..." : "Reupload"}
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="default"
+                          disabled={isUploadingDoc}
+                          onClick={() => triggerUpload(docCategory)}
+                          className="h-8 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                        >
+                          <Upload className="w-3.5 h-3.5 mr-1.5" />
+                          {isUploadingDoc && uploadingCategory === docCategory ? "Uploading..." : "Upload"}
+                        </Button>
+                      )
+                    ) : !isTaskCompleted && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={loading}
+                        onClick={async () => {
+                          await completeTask({ variables: { taskId: task.id } });
+                          refetch();
+                        }}
+                        className="h-8 text-xs font-semibold cursor-pointer"
+                      >
+                        Mark Done
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
       </div>
       <ConfirmationModal
         isOpen={!!docToDelete}
